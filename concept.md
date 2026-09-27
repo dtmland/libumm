@@ -512,6 +512,17 @@ The architecture should allow:
 
 This could eventually allow the library to use one backend as the primary writer and another as an independent verification reader.
 
+### File-type coverage is not a simple subset
+
+Exiv2 is **not a strict subset** of ExifTool.
+
+- For still-image and RAW *file types*, Exiv2 is **almost** a subset of ExifTool. The exception is **TGA**, which Exiv2 only identifies (MIME type and dimensions); ExifTool does not list TGA.
+- Write capability is **not** a subset. ExifTool writes many types Exiv2 can only read (**CR3**, **HEIC/HEIF**, **AVIF**, **JXL**, **RAF**, **RW2**, **MRW**, **SR2**, **GIF**, QuickTime/**MP4**). Conversely, Exiv2 **writes PGF**; ExifTool is **read-only** for PGF.
+- The same container can still differ by metadata category: Exiv2’s table has **no Exif on PNG** and **no IPTC on WebP**. ExifTool lists both as writable (PNG including Exif; WebP via Exif/XMP).
+- Exiv2 video support is **rudimentary read** of QuickTime, Matroska, and RIFF (e.g. MOV/MP4, MKV, AVI, WAV, ASF). ExifTool adds write for QuickTime-family files and a large set of audio, document, font, and archive types.
+
+The full tables (Exiv2 first, then ExifTool deltas without repeating shared types) live in [supported-types.md](supported-types.md). That document is also why `capabilities(media)` in the next section must be per-backend and per-metadata-category, not a static extension list.
+
 ---
 
 # 14. Capability Discovery Is a Major Feature
@@ -890,9 +901,9 @@ The project should have an explicit policy:
 
 And project-specific properties should be explicitly namespaced:
 
-    umml:assetId
-    umml:metadataProvenance
-    umml:sourceHash
+    libumm:assetId
+    libumm:metadataProvenance
+    libumm:sourceHash
 
 rather than pretending they are IPTC/EXIF properties.
 
@@ -1162,11 +1173,7 @@ because the project is broader than any of those.
 
 A working description could be:
 
-**Universal Media Metadata Library**
-
-or:
-
-**Universal Media Metadata Layer (UMML)**
+**libumm** — Universal Media Metadata Library
 
 with the tagline:
 
@@ -1174,7 +1181,7 @@ with the tagline:
 
 The README could immediately state:
 
-> UMML does not define a new metadata standard. It provides a unified programming interface over established standards including IPTC Photo Metadata, IPTC Video Metadata Hub, XMP, EXIF, and media-container metadata, using proven implementation engines such as Exiv2 and ExifTool.
+> libumm does not define a new metadata standard. It provides a unified programming interface over established standards including IPTC Photo Metadata, IPTC Video Metadata Hub, XMP, EXIF, and media-container metadata, using proven implementation engines such as Exiv2 and ExifTool.
 
 ---
 
@@ -1208,7 +1215,7 @@ Your library sits across all three:
                               │
                               ▼
                      ┌────────────────┐
-                     │  UMML API      │
+                     │  libumm API    │
                      └────────────────┘
                               │
                        Semantic layer
