@@ -521,7 +521,7 @@ Exiv2 is **not a strict subset** of ExifTool.
 - The same container can still differ by metadata category: Exiv2’s table has **no Exif on PNG** and **no IPTC on WebP**. ExifTool lists both as writable (PNG including Exif; WebP via Exif/XMP).
 - Exiv2 video support is **rudimentary read** of QuickTime, Matroska, and RIFF (e.g. MOV/MP4, MKV, AVI, WAV, ASF). ExifTool adds write for QuickTime-family files and a large set of audio, document, font, and archive types.
 
-The full tables (Exiv2 first, then ExifTool deltas without repeating shared types) live in [supported-types.md](supported-types.md). That document is also why `capabilities(media)` in the next section must be per-backend and per-metadata-category, not a static extension list.
+The full tables (Exiv2 first, then ExifTool deltas without repeating shared types) live in [supported-types.md](supported-types.md). **Location metadata** (EXIF GPS, IPTC/XMP named place, QuickTime `GPSCoordinates`, GeoTIFF) is called out there per backend and per type: a container can be “supported” and still lack location **read** or **write**, or only support one encoding. That document is also why `capabilities(media)` in the next section must be per-backend and per-metadata-category, not a static extension list.
 
 ---
 
@@ -540,12 +540,16 @@ and receive:
         XMP        yes
         IPTC       partial
         GPS        yes
+        named place yes
 
     Write:
         EXIF       limited
         XMP        yes
         IPTC       no
         GPS        via XMP
+        named place via XMP
+
+GPS coordinates and IPTC/XMP named place are separate location capabilities. Which encodings are readable or writable depends on backend and file type; see [supported-types.md §3](supported-types.md#3-location-metadata-gps-and-named-place).
 
     Sidecar:
         XMP        recommended
