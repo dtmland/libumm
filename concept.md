@@ -1,6 +1,15 @@
 # Universal Media Metadata Abstraction Layer
 ## Concept Plan
 
+> **Revision note (2026-09-27):** this plan was reviewed and revised per
+> [docs/analysis/2026-09-27-plan-review-and-decisions.md](docs/analysis/2026-09-27-plan-review-and-decisions.md).
+> Key applied decisions: the standards registry is built **before** photo read/write (S2); the
+> first read/write scope is **JPEG + XMP sidecar only** (S3); reconciliation is a first-phase
+> deliverable (S4a); the ExifTool backend is a defined out-of-process adapter and backends are
+> optional at runtime (S1); license is Apache-2.0, provisional (S1d); the public API is
+> exception-free `Result`-based C++20 (M1). Session-sized execution plan:
+> [docs/implementation/00-overview.md](docs/implementation/00-overview.md).
+
 ### 1. Project Purpose
 
 Create an open-source library that provides applications with a **single, standards-based API for reading, writing, synchronizing, and exchanging metadata across photos, videos, audio, and related media formats**.
@@ -521,6 +530,26 @@ Exiv2 is **not a strict subset** of ExifTool.
 - The same container can still differ by metadata category: Exiv2’s table has **no Exif on PNG** and **no IPTC on WebP**. ExifTool lists both as writable (PNG including Exif; WebP via Exif/XMP).
 - Exiv2 video support is **rudimentary read** of QuickTime, Matroska, and RIFF (e.g. MOV/MP4, MKV, AVI, WAV, ASF). ExifTool adds write for QuickTime-family files and a large set of audio, document, font, and archive types.
 
+### The two backends are not architecturally symmetric (decision S1)
+
+Exiv2 is an in-process C++ library. ExifTool is a Perl program. The Backend Manager treats them
+through one adapter contract (see [include/umm/backend.hpp](include/umm/backend.hpp), design
+draft), but the following is binding (analysis findings S1a–S1d):
+
+- **ExifTool adapter is out-of-process**, using ExifTool's `-stay_open` batch mode with JSON
+  output (`-j -G -struct`). One persistent process per adapter instance; per-call spawning is not
+  acceptable, especially on Windows. The adapter defines process lifecycle, error mapping,
+  timeouts/kill-and-restart, and UTF-8 encoding rules.
+- **Backends are optional at runtime.** libumm core + Exiv2 must be fully usable when ExifTool is
+  absent; absence is reported through backend availability and `capabilities()`, never a load
+  failure. CI still requires both backends on every platform.
+- **ExifTool is located, never bundled.** Discovery order: explicit configuration →
+  `UMM_EXIFTOOL` environment variable → PATH. Bundling is precluded by licensing (below).
+- **Licensing:** libumm is **Apache-2.0** (provisional, owner confirmation before first release).
+  Exiv2 is GPL-2.0+ — distributing libumm with the Exiv2 backend statically linked makes the
+  combined work GPL-governed (documented in NOTICE). ExifTool (Artistic/GPL) is only ever invoked
+  as an external process and never redistributed by libumm.
+
 The full tables (Exiv2 first, then ExifTool deltas without repeating shared types) live in [supported-types.md](supported-types.md). **Location metadata** (EXIF GPS, IPTC/XMP named place, QuickTime `GPSCoordinates`, GeoTIFF) is called out there per backend and per type: a container can be “supported” and still lack location **read** or **write**, or only support one encoding. That document is also why `capabilities(media)` in the next section must be per-backend and per-metadata-category, not a static extension list.
 
 ---
@@ -590,6 +619,13 @@ It should incorporate:
 - backend-specific behavior
 
 rather than inventing arbitrary precedence rules.
+
+**Decisions S4a/S4b applied:** a written, testable reconciliation policy
+(`docs/reconciliation-policy.md`, per property: precedence, conflict classification, and
+write-synchronization rule) is a deliverable of the **first read/write phase**, not a later
+milestone — you cannot correctly read even a single JPEG without it. The **Metadata Working Group
+is defunct**; its guidance is adopted as a *frozen historical input*, with ExifTool's MWG module
+behavior as the living compatibility reference.
 
 This becomes:
 
@@ -764,6 +800,17 @@ A clean architecture might be:
         ├── KML
         └── track matching
 
+### API and error model (decision M1)
+
+- Public API: **C++20**, primary and only surface for v1.
+- **No exceptions cross the API boundary.** All fallible operations return `umm::Result<T>`
+  (expected-style). This keeps a future **stable C ABI** and language bindings possible without
+  redesign; neither ships in v1.
+- Backend types (Exiv2 classes, ExifTool JSON) never appear in public headers.
+- Draft public headers live in [include/umm/](include/umm/) as design artifacts (decision M7);
+  each is promoted to a real header by the implementation session that builds it — header first,
+  then code.
+
 ---
 
 # 20. Standards Registry
@@ -881,6 +928,18 @@ The project should explicitly position itself as:
 
 That distinction makes the project much easier to explain to potential contributors and users.
 
+### Prior art — why not just use X? (analysis §4)
+
+Evaluated and rejected as the *whole* answer, recorded here to preempt the question:
+
+- **Use Exiv2 or ExifTool directly:** applications then own reconciliation, capability tables,
+  backend divergence, and sidecar policy themselves — exactly the complexity libumm absorbs.
+  Neither tool provides a standards-registry semantic layer.
+- **Adobe XMP Toolkit / KDE metadata libraries:** representation- or app-framework-bound; none
+  offers IPTC/VMH-registry semantics across multiple engines.
+- **Data/spec-only project (registry + mappings, no runtime):** adopted as a *component boundary*
+  — the registry is standalone-consumable — but applications need the read/write engine.
+
 ---
 
 # 23. The "Don't Reinvent This" Rule
@@ -938,16 +997,26 @@ This gives the project a strong standards foundation without requiring the proje
 
 # 25. Phase 1 — Photo Metadata
 
+> **Revised by decisions S2 and S3:** the standards registry (§26) is built **first** — importing
+> IPTC's machine-readable vocabulary before any read/write code exists, so no property definition
+> is ever hand-typed. The initial read/write scope is **JPEG + XMP sidecar only**; TIFF, PNG,
+> WebP, and common RAW follow as fast increments once the round-trip is proven (PNG's missing
+> EXIF and WebP's missing IPTC in Exiv2 make them poor first targets). A written reconciliation
+> policy is a Phase 1 deliverable (S4a; §15).
+
 Start small.
 
 Support:
 
     JPEG
+    XMP sidecars
+
+then, as fast-follow increments after the round-trip is proven:
+
     TIFF
     PNG
     WebP
     common RAW formats
-    XMP sidecars
 
 Implement:
 
@@ -983,6 +1052,12 @@ while preserving correct IPTC/XMP/EXIF relationships.
 ---
 
 # 26. Phase 2 — Standards Registry + Mapping Engine
+
+> **Revised by decision S2: this work is sequenced FIRST, before Phase 1 read/write.** Building
+> read/write before the registry would hand-code hundreds of property definitions that the
+> registry then regenerates, and the public API shape depends on the registry design. The phase
+> numbering is kept for historical reference; execution order is registry → read/write. See
+> [docs/implementation/00-overview.md](docs/implementation/00-overview.md) Stage 2.
 
 Move the IPTC machine-readable reference into the project's build process.
 

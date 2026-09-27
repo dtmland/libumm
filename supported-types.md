@@ -1,5 +1,12 @@
 # Backend file-type coverage: Exiv2 and ExifTool
 
+> **Status (decision M2):** this is currently a **hand-maintained snapshot** of the upstream
+> tables. Per [docs/analysis/2026-09-27-plan-review-and-decisions.md](docs/analysis/2026-09-27-plan-review-and-decisions.md),
+> this document will become **generated output** of machine-readable capability data under
+> `registry/capabilities/`, with Tier A CI probing the pinned backend versions against that data
+> so drift fails a test ([implementation session 15](docs/implementation/15-capabilities-engine.md)).
+> Until then, treat the sources listed below as the drift check.
+
 This is a snapshot of **file-type** (container) support in the two backends named in [concept.md](concept.md). It is **not** a list of IPTC/EXIF/XMP *properties*.
 
 **Location is called out separately.** `getLocation()` / `setLocation()` in [concept.md](concept.md) is not a file-type flag. Coordinates and named place live in different encodings, and Exiv2 vs ExifTool do not offer the same location **read** or **write** path for the same type. See [§3 Location metadata](#3-location-metadata-gps-and-named-place).
