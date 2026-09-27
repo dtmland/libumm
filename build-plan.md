@@ -6,6 +6,9 @@ Related:
 
 - Design plan: [concept.md](concept.md)
 - Backend file-type coverage: [supported-types.md](supported-types.md)
+- Decisions applied: [docs/analysis/2026-09-27-plan-review-and-decisions.md](docs/analysis/2026-09-27-plan-review-and-decisions.md)
+- Session-sized execution plan (supersedes §14 ordering): [docs/implementation/00-overview.md](docs/implementation/00-overview.md)
+- Test media strategy: [docs/test-media-plan.md](docs/test-media-plan.md)
 
 ## 1. Goal
 
@@ -37,8 +40,13 @@ libumm is currently design documentation only. Before (and while) the library is
 
 ## 3. Design constraints from concept.md
 
-- Backends: **Exiv2** (native C++) and **ExifTool** (Perl script + modules).
-- Phase 1 product surface: `read` / `write` / `capabilities` for stills (JPEG, TIFF, PNG, WebP, common RAW, XMP sidecars).
+- Backends: **Exiv2** (native C++, in-process) and **ExifTool** (Perl; **out-of-process
+  `-stay_open` JSON adapter**, decision S1a). Backends are optional at runtime; **both are
+  required in CI** (decision S1b).
+- Phase 1 product surface: `read` / `write` / `capabilities` for **JPEG + XMP sidecars only**
+  (decision S3); TIFF/PNG/WebP/RAW follow as increments.
+- The standards registry is built **before** read/write (decision S2), so registry importer /
+  codegen tooling (Python, stdlib-only) is part of the early build.
 - Cross-backend verification (Exiv2 ↔ ExifTool round-trips) is a later milestone, so CI must be able to run **both** backends on every OS once code exists.
 - libumm is a **library**, not an application: no GUI test tiers, no desktop deploy doctor.
 
@@ -95,12 +103,20 @@ Record formally in `docs/supported-platforms.md` when implementation starts. Wor
 | Linux arm64 | Buildable when dependencies allow; not a hosted CI target initially |
 | Backends in CI | Exiv2 **and** ExifTool required on every matrix job |
 
-Open decisions to confirm before coding:
+Open decisions — **resolved** in the [analysis document](docs/analysis/2026-09-27-plan-review-and-decisions.md):
 
-- Exiv2: always build from pinned source vs allow system Exiv2 locally with pin-only enforcement in CI
-- Default `BUILD_SHARED_LIBS` (static vs shared) for the first consumer
-- Exact minimum compiler versions (MSVC, Apple Clang, GCC/Clang on Linux) beside runner images
-- How downstream apps may bundle ExifTool/Perl (library CI only needs them as build/test tools at first)
+- Exiv2 acquisition: **pinned source via FetchContent on all OSes** (M4a); checksum-pinned
+  prebuilt is the sanctioned Windows-only fallback if build time proves painful, taken as a new
+  decision entry.
+- Default linkage: **static default** (`BUILD_SHARED_LIBS=OFF`), shared supported (M4c).
+- Windows Perl: **pinned Strawberry Perl provisioning step**, covered by build contracts (M4b).
+- Downstream ExifTool/Perl acquisition: libumm **locates, never bundles** ExifTool (S1c);
+  discovery order explicit path → `UMM_EXIFTOOL` env var → PATH.
+- License: **Apache-2.0** (provisional, S1d); `NOTICE.md` documents the Exiv2 GPL static-link
+  implication and the out-of-process-only ExifTool rule.
+
+Still open (lock during the relevant implementation session): exact minimum compiler versions
+(MSVC, Apple Clang, GCC/Clang) beside runner images.
 
 ## 8. Target repository layout
 
@@ -136,9 +152,13 @@ Public CMake package target naming (provisional): `umm::umm` (or `libumm::libumm
 
 ### 9.1 Exiv2
 
-- Prefer a **pinned version** acquired the same way on all three OSes (FetchContent from source, or prebuilt artifacts with SHA-256), so CI does not depend on “whatever apt/brew shipped.”
+- **Decision M4a locked: pinned source via FetchContent** the same way on all three OSes, with
+  aggressive caching, so CI does not depend on “whatever apt/brew shipped.” Build with
+  `EXIV2_ENABLE_BMFF=ON` (CR3/HEIC/AVIF read).
 - Linux may still install **build prerequisites** (zlib, expat, and similar) via `tools/build/linux-packages.txt`.
-- Windows: build under the same Ninja + MSVC preset, or consume a pinned binary if source build time becomes painful—decision locked when implementing.
+- Windows: build under the same Ninja + MSVC preset; if source build time proves painful even
+  cached, the sanctioned fallback is a checksum-pinned prebuilt **for Windows only**, taken as a
+  new decision entry in the analysis doc.
 - macOS arm64: same pin; universal binaries are out of scope for v1.
 - CMake: `UMM_REQUIRE_EXIV2=ON` in CI so a missing backend fails configure.
 
@@ -146,10 +166,12 @@ Public CMake package target naming (provisional): `umm::umm` (or `libumm::libumm
 
 - Checksum-pinned source archive via FetchContent (or equivalent).
 - `find_package(Perl REQUIRED)`; run the `exiftool` script with the discovered interpreter.
+- The runtime backend uses **`-stay_open` batch mode with JSON output** (decision S1a); the
+  integration tests exercise that adapter, not per-call spawning.
 - CI installs Perl on every runner:
   - Linux: `perl` in `linux-packages.txt`
   - macOS: document system Perl or Homebrew if the image is insufficient
-  - Windows: verify Perl on PATH; if missing, pin an install step and cover it in build contracts
+  - Windows: **pinned Strawberry Perl provisioning step** (decision M4b), covered by build contracts — never rely on whatever the image has on PATH
 - Tests receive compile definitions such as `UMM_TEST_EXIFTOOL_SCRIPT` and `UMM_TEST_EXIFTOOL_PERL`.
 
 ### 9.3 Pins and evidence
@@ -224,7 +246,12 @@ File: `.github/workflows/ci.yml` (to be added later).
 - **Build contracts:** pins load correctly; workflows reference pin loaders and package lists; malformed pins fail closed.
 - **Unit tests:** semantic model, mapping tables, capability logic without media files.
 - **Fixture integration:** read/write small checked-in samples through Exiv2 and ExifTool backends.
-- **Capabilities alignment:** expectations stay consistent with [supported-types.md](supported-types.md) (later: machine-readable slice or generated asserts).
+- **Write-safety tests (decision M3):** payload bytes unchanged after metadata-only writes;
+  unknown tags and MakerNotes preserved across writes; write-to-temp-then-atomic-rename verified;
+  **non-ASCII paths and metadata values** round-trip on all three OSes.
+- **Capabilities alignment:** capability data is machine-readable (decision M2);
+  [supported-types.md](supported-types.md) is generated from it, and CI probes the pinned backends
+  against it so drift fails a test.
 - **Failing self-test option:** one deliberately failing CTest gated by CMake option, enabled only from `workflow_dispatch`, proving red CI on each OS.
 
 ### Tier B — when cross-backend verification lands
@@ -239,8 +266,11 @@ File: `.github/workflows/ci.yml` (to be added later).
 
 ### Fixture policy
 
-- Tiny synthetic or clearly licensed samples only in-repo at first.
-- No huge RAW trees in git; optional cache download keyed by manifest SHA when needed.
+Full strategy: [docs/test-media-plan.md](docs/test-media-plan.md) (decision M6 — hybrid:
+generated in-repo fixtures; checksummed downloads for Tier B; no third-party media committed).
+
+- Tiny **generated** synthetic samples only in-repo (≤100 KB each; Phase 1 corpus <1 MB), produced by a committed generator using the pinned backends.
+- No huge RAW trees in git; Tier B corpus is a checksum-manifest download, cached in CI.
 - Fixture directories passed through CMake so Windows paths do not break tests.
 
 ## 13. Documentation to add with implementation
@@ -256,6 +286,11 @@ File: `.github/workflows/ci.yml` (to be added later).
 This file (`build-plan.md`) remains the planning source until those docs exist; implementation may fold or split content into `docs/` without changing the decisions here unless explicitly revised.
 
 ## 14. Implementation order (later sessions)
+
+> **Superseded for execution:** the authoritative, session-sized ordering now lives in
+> [docs/implementation/00-overview.md](docs/implementation/00-overview.md) (registry-first per
+> decision S2, fixtures before backend reads). The list below is retained as the original
+> high-level shape.
 
 1. **Lock docs:** supported platforms, build architecture, testing (or keep this plan as the interim source of truth).
 2. **Skeleton:** root `CMakeLists.txt`, presets, empty library target, `enable_testing`, trivial passing test + optional failing self-test.
