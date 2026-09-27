@@ -6,3 +6,4 @@ libumm does not define a new metadata standard. It provides a unified programmin
 
 - Design plan: [concept.md](concept.md)
 - Exiv2 and ExifTool file-type coverage (read vs write), including **location** (GPS and named place): [supported-types.md](supported-types.md)
+- Multi-platform build and test plan (Linux, Windows, macOS): [build-plan.md](build-plan.md)
