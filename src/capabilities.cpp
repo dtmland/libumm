@@ -99,6 +99,26 @@ bool looks_like_tiff(const std::vector<unsigned char>& bytes) {
            bytes[3] == '*'));
 }
 
+bool looks_like_png(const std::vector<unsigned char>& bytes) {
+  static constexpr unsigned char kSig[] = {0x89, 'P', 'N', 'G', 0x0D, 0x0A,
+                                           0x1A, 0x0A};
+  if (bytes.size() < sizeof(kSig)) {
+    return false;
+  }
+  for (std::size_t i = 0; i < sizeof(kSig); ++i) {
+    if (bytes[i] != kSig[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool looks_like_webp(const std::vector<unsigned char>& bytes) {
+  return bytes.size() >= 12 && bytes[0] == 'R' && bytes[1] == 'I' &&
+         bytes[2] == 'F' && bytes[3] == 'F' && bytes[8] == 'W' &&
+         bytes[9] == 'E' && bytes[10] == 'B' && bytes[11] == 'P';
+}
+
 bool looks_like_xmp(const std::vector<unsigned char>& bytes) {
   std::string_view text(reinterpret_cast<const char*>(bytes.data()),
                         bytes.size());
@@ -126,10 +146,16 @@ std::string sniff_type(const std::filesystem::path& media) {
     if (looks_like_jpeg(bytes)) {
       return "JPEG";
     }
-    // Container magics before XMP text: embedded XMP packets in TIFF/JPEG
-    // must not classify the file as a sidecar (session 17).
+    // Container magics before XMP text: embedded XMP packets in stills
+    // must not classify the file as a sidecar (sessions 17–18).
     if (looks_like_tiff(bytes)) {
       return "TIFF";
+    }
+    if (looks_like_png(bytes)) {
+      return "PNG";
+    }
+    if (looks_like_webp(bytes)) {
+      return "WEBP";
     }
     if (looks_like_xmp(bytes)) {
       return "XMP";

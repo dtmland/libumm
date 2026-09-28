@@ -146,6 +146,62 @@ std::vector<std::uint8_t> tiff_strips(const std::vector<std::uint8_t>& bytes) {
   return payload;
 }
 
+std::vector<std::uint8_t> png_idat(const std::vector<std::uint8_t>& bytes) {
+  if (bytes.size() < 8 || bytes[0] != 0x89 || bytes[1] != 'P') {
+    return {};
+  }
+  std::vector<std::uint8_t> idat;
+  std::size_t i = 8;
+  while (i + 12 <= bytes.size()) {
+    const std::uint32_t len = (static_cast<std::uint32_t>(bytes[i]) << 24) |
+                              (static_cast<std::uint32_t>(bytes[i + 1]) << 16) |
+                              (static_cast<std::uint32_t>(bytes[i + 2]) << 8) |
+                              static_cast<std::uint32_t>(bytes[i + 3]);
+    if (i + 12 + len > bytes.size()) {
+      return {};
+    }
+    const char type[4] = {static_cast<char>(bytes[i + 4]),
+                          static_cast<char>(bytes[i + 5]),
+                          static_cast<char>(bytes[i + 6]),
+                          static_cast<char>(bytes[i + 7])};
+    if (type[0] == 'I' && type[1] == 'D' && type[2] == 'A' && type[3] == 'T') {
+      idat.insert(idat.end(), bytes.begin() + static_cast<std::ptrdiff_t>(i + 8),
+                  bytes.begin() + static_cast<std::ptrdiff_t>(i + 8 + len));
+    }
+    i += 12 + len;
+  }
+  return idat;
+}
+
+std::vector<std::uint8_t> webp_vp8l(const std::vector<std::uint8_t>& bytes) {
+  if (bytes.size() < 12 || bytes[0] != 'R' || bytes[8] != 'W') {
+    return {};
+  }
+  std::size_t i = 12;
+  while (i + 8 <= bytes.size()) {
+    const char type[4] = {static_cast<char>(bytes[i]),
+                          static_cast<char>(bytes[i + 1]),
+                          static_cast<char>(bytes[i + 2]),
+                          static_cast<char>(bytes[i + 3])};
+    const std::uint32_t len = static_cast<std::uint32_t>(bytes[i + 4]) |
+                              (static_cast<std::uint32_t>(bytes[i + 5]) << 8) |
+                              (static_cast<std::uint32_t>(bytes[i + 6]) << 16) |
+                              (static_cast<std::uint32_t>(bytes[i + 7]) << 24);
+    const std::size_t data = i + 8;
+    if (data + len > bytes.size()) {
+      return {};
+    }
+    if ((type[0] == 'V' && type[1] == 'P' && type[2] == '8' &&
+         (type[3] == ' ' || type[3] == 'L')) ||
+        (type[0] == 'V' && type[1] == 'P' && type[2] == '8' && type[3] == 'L')) {
+      return {bytes.begin() + static_cast<std::ptrdiff_t>(data),
+              bytes.begin() + static_cast<std::ptrdiff_t>(data + len)};
+    }
+    i = data + len + (len % 2);
+  }
+  return {};
+}
+
 std::vector<std::uint8_t> jpeg_sos(const std::vector<std::uint8_t>& bytes) {
   for (std::size_t i = 0; i + 1 < bytes.size(); ++i) {
     if (bytes[i] == 0xFF && bytes[i + 1] == 0xDA) {
@@ -160,7 +216,23 @@ std::vector<std::uint8_t> image_payload(const std::filesystem::path& path) {
   if (bytes.size() >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8) {
     return jpeg_sos(bytes);
   }
+  if (bytes.size() >= 8 && bytes[0] == 0x89 && bytes[1] == 'P') {
+    return png_idat(bytes);
+  }
+  if (bytes.size() >= 12 && bytes[0] == 'R' && bytes[8] == 'W') {
+    return webp_vp8l(bytes);
+  }
   return tiff_strips(bytes);
+}
+
+bool decision_has_format(const umm::StorageDecision& decision,
+                         std::string_view format) {
+  for (const std::string& item : decision.formats) {
+    if (item == format) {
+      return true;
+    }
+  }
+  return false;
 }
 
 std::filesystem::path work_dir() {
@@ -431,8 +503,15 @@ int test_roundtrip(const std::string& backend,
       saw_exif = true;
     }
   }
-  if (!saw_xmp || !saw_iim || !saw_exif) {
-    return fail("roundtrip did not write all description representations");
+  const bool want_xmp = decision_has_format(written.value().decision, "XMP");
+  const bool want_iim =
+      decision_has_format(written.value().decision, "IPTC-IIM");
+  const bool want_exif = decision_has_format(written.value().decision, "EXIF");
+  if (want_xmp != saw_xmp || want_iim != saw_iim || want_exif != saw_exif) {
+    return fail("roundtrip WriteReport families do not match storage decision");
+  }
+  if (written.value().written.empty()) {
+    return fail("roundtrip silently dropped description");
   }
   for (const std::string& reader : readers) {
     const auto read = umm::read(file, ropts(reader));
@@ -461,12 +540,101 @@ int test_roundtrip(const std::string& backend,
   return 0;
 }
 
+int test_png_gps_write(const std::string& backend) {
+  const auto file =
+      copy_fixture(raw_stem("png", "minimal", ".png"), backend + "-png-gps.png");
+  umm::Metadata metadata;
+  umm::GpsCoordinate gps;
+  gps.latitude = 37.7749;
+  gps.longitude = -122.4194;
+  if (!metadata.setGps(gps).ok()) {
+    return fail("setGps png");
+  }
+  const auto written = umm::write(file, metadata, opts(backend));
+  if (!written.ok()) {
+    std::fprintf(stderr, "png gps write failed: %s (%s)\n",
+                 written.error().message.c_str(),
+                 written.error().detail.c_str());
+    return 1;
+  }
+  bool saw_xmp = false;
+  bool saw_exif = false;
+  for (const umm::RawKey& key : written.value().written) {
+    if (key.key == "Xmp.exif.GPSLatitude") {
+      saw_xmp = true;
+    }
+    if (key.key == "Exif.GPSInfo.GPSLatitude") {
+      saw_exif = true;
+    }
+  }
+  if (!saw_xmp) {
+    return fail("png gps write dropped XMP GPS");
+  }
+  const bool want_exif =
+      decision_has_format(written.value().decision, "EXIF");
+  if (want_exif != saw_exif) {
+    return fail("png gps EXIF write did not follow capability formats");
+  }
+  const auto read = umm::read(file, ropts(backend));
+  if (!read.ok() || !read.value().gps()) {
+    return fail("png gps write was not readable");
+  }
+  return 0;
+}
+
+int test_webp_no_iptc_write(const std::string& backend) {
+  const auto file = copy_fixture(raw_stem("webp", "minimal", ".webp"),
+                                 backend + "-webp-creator.webp");
+  umm::Metadata metadata;
+  if (!metadata.setCreator({"WebP Creator"}).ok()) {
+    return fail("setCreator webp");
+  }
+  const auto written = umm::write(file, metadata, opts(backend));
+  if (!written.ok()) {
+    std::fprintf(stderr, "webp creator write failed: %s (%s)\n",
+                 written.error().message.c_str(),
+                 written.error().detail.c_str());
+    return 1;
+  }
+  bool saw_xmp = false;
+  bool saw_exif = false;
+  bool saw_iptc = false;
+  for (const umm::RawKey& key : written.value().written) {
+    if (key.family == "Xmp") {
+      saw_xmp = true;
+    }
+    if (key.family == "Exif") {
+      saw_exif = true;
+    }
+    if (key.family == "Iptc") {
+      saw_iptc = true;
+    }
+  }
+  if (!saw_xmp || !saw_exif) {
+    return fail("webp creator write dropped XMP or EXIF");
+  }
+  if (saw_iptc || decision_has_format(written.value().decision, "IPTC-IIM")) {
+    return fail("webp creator write listed IPTC");
+  }
+  const auto read = umm::read(file, ropts(backend));
+  if (!read.ok() || !read.value().creator()) {
+    return fail("webp creator write was not readable");
+  }
+  return 0;
+}
+
 int check_backend(const std::string& backend,
                   const std::vector<std::string>& readers) {
   if (const int rc = test_payload(backend, "jpeg", ".jpg"); rc != 0) {
     return rc;
   }
   if (const int rc = test_payload(backend, "tiff", ".tif"); rc != 0) {
+    return rc;
+  }
+  if (const int rc = test_payload(backend, "png", ".png"); rc != 0) {
+    return rc;
+  }
+  if (const int rc = test_payload(backend, "webp", ".webp"); rc != 0) {
     return rc;
   }
   if (const int rc = test_unknown(backend); rc != 0) {
@@ -478,10 +646,23 @@ int check_backend(const std::string& backend,
   if (const int rc = test_atomicity(backend, "tiff", ".tif"); rc != 0) {
     return rc;
   }
+  if (const int rc = test_atomicity(backend, "png", ".png"); rc != 0) {
+    return rc;
+  }
+  if (const int rc = test_atomicity(backend, "webp", ".webp"); rc != 0) {
+    return rc;
+  }
   if (const int rc = test_encoding(backend, readers, "jpeg", ".jpg"); rc != 0) {
     return rc;
   }
   if (const int rc = test_encoding(backend, readers, "tiff", ".tif"); rc != 0) {
+    return rc;
+  }
+  if (const int rc = test_encoding(backend, readers, "png", ".png"); rc != 0) {
+    return rc;
+  }
+  if (const int rc = test_encoding(backend, readers, "webp", ".webp");
+      rc != 0) {
     return rc;
   }
   if (const int rc = test_roundtrip(backend, readers, "jpeg", ".jpg");
@@ -490,6 +671,19 @@ int check_backend(const std::string& backend,
   }
   if (const int rc = test_roundtrip(backend, readers, "tiff", ".tif");
       rc != 0) {
+    return rc;
+  }
+  if (const int rc = test_roundtrip(backend, readers, "png", ".png"); rc != 0) {
+    return rc;
+  }
+  if (const int rc = test_roundtrip(backend, readers, "webp", ".webp");
+      rc != 0) {
+    return rc;
+  }
+  if (const int rc = test_png_gps_write(backend); rc != 0) {
+    return rc;
+  }
+  if (const int rc = test_webp_no_iptc_write(backend); rc != 0) {
     return rc;
   }
   return 0;

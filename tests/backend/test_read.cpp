@@ -34,6 +34,9 @@ const umm::LangAlt* as_lang(const umm::PropertyValue& property) {
   return std::get_if<umm::LangAlt>(&property.value.data);
 }
 
+int check_backend_unicode(const std::string& backend_id, const char* folder,
+                          const char* ext);
+
 bool has_x_default(const umm::LangAlt& alt, std::string_view expected) {
   const auto it = alt.find("x-default");
   if (it == alt.end()) {
@@ -206,6 +209,155 @@ int check_backend(const std::string& backend_id, const char* folder,
     return fail_read("gps missing named place");
   }
 
+  return check_backend_unicode(backend_id, folder, ext);
+}
+
+int check_png_backend(const std::string& backend_id) {
+  umm::ReadOptions options;
+  options.backend = backend_id;
+
+  const auto minimal = umm::read(raw_stem("png", "minimal", ".png"), options);
+  if (!minimal.ok()) {
+    std::fprintf(stderr, "png minimal read failed: %s\n",
+                 minimal.error().message.c_str());
+    return 1;
+  }
+  if (!minimal.value().propertyIds().empty()) {
+    return fail_read("png minimal should have no Phase 1 properties");
+  }
+
+  const auto xmp_only = umm::read(raw_stem("png", "xmp-only", ".png"), options);
+  if (!xmp_only.ok()) {
+    std::fprintf(stderr, "png xmp-only read failed: %s\n",
+                 xmp_only.error().message.c_str());
+    return 1;
+  }
+  if (!xmp_only.value().creator() ||
+      xmp_only.value().creator()->resolution != umm::Resolution::single ||
+      !xmp_only.value().dateCreated() ||
+      xmp_only.value().dateCreated()->resolution != umm::Resolution::single) {
+    return fail_read("png xmp-only properties not single");
+  }
+
+  const auto agreeing =
+      umm::read(raw_stem("png", "full-agreeing", ".png"), options);
+  if (!agreeing.ok()) {
+    std::fprintf(stderr, "png full-agreeing read failed: %s\n",
+                 agreeing.error().message.c_str());
+    return 1;
+  }
+  const auto creator = agreeing.value().creator();
+  const auto description = agreeing.value().description();
+  const auto date = agreeing.value().dateCreated();
+  if (!creator || creator->resolution != umm::Resolution::equivalent) {
+    return fail_read("png full-agreeing creator not equivalent");
+  }
+  const auto* names = as_list(*creator);
+  if (!names || names->empty() || names->front() != "Agreeing Creator") {
+    return fail_read("png full-agreeing creator value");
+  }
+  if (!description || description->resolution != umm::Resolution::equivalent) {
+    return fail_read("png full-agreeing description not equivalent");
+  }
+  if (!date || date->resolution != umm::Resolution::equivalent) {
+    return fail_read("png full-agreeing date not equivalent");
+  }
+  if (creator->sources.size() < 2 || date->sources.size() < 2) {
+    return fail_read("png full-agreeing dropped IPTC/XMP sources");
+  }
+
+  const auto gps = umm::read(raw_stem("png", "gps", ".png"), options);
+  if (!gps.ok()) {
+    std::fprintf(stderr, "png gps read failed: %s\n",
+                 gps.error().message.c_str());
+    return 1;
+  }
+  const auto gps_value = gps.value().gps();
+  const auto* coord =
+      gps_value ? std::get_if<umm::GpsCoordinate>(&gps_value->value.data)
+                : nullptr;
+  if (!coord || std::fabs(coord->latitude - 37.7749) > 1e-4 ||
+      std::fabs(coord->longitude + 122.4194) > 1e-4) {
+    return fail_read("png gps coordinate");
+  }
+  bool saw_xmp = false;
+  bool saw_exif = false;
+  for (const umm::SourceRef& source : gps_value->sources) {
+    if (source.raw_key.find("Xmp.") == 0) {
+      saw_xmp = true;
+    }
+    if (source.raw_key.find("Exif.") == 0) {
+      saw_exif = true;
+    }
+  }
+  if (!saw_xmp) {
+    return fail_read("png gps missing XMP provenance");
+  }
+  if (backend_id == "exiftool" && !saw_exif) {
+    return fail_read("png gps ExifTool missing EXIF provenance");
+  }
+  return 0;
+}
+
+int check_webp_backend(const std::string& backend_id) {
+  umm::ReadOptions options;
+  options.backend = backend_id;
+
+  const auto minimal = umm::read(raw_stem("webp", "minimal", ".webp"), options);
+  if (!minimal.ok()) {
+    std::fprintf(stderr, "webp minimal read failed: %s\n",
+                 minimal.error().message.c_str());
+    return 1;
+  }
+  if (!minimal.value().propertyIds().empty()) {
+    return fail_read("webp minimal should have no Phase 1 properties");
+  }
+
+  const auto xmp_only =
+      umm::read(raw_stem("webp", "xmp-only", ".webp"), options);
+  if (!xmp_only.ok() || !xmp_only.value().creator() ||
+      xmp_only.value().creator()->resolution != umm::Resolution::single) {
+    return fail_read("webp xmp-only creator not single");
+  }
+
+  const auto agreeing =
+      umm::read(raw_stem("webp", "full-agreeing", ".webp"), options);
+  if (!agreeing.ok()) {
+    std::fprintf(stderr, "webp full-agreeing read failed: %s\n",
+                 agreeing.error().message.c_str());
+    return 1;
+  }
+  const auto creator = agreeing.value().creator();
+  const auto description = agreeing.value().description();
+  const auto date = agreeing.value().dateCreated();
+  if (!creator || creator->resolution != umm::Resolution::equivalent) {
+    return fail_read("webp full-agreeing creator not equivalent");
+  }
+  const auto* names = as_list(*creator);
+  if (!names || names->empty() || names->front() != "Agreeing Creator") {
+    return fail_read("webp full-agreeing creator value");
+  }
+  if (!description || description->resolution != umm::Resolution::equivalent) {
+    return fail_read("webp full-agreeing description not equivalent");
+  }
+  if (!date || date->resolution != umm::Resolution::equivalent) {
+    return fail_read("webp full-agreeing date not equivalent");
+  }
+  if (creator->sources.size() < 2) {
+    return fail_read("webp full-agreeing dropped EXIF/XMP sources");
+  }
+  for (const umm::SourceRef& source : creator->sources) {
+    if (source.raw_key.find("Iptc.") == 0) {
+      return fail_read("webp creator should not have IPTC provenance");
+    }
+  }
+  return 0;
+}
+
+int check_backend_unicode(const std::string& backend_id, const char* folder,
+                          const char* ext) {
+  umm::ReadOptions options;
+  options.backend = backend_id;
   const auto unicode = umm::read(raw_stem(folder, "unicode", ext), options);
   if (!unicode.ok()) {
     std::fprintf(stderr, "unicode read failed: %s\n",
@@ -294,6 +446,14 @@ int main() {
       std::fprintf(stderr, "backend %s tiff failed\n", id.c_str());
       return rc;
     }
+    if (const int rc = check_png_backend(id); rc != 0) {
+      std::fprintf(stderr, "backend %s png failed\n", id.c_str());
+      return rc;
+    }
+    if (const int rc = check_webp_backend(id); rc != 0) {
+      std::fprintf(stderr, "backend %s webp failed\n", id.c_str());
+      return rc;
+    }
     tested.push_back(id);
   }
   if (tested.empty()) {
@@ -305,7 +465,17 @@ int main() {
         rc != 0) {
       return rc;
     }
-    return compare_agreeing_backends(tested[0], tested[1], "tiff", ".tif");
+    if (const int rc =
+            compare_agreeing_backends(tested[0], tested[1], "tiff", ".tif");
+        rc != 0) {
+      return rc;
+    }
+    if (const int rc =
+            compare_agreeing_backends(tested[0], tested[1], "png", ".png");
+        rc != 0) {
+      return rc;
+    }
+    return compare_agreeing_backends(tested[0], tested[1], "webp", ".webp");
   }
   return 0;
 }
