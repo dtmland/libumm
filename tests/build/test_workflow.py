@@ -96,7 +96,9 @@ class TestWorkflow(unittest.TestCase):
         self.assertIn("UMM_ENABLE_FAILING_SELFTEST", text)
         self.assertIn("python3 -m unittest discover -s tests/build -v", text)
         self.assertIn("-DUMM_REQUIRE_EXIFTOOL=ON", text)
+        self.assertIn("-DUMM_REQUIRE_EXIV2=ON", text)
         self.assertIn("backends-acquired.txt", text)
+        self.assertIn("hendrikmuhs/ccache-action", text)
 
 
 if __name__ == "__main__":

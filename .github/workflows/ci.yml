@@ -94,8 +94,16 @@ jobs:
           path: .cache
           key: ${{ runner.os }}-${{ env.UMM_EXIV2_VERSION }}-${{ env.UMM_EXIV2_SHA256 }}-${{ env.UMM_EXIFTOOL_VERSION }}-${{ env.UMM_EXIFTOOL_SHA256 }}-${{ env.UMM_STRAWBERRY_PERL_VERSION }}
 
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ runner.os }}-${{ env.UMM_EXIV2_VERSION }}-${{ env.UMM_EXIV2_SHA256 }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.UMM_EXIV2_VERSION }}-
+            ${{ runner.os }}-
+
       - name: Configure
-        run: cmake --preset default -DUMM_REQUIRE_EXIFTOOL=ON ${{ inputs.failing_selftest && '-DUMM_ENABLE_FAILING_SELFTEST=ON' || '' }}
+        run: cmake --preset default -DUMM_REQUIRE_EXIV2=ON -DUMM_REQUIRE_EXIFTOOL=ON ${{ inputs.failing_selftest && '-DUMM_ENABLE_FAILING_SELFTEST=ON' || '' }}
 
       - name: Report acquired backends
         shell: bash

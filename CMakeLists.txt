@@ -9,8 +9,17 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 option(BUILD_SHARED_LIBS "Build shared libraries instead of static (decision M4c: static default)" OFF)
 option(UMM_BUILD_TESTS "Build unit tests" ON)
 option(UMM_ENABLE_FAILING_SELFTEST "Build and register the deliberately failing self-test" OFF)
-option(UMM_REQUIRE_EXIV2 "Require Exiv2 at configure time (placeholder; no effect yet)" OFF)
+option(UMM_REQUIRE_EXIV2 "Require Exiv2 at configure time" OFF)
 option(UMM_REQUIRE_EXIFTOOL "Require ExifTool at configure time" OFF)
+
+if(NOT CMAKE_CXX_COMPILER_LAUNCHER)
+  find_program(UMM_CCACHE ccache)
+  if(UMM_CCACHE)
+    set(CMAKE_C_COMPILER_LAUNCHER "${UMM_CCACHE}")
+    set(CMAKE_CXX_COMPILER_LAUNCHER "${UMM_CCACHE}")
+    message(STATUS "Using ccache: ${UMM_CCACHE}")
+  endif()
+endif()
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/LibummPins.cmake")
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/LibummExifTool.cmake")
@@ -35,6 +44,8 @@ set_target_properties(umm PROPERTIES
   VERSION ${PROJECT_VERSION}
   SOVERSION 0
 )
+
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/LibummExiv2.cmake")
 
 if(UMM_BUILD_TESTS)
   enable_testing()
@@ -63,5 +74,21 @@ if(UMM_BUILD_TESTS)
     )
   elseif(UMM_REQUIRE_EXIFTOOL)
     message(FATAL_ERROR "UMM_REQUIRE_EXIFTOOL=ON but exiftool_smoke cannot be registered")
+  endif()
+
+  if(UMM_EXIV2_ACQUIRED)
+    add_executable(test_exiv2_smoke tests/backend/test_exiv2_smoke.cpp)
+    target_link_libraries(test_exiv2_smoke PRIVATE umm::umm)
+    target_include_directories(test_exiv2_smoke
+      PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    )
+    target_compile_definitions(test_exiv2_smoke
+      PRIVATE
+        "UMM_TEST_EXIV2_VERSION=\"${UMM_EXIV2_VERSION}\""
+    )
+    add_test(NAME exiv2_smoke COMMAND test_exiv2_smoke)
+  elseif(UMM_REQUIRE_EXIV2)
+    message(FATAL_ERROR "UMM_REQUIRE_EXIV2=ON but exiv2_smoke cannot be registered")
   endif()
 endif()
