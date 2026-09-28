@@ -77,9 +77,42 @@ int main() {
     return fail("unknown property id was found");
   }
 
+  const auto date_created_video = reg.find("iptc.video.dateCreated");
+  if (!date_created_video) {
+    return fail("missing iptc.video.dateCreated");
+  }
+  if (date_created_video->datatype != umm::Datatype::date_time) {
+    return fail("iptc.video.dateCreated datatype");
+  }
+  if (date_created_video->standard_version != "1.7") {
+    return fail("iptc.video.dateCreated standard_version");
+  }
+  if (date_created_video->schema != "Administrative") {
+    return fail("iptc.video.dateCreated schema");
+  }
+  if (date_created_video->representations.xmp_property !=
+      "photoshop:DateCreated") {
+    return fail("iptc.video.dateCreated xmp_property");
+  }
+  if (date_created_video->representations.quicktime_key !=
+      "com.apple.quicktime.creationdate") {
+    return fail("iptc.video.dateCreated quicktime_key");
+  }
+  if (date_created_video->representations.ebucore != "date/created") {
+    return fail("iptc.video.dateCreated ebucore");
+  }
+
+  const auto video_creator = reg.find("iptc.video.creator");
+  if (!video_creator) {
+    return fail("missing iptc.video.creator");
+  }
+  if (video_creator->id == creator->id) {
+    return fail("photo and video creator ids must be distinct");
+  }
+
   const auto standards = reg.standards();
-  if (standards.size() != 1) {
-    return fail("expected one adopted standard");
+  if (standards.size() != 2) {
+    return fail("expected two adopted standards");
   }
   if (standards[0].standard != "IPTC Photo Metadata") {
     return fail("standard name");
@@ -90,6 +123,16 @@ int main() {
   if (standards[0].source_document !=
       "IPTC Photo Metadata Technical Reference") {
     return fail("source document");
+  }
+  if (standards[1].standard != "IPTC Video Metadata Hub") {
+    return fail("video standard name");
+  }
+  if (standards[1].version != "1.7") {
+    return fail("video standard version");
+  }
+  if (standards[1].source_document !=
+      "IPTC Video Metadata Hub Recommendation") {
+    return fail("video source document");
   }
 
   bool saw_creator = false;

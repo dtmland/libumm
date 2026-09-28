@@ -1,8 +1,9 @@
 # libumm property registry record
 
 This is the written definition of the machine-readable registry produced from
-standards Technical References (concept.md §20; decisions **S2**, **M5**). Session
-06 imports IPTC Photo Metadata only.
+standards Technical References (concept.md §20; decisions **S2**, **M5**, **R2**).
+Session 06 imports IPTC Photo Metadata; session 20 adds the IPTC Video Metadata
+Hub as a separate domain.
 
 The registry does not invent property semantics. Each record copies identifiers,
 definitions, datatypes, cardinality, and representations from the source
@@ -13,10 +14,13 @@ answered from the data alone.
 
 | Path | Role |
 | --- | --- |
-| `registry/sources/` | Vendored Technical Reference input plus `SOURCE.md` |
-| `registry/iptc-photo/iptc-photo.json` | Importer output (generated-but-committed) |
+| `registry/sources/` | Vendored IPTC Photo Technical Reference plus `SOURCE.md` |
+| `registry/sources/vmh/` | Vendored IPTC Video Metadata Hub 1.7 artifacts plus `SOURCE.md` |
+| `registry/iptc-photo/iptc-photo.json` | Photo importer output (generated-but-committed) |
+| `registry/iptc-video/iptc-video.json` | VMH importer output (generated-but-committed) |
 | `registry/mappings/iptc-exif-overlay.json` | Curated EXIF mappings from the IPTC Mapping Guidelines (session 07; `partial: true` until Stage 6) |
-| `tools/registry/import_iptc.py` | Stdlib-only importer |
+| `tools/registry/import_iptc.py` | Stdlib-only IPTC Photo importer |
+| `tools/registry/import_vmh.py` | Stdlib-only IPTC Video Metadata Hub importer |
 | `tools/registry/generate_cpp.py` | Stdlib-only C++ table generator |
 | `src/generated/` | Committed generated `property_registry.hpp` / `.cpp` |
 | `registry/capabilities/` | File-type capability tables (session 15; decision M2) |
@@ -62,7 +66,8 @@ Matches concept.md §20.
 `id` is `iptc.photo.` plus a camelCase token derived from
 `standard_property_name` (punctuation stripped, words concatenated). The TR
 object key is not used as the id so names like Creator become
-`iptc.photo.creator`.
+`iptc.photo.creator`. Video properties use the same derivation under
+`iptc.video.` (see Domain rule).
 
 ## Representations
 
@@ -71,6 +76,12 @@ object key is not used as the id so names like Creator become
 | `xmp` | object or null | `namespace` (URI) + `property` (prefixed name, e.g. `dc:creator`) |
 | `iptc_iim` | object or null | `dataset` (e.g. `2:80`); `name` when the TR provides `IIMname` |
 | `exif` | object or null | `tag` from the TR (`etEXIF`, else `EXIFid`) |
+| `quicktime` | object or null | VMH only: `key` from the Apple QuickTime mapping (e.g. `com.apple.quicktime.creationdate`) |
+| `ebucore` | object or null | VMH only: `path` from the EBUCore mapping (e.g. `date/created`) |
+
+Photo records omit `quicktime` and `ebucore`. Video records include them (null
+when the mapping artifact has no value) and keep `iptc_iim` / `exif` null —
+VMH does not define IIM or EXIF representations.
 
 XMP namespace URIs are the established IPTC/Adobe/PLUS namespaces already used
 by the Photo Metadata Standard. The importer fails closed on an unknown XMP
@@ -106,12 +117,17 @@ JSON `datatype` + `cardinality` map onto `include/umm/registry.hpp`:
 | `integer` | `integer` |
 | `number` | `real` |
 | `date-time` | `date_time` |
+| `boolean` | `boolean` |
 | `struct` + `one` | `structure` |
 | `struct` + `many` | `structure_list` |
 
-`boolean`, `rational`, and `gps_coordinate` are reserved for later value shapes
-(session 08). Generated C++ is UTF-8 with LF newlines. `.gitattributes` pins
-`src/generated/**` to LF.
+`boolean` is emitted for VMH boolean properties. `rational` and `gps_coordinate`
+remain reserved for later value shapes (session 08). Generated C++ is UTF-8 with
+LF newlines. `.gitattributes` pins `src/generated/**` to LF.
+
+`umm::Representations` also carries `quicktime_key` and `ebucore` (empty for
+photo rows). Only XMP and QuickTime mappings are used at runtime in Stage 7;
+EBUCore is imported as data.
 
 ## Struct record
 
@@ -180,3 +196,74 @@ Unknown `propoccurrence` values fail the importer.
 Unknown `ipmdschema` values fail the importer. Top-level `properties` are only
 Core 1.5 + Extension 1.9; envelope counts must equal the TR's own `ipmd_top`
 counts for those two schemas.
+
+## Domain rule (photo vs video)
+
+Photo properties stay `iptc.photo.*`. Video-domain semantics come from the IPTC
+Video Metadata Hub as `iptc.video.*`. Shared concepts (creator, description,
+date created, location, …) are **distinct registry entries** with their
+VMH-defined mappings. libumm does not invent a merged super-schema
+(concept.md §10).
+
+## Envelope (`registry/iptc-video/iptc-video.json`)
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `standard` | string | `IPTC Video Metadata Hub` |
+| `standard_version` | string | Recommendation version, e.g. `1.7` |
+| `source` | object | Provenance of the vendored VMH artifacts (see Source) |
+| `counts` | object | `properties`, `administrative`, `descriptive`, `rights`, `technical`, `time_marker`, `structs` |
+| `properties` | array | One record per VMH top-level property |
+| `structs` | array | Property structures from the VMH properties table |
+
+`schema` on video properties is the VMH property group:
+
+| Registry `schema` | VMH property group |
+| --- | --- |
+| `Administrative` | Administrative fields |
+| `Descriptive` | Fields describing audio/visual content |
+| `Rights` | Rights fields |
+| `Technical` | Technical fields |
+| `Time marker` | Time marker |
+
+Video ids are `iptc.video.` plus a camelCase token from the VMH property name.
+Struct ids are `iptc.video.struct.<Name>` from the structure header, with field
+ids using the PVMD JSON property token when present.
+
+## VMH datatype mapping
+
+Closed set. Values are resolved from the PVMD JSON Data Type column
+(`type/format/occurrence`); the HTML Basic Type/Cardinality column is the
+fallback when JSON is `NA` or empty. Unknown types fail the importer.
+
+| Registry `datatype` | PVMD JSON Data Type |
+| --- | --- |
+| `string` | `string//` or `string//enum` |
+| `uri` | `string/uri` or `string/url` |
+| `date-time` | `string/date-time` |
+| `number` | `number//` |
+| `integer` | `number/integer` |
+| `boolean` | `boolean//` |
+| `lang-alt` | `object/AltLang` |
+| `struct` | `object/<StructureName>` |
+
+`array` in the third JSON slot is cardinality `many`; otherwise `one`.
+
+## VMH source artifacts
+
+`tools/registry/import_vmh.py` reads:
+
+1. `iptc-vmhub-1.7-schema.json` — property count / PVMD JSON names (checksummed)
+2. `IPTC-VideoMetadataHub-props-Rec_1.7.html` — names, definitions, XMP, types, structures
+3. `IPTC-VideoMetadataHub-mapping-AppleQT-Rec_1.7.html` — Apple QuickTime keys and EBUCore paths
+
+`SOURCE.md` records version, URLs, retrieval date, and SHA-256 for each file
+(decision M5). The importer verifies checksums before parsing.
+
+The VMH 1.7 mapping HTML labels are shifted relative to the master sheet
+columns: Apple QuickTime is taken from the column headed `Apple Quicktime`;
+EBUCore paths are taken from the labeled `EBUcore` cell when that cell is an
+EBUCore path, otherwise from the published `PVMD JSON` mapping cell when it
+contains an EBUCore path (`ebuCore…` or a `/`-separated EBUCore location).
+XMP on video properties always comes from the properties table, not the
+mapping page.

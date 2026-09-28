@@ -2,6 +2,7 @@
 //
 // Generator: tools/registry/generate_cpp.py
 // Source registry: registry/iptc-photo/iptc-photo.json (IPTC Photo Metadata 2025.1)
+// Source registry: registry/iptc-video/iptc-video.json (IPTC Video Metadata Hub 1.7)
 // EXIF overlay: registry/mappings/iptc-exif-overlay.json
 
 #include "umm/registry.hpp"

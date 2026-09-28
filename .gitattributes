@@ -1,5 +1,6 @@
 # Importer output is UTF-8 with LF newlines and compared byte-for-byte.
 registry/**/*.json text eol=lf
+registry/sources/**/*.html text eol=lf
 src/generated/** text eol=lf
 # Generated supported-types.md is compared byte-for-byte with the generator.
 supported-types.md text eol=lf

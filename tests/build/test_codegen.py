@@ -15,6 +15,8 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 GENERATOR = REPO_ROOT / "tools" / "registry" / "generate_cpp.py"
 REGISTRY_DIR = REPO_ROOT / "registry" / "iptc-photo"
 REGISTRY_JSON = REGISTRY_DIR / "iptc-photo.json"
+VIDEO_REGISTRY_DIR = REPO_ROOT / "registry" / "iptc-video"
+VIDEO_REGISTRY_JSON = VIDEO_REGISTRY_DIR / "iptc-video.json"
 OVERLAY = REPO_ROOT / "registry" / "mappings" / "iptc-exif-overlay.json"
 GENERATED_DIR = REPO_ROOT / "src" / "generated"
 GENERATED_HPP = GENERATED_DIR / "property_registry.hpp"
@@ -29,19 +31,22 @@ KPROPERTY_COUNT = re.compile(
 
 
 def run_generator(
-    registry_dir: Path, overlay: Path, output_dir: Path
+    registry_dirs: Path | list[Path], overlay: Path, output_dir: Path
 ) -> subprocess.CompletedProcess[str]:
+    if isinstance(registry_dirs, Path):
+        registry_dirs = [registry_dirs]
+    command = [
+        "python3",
+        str(GENERATOR),
+        "--overlay",
+        str(overlay),
+        "--output-dir",
+        str(output_dir),
+    ]
+    for registry_dir in registry_dirs:
+        command.extend(["--registry-dir", str(registry_dir)])
     return subprocess.run(
-        [
-            "python3",
-            str(GENERATOR),
-            "--registry-dir",
-            str(registry_dir),
-            "--overlay",
-            str(overlay),
-            "--output-dir",
-            str(output_dir),
-        ],
+        command,
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
@@ -65,7 +70,7 @@ class TestCodegen(unittest.TestCase):
         committed_cpp = GENERATED_CPP.read_bytes()
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp)
-            result = run_generator(REGISTRY_DIR, OVERLAY, output)
+            result = run_generator([REGISTRY_DIR, VIDEO_REGISTRY_DIR], OVERLAY, output)
             self.assertEqual(result.returncode, 0, result.stderr)
             generated_hpp = (output / GENERATED_HPP.name).read_bytes()
             generated_cpp = (output / GENERATED_CPP.name).read_bytes()
@@ -82,8 +87,8 @@ class TestCodegen(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             first = Path(tmp) / "a"
             second = Path(tmp) / "b"
-            r1 = run_generator(REGISTRY_DIR, OVERLAY, first)
-            r2 = run_generator(REGISTRY_DIR, OVERLAY, second)
+            r1 = run_generator([REGISTRY_DIR, VIDEO_REGISTRY_DIR], OVERLAY, first)
+            r2 = run_generator([REGISTRY_DIR, VIDEO_REGISTRY_DIR], OVERLAY, second)
             self.assertEqual(r1.returncode, 0, r1.stderr)
             self.assertEqual(r2.returncode, 0, r2.stderr)
             self.assertEqual(
@@ -96,12 +101,17 @@ class TestCodegen(unittest.TestCase):
             )
 
     def test_property_count_matches_registry_json(self) -> None:
-        registry = json.loads(REGISTRY_JSON.read_text(encoding="utf-8"))
+        photo = json.loads(REGISTRY_JSON.read_text(encoding="utf-8"))
+        video = json.loads(VIDEO_REGISTRY_JSON.read_text(encoding="utf-8"))
         header = GENERATED_HPP.read_text(encoding="utf-8")
         match = KPROPERTY_COUNT.search(header)
         self.assertIsNotNone(match)
-        self.assertEqual(int(match.group(1)), len(registry["properties"]))
-        self.assertEqual(header.count('"iptc.photo.'), len(registry["properties"]))
+        total = len(photo["properties"]) + len(video["properties"])
+        self.assertEqual(int(match.group(1)), total)
+        self.assertEqual(header.count('"iptc.photo.'), len(photo["properties"]))
+        self.assertEqual(header.count('"iptc.video.'), len(video["properties"]))
+        self.assertIn("iptc.video.dateCreated", header)
+        self.assertIn("com.apple.quicktime.creationdate", header)
 
     def test_editing_registry_changes_generated_entry(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

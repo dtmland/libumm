@@ -1,6 +1,8 @@
-// The registry is generated from IPTC's machine-readable Technical Reference
-// (concept.md §5, §20; decisions S2, M5). No property definition is hand-typed
-// in C++; semantics remain owned by the standards.
+// The registry is generated from IPTC's machine-readable Technical References
+// (concept.md §5, §8, §20; decisions S2, M5, R2). No property definition is
+// hand-typed in C++; semantics remain owned by the standards. Photo properties
+// use iptc.photo.*; video-domain semantics from the Video Metadata Hub use
+// iptc.video.* — shared concepts are distinct registry entries.
 #pragma once
 
 #include <cstddef>
@@ -33,6 +35,8 @@ struct Representations {
   std::string_view xmp_property;    // e.g. "dc:creator"
   std::string_view iim_dataset;     // e.g. "2:80" (IPTC IIM)
   std::string_view exif_tag;        // e.g. "IFD0:Artist" (TR / IPTC Mapping Guidelines)
+  std::string_view quicktime_key;   // e.g. "com.apple.quicktime.creationdate" (VMH)
+  std::string_view ebucore;         // e.g. "date/created" (VMH EBUCore path)
 };
 
 // One adopted standard property. Semantics are inherited from the standard
@@ -40,8 +44,8 @@ struct Representations {
 struct PropertyDef {
   std::string_view id;                      // stable libumm id, e.g. "iptc.photo.creator"
   std::string_view standard;                // e.g. "IPTC Photo Metadata"
-  std::string_view standard_version;        // e.g. "2025.1" (decision M5)
-  std::string_view schema;                  // e.g. "Core 1.5", "Extension 1.9"
+  std::string_view standard_version;        // e.g. "2025.1" / VMH "1.7" (decision M5)
+  std::string_view schema;                  // e.g. "Core 1.5", "Administrative"
   std::string_view standard_property_name;  // e.g. "Creator"
   Datatype datatype;
   Cardinality cardinality;
