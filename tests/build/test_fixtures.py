@@ -20,6 +20,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = REPO_ROOT / "tests" / "fixtures"
 GENERATOR = FIXTURES / "generator" / "generate.py"
 BASE_JPEG = FIXTURES / "generator" / "base-16x16-gray.jpg"
+BASE_TIFF = FIXTURES / "generator" / "base-16x16-gray.tif"
 CONFIG = FIXTURES / "generator" / "exiftool.config"
 MANIFEST = FIXTURES / "MANIFEST.md"
 GITATTRIBUTES = REPO_ROOT / ".gitattributes"
@@ -46,6 +47,18 @@ SECTION_22 = (
     "sidecar/orphan.xmp",
     f"naming/{UNICODE_FILENAME}",
     "corrupt/truncated.jpg",
+)
+
+# docs/implementation/17-tiff-support.md — JPEG matrix pattern for TIFF.
+TIFF_FILES = (
+    "tiff/minimal.tif",
+    "tiff/exif-only.tif",
+    "tiff/iptc-only.tif",
+    "tiff/xmp-only.tif",
+    "tiff/full-agreeing.tif",
+    "tiff/full-conflicting.tif",
+    "tiff/gps.tif",
+    "tiff/unicode.tif",
 )
 
 ENTRY_RE = re.compile(
@@ -186,7 +199,7 @@ def comparable_metadata(record: dict) -> dict:
 
 class TestFixtureCorpus(unittest.TestCase):
     def test_required_generator_files_exist(self) -> None:
-        for path in (GENERATOR, BASE_JPEG, CONFIG, MANIFEST, GITATTRIBUTES):
+        for path in (GENERATOR, BASE_JPEG, BASE_TIFF, CONFIG, MANIFEST, GITATTRIBUTES):
             self.assertTrue(path.is_file(), f"missing {path}")
 
     def test_generator_passes_unicode_via_utf8_argfile(self) -> None:
@@ -278,6 +291,10 @@ class TestFixtureCorpus(unittest.TestCase):
             ".gitattributes must mark JPEG fixtures as binary",
         )
         self.assertTrue(
+            any("tests/fixtures/**/*.tif" in line and "binary" in line for line in lines),
+            ".gitattributes must mark TIFF fixtures as binary",
+        )
+        self.assertTrue(
             any(
                 "tests/fixtures/**/*.xmp" in line and "eol=lf" in line
                 for line in lines
@@ -298,6 +315,19 @@ class TestFixtureCorpus(unittest.TestCase):
                 continue
             self.assertIn(relpath, entries, f"{relpath} missing from MANIFEST.md")
             self.assertTrue(path.is_file(), f"missing fixture {relpath}")
+
+    def test_tiff_matrix_is_present(self) -> None:
+        text = MANIFEST.read_text(encoding="utf-8")
+        entries = parse_manifest(text)
+        for relpath in TIFF_FILES:
+            path = FIXTURES / relpath
+            self.assertIn(relpath, entries, f"{relpath} missing from MANIFEST.md")
+            self.assertTrue(path.is_file(), f"missing fixture {relpath}")
+            data = path.read_bytes()
+            self.assertTrue(
+                (data.startswith(b"II*\x00") or data.startswith(b"MM\x00*")),
+                f"{relpath} is not TIFF magic",
+            )
 
     def test_manifest_matches_files_on_disk(self) -> None:
         text = MANIFEST.read_text(encoding="utf-8")
@@ -379,6 +409,30 @@ class TestFixtureExifTool(unittest.TestCase):
 
     def test_unicode_values_survive(self) -> None:
         record = exiftool_json(self.perl, self.script, FIXTURES / "jpeg" / "unicode.jpg")
+        self.assertEqual(record.get("XMP-dc:Creator"), "Jürgen Müller")
+        self.assertIn("café", str(record.get("XMP-dc:Description", "")))
+        self.assertIn("日本語", str(record.get("XMP-dc:Description", "")))
+        self.assertEqual(record.get("IPTC:By-line"), "Jürgen Müller")
+
+    def test_tiff_full_conflicting_dates_and_creators_differ(self) -> None:
+        record = exiftool_json(
+            self.perl, self.script, FIXTURES / "tiff" / "full-conflicting.tif"
+        )
+        self.assertEqual(record.get("IFD0:Artist"), "EXIF Creator")
+        self.assertEqual(record.get("IPTC:By-line"), "IPTC Creator")
+        self.assertEqual(record.get("XMP-dc:Creator"), "XMP Creator")
+        exif_date = str(record.get("ExifIFD:DateTimeOriginal", ""))
+        iptc_date = str(record.get("IPTC:DateCreated", ""))
+        xmp_date = str(record.get("XMP-photoshop:DateCreated", ""))
+        self.assertTrue(exif_date)
+        self.assertTrue(iptc_date)
+        self.assertTrue(xmp_date)
+        self.assertNotEqual(exif_date[:10].replace(":", "-"), iptc_date[:10].replace(":", "-"))
+        self.assertNotIn(iptc_date[:10], xmp_date)
+        self.assertNotIn("2020:01:01", xmp_date)
+
+    def test_tiff_unicode_values_survive(self) -> None:
+        record = exiftool_json(self.perl, self.script, FIXTURES / "tiff" / "unicode.tif")
         self.assertEqual(record.get("XMP-dc:Creator"), "Jürgen Müller")
         self.assertIn("café", str(record.get("XMP-dc:Description", "")))
         self.assertIn("日本語", str(record.get("XMP-dc:Description", "")))

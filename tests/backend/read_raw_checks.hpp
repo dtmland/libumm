@@ -31,6 +31,15 @@ inline std::filesystem::path raw_jpeg(const char* name) {
   return raw_fixtures_dir() / "jpeg" / name;
 }
 
+inline std::filesystem::path raw_tiff(const char* name) {
+  return raw_fixtures_dir() / "tiff" / name;
+}
+
+inline std::filesystem::path raw_stem(const char* folder, const char* stem,
+                                      const char* ext) {
+  return raw_fixtures_dir() / folder / (std::string(stem) + ext);
+}
+
 inline std::filesystem::path raw_sidecar(const char* name) {
   return raw_fixtures_dir() / "sidecar" / name;
 }
@@ -91,33 +100,35 @@ inline bool raw_has_key_with_value(const umm::RawDocument& document,
   return false;
 }
 
-// Shared JPEG fixture expectations for Exiv2 and ExifTool readRaw (session 11).
-inline int check_jpeg_raw_reads(umm::Backend& backend,
-                                const char* backend_id) {
-  const auto exif_only = backend.readRaw(raw_jpeg("exif-only.jpg"));
+// Shared still-fixture expectations for Exiv2 and ExifTool readRaw.
+inline int check_still_raw_reads(umm::Backend& backend, const char* backend_id,
+                                 const char* folder, const char* ext) {
+  const auto exif_only =
+      backend.readRaw(raw_stem(folder, "exif-only", ext));
   if (!exif_only.ok()) {
-    std::fprintf(stderr, "exif-only read failed: %s\n",
+    std::fprintf(stderr, "%s/exif-only%s read failed: %s\n", folder, ext,
                  exif_only.error().message.c_str());
     return 1;
   }
   if (!raw_only_family(exif_only.value(), "Exif")) {
-    return raw_fail("exif-only.jpg produced non-Exif keys");
+    return raw_fail("exif-only produced non-Exif keys");
   }
   if (!raw_has_key_with_value(exif_only.value(), "Exif.Image.Artist",
                               "EXIF Artist")) {
-    return raw_fail("exif-only.jpg missing Exif.Image.Artist");
+    return raw_fail("exif-only missing Exif.Image.Artist");
   }
 
-  const auto agreeing = backend.readRaw(raw_jpeg("full-agreeing.jpg"));
+  const auto agreeing =
+      backend.readRaw(raw_stem(folder, "full-agreeing", ext));
   if (!agreeing.ok()) {
-    std::fprintf(stderr, "full-agreeing read failed: %s\n",
+    std::fprintf(stderr, "%s/full-agreeing%s read failed: %s\n", folder, ext,
                  agreeing.error().message.c_str());
     return 1;
   }
   if (!raw_has_family(agreeing.value(), "Exif") ||
       !raw_has_family(agreeing.value(), "Iptc") ||
       !raw_has_family(agreeing.value(), "Xmp")) {
-    return raw_fail("full-agreeing.jpg missing a metadata family");
+    return raw_fail("full-agreeing missing a metadata family");
   }
   if (!raw_has_key_with_value(agreeing.value(), "Exif.Image.Artist",
                               "Agreeing Creator") ||
@@ -125,27 +136,28 @@ inline int check_jpeg_raw_reads(umm::Backend& backend,
                               "Agreeing Creator") ||
       !raw_has_key_with_value(agreeing.value(), "Xmp.dc.creator",
                               "Agreeing Creator")) {
-    return raw_fail("full-agreeing.jpg missing creator in all families");
+    return raw_fail("full-agreeing missing creator in all families");
   }
   if (!raw_has_key_with_value(agreeing.value(), "Exif.Photo.DateTimeOriginal",
                               "2020:01:02 03:04:05") ||
       !raw_value_of(agreeing.value(), "Iptc.Application2.DateCreated")) {
-    return raw_fail("full-agreeing.jpg missing expected dates");
+    return raw_fail("full-agreeing missing expected dates");
   }
 
-  const auto gps = backend.readRaw(raw_jpeg("gps.jpg"));
+  const auto gps = backend.readRaw(raw_stem(folder, "gps", ext));
   if (!gps.ok()) {
-    std::fprintf(stderr, "gps read failed: %s\n", gps.error().message.c_str());
+    std::fprintf(stderr, "%s/gps%s read failed: %s\n", folder, ext,
+                 gps.error().message.c_str());
     return 1;
   }
   if (!raw_value_of(gps.value(), "Exif.GPSInfo.GPSLatitude") ||
       !raw_value_of(gps.value(), "Exif.GPSInfo.GPSLongitude")) {
-    return raw_fail("gps.jpg missing EXIF GPS coordinates");
+    return raw_fail("gps missing EXIF GPS coordinates");
   }
 
-  const auto unicode = backend.readRaw(raw_jpeg("unicode.jpg"));
+  const auto unicode = backend.readRaw(raw_stem(folder, "unicode", ext));
   if (!unicode.ok()) {
-    std::fprintf(stderr, "unicode read failed: %s\n",
+    std::fprintf(stderr, "%s/unicode%s read failed: %s\n", folder, ext,
                  unicode.error().message.c_str());
     return 1;
   }
@@ -163,9 +175,22 @@ inline int check_jpeg_raw_reads(umm::Backend& backend,
       !raw_has_key_with_value(unicode.value(), "Iptc.Application2.Caption",
                               cafe) ||
       !raw_has_key_with_value(unicode.value(), "Xmp.dc.description", cafe)) {
-    return raw_fail("unicode.jpg values did not match UTF-8 expectations");
+    return raw_fail("unicode values did not match UTF-8 expectations");
   }
+  return 0;
+}
 
+// Shared JPEG fixture expectations for Exiv2 and ExifTool readRaw (session 11).
+inline int check_jpeg_raw_reads(umm::Backend& backend,
+                                const char* backend_id) {
+  if (const int rc = check_still_raw_reads(backend, backend_id, "jpeg", ".jpg");
+      rc != 0) {
+    return rc;
+  }
+  static constexpr char8_t kJurgen[] = {
+      'J', 0xC3, 0xBC, 'r', 'g', 'e', 'n', ' ', 'M', 0xC3, 0xBC, 'l', 'l',
+      'e', 'r', 0};
+  const std::string jurgen = raw_from_u8(kJurgen);
   const auto unicode_path = backend.readRaw(raw_unicode_filename());
   if (!unicode_path.ok()) {
     std::fprintf(stderr, "unicode filename read failed: %s\n",
@@ -193,4 +218,8 @@ inline int check_jpeg_raw_reads(umm::Backend& backend,
     return raw_fail("truncated.jpg error missing backend id");
   }
   return 0;
+}
+
+inline int check_tiff_raw_reads(umm::Backend& backend, const char* backend_id) {
+  return check_still_raw_reads(backend, backend_id, "tiff", ".tif");
 }

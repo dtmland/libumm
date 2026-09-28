@@ -43,21 +43,23 @@ bool has_x_default(const umm::LangAlt& alt, std::string_view expected) {
   return it->second.find(std::string(expected)) != std::string::npos;
 }
 
-int check_backend(const std::string& backend_id) {
+int check_backend(const std::string& backend_id, const char* folder,
+                  const char* ext) {
   umm::ReadOptions options;
   options.backend = backend_id;
 
-  const auto minimal = umm::read(raw_jpeg("minimal.jpg"), options);
+  const auto minimal = umm::read(raw_stem(folder, "minimal", ext), options);
   if (!minimal.ok()) {
     std::fprintf(stderr, "minimal read failed: %s\n",
                  minimal.error().message.c_str());
     return 1;
   }
   if (!minimal.value().propertyIds().empty()) {
-    return fail_read("minimal.jpg should have no Phase 1 properties");
+    return fail_read("minimal should have no Phase 1 properties");
   }
 
-  const auto exif_only = umm::read(raw_jpeg("exif-only.jpg"), options);
+  const auto exif_only =
+      umm::read(raw_stem(folder, "exif-only", ext), options);
   if (!exif_only.ok()) {
     std::fprintf(stderr, "exif-only read failed: %s\n",
                  exif_only.error().message.c_str());
@@ -72,7 +74,8 @@ int check_backend(const std::string& backend_id) {
     return fail_read("exif-only date not single");
   }
 
-  const auto iptc_only = umm::read(raw_jpeg("iptc-only.jpg"), options);
+  const auto iptc_only =
+      umm::read(raw_stem(folder, "iptc-only", ext), options);
   if (!iptc_only.ok()) {
     std::fprintf(stderr, "iptc-only read failed: %s\n",
                  iptc_only.error().message.c_str());
@@ -85,7 +88,8 @@ int check_backend(const std::string& backend_id) {
     return fail_read("iptc-only properties not single");
   }
 
-  const auto xmp_only = umm::read(raw_jpeg("xmp-only.jpg"), options);
+  const auto xmp_only =
+      umm::read(raw_stem(folder, "xmp-only", ext), options);
   if (!xmp_only.ok()) {
     std::fprintf(stderr, "xmp-only read failed: %s\n",
                  xmp_only.error().message.c_str());
@@ -98,7 +102,8 @@ int check_backend(const std::string& backend_id) {
     return fail_read("xmp-only properties not single");
   }
 
-  const auto agreeing = umm::read(raw_jpeg("full-agreeing.jpg"), options);
+  const auto agreeing =
+      umm::read(raw_stem(folder, "full-agreeing", ext), options);
   if (!agreeing.ok()) {
     std::fprintf(stderr, "full-agreeing read failed: %s\n",
                  agreeing.error().message.c_str());
@@ -146,7 +151,8 @@ int check_backend(const std::string& backend_id) {
     return fail_read("full-agreeing dropped sources");
   }
 
-  const auto conflicting = umm::read(raw_jpeg("full-conflicting.jpg"), options);
+  const auto conflicting =
+      umm::read(raw_stem(folder, "full-conflicting", ext), options);
   if (!conflicting.ok()) {
     std::fprintf(stderr, "full-conflicting read failed: %s\n",
                  conflicting.error().message.c_str());
@@ -178,12 +184,12 @@ int check_backend(const std::string& backend_id) {
   umm::ReadOptions strict = options;
   strict.conflicts_as_errors = true;
   const auto strict_read =
-      umm::read(raw_jpeg("full-conflicting.jpg"), strict);
+      umm::read(raw_stem(folder, "full-conflicting", ext), strict);
   if (!strict_read.ok()) {
     return fail_read("reconciled properties must not fail conflicts_as_errors");
   }
 
-  const auto gps = umm::read(raw_jpeg("gps.jpg"), options);
+  const auto gps = umm::read(raw_stem(folder, "gps", ext), options);
   if (!gps.ok()) {
     std::fprintf(stderr, "gps read failed: %s\n", gps.error().message.c_str());
     return 1;
@@ -194,13 +200,13 @@ int check_backend(const std::string& backend_id) {
                 : nullptr;
   if (!coord || std::fabs(coord->latitude - 37.7749) > 1e-4 ||
       std::fabs(coord->longitude + 122.4194) > 1e-4) {
-    return fail_read("gps.jpg coordinate");
+    return fail_read("gps coordinate");
   }
   if (!gps.value().locationCreated()) {
-    return fail_read("gps.jpg missing named place");
+    return fail_read("gps missing named place");
   }
 
-  const auto unicode = umm::read(raw_jpeg("unicode.jpg"), options);
+  const auto unicode = umm::read(raw_stem(folder, "unicode", ext), options);
   if (!unicode.ok()) {
     std::fprintf(stderr, "unicode read failed: %s\n",
                  unicode.error().message.c_str());
@@ -224,7 +230,12 @@ int check_backend(const std::string& backend_id) {
   if (!u_lang || !has_x_default(*u_lang, cafe)) {
     return fail_read("unicode description mangled");
   }
+  return 0;
+}
 
+int check_truncated(const std::string& backend_id) {
+  umm::ReadOptions options;
+  options.backend = backend_id;
   const auto truncated =
       umm::read(raw_fixtures_dir() / "corrupt" / "truncated.jpg", options);
   if (truncated.ok()) {
@@ -238,13 +249,15 @@ int check_backend(const std::string& backend_id) {
   return 0;
 }
 
-int compare_agreeing_backends(const std::string& a, const std::string& b) {
+int compare_agreeing_backends(const std::string& a, const std::string& b,
+                              const char* folder, const char* ext) {
   umm::ReadOptions left;
   left.backend = a;
   umm::ReadOptions right;
   right.backend = b;
-  const auto la = umm::read(raw_jpeg("full-agreeing.jpg"), left);
-  const auto lb = umm::read(raw_jpeg("full-agreeing.jpg"), right);
+  const auto path = raw_stem(folder, "full-agreeing", ext);
+  const auto la = umm::read(path, left);
+  const auto lb = umm::read(path, right);
   if (!la.ok() || !lb.ok()) {
     return fail_read("cross-backend agreeing read failed");
   }
@@ -269,8 +282,16 @@ int main() {
     if (!backend || !backend->availability().available) {
       continue;
     }
-    if (const int rc = check_backend(id); rc != 0) {
-      std::fprintf(stderr, "backend %s failed\n", id.c_str());
+    if (const int rc = check_backend(id, "jpeg", ".jpg"); rc != 0) {
+      std::fprintf(stderr, "backend %s jpeg failed\n", id.c_str());
+      return rc;
+    }
+    if (const int rc = check_truncated(id); rc != 0) {
+      std::fprintf(stderr, "backend %s truncated failed\n", id.c_str());
+      return rc;
+    }
+    if (const int rc = check_backend(id, "tiff", ".tif"); rc != 0) {
+      std::fprintf(stderr, "backend %s tiff failed\n", id.c_str());
       return rc;
     }
     tested.push_back(id);
@@ -279,7 +300,12 @@ int main() {
     return fail_read("no backend available for test_read");
   }
   if (tested.size() == 2) {
-    return compare_agreeing_backends(tested[0], tested[1]);
+    if (const int rc =
+            compare_agreeing_backends(tested[0], tested[1], "jpeg", ".jpg");
+        rc != 0) {
+      return rc;
+    }
+    return compare_agreeing_backends(tested[0], tested[1], "tiff", ".tif");
   }
   return 0;
 }
