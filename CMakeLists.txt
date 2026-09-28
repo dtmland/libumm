@@ -58,6 +58,21 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/LibummExiv2.cmake")
 if(UMM_BUILD_TESTS)
   enable_testing()
 
+  set(UMM_FIXTURES_DIR "${PROJECT_SOURCE_DIR}/tests/fixtures")
+  file(TO_CMAKE_PATH "${UMM_FIXTURES_DIR}" UMM_FIXTURES_DIR_CMAKE)
+
+  function(umm_apply_fixture_dir target)
+    target_compile_definitions(${target}
+      PRIVATE
+        "UMM_FIXTURES_DIR=R\"(${UMM_FIXTURES_DIR_CMAKE})\""
+    )
+  endfunction()
+
+  function(umm_apply_fixture_dir_to_test test_name)
+    set_property(TEST ${test_name} PROPERTY ENVIRONMENT_MODIFICATION
+      "UMM_FIXTURES_DIR=set:${UMM_FIXTURES_DIR}")
+  endfunction()
+
   add_executable(test_version tests/unit/test_version.cpp)
   target_link_libraries(test_version PRIVATE umm::umm)
   target_compile_definitions(test_version
@@ -82,6 +97,11 @@ if(UMM_BUILD_TESTS)
   target_link_libraries(test_metadata PRIVATE umm::umm)
   add_test(NAME test_metadata COMMAND test_metadata)
 
+  add_executable(test_fixtures_path tests/unit/test_fixtures_path.cpp)
+  umm_apply_fixture_dir(test_fixtures_path)
+  add_test(NAME test_fixtures_path COMMAND test_fixtures_path)
+  umm_apply_fixture_dir_to_test(test_fixtures_path)
+
   if(UMM_ENABLE_FAILING_SELFTEST)
     add_executable(test_failing_selftest tests/unit/test_failing_selftest.cpp)
     add_test(NAME test_failing_selftest COMMAND test_failing_selftest)
@@ -96,6 +116,21 @@ if(UMM_BUILD_TESTS)
         "-DUMM_TEST_EXIFTOOL_VERSION=${UMM_EXIFTOOL_VERSION}"
         -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/backend/test_exiftool_smoke.cmake"
     )
+
+    if(Python3_Interpreter_FOUND)
+      add_test(
+        NAME fixtures_exiftool
+        COMMAND "${Python3_EXECUTABLE}" -m unittest discover
+                -s "${PROJECT_SOURCE_DIR}/tests/build"
+                -p test_fixtures.py
+                -v
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+      )
+      set_property(TEST fixtures_exiftool PROPERTY ENVIRONMENT_MODIFICATION
+        "UMM_EXIFTOOL_SCRIPT=set:${UMM_EXIFTOOL_SCRIPT}"
+        "UMM_PERL_EXECUTABLE=set:${UMM_PERL_EXECUTABLE}"
+        "UMM_FIXTURES_DIR=set:${UMM_FIXTURES_DIR}")
+    endif()
   elseif(UMM_REQUIRE_EXIFTOOL)
     message(FATAL_ERROR "UMM_REQUIRE_EXIFTOOL=ON but exiftool_smoke cannot be registered")
   endif()

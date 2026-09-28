@@ -1,3 +1,8 @@
 # Importer output is UTF-8 with LF newlines and compared byte-for-byte.
 registry/**/*.json text eol=lf
 src/generated/** text eol=lf
+
+# Fixture JPEGs must stay binary so Windows checkouts do not alter bytes.
+tests/fixtures/**/*.jpg binary
+# XMP sidecars are UTF-8 text; pin LF for byte-stable checkouts.
+tests/fixtures/**/*.xmp text eol=lf
