@@ -11,8 +11,10 @@ and [docs/test-media-plan.md](../test-media-plan.md) into **session-sized work p
 
 ## Session sizing rules
 
-- Each session document targets **≤ 45 minutes** of focused implementation work (hard ceiling:
-  one hour), including running tests and CI-relevant checks.
+- Each session document has a strict upper-bound cap of **≤ 45 minutes** of focused
+  implementation work, with a hard ceiling of **one hour** including running tests and
+  CI-relevant checks. This is a maximum allowed duration, not an expected or default runtime;
+  if a session finishes sooner, that is a success and not a reason to expand scope.
 - Each session ends **green**: builds pass, all existing tests pass, CI unaffected or improved.
 - Sessions are ordered; each lists explicit prerequisites. Do not start a session whose
   prerequisites are unmerged.
