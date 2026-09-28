@@ -161,6 +161,31 @@ int main() {
       by_webp.value().file_type != "WEBP") {
     return fail("path extension PNG/WEBP");
   }
+  const auto by_dng = umm::capabilities(std::filesystem::path("photo.dng"));
+  if (!by_dng.ok() || by_dng.value().file_type != "DNG" ||
+      by_dng.value().preferred_backend != "exiv2" ||
+      by_dng.value().sidecar_recommended) {
+    return fail("path extension DNG");
+  }
+
+  const auto dng = umm::capabilitiesForType("DNG");
+  if (!dng.ok() || dng.value().file_type != "DNG" ||
+      dng.value().preferred_backend != "exiv2" ||
+      dng.value().sidecar_recommended) {
+    return fail("DNG policy");
+  }
+  const umm::BackendCapability* dng_exiv2 = find_backend(dng.value(), "exiv2");
+  const umm::BackendCapability* dng_et = find_backend(dng.value(), "exiftool");
+  if (!dng_exiv2 || dng_exiv2->categories.exif != umm::Access::read_write ||
+      dng_exiv2->categories.iptc_iim != umm::Access::read_write ||
+      dng_exiv2->categories.xmp != umm::Access::read_write) {
+    return fail("DNG Exiv2 categories");
+  }
+  if (!dng_et || dng_et->categories.exif != umm::Access::read_write ||
+      dng_et->categories.iptc_iim != umm::Access::read_write ||
+      dng_et->categories.xmp != umm::Access::read_write) {
+    return fail("DNG ExifTool categories");
+  }
 
   {
     const std::filesystem::path dir =
@@ -179,6 +204,14 @@ int main() {
     const auto sniffed = umm::capabilities(tiff_xmp);
     if (!sniffed.ok() || sniffed.value().file_type != "TIFF") {
       return fail("TIFF magic before embedded XMP text");
+    }
+    const std::filesystem::path dng_xmp = dir / "packet.dng";
+    std::ofstream dng_out(dng_xmp, std::ios::binary | std::ios::trunc);
+    dng_out.write(bytes.data(), static_cast<std::streamsize>(bytes.size()));
+    dng_out.close();
+    const auto sniffed_dng = umm::capabilities(dng_xmp);
+    if (!sniffed_dng.ok() || sniffed_dng.value().file_type != "DNG") {
+      return fail("TIFF magic with .dng extension is DNG");
     }
   }
   {

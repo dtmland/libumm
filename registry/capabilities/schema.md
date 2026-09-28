@@ -90,8 +90,11 @@ Derivation rules from supported-types.md §3 and §6 encoded as data:
 | `sidecar_recommended` | boolean | XMP sidecar advisable for writes |
 | `extensions` | array of string | Leading-dot ASCII extensions, lowercase |
 
-`umm::capabilities(path)` maps the path extension (and JPEG/XMP magic) through
-this table. Unknown types return `ErrorCode::unsupported_type`.
+`umm::capabilities(path)` maps the path through this table: JPEG, TIFF, PNG,
+and WebP magic first, then XMP text, then the extension. DNG shares TIFF
+magic, so sniffing uses the `.dng` extension to discriminate DNG from TIFF
+(session 19; extension-first is the documented rule). Unknown types return
+`ErrorCode::unsupported_type`.
 
 ## Generated outputs
 

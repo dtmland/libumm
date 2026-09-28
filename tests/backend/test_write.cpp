@@ -637,6 +637,9 @@ int check_backend(const std::string& backend,
   if (const int rc = test_payload(backend, "webp", ".webp"); rc != 0) {
     return rc;
   }
+  if (const int rc = test_payload(backend, "raw", ".dng"); rc != 0) {
+    return rc;
+  }
   if (const int rc = test_unknown(backend); rc != 0) {
     return rc;
   }
@@ -652,6 +655,9 @@ int check_backend(const std::string& backend,
   if (const int rc = test_atomicity(backend, "webp", ".webp"); rc != 0) {
     return rc;
   }
+  if (const int rc = test_atomicity(backend, "raw", ".dng"); rc != 0) {
+    return rc;
+  }
   if (const int rc = test_encoding(backend, readers, "jpeg", ".jpg"); rc != 0) {
     return rc;
   }
@@ -663,6 +669,9 @@ int check_backend(const std::string& backend,
   }
   if (const int rc = test_encoding(backend, readers, "webp", ".webp");
       rc != 0) {
+    return rc;
+  }
+  if (const int rc = test_encoding(backend, readers, "raw", ".dng"); rc != 0) {
     return rc;
   }
   if (const int rc = test_roundtrip(backend, readers, "jpeg", ".jpg");
@@ -678,6 +687,9 @@ int check_backend(const std::string& backend,
   }
   if (const int rc = test_roundtrip(backend, readers, "webp", ".webp");
       rc != 0) {
+    return rc;
+  }
+  if (const int rc = test_roundtrip(backend, readers, "raw", ".dng"); rc != 0) {
     return rc;
   }
   if (const int rc = test_png_gps_write(backend); rc != 0) {

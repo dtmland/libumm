@@ -247,6 +247,36 @@ int probe_backend(const std::string& backend_id) {
       raw_has_family(webp_agree.value(), "Iptc")) {
     return fail("webp full-agreeing fixture vs EXIF/XMP capability");
   }
+
+  const auto dng_caps = umm::capabilitiesForType("DNG");
+  if (!dng_caps.ok()) {
+    return fail("probe DNG caps");
+  }
+  const umm::BackendCapability* dng_row =
+      find_backend(dng_caps.value(), backend_id);
+  if (!dng_row || dng_row->categories.exif != umm::Access::read_write ||
+      dng_row->categories.iptc_iim != umm::Access::read_write ||
+      dng_row->categories.xmp != umm::Access::read_write ||
+      dng_row->location.gps_exif != umm::Access::read_write ||
+      dng_row->location.named_place != umm::Access::read_write) {
+    return fail("DNG capability data mismatch");
+  }
+  const auto dng_ok = backend->typeCapabilities("DNG");
+  if (!dng_ok.ok()) {
+    return fail("typeCapabilities DNG");
+  }
+  const auto sniffed_dng =
+      umm::capabilities(raw_stem("raw", "full-agreeing", ".dng"));
+  if (!sniffed_dng.ok() || sniffed_dng.value().file_type != "DNG") {
+    return fail("sniff full-agreeing.dng");
+  }
+  const auto dng_agree =
+      backend->readRaw(raw_stem("raw", "full-agreeing", ".dng"));
+  if (!dng_agree.ok() || !raw_has_family(dng_agree.value(), "Exif") ||
+      !raw_has_family(dng_agree.value(), "Iptc") ||
+      !raw_has_family(dng_agree.value(), "Xmp")) {
+    return fail("dng full-agreeing fixture vs EXIF/IPTC/XMP capability");
+  }
   return 0;
 }
 

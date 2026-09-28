@@ -39,5 +39,8 @@ int main() {
   if (const int rc = check_png_raw_reads(*backend, "exiv2"); rc != 0) {
     return rc;
   }
-  return check_webp_raw_reads(*backend, "exiv2");
+  if (const int rc = check_webp_raw_reads(*backend, "exiv2"); rc != 0) {
+    return rc;
+  }
+  return check_dng_raw_reads(*backend, "exiv2");
 }

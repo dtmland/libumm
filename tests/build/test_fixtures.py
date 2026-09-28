@@ -76,6 +76,12 @@ WEBP_FILES = (
     "webp/full-agreeing.webp",
 )
 
+# docs/implementation/19-raw-read-and-sidecar-write.md
+DNG_FILES = (
+    "raw/minimal.dng",
+    "raw/full-agreeing.dng",
+)
+
 ENTRY_RE = re.compile(
     r"^### `([^`]+)`\n"
     r"\n"
@@ -330,6 +336,10 @@ class TestFixtureCorpus(unittest.TestCase):
             ".gitattributes must mark WebP fixtures as binary",
         )
         self.assertTrue(
+            any("tests/fixtures/**/*.dng" in line and "binary" in line for line in lines),
+            ".gitattributes must mark DNG fixtures as binary",
+        )
+        self.assertTrue(
             any(
                 "tests/fixtures/**/*.xmp" in line and "eol=lf" in line
                 for line in lines
@@ -375,6 +385,24 @@ class TestFixtureCorpus(unittest.TestCase):
                 path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n"),
                 f"{relpath} is not PNG magic",
             )
+
+    def test_dng_matrix_is_present(self) -> None:
+        text = MANIFEST.read_text(encoding="utf-8")
+        entries = parse_manifest(text)
+        for relpath in DNG_FILES:
+            path = FIXTURES / relpath
+            self.assertIn(relpath, entries, f"{relpath} missing from MANIFEST.md")
+            self.assertTrue(path.is_file(), f"missing fixture {relpath}")
+            data = path.read_bytes()
+            self.assertTrue(
+                (data.startswith(b"II*\x00") or data.startswith(b"MM\x00*")),
+                f"{relpath} is not TIFF/DNG magic",
+            )
+        open_items = parse_open_items(text)
+        self.assertTrue(
+            any("RAF/RW2/SR2" in item for item in open_items),
+            "MANIFEST must defer proprietary RAW to Tier B",
+        )
 
     def test_webp_matrix_is_present(self) -> None:
         text = MANIFEST.read_text(encoding="utf-8")
@@ -507,6 +535,14 @@ class TestFixtureExifTool(unittest.TestCase):
         self.assertEqual(record.get("IPTC:By-line"), "Agreeing Creator")
         self.assertEqual(record.get("XMP-dc:Creator"), "Agreeing Creator")
         self.assertIsNone(record.get("IFD0:Artist"))
+
+    def test_dng_full_agreeing_has_all_families(self) -> None:
+        record = exiftool_json(
+            self.perl, self.script, FIXTURES / "raw" / "full-agreeing.dng"
+        )
+        self.assertEqual(record.get("IFD0:Artist"), "Agreeing Creator")
+        self.assertEqual(record.get("IPTC:By-line"), "Agreeing Creator")
+        self.assertEqual(record.get("XMP-dc:Creator"), "Agreeing Creator")
 
     def test_webp_full_agreeing_has_exif_and_xmp_not_iptc(self) -> None:
         record = exiftool_json(
