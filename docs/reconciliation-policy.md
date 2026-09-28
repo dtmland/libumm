@@ -1,7 +1,8 @@
 # Reconciliation policy (Phase 1)
 
 Status: **normative** for JPEG embedded read (session 12), write-synchronization
-(session 13), and XMP sidecar pairing (session 14).
+(session 13), XMP sidecar pairing (session 14), and MP4/MOV video read
+(session 21).
 
 This is the written, testable policy required by decision **S4a**. Classification
 and provenance shapes are those in `include/umm/provenance.hpp` (concept.md §15,
@@ -227,6 +228,54 @@ Phase 1 stores one `Structure` with fields `city`, `provinceState`,
 - **Write-sync:** structured LocationCreated when the writer can; also legacy
   IIM + photoshop fields from `city` / `provinceState` / `countryName`. Full
   Extension location structures are Stage 6.
+
+## Video (MP4/MOV)
+
+Sniffed file types `MP4` and `MOV` select the `iptc.video.*` domain instead of
+`iptc.photo.*`. Shared XMP encodings (`dc:description`, `photoshop:DateCreated`)
+must not populate photo properties on a video file.
+
+### Read precedence (video)
+
+**XMP > QuickTime item/keys metadata > movie-header `CreateDate`**
+
+Cross-family disagreement is `reconciled` with that ranking. Same-tier
+disagreement remains `conflict`. GPS is native to the container and inverts
+XMP vs QuickTime (below).
+
+Movie-header `QuickTime.CreateDate` is often stored as UTC with **no offset
+field**. libumm does **not** invent UTC (`+00:00`) for a naive header date.
+`Keys:CreationDate` (`com.apple.quicktime.creationdate`) may include an
+offset; missing vs present offset stays equivalent (`opt_equal`).
+
+### `iptc.video.title` / `description` / `creator` / `copyrightNotice` / `keywords` / `dateCreated`
+
+| Family | Raw keys |
+| --- | --- |
+| XMP | Registry `xmp_property` (plus `Xmp.dc.creator` names flattened to EntityWRole `name`) |
+| QuickTime | `QuickTime.Title`, `Description`, `Artist`/`Author`/`Director` (creator names), `Copyright`, `Keywords`, `CreationDate` |
+| Movie header | `QuickTime.CreateDate` (date only; lowest rank) |
+
+`iptc.video.title` / `description` / `copyrightNotice` / `keywords` are lang-alt.
+`iptc.video.creator` is a structure list (`name` only for Phase 1 string sources).
+`iptc.video.keywords` joins bag values into `x-default` (VMH types the property as lang-alt).
+
+### `exif.gps.position` on video
+
+| Family | Raw keys |
+| --- | --- |
+| QuickTime | `QuickTime.GPSCoordinates` (`lat lon [alt]`, comma or whitespace; ISO 6709 accepted when decimal) |
+| XMP | `Xmp.exif.GPSLatitude` / `GPSLongitude` / optional altitude |
+
+Disagreement: `reconciled`, **container GPS > XMP**. Equivalence uses the same
+degree/altitude tolerances as stills.
+
+### R3 (per-property dispatch)
+
+Session 21 keeps the per-property `if` dispatch. A second domain did not make a
+table-driven engine necessary: video is a closed Phase-1-sized set with the same
+classify/merge helpers. Revisit if a third domain or generated mapping tables
+land.
 
 ## Sidecars
 

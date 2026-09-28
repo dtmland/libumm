@@ -19,7 +19,7 @@ namespace umm {
 // Raw escape hatch (concept.md §18): standardized metadata gets standardized
 // semantics; everything else remains accessible without a fake definition.
 struct RawKey {
-  std::string family;  // "Exif" | "Iptc" | "Xmp" (neutral raw vocabulary)
+  std::string family;  // "Exif" | "Iptc" | "Xmp" | "QuickTime"
   std::string key;     // e.g. "Exif.Nikon3.LensType", "Xmp.vendor.SomeProperty"
 
   bool operator==(const RawKey&) const = default;

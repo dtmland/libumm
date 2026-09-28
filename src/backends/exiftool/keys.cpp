@@ -81,6 +81,29 @@ std::string rename_exif(std::string_view group, std::string_view tag) {
   return std::string(tag);
 }
 
+bool is_quicktime_group(std::string_view group) {
+  return group == "QuickTime" || group == "Keys" || group == "ItemList" ||
+         group == "UserData";
+}
+
+std::string mapped_quicktime_tag(std::string_view tag) {
+  if (tag == "Keyword") {
+    return "Keywords";
+  }
+  if (tag == "UserRating") {
+    return "Rating";
+  }
+  if (tag == "Title" || tag == "Description" || tag == "Artist" ||
+      tag == "Author" || tag == "Director" || tag == "Copyright" ||
+      tag == "Publisher" || tag == "Year" || tag == "Keywords" ||
+      tag == "Genre" || tag == "CreateDate" || tag == "CreationDate" ||
+      tag == "GPSCoordinates" || tag == "Duration" || tag == "MediaDuration" ||
+      tag == "TrackDuration" || tag == "Rating") {
+    return std::string(tag);
+  }
+  return {};
+}
+
 }  // namespace
 
 std::optional<RawKey> map_exiftool_tag(std::string_view json_key) {
@@ -155,6 +178,14 @@ std::optional<RawKey> map_exiftool_tag(std::string_view json_key) {
     key.family = "Exif";
     key.key = "Exif.Iop." + std::string(tag);
     return key;
+  }
+  if (is_quicktime_group(group)) {
+    const std::string mapped = mapped_quicktime_tag(tag);
+    if (!mapped.empty()) {
+      key.family = "QuickTime";
+      key.key = "QuickTime." + mapped;
+      return key;
+    }
   }
 
   key.family = "ExifTool";
@@ -259,6 +290,12 @@ std::optional<std::string> exiftool_tag_for_raw_key(std::string_view raw_key) {
   }
   if (const auto name = after_prefix("Iptc.Envelope.")) {
     return "IPTC:" + iptc_exiftool_name(*name);
+  }
+  if (const auto name = after_prefix("QuickTime.")) {
+    if (*name == "CreationDate" || *name == "GPSCoordinates") {
+      return "Keys:" + *name;
+    }
+    return "QuickTime:" + *name;
   }
   if (key.rfind("Xmp.", 0) == 0) {
     const std::string rest = key.substr(4);

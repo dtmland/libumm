@@ -25,7 +25,8 @@
 // ExifTool key mapping: JSON `-j -G1` names (`Group1:Tag`) are translated
 // into the Exiv2-syntax vocabulary. Phase 1 tags have an explicit table
 // (IFD0:Artist -> Exif.Image.Artist, IPTC:By-line -> Iptc.Application2.Byline,
-// XMP-dc:Creator -> Xmp.dc.creator, GPS:* -> Exif.GPSInfo.*, ...). Unmapped
+// XMP-dc:Creator -> Xmp.dc.creator, GPS:* -> Exif.GPSInfo.*, mapped
+// QuickTime/Keys/ItemList/UserData tags -> QuickTime.<Tag>, ...). Unmapped
 // XMP-ns:Tag keys become Xmp.ns.Tag; anything else is kept as the
 // adapter-specific key ExifTool.<Group1>.<Tag>. File/ExifTool/Composite
 // groups are omitted (not stored metadata).

@@ -466,6 +466,111 @@ int check_dng_backend(const std::string& backend_id) {
   return 0;
 }
 
+int check_video_backend() {
+  umm::ReadOptions options;
+  options.backend = "exiftool";
+
+  const auto minimal = umm::read(raw_stem("video", "minimal", ".mp4"), options);
+  if (!minimal.ok()) {
+    std::fprintf(stderr, "video minimal read failed: %s\n",
+                 minimal.error().message.c_str());
+    return 1;
+  }
+  if (minimal.value().get("iptc.video.title") ||
+      minimal.value().get("iptc.video.creator") ||
+      minimal.value().creator()) {
+    return fail_read("video minimal should have no descriptive properties");
+  }
+
+  const auto full = umm::read(raw_stem("video", "full", ".mp4"), options);
+  if (!full.ok()) {
+    std::fprintf(stderr, "video full read failed: %s\n",
+                 full.error().message.c_str());
+    return 1;
+  }
+  const auto title = full.value().get("iptc.video.title");
+  const auto creator = full.value().get("iptc.video.creator");
+  const auto description = full.value().get("iptc.video.description");
+  const auto date = full.value().get("iptc.video.dateCreated");
+  if (!title || !as_lang(*title) ||
+      as_lang(*title)->count("x-default") == 0 ||
+      as_lang(*title)->at("x-default") != "Agreeing Title") {
+    return fail_read("video full title");
+  }
+  if (!creator) {
+    return fail_read("video full missing creator");
+  }
+  const auto* entities =
+      std::get_if<std::vector<umm::Structure>>(&creator->value.data);
+  if (!entities || entities->empty()) {
+    return fail_read("video full creator shape");
+  }
+  const auto name = entities->front().find("name");
+  const auto* name_lang =
+      name == entities->front().end()
+          ? nullptr
+          : std::get_if<umm::LangAlt>(&name->second.data);
+  if (!name_lang || name_lang->count("x-default") == 0 ||
+      name_lang->at("x-default") != "Agreeing Creator") {
+    return fail_read("video full creator name");
+  }
+  if (!description || !as_lang(*description) ||
+      as_lang(*description)->count("x-default") == 0 ||
+      as_lang(*description)->at("x-default").find("Agreeing description") ==
+          std::string::npos) {
+    return fail_read("video full description");
+  }
+  if (!date) {
+    return fail_read("video full missing date");
+  }
+  const auto* dt = as_date(*date);
+  if (!dt || dt->year != 2020 || dt->month != 1 || dt->day != 2) {
+    return fail_read("video full date value");
+  }
+  if (full.value().creator()) {
+    return fail_read("video full filled photo creator");
+  }
+
+  const auto gps = umm::read(raw_stem("video", "gps", ".mp4"), options);
+  if (!gps.ok()) {
+    std::fprintf(stderr, "video gps read failed: %s\n",
+                 gps.error().message.c_str());
+    return 1;
+  }
+  const auto gps_value = gps.value().gps();
+  const auto* coord =
+      gps_value ? std::get_if<umm::GpsCoordinate>(&gps_value->value.data)
+                : nullptr;
+  if (!coord || std::fabs(coord->latitude - 37.7749) > 1e-4 ||
+      std::fabs(coord->longitude + 122.4194) > 1e-4) {
+    return fail_read("video gps coordinate");
+  }
+
+  const auto conflicting =
+      umm::read(raw_stem("video", "conflicting", ".mp4"), options);
+  if (!conflicting.ok()) {
+    std::fprintf(stderr, "video conflicting read failed: %s\n",
+                 conflicting.error().message.c_str());
+    return 1;
+  }
+  const auto cdate = conflicting.value().get("iptc.video.dateCreated");
+  if (!cdate || cdate->resolution != umm::Resolution::reconciled) {
+    return fail_read("video conflicting date not reconciled");
+  }
+  const auto* cdt = as_date(*cdate);
+  if (!cdt || cdt->year != 2020 || cdt->month != 3 || cdt->day != 3) {
+    return fail_read("video conflicting date did not prefer XMP");
+  }
+
+  const auto mov = umm::read(raw_stem("video", "minimal", ".mov"), options);
+  if (!mov.ok()) {
+    std::fprintf(stderr, "video minimal.mov read failed: %s\n",
+                 mov.error().message.c_str());
+    return 1;
+  }
+  return 0;
+}
+
 int compare_agreeing_backends(const std::string& a, const std::string& b,
                               const char* folder, const char* ext) {
   umm::ReadOptions left;
@@ -522,6 +627,12 @@ int main() {
     if (const int rc = check_dng_backend(id); rc != 0) {
       std::fprintf(stderr, "backend %s dng failed\n", id.c_str());
       return rc;
+    }
+    if (id == "exiftool") {
+      if (const int rc = check_video_backend(); rc != 0) {
+        std::fprintf(stderr, "backend %s video failed\n", id.c_str());
+        return rc;
+      }
     }
     tested.push_back(id);
   }

@@ -254,6 +254,67 @@ int main() {
     return fail("path extension XMP");
   }
 
+  const auto mp4 = umm::capabilitiesForType("MP4");
+  if (!mp4.ok() || mp4.value().file_type != "MP4" ||
+      mp4.value().preferred_backend != "exiftool" ||
+      mp4.value().sidecar_recommended) {
+    return fail("MP4 policy");
+  }
+  const umm::BackendCapability* mp4_exiv2 = find_backend(mp4.value(), "exiv2");
+  const umm::BackendCapability* mp4_et = find_backend(mp4.value(), "exiftool");
+  if (!mp4_et || mp4_et->categories.xmp != umm::Access::read_write ||
+      mp4_et->categories.exif != umm::Access::none ||
+      mp4_et->location.container_gps != umm::Access::read_write ||
+      mp4_et->location.gps_exif != umm::Access::none) {
+    return fail("MP4 ExifTool categories");
+  }
+  if (!mp4_exiv2 || mp4_exiv2->categories.xmp != umm::Access::none ||
+      mp4_exiv2->location.container_gps != umm::Access::none ||
+      mp4_exiv2->notes.find("rudimentary") == std::string::npos) {
+    return fail("MP4 Exiv2 rudimentary");
+  }
+  const auto mov = umm::capabilitiesForType("mov");
+  if (!mov.ok() || mov.value().file_type != "MOV" ||
+      mov.value().preferred_backend != "exiftool") {
+    return fail("MOV policy");
+  }
+  const auto by_mp4 = umm::capabilities(std::filesystem::path("clip.mp4"));
+  const auto by_mov = umm::capabilities(std::filesystem::path("clip.mov"));
+  if (!by_mp4.ok() || by_mp4.value().file_type != "MP4" || !by_mov.ok() ||
+      by_mov.value().file_type != "MOV") {
+    return fail("path extension MP4/MOV");
+  }
+  {
+    const std::filesystem::path dir =
+        std::filesystem::temp_directory_path() / "umm-sniff-mp4-mov-xmp";
+    std::filesystem::create_directories(dir);
+    const std::filesystem::path mp4_xmp = dir / "packet.mp4";
+    std::string mp4(256, '\0');
+    mp4.replace(4, 4, "ftyp");
+    mp4.replace(8, 4, "isom");
+    mp4.replace(64, 7, "xpacket");
+    std::ofstream mp4_out(mp4_xmp, std::ios::binary | std::ios::trunc);
+    mp4_out.write(mp4.data(), static_cast<std::streamsize>(mp4.size()));
+    mp4_out.close();
+    const auto sniffed_mp4 = umm::capabilities(mp4_xmp);
+    if (!sniffed_mp4.ok() || sniffed_mp4.value().file_type != "MP4") {
+      return fail("MP4 ftyp before embedded XMP text");
+    }
+    const std::filesystem::path mov_xmp = dir / "packet.mov";
+    std::string mov_bytes(256, '\0');
+    mov_bytes.replace(4, 4, "ftyp");
+    mov_bytes.replace(8, 4, "qt  ");
+    mov_bytes.replace(64, 7, "xpacket");
+    std::ofstream mov_out(mov_xmp, std::ios::binary | std::ios::trunc);
+    mov_out.write(mov_bytes.data(),
+                  static_cast<std::streamsize>(mov_bytes.size()));
+    mov_out.close();
+    const auto sniffed_mov = umm::capabilities(mov_xmp);
+    if (!sniffed_mov.ok() || sniffed_mov.value().file_type != "MOV") {
+      return fail("MOV qt brand before embedded XMP text");
+    }
+  }
+
   const auto unknown = umm::capabilitiesForType("NO_SUCH_TYPE");
   if (unknown.ok() || unknown.error().code != umm::ErrorCode::unsupported_type) {
     return fail("unknown type");

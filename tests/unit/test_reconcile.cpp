@@ -2,6 +2,7 @@
 
 #include "umm/umm.hpp"
 
+#include <cmath>
 #include <cstdio>
 #include <string>
 #include <string_view>
@@ -346,6 +347,108 @@ int main() {
     }
     if (result.value().conflictedPropertyIds().empty()) {
       return fail("conflictedPropertyIds empty");
+    }
+  }
+
+  {
+    const auto result = umm::internal::reconcile(
+        doc({entry("QuickTime", "QuickTime.Title", "QT Title"),
+             entry("QuickTime", "QuickTime.Artist", "QT Artist"),
+             entry("QuickTime", "QuickTime.CreationDate",
+                   "2020:01:02 03:04:05")}),
+        "test", nullptr, "MP4");
+    if (!result.ok()) {
+      return fail("video qt-only reconcile failed");
+    }
+    if (result.value().creator() || result.value().description()) {
+      return fail("video file filled photo properties");
+    }
+    const auto title = result.value().get("iptc.video.title");
+    const auto creator = result.value().get("iptc.video.creator");
+    const auto date = result.value().get("iptc.video.dateCreated");
+    if (!title || title->resolution != umm::Resolution::single) {
+      return fail("video qt-only title not single");
+    }
+    const auto* lang = as_lang(*title);
+    if (!lang || lang->count("x-default") == 0 ||
+        lang->at("x-default") != "QT Title") {
+      return fail("video qt-only title value");
+    }
+    if (!creator || creator->resolution != umm::Resolution::single) {
+      return fail("video qt-only creator not single");
+    }
+    const auto* entities =
+        std::get_if<std::vector<umm::Structure>>(&creator->value.data);
+    if (!entities || entities->size() != 1) {
+      return fail("video qt-only creator shape");
+    }
+    const auto name = entities->front().find("name");
+    const auto* name_lang =
+        name == entities->front().end()
+            ? nullptr
+            : std::get_if<umm::LangAlt>(&name->second.data);
+    if (!name_lang || name_lang->count("x-default") == 0 ||
+        name_lang->at("x-default") != "QT Artist") {
+      return fail("video qt-only creator name");
+    }
+    if (!date || date->resolution != umm::Resolution::single) {
+      return fail("video qt-only date not single");
+    }
+    const auto* dt = as_date(*date);
+    if (!dt || dt->year != 2020 || dt->month != 1 || dt->day != 2) {
+      return fail("video qt-only date value");
+    }
+  }
+
+  {
+    const auto result = umm::internal::reconcile(
+        doc({entry("Xmp", "Xmp.dc.description", "XMP description"),
+             entry("QuickTime", "QuickTime.Description", "QT description"),
+             entry("Xmp", "Xmp.photoshop.DateCreated", "2020:03:03T00:00:00"),
+             entry("QuickTime", "QuickTime.CreationDate",
+                   "2020:01:01 00:00:00")}),
+        "test", nullptr, "MOV");
+    if (!result.ok()) {
+      return fail("video conflict reconcile failed");
+    }
+    const auto description = result.value().get("iptc.video.description");
+    const auto date = result.value().get("iptc.video.dateCreated");
+    if (!description ||
+        description->resolution != umm::Resolution::reconciled) {
+      return fail("video description not reconciled");
+    }
+    const auto* lang = as_lang(*description);
+    if (!lang || lang->count("x-default") == 0 ||
+        lang->at("x-default") != "XMP description") {
+      return fail("video description did not prefer XMP");
+    }
+    if (!date || date->resolution != umm::Resolution::reconciled) {
+      return fail("video date not reconciled");
+    }
+    const auto* dt = as_date(*date);
+    if (!dt || dt->year != 2020 || dt->month != 3 || dt->day != 3) {
+      return fail("video date did not prefer XMP");
+    }
+  }
+
+  {
+    const auto result = umm::internal::reconcile(
+        doc({entry("QuickTime", "QuickTime.GPSCoordinates",
+                   "37.7749, -122.4194, 10"),
+             entry("Xmp", "Xmp.exif.GPSLatitude", "10.0N"),
+             entry("Xmp", "Xmp.exif.GPSLongitude", "10.0E")}),
+        "test", nullptr, "MP4");
+    if (!result.ok()) {
+      return fail("video gps reconcile failed");
+    }
+    const auto gps = result.value().gps();
+    if (!gps || gps->resolution != umm::Resolution::reconciled) {
+      return fail("video gps not reconciled");
+    }
+    const auto* coord = std::get_if<umm::GpsCoordinate>(&gps->value.data);
+    if (!coord || std::fabs(coord->latitude - 37.7749) > 1e-4 ||
+        std::fabs(coord->longitude + 122.4194) > 1e-4) {
+      return fail("video gps did not prefer QuickTime");
     }
   }
 

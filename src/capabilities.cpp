@@ -119,6 +119,24 @@ bool looks_like_webp(const std::vector<unsigned char>& bytes) {
          bytes[9] == 'E' && bytes[10] == 'B' && bytes[11] == 'P';
 }
 
+bool looks_like_iso_bmff(const std::vector<unsigned char>& bytes) {
+  return bytes.size() >= 12 && bytes[4] == 'f' && bytes[5] == 't' &&
+         bytes[6] == 'y' && bytes[7] == 'p';
+}
+
+std::string iso_bmff_type(const std::vector<unsigned char>& bytes,
+                          const std::filesystem::path& media) {
+  if (bytes.size() >= 12 && bytes[8] == 'q' && bytes[9] == 't' &&
+      bytes[10] == ' ' && bytes[11] == ' ') {
+    return "MOV";
+  }
+  const std::string from_ext = type_from_extension(media);
+  if (from_ext == "MOV") {
+    return "MOV";
+  }
+  return "MP4";
+}
+
 bool looks_like_xmp(const std::vector<unsigned char>& bytes) {
   std::string_view text(reinterpret_cast<const char*>(bytes.data()),
                         bytes.size());
@@ -160,6 +178,9 @@ std::string sniff_type(const std::filesystem::path& media) {
     }
     if (looks_like_webp(bytes)) {
       return "WEBP";
+    }
+    if (looks_like_iso_bmff(bytes)) {
+      return iso_bmff_type(bytes, media);
     }
     if (looks_like_xmp(bytes)) {
       return "XMP";
