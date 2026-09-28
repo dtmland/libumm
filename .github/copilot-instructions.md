@@ -18,6 +18,8 @@
 ## Implementation workflow
 
 - Before changing behavior, read the exact files that define it; do not rely solely on names, grep hits, or assumptions from adjacent code.
+- Before starting or continuing implementation, check the current progress tracker and the numbered session docs in `docs/implementation/` to confirm the active phase, prerequisites, and current status of the work.
+- Use `docs/implementation/00-overview.md` as the canonical phase map and the repo progress tracker at `docs/implementation-progress.md` as the quick status reference; do not skip ahead in the numbered sequence without checking the relevant prerequisites and session docs.
 - When a change affects the public API, semantics, or backend behavior, update the relevant design/implementation documents and the corresponding header(s) in `include/umm/` as needed.
 - Keep patches focused and testable. Prefer incremental, reviewable changes over broad rewrites.
 - Validate the affected behavior using the smallest relevant existing tests or checks, and avoid adding new test tooling unless it is clearly necessary.
