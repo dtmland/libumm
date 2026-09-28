@@ -9,7 +9,7 @@ Use it as a quick reference before starting work so you can confirm which phase 
 | Phase | Document | Status | Notes |
 | --- | --- | --- | --- |
 | 00 | [00-overview.md](implementation/00-overview.md) | Active planning reference | Canonical stage map and session ordering. |
-| 01 | [01-repo-skeleton.md](implementation/01-repo-skeleton.md) | Not started | Repo skeleton and baseline build contract. |
+| 01 | [01-repo-skeleton.md](implementation/01-repo-skeleton.md) | Complete | CMake skeleton, `umm::version()`, passing unit test, optional failing self-test. |
 | 02 | [02-pins-and-build-contracts.md](implementation/02-pins-and-build-contracts.md) | Not started | Dependency pins and build contract enforcement. |
 | 03 | [03-ci-matrix.md](implementation/03-ci-matrix.md) | Not started | Multi-OS CI validation. |
 | 04 | [04-exiftool-acquisition.md](implementation/04-exiftool-acquisition.md) | Not started | ExifTool acquisition and validation. |

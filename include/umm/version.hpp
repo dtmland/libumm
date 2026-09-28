@@ -1,8 +1,3 @@
-// ============================================================================
-// DESIGN DRAFT — NOT BUILT, NOT TESTED.
-// Normative statement of API shape per docs/analysis decision M7.
-// Promoted to a real header by docs/implementation/01-repo-skeleton.md.
-// ============================================================================
 #pragma once
 
 #include <string_view>

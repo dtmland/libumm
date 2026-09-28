@@ -10,4 +10,4 @@ libumm does not define a new metadata standard. It provides a unified programmin
 - Plan review and decisions (historical analysis): [docs/analysis/2026-09-27-plan-review-and-decisions.md](docs/analysis/2026-09-27-plan-review-and-decisions.md)
 - **Implementation plan (session-sized):** [docs/implementation/00-overview.md](docs/implementation/00-overview.md)
 - Test media strategy: [docs/test-media-plan.md](docs/test-media-plan.md)
-- Design-draft public API headers (not built; decision M7): [include/umm/](include/umm/)
+- Public API headers: [include/umm/](include/umm/) — `version.hpp` is implemented; remaining headers are design drafts (decision M7) until their implementation sessions.
