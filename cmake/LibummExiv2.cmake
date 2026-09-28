@@ -23,6 +23,14 @@ set(_umm_exiv2_url
 set(_umm_exiv2_download_dir "${PROJECT_SOURCE_DIR}/.cache/exiv2")
 set(_umm_exiv2_source_dir "${PROJECT_SOURCE_DIR}/.cache/exiv2/src")
 
+# FetchContent Expat/zlib/Exiv2 are private build deps. Their install(EXPORT)
+# rules still run at generate time. zlib 1.3.x has no EXPORT, and adding
+# zlibstatic to exiv2Targets then fails because its INTERFACE_INCLUDE_DIRECTORIES
+# point at the source/build trees. libumm links exiv2lib privately and does
+# not install those targets.
+set(_umm_saved_skip_install_rules "${CMAKE_SKIP_INSTALL_RULES}")
+set(CMAKE_SKIP_INSTALL_RULES ON)
+
 # CMP0077: option() in Exiv2 honors these normal variables instead of clobbering them.
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 set(_umm_saved_build_shared_libs "${BUILD_SHARED_LIBS}")
@@ -139,14 +147,7 @@ FetchContent_Declare(umm_exiv2
 
 FetchContent_MakeAvailable(umm_exiv2)
 
-# zlib 1.3.x install(TARGETS zlib zlibstatic) has no EXPORT. Static
-# exiv2lib privately links ZLIB::ZLIB (resolved to zlibstatic), so
-# generate-time install(EXPORT exiv2Targets) fails unless zlibstatic is
-# in an export set. Happens on Windows CI where zlib is FetchContent'd.
-if(TARGET zlibstatic)
-  install(TARGETS zlibstatic EXPORT exiv2Targets)
-endif()
-
+set(CMAKE_SKIP_INSTALL_RULES "${_umm_saved_skip_install_rules}")
 set(BUILD_SHARED_LIBS "${_umm_saved_build_shared_libs}")
 
 if(NOT TARGET exiv2lib)
@@ -180,3 +181,4 @@ unset(_umm_exiv2_url)
 unset(_umm_exiv2_download_dir)
 unset(_umm_exiv2_source_dir)
 unset(_umm_saved_build_shared_libs)
+unset(_umm_saved_skip_install_rules)

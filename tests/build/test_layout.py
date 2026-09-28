@@ -92,12 +92,16 @@ class TestLayout(unittest.TestCase):
         self.assertRegex(text, r'set\(EXPAT_INCLUDE_DIRS ')
         self.assertRegex(text, r'set\(EXPAT_INCLUDE_DIR ')
 
-    def test_exiv2_fetched_zlib_is_in_exiv2_export_set(self) -> None:
-        # zlib's CMake installs zlibstatic without EXPORT. Windows CI fetches
-        # zlib, then Exiv2 install(EXPORT exiv2Targets) fails unless we add
-        # zlibstatic to that export set.
+    def test_exiv2_fetched_deps_skip_install_rules(self) -> None:
+        # zlib 1.3.x install(TARGETS) has no EXPORT. Putting zlibstatic in
+        # exiv2Targets then fails generate: INTERFACE_INCLUDE_DIRECTORIES
+        # is prefixed in the source/build directory. Skip install rules for
+        # FetchContent deps instead; libumm links exiv2lib privately.
         text = LIBUMM_EXIV2_CMAKE.read_text(encoding="utf-8")
-        self.assertIn("install(TARGETS zlibstatic EXPORT exiv2Targets)", text)
+        self.assertIn("CMAKE_SKIP_INSTALL_RULES", text)
+        self.assertNotIn(
+            "install(TARGETS zlibstatic EXPORT exiv2Targets)", text
+        )
         self.assertIn("Zlib not found on system; fetched for Exiv2 PNG", text)
 
     def test_exiv2_windows_unicode_paths_use_memio(self) -> None:
