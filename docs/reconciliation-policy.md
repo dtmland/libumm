@@ -237,9 +237,11 @@ case-insensitive filesystems the OS resolves the name. A path that is itself
 `.xmp` is a standalone sidecar and is not paired with another sidecar.
 
 `ReadOptions::merge_sidecar` (default true) reads the paired sidecar when it
-exists and feeds it to reconciliation as an additional source. `false` reads
-embedded metadata only. A missing sidecar is not an error. A sidecar that
-exists but cannot be parsed fails the read.
+exists and feeds it to reconciliation as an additional source. Sidecar files
+are XMP carriers: only `Xmp.*` raw entries are used even if a backend also
+projects EXIF/IIM copies. `false` reads embedded metadata only. A missing
+sidecar is not an error. A sidecar that exists but cannot be parsed fails the
+read.
 
 `SourceRef::container` is `"embedded"` or `"sidecar"`. No source is dropped.
 

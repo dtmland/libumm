@@ -19,6 +19,16 @@ Backend* select_backend(const ReadOptions& options) {
   return manager.firstAvailable();
 }
 
+void keep_xmp_entries(RawDocument& document) {
+  std::vector<RawEntry> xmp;
+  for (RawEntry& entry : document.entries) {
+    if (entry.key.family == "Xmp" || entry.key.key.rfind("Xmp.", 0) == 0) {
+      xmp.push_back(std::move(entry));
+    }
+  }
+  document.entries = std::move(xmp);
+}
+
 Result<Metadata> finish_read(Result<Metadata> metadata, const ReadOptions& options,
                              std::string_view backend_id) {
   if (!metadata.ok()) {
@@ -54,27 +64,31 @@ Result<Metadata> read(const std::filesystem::path& media, ReadOptions options) {
   if (!raw.ok()) {
     return raw.error();
   }
+  RawDocument document = std::move(raw).value();
 
   if (internal::is_xmp_sidecar_path(media)) {
+    keep_xmp_entries(document);
     RawDocument embedded;
     return finish_read(
-        internal::reconcile(embedded, backend->id(), &raw.value()), options,
+        internal::reconcile(embedded, backend->id(), &document), options,
         backend->id());
   }
 
+  RawDocument sidecar_document;
   const RawDocument* sidecar = nullptr;
-  Result<RawDocument> sidecar_raw{RawDocument{}};
   if (options.merge_sidecar) {
     if (const auto path = findSidecar(media)) {
-      sidecar_raw = backend->readRaw(*path);
+      Result<RawDocument> sidecar_raw = backend->readRaw(*path);
       if (!sidecar_raw.ok()) {
         return sidecar_raw.error();
       }
-      sidecar = &sidecar_raw.value();
+      sidecar_document = std::move(sidecar_raw).value();
+      keep_xmp_entries(sidecar_document);
+      sidecar = &sidecar_document;
     }
   }
 
-  return finish_read(internal::reconcile(raw.value(), backend->id(), sidecar),
+  return finish_read(internal::reconcile(document, backend->id(), sidecar),
                      options, backend->id());
 }
 

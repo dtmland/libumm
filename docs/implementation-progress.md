@@ -22,7 +22,7 @@ Use it as a quick reference before starting work so you can confirm which phase 
 | 11 | [11-exiftool-adapter-read.md](implementation/11-exiftool-adapter-read.md) | Complete | ExifTool `-stay_open` JSON `readRaw()`, Group1:Tag translation, process reuse/timeout/unavailable tests. |
 | 12 | [12-reconciliation-engine.md](implementation/12-reconciliation-engine.md) | Complete | Policy + `umm::read` maps raw JPEG entries to canonical Metadata with provenance. |
 | 13 | [13-write-path-and-safety.md](implementation/13-write-path-and-safety.md) | Complete | JPEG `umm::write` through both backends; write-sync; temp+atomic rename (M3). `makernote.jpg` still deferred (M6). |
-| 14 | [14-xmp-sidecar-and-policy.md](implementation/14-xmp-sidecar-and-policy.md) | In progress | XMP sidecar pairing, read merge, sidecar-only write, StoragePolicy. |
+| 14 | [14-xmp-sidecar-and-policy.md](implementation/14-xmp-sidecar-and-policy.md) | Complete | JPEG+XMP sidecar pairing, read merge/conflict, sidecar-only write, StoragePolicy. Mixed sync deferred (Stage 8). |
 | 15 | [15-capabilities-engine.md](implementation/15-capabilities-engine.md) | Not started | Capability reporting and drift checks. |
 
 ## How to use this document
