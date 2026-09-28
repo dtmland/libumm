@@ -249,12 +249,33 @@ BackendAvailability ExifToolBackend::availability() const {
                                : std::chrono::milliseconds{30'000};
       if (probe.read_all(timeout, out, stderr_text, read_err) ==
           ChildProcess::Read::ok) {
-        while (!out.empty() &&
-               (out.back() == '\n' || out.back() == '\r' ||
-                out.back() == ' ' || out.back() == '\t')) {
-          out.pop_back();
+        auto first_line = [](std::string text) {
+          const auto end = text.find_first_of("\r\n");
+          if (end != std::string::npos) {
+            text.resize(end);
+          }
+          const auto start = text.find_first_not_of(" \t");
+          if (start == std::string::npos) {
+            return std::string{};
+          }
+          text.erase(0, start);
+          while (!text.empty() &&
+                 (text.back() == ' ' || text.back() == '\t')) {
+            text.pop_back();
+          }
+          return text;
+        };
+        version_ = first_line(std::move(out));
+        if (version_.empty()) {
+          const std::string err_line = first_line(std::move(stderr_text));
+          const bool looks_like_version =
+              !err_line.empty() &&
+              err_line.find_first_not_of("0123456789.") == std::string::npos &&
+              err_line.front() != '.';
+          if (looks_like_version) {
+            version_ = err_line;
+          }
         }
-        version_ = std::move(out);
       }
     }
   }

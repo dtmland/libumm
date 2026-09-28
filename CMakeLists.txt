@@ -219,6 +219,14 @@ if(UMM_BUILD_TESTS)
   )
   add_test(NAME test_exiftool_keys COMMAND test_exiftool_keys)
 
+  add_executable(test_child_process tests/backend/test_child_process.cpp)
+  target_link_libraries(test_child_process PRIVATE umm::umm)
+  target_include_directories(test_child_process
+    PRIVATE
+      "${CMAKE_CURRENT_SOURCE_DIR}/src/backends"
+  )
+  add_test(NAME test_child_process COMMAND test_child_process)
+
   add_executable(test_exiftool_unavailable tests/backend/test_exiftool_unavailable.cpp)
   target_link_libraries(test_exiftool_unavailable PRIVATE umm::umm)
   add_test(NAME test_exiftool_unavailable COMMAND test_exiftool_unavailable)
