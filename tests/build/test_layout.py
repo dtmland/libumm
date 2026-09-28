@@ -24,6 +24,10 @@ READ_RAW_CHECKS = REPO_ROOT / "tests" / "backend" / "read_raw_checks.hpp"
 EXIFTOOL_BACKEND = (
     REPO_ROOT / "src" / "backends" / "exiftool" / "exiftool_backend.cpp"
 )
+RECONCILE_POLICY = REPO_ROOT / "docs" / "reconciliation-policy.md"
+RECONCILE_CPP = REPO_ROOT / "src" / "core" / "reconcile.cpp"
+TEST_RECONCILE = REPO_ROOT / "tests" / "unit" / "test_reconcile.cpp"
+TEST_READ = REPO_ROOT / "tests" / "backend" / "test_read.cpp"
 PUBLIC_INCLUDE = REPO_ROOT / "include"
 
 
@@ -44,6 +48,10 @@ class TestLayout(unittest.TestCase):
             EXIFTOOL_KEYS,
             READ_RAW_CHECKS,
             EXIFTOOL_BACKEND,
+            RECONCILE_POLICY,
+            RECONCILE_CPP,
+            TEST_RECONCILE,
+            TEST_READ,
         ):
             self.assertTrue(path.is_file(), f"missing required file: {path}")
 

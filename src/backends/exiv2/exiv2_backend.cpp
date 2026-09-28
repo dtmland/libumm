@@ -1,9 +1,11 @@
 #include "exiv2/exiv2_backend.hpp"
 
+#include <cstddef>
 #include <exception>
 #include <fstream>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -43,16 +45,37 @@ Error map_exiv2_error(const Exiv2::Error& error) {
   }
 }
 
+bool is_xmp_simple_array(std::string_view type) {
+  return type == "XmpBag" || type == "XmpSeq";
+}
+
 template <typename Data>
 void append_entries(RawDocument& document, const Data& data,
                     std::string family) {
   for (const auto& metadatum : data) {
+    const char* type_name = metadatum.typeName();
+    const std::string type = type_name ? type_name : "";
+    // XmpBag/XmpSeq toString() joins items with ", ", which is not a list
+    // item. Expand count>1 like the ExifTool adapter so keywords/creator
+    // reconcile as separate values (docs/reconciliation-policy.md).
+    if (is_xmp_simple_array(type) && metadatum.count() > 1) {
+      for (std::size_t i = 0; i < metadatum.count(); ++i) {
+        RawEntry entry;
+        entry.key.family = family;
+        entry.key.key = metadatum.key();
+        entry.key.key += '[';
+        entry.key.key += std::to_string(i + 1);
+        entry.key.key += ']';
+        entry.type_hint = "XmpText";
+        entry.value = metadatum.toString(i);
+        document.entries.push_back(std::move(entry));
+      }
+      continue;
+    }
     RawEntry entry;
     entry.key.family = family;
     entry.key.key = metadatum.key();
-    if (const char* type_name = metadatum.typeName()) {
-      entry.type_hint = type_name;
-    }
+    entry.type_hint = type;
     entry.value = metadatum.toString();
     document.entries.push_back(std::move(entry));
   }

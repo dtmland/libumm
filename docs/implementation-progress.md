@@ -20,7 +20,7 @@ Use it as a quick reference before starting work so you can confirm which phase 
 | 09 | [09-fixture-corpus.md](implementation/09-fixture-corpus.md) | Complete | Tier A JPEG+XMP corpus, generator, MANIFEST, CMake fixture path. `makernote.jpg` deferred (M6). |
 | 10 | [10-exiv2-backend-read.md](implementation/10-exiv2-backend-read.md) | Complete | Backend contract + Exiv2 `readRaw()` for JPEG fixtures. |
 | 11 | [11-exiftool-adapter-read.md](implementation/11-exiftool-adapter-read.md) | Complete | ExifTool `-stay_open` JSON `readRaw()`, Group1:Tag translation, process reuse/timeout/unavailable tests. |
-| 12 | [12-reconciliation-engine.md](implementation/12-reconciliation-engine.md) | Not started | Reconciliation logic and policy. |
+| 12 | [12-reconciliation-engine.md](implementation/12-reconciliation-engine.md) | Complete | Policy + `umm::read` maps raw JPEG entries to canonical Metadata with provenance. |
 | 13 | [13-write-path-and-safety.md](implementation/13-write-path-and-safety.md) | Not started | Write path and safety constraints. |
 | 14 | [14-xmp-sidecar-and-policy.md](implementation/14-xmp-sidecar-and-policy.md) | Not started | XMP sidecar preservation and policy. |
 | 15 | [15-capabilities-engine.md](implementation/15-capabilities-engine.md) | Not started | Capability reporting and drift checks. |

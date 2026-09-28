@@ -29,6 +29,8 @@ add_library(umm
   src/version.cpp
   src/value.cpp
   src/metadata.cpp
+  src/read.cpp
+  src/core/reconcile.cpp
   src/backends/backend_manager.cpp
   src/backends/exiftool/json.cpp
   src/backends/exiftool/keys.cpp
@@ -43,6 +45,7 @@ target_include_directories(umm
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   PRIVATE
     "${UMM_REGISTRY_GENERATED_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/backends"
 )
 
@@ -102,6 +105,14 @@ if(UMM_BUILD_TESTS)
   add_executable(test_metadata tests/unit/test_metadata.cpp)
   target_link_libraries(test_metadata PRIVATE umm::umm)
   add_test(NAME test_metadata COMMAND test_metadata)
+
+  add_executable(test_reconcile tests/unit/test_reconcile.cpp)
+  target_link_libraries(test_reconcile PRIVATE umm::umm)
+  target_include_directories(test_reconcile
+    PRIVATE
+      "${CMAKE_CURRENT_SOURCE_DIR}/src"
+  )
+  add_test(NAME test_reconcile COMMAND test_reconcile)
 
   add_executable(test_fixtures_path tests/unit/test_fixtures_path.cpp)
   umm_apply_fixture_dir(test_fixtures_path)
@@ -182,6 +193,27 @@ if(UMM_BUILD_TESTS)
   add_executable(test_exiftool_unavailable tests/backend/test_exiftool_unavailable.cpp)
   target_link_libraries(test_exiftool_unavailable PRIVATE umm::umm)
   add_test(NAME test_exiftool_unavailable COMMAND test_exiftool_unavailable)
+
+  if(UMM_EXIV2_ACQUIRED OR (UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE))
+    add_executable(test_read tests/backend/test_read.cpp)
+    target_link_libraries(test_read PRIVATE umm::umm)
+    target_include_directories(test_read
+      PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/backend"
+    )
+    umm_apply_fixture_dir(test_read)
+    if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)
+      file(TO_CMAKE_PATH "${UMM_EXIFTOOL_SCRIPT}" UMM_TEST_READ_EXIFTOOL_SCRIPT)
+      file(TO_CMAKE_PATH "${UMM_PERL_EXECUTABLE}" UMM_TEST_READ_EXIFTOOL_PERL)
+      target_compile_definitions(test_read
+        PRIVATE
+          "UMM_TEST_EXIFTOOL_SCRIPT=R\"(${UMM_TEST_READ_EXIFTOOL_SCRIPT})\""
+          "UMM_TEST_EXIFTOOL_PERL=R\"(${UMM_TEST_READ_EXIFTOOL_PERL})\""
+      )
+    endif()
+    add_test(NAME test_read COMMAND test_read)
+    umm_apply_fixture_dir_to_test(test_read)
+  endif()
 
   if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)
     file(TO_CMAKE_PATH "${UMM_EXIFTOOL_SCRIPT}" UMM_EXIFTOOL_SCRIPT_CMAKE)

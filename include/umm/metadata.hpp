@@ -74,6 +74,8 @@ class Metadata {
   // --- Raw access (read-side; raw write goes through backend options) --------
   const std::vector<RawEntry>& raw() const;
   std::optional<std::string> raw(const RawKey& key) const;
+  // Filled by umm::read from the backend RawDocument. Not a write API.
+  void assignRaw(std::vector<RawEntry> entries);
 
  private:
   std::map<std::string, PropertyValue> properties_;
