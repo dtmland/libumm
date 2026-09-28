@@ -104,6 +104,22 @@ class TestLayout(unittest.TestCase):
         )
         self.assertIn("Zlib not found on system; fetched for Exiv2 PNG", text)
 
+    def test_exiv2_zlib_shim_includes_generated_zconf(self) -> None:
+        # zlib CMake generates zconf.h in BINARY_DIR. Exiv2 0.28 compiles
+        # pngchunk_int.cpp with ZLIB_INCLUDE_DIR only, so the shim must list
+        # both the source tree (zlib.h) and the build tree (zconf.h).
+        text = LIBUMM_EXIV2_CMAKE.read_text(encoding="utf-8")
+        self.assertRegex(
+            text,
+            r'set\(ZLIB_INCLUDE_DIR "\$\{_umm_zlib_include_dir\}" '
+            r'"\$\{_umm_zlib_binary_dir\}"\)',
+        )
+        self.assertRegex(
+            text,
+            r'set\(ZLIB_INCLUDE_DIRS "\$\{_umm_zlib_include_dir\}" '
+            r'"\$\{_umm_zlib_binary_dir\}"\)',
+        )
+
     def test_exiv2_windows_unicode_paths_use_memio(self) -> None:
         # Exiv2 0.28 FileIo::open uses fopen (ACP on Windows). Unicode fixture
         # paths must be read via ifstream + MemIo, not ImageFactory::open(utf8).

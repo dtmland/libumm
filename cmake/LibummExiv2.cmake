@@ -119,18 +119,21 @@ if(NOT ZLIB_FOUND)
   endif()
   file(TO_CMAKE_PATH "${umm_zlib_SOURCE_DIR}" _umm_zlib_include_dir)
   file(TO_CMAKE_PATH "${umm_zlib_BINARY_DIR}" _umm_zlib_binary_dir)
+  # zlib CMake generates zconf.h in BINARY_DIR and renames the copy next to
+  # zlib.h. Exiv2 0.28 compiles pngchunk_int.cpp with ZLIB_INCLUDE_DIR only
+  # (not ZLIB::ZLIB), so both trees must be on that variable.
   file(WRITE "${CMAKE_BINARY_DIR}/zlib-config-shim/FindZLIB.cmake"
     "if(NOT TARGET ZLIB::ZLIB)\n"
     "  add_library(ZLIB::ZLIB ALIAS zlibstatic)\n"
     "endif()\n"
     "set(ZLIB_FOUND TRUE)\n"
-    "set(ZLIB_INCLUDE_DIR \"${_umm_zlib_include_dir}\")\n"
-    "set(ZLIB_INCLUDE_DIRS \"${_umm_zlib_include_dir};${_umm_zlib_binary_dir}\")\n"
+    "set(ZLIB_INCLUDE_DIR \"${_umm_zlib_include_dir}\" \"${_umm_zlib_binary_dir}\")\n"
+    "set(ZLIB_INCLUDE_DIRS \"${_umm_zlib_include_dir}\" \"${_umm_zlib_binary_dir}\")\n"
     "set(ZLIB_LIBRARY zlibstatic)\n"
     "set(ZLIB_LIBRARIES zlibstatic)\n")
   list(PREPEND CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR}/zlib-config-shim")
-  set(ZLIB_INCLUDE_DIR "${_umm_zlib_include_dir}")
-  set(ZLIB_INCLUDE_DIRS "${_umm_zlib_include_dir};${_umm_zlib_binary_dir}")
+  set(ZLIB_INCLUDE_DIR "${_umm_zlib_include_dir}" "${_umm_zlib_binary_dir}")
+  set(ZLIB_INCLUDE_DIRS "${_umm_zlib_include_dir}" "${_umm_zlib_binary_dir}")
   set(ZLIB_FOUND TRUE)
   unset(_umm_zlib_include_dir)
   unset(_umm_zlib_binary_dir)
