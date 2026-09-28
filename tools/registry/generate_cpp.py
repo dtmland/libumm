@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate C++ property tables from the IPTC photo registry JSON."""
+"""Generate C++ property tables from IPTC photo and video registry JSON."""
 
 from __future__ import annotations
 
@@ -10,7 +10,10 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_REGISTRY_DIR = REPO_ROOT / "registry" / "iptc-photo"
+DEFAULT_REGISTRY_DIRS = (
+    REPO_ROOT / "registry" / "iptc-photo",
+    REPO_ROOT / "registry" / "iptc-video",
+)
 DEFAULT_OVERLAY = REPO_ROOT / "registry" / "mappings" / "iptc-exif-overlay.json"
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "src" / "generated"
 
@@ -41,6 +44,8 @@ DATATYPE_ENUM = {
     ("number", "many"): "real",
     ("date-time", "one"): "date_time",
     ("date-time", "many"): "date_time",
+    ("boolean", "one"): "boolean",
+    ("boolean", "many"): "boolean",
     ("struct", "one"): "structure",
     ("struct", "many"): "structure_list",
 }
@@ -83,10 +88,13 @@ def cpp_string(value: str) -> str:
     return f'"{escaped}"'
 
 
-def registry_files(registry_dir: Path) -> list[Path]:
-    files = sorted(path for path in registry_dir.glob("*.json") if path.is_file())
-    if not files:
-        raise CodegenError(f"no registry JSON files in {registry_dir}")
+def registry_files(registry_dirs: list[Path]) -> list[Path]:
+    files: list[Path] = []
+    for registry_dir in registry_dirs:
+        found = sorted(path for path in registry_dir.glob("*.json") if path.is_file())
+        if not found:
+            raise CodegenError(f"no registry JSON files in {registry_dir}")
+        files.extend(found)
     return files
 
 
@@ -220,6 +228,8 @@ def emit_property(record: dict[str, Any], exif_tag: str) -> str:
     iim = representation_field(record, "iptc_iim", "dataset")
     if not exif_tag:
         exif_tag = representation_field(record, "exif", "tag")
+    quicktime = representation_field(record, "quicktime", "key")
+    ebucore = representation_field(record, "ebucore", "path")
     datatype = map_datatype(record)
     cardinality = map_cardinality(record)
     return "\n".join(
@@ -237,6 +247,8 @@ def emit_property(record: dict[str, Any], exif_tag: str) -> str:
             f"            {cpp_string(xmp_prop)},",
             f"            {cpp_string(iim)},",
             f"            {cpp_string(exif_tag)},",
+            f"            {cpp_string(quicktime)},",
+            f"            {cpp_string(ebucore)},",
             "        },",
             "    }",
         ]
@@ -342,18 +354,17 @@ def generate_source(banner_text: str) -> str:
 
 
 def generate(
-    registry_dir: Path,
+    registry_dirs: list[Path],
     overlay_path: Path,
     output_dir: Path,
 ) -> tuple[Path, Path]:
-    files = registry_files(registry_dir)
+    files = registry_files(registry_dirs)
     overlay = load_overlay(overlay_path)
     registries: list[dict[str, Any]] = []
     properties: list[dict[str, Any]] = []
     standards: list[dict[str, str]] = []
     known_ids: dict[str, str] = {}
     seen_ids: set[str] = set()
-    overlay_exif: dict[str, str] = {}
 
     for path in files:
         registry = load_json(path)
@@ -364,7 +375,6 @@ def generate(
         registries.append(registry)
         file_ids = collect_known_ids(registry)
         known_ids.update(file_ids)
-        overlay_exif.update(apply_overlay(registry["properties"], file_ids, overlay, overlay_path))
         for record in registry["properties"]:
             property_id = record["id"]
             if property_id in seen_ids:
@@ -378,6 +388,8 @@ def generate(
                 "source_document": registry["source"]["document"],
             }
         )
+
+    overlay_exif = apply_overlay(properties, known_ids, overlay, overlay_path)
 
     properties.sort(key=lambda item: item["id"])
     banner_text = banner(files, overlay_path, registries)
@@ -408,8 +420,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--registry-dir",
         type=Path,
-        default=DEFAULT_REGISTRY_DIR,
-        help="Directory of registry JSON files (default: registry/iptc-photo)",
+        action="append",
+        dest="registry_dirs",
+        help="Directory of registry JSON files (repeatable; default: iptc-photo and iptc-video)",
     )
     parser.add_argument(
         "--overlay",
@@ -425,8 +438,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     try:
+        registry_dirs = args.registry_dirs or list(DEFAULT_REGISTRY_DIRS)
         generate(
-            args.registry_dir.resolve(),
+            [path.resolve() for path in registry_dirs],
             args.overlay.resolve(),
             args.output_dir.resolve(),
         )

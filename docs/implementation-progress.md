@@ -28,7 +28,7 @@ Use it as a quick reference before starting work so you can confirm which phase 
 | 17 | [17-tiff-support.md](implementation/17-tiff-support.md) | Complete | TIFF fixtures, read/write/round-trip both backends, probe extension. |
 | 18 | [18-png-webp-support.md](implementation/18-png-webp-support.md) | Complete | PNG + WebP fixtures, sniffing, read/write/probes; Exiv2 PNG is EXIF-blind, WebP has no IPTC. |
 | 19 | [19-raw-read-and-sidecar-write.md](implementation/19-raw-read-and-sidecar-write.md) | Complete | DNG fixtures, extension-vs-TIFF sniffing, read/write/round-trip both backends, M3 payload test; read-only-RAW sidecar pattern; proprietary RAW deferred to Tier B. |
-| 20 | [20-vmh-registry-import.md](implementation/20-vmh-registry-import.md) | Not started | Vendored IPTC Video Metadata Hub spec; `registry/iptc-video/` importer + codegen. |
+| 20 | [20-vmh-registry-import.md](implementation/20-vmh-registry-import.md) | Complete | Vendored VMH 1.7; `registry/iptc-video/` importer + codegen; photo/video domains stay distinct. |
 | 21 | [21-video-read-mp4-mov.md](implementation/21-video-read-mp4-mov.md) | Not started | ffmpeg-generated video fixtures; QuickTime key mappings; video reconciliation. |
 | 22 | [22-video-write-and-location.md](implementation/22-video-write-and-location.md) | Not started | ExifTool-only MP4/MOV write incl. `GPSCoordinates`; M3 safety for video. |
 | 23 | [23-conflict-api-detect-merge.md](implementation/23-conflict-api-detect-merge.md) | Not started | Public `detectConflict()` / `merge()` over the existing provenance model. |

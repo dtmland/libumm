@@ -6,6 +6,7 @@ include_guard(GLOBAL)
 
 set(UMM_REGISTRY_GENERATOR "${CMAKE_CURRENT_SOURCE_DIR}/tools/registry/generate_cpp.py")
 set(UMM_REGISTRY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/registry/iptc-photo")
+set(UMM_REGISTRY_VIDEO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/registry/iptc-video")
 set(UMM_REGISTRY_OVERLAY "${CMAKE_CURRENT_SOURCE_DIR}/registry/mappings/iptc-exif-overlay.json")
 set(UMM_REGISTRY_GENERATED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/generated")
 set(UMM_REGISTRY_GENERATED_CPP "${UMM_REGISTRY_GENERATED_DIR}/property_registry.cpp")
@@ -27,7 +28,10 @@ if(NOT EXISTS "${UMM_CAPABILITIES_GENERATED_HPP}")
     "Run: python3 tools/registry/generate_supported_types.py")
 endif()
 
-file(GLOB UMM_REGISTRY_JSON CONFIGURE_DEPENDS "${UMM_REGISTRY_DIR}/*.json")
+file(GLOB UMM_REGISTRY_JSON CONFIGURE_DEPENDS
+  "${UMM_REGISTRY_DIR}/*.json"
+  "${UMM_REGISTRY_VIDEO_DIR}/*.json"
+)
 file(GLOB UMM_CAPABILITIES_JSON CONFIGURE_DEPENDS "${UMM_CAPABILITIES_DIR}/*.json")
 
 find_package(Python3 COMPONENTS Interpreter)
@@ -37,6 +41,7 @@ if(Python3_Interpreter_FOUND)
     OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/umm_registry_codegen.stamp"
     COMMAND "${Python3_EXECUTABLE}" "${UMM_REGISTRY_GENERATOR}"
             --registry-dir "${UMM_REGISTRY_DIR}"
+            --registry-dir "${UMM_REGISTRY_VIDEO_DIR}"
             --overlay "${UMM_REGISTRY_OVERLAY}"
             --output-dir "${UMM_REGISTRY_GENERATED_DIR}"
     COMMAND "${CMAKE_COMMAND}" -E touch
