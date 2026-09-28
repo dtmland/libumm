@@ -6,6 +6,7 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <vector>
 
 namespace umm {
 namespace {
@@ -29,10 +30,41 @@ bool file_exists(const std::filesystem::path& path) {
   return std::filesystem::is_regular_file(path, ec);
 }
 
-StorageDecision jpeg_embedded(std::string backend) {
+bool access_writable(Access access) {
+  return access == Access::read_write || access == Access::create;
+}
+
+std::vector<std::string> embedded_formats(const CategoryAccess& categories) {
+  std::vector<std::string> formats;
+  if (access_writable(categories.xmp)) {
+    formats.emplace_back("XMP");
+  }
+  if (access_writable(categories.exif)) {
+    formats.emplace_back("EXIF");
+  }
+  if (access_writable(categories.iptc_iim)) {
+    formats.emplace_back("IPTC-IIM");
+  }
+  return formats;
+}
+
+const BackendCapability* backend_row(const Capabilities& caps,
+                                     std::string_view id) {
+  for (const BackendCapability& row : caps.backends) {
+    if (row.backend == id) {
+      return &row;
+    }
+  }
+  return caps.backends.empty() ? nullptr : &caps.backends.front();
+}
+
+StorageDecision jpeg_embedded(std::string backend, CategoryAccess categories) {
   StorageDecision decision;
   decision.method = StorageDecision::Method::embedded;
-  decision.formats = {"XMP", "EXIF", "IPTC-IIM"};
+  decision.formats = embedded_formats(categories);
+  if (decision.formats.empty()) {
+    decision.formats = {"XMP", "EXIF", "IPTC-IIM"};
+  }
   decision.backend = std::move(backend);
   return decision;
 }
@@ -45,13 +77,21 @@ StorageDecision xmp_sidecar(std::string backend) {
   return decision;
 }
 
-std::string selected_backend(const WriteOptions& options) {
+std::string selected_backend(const WriteOptions& options,
+                             const Capabilities& caps) {
   BackendManager& manager = BackendManager::instance();
   if (!options.backend.empty()) {
     if (Backend* backend = manager.get(options.backend)) {
       return backend->id();
     }
     return options.backend;
+  }
+  if (!caps.preferred_backend.empty()) {
+    if (Backend* backend = manager.get(caps.preferred_backend)) {
+      if (backend->availability().available) {
+        return backend->id();
+      }
+    }
   }
   if (Backend* backend = manager.firstAvailable()) {
     return backend->id();
@@ -139,8 +179,16 @@ Result<StorageDecision> evaluateStorage(const std::filesystem::path& media,
   if (media.empty()) {
     return Error{ErrorCode::io_not_found, "media path is empty", "", ""};
   }
-  const std::string backend = selected_backend(options);
-  if (internal::is_xmp_sidecar_path(media)) {
+  Result<Capabilities> caps = capabilities(media);
+  if (!caps.ok()) {
+    return caps.error();
+  }
+  const Capabilities& reported = caps.value();
+  const std::string backend = selected_backend(options, reported);
+  const BackendCapability* row = backend_row(reported, backend);
+  const CategoryAccess categories = row ? row->categories : CategoryAccess{};
+
+  if (reported.file_type == "XMP") {
     if (options.policy == StoragePolicy::embedded_only) {
       return Error{ErrorCode::unsupported_capability,
                    "embedded writes are not available for XMP sidecars",
@@ -148,7 +196,7 @@ Result<StorageDecision> evaluateStorage(const std::filesystem::path& media,
     }
     return xmp_sidecar(backend);
   }
-  if (!internal::is_jpeg_path(media)) {
+  if (reported.file_type != "JPEG") {
     return Error{ErrorCode::unsupported_type,
                  "storage policy is implemented for JPEG and XMP sidecar",
                  backend, ""};
@@ -156,7 +204,7 @@ Result<StorageDecision> evaluateStorage(const std::filesystem::path& media,
   switch (options.policy) {
     case StoragePolicy::preferred:
     case StoragePolicy::embedded_only:
-      return jpeg_embedded(backend);
+      return jpeg_embedded(backend, categories);
     case StoragePolicy::sidecar_only:
     case StoragePolicy::sidecar_required:
       return xmp_sidecar(backend);

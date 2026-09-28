@@ -83,7 +83,7 @@ Result<WriteReport> write(const std::filesystem::path& media,
 Result<WriteReport> write(const std::filesystem::path& media,
                           const Metadata& metadata, StoragePolicy policy);
 
-// JPEG: Preferred/EmbeddedOnly → Embedded(XMP+EXIF+IPTC-IIM);
+// JPEG: Preferred/EmbeddedOnly → Embedded formats from capabilities();
 // SidecarOnly/SidecarRequired → Sidecar(XMP). Mixed sync is Stage 8.
 Result<StorageDecision> evaluateStorage(const std::filesystem::path& media,
                                         WriteOptions options = {});

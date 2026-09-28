@@ -1,0 +1,309 @@
+{
+  "schema_version": 1,
+  "source": {
+    "document": "supported-types.md §3 derivation rules and §6 implications",
+    "version": "session 15 transcription",
+    "url": "https://github.com/dtmland/libumm/blob/main/supported-types.md",
+    "retrieval_date": "2026-09-28"
+  },
+  "types": [
+    {
+      "type": "JPEG",
+      "preferred_backend": "exiv2",
+      "sidecar_recommended": false,
+      "extensions": [
+        ".jpg",
+        ".jpeg"
+      ]
+    },
+    {
+      "type": "TIFF",
+      "preferred_backend": "exiv2",
+      "sidecar_recommended": false,
+      "extensions": [
+        ".tif",
+        ".tiff"
+      ]
+    },
+    {
+      "type": "DNG",
+      "preferred_backend": "exiv2",
+      "sidecar_recommended": false,
+      "extensions": [
+        ".dng"
+      ]
+    },
+    {
+      "type": "JP2",
+      "preferred_backend": "exiv2",
+      "sidecar_recommended": false,
+      "extensions": [
+        ".jp2"
+      ]
+    },
+    {
+      "type": "PSD",
+      "preferred_backend": "exiv2",
+      "sidecar_recommended": false,
+      "extensions": [
+        ".psd"
+      ]
+    },
+    {
+      "type": "EXV",
+      "preferred_backend": "exiv2",
+      "sidecar_recommended": false,
+      "extensions": [
+        ".exv"
+      ]
+    },
+    {
+      "type": "ARW",
+      "preferred_backend": "exiv2",
+      "sidecar_recommended": true,
+      "extensions": [
+        ".arw"
+      ]
+    },
+    {
+      "type": "CR2",
+      "preferred_backend": "exiv2",
+      "sidecar_recommended": true,
+      "extensions": [
+        ".cr2"
+      ]
+    },
+    {
+      "type": "NEF",
+      "preferred_backend": "exiv2",
+      "sidecar_recommended": true,
+      "extensions": [
+        ".nef"
+      ]
+    },
+    {
+      "type": "ORF",
+      "preferred_backend": "exiv2",
+      "sidecar_recommended": true,
+      "extensions": [
+        ".orf"
+      ]
+    },
+    {
+      "type": "PEF",
+      "preferred_backend": "exiv2",
+      "sidecar_recommended": true,
+      "extensions": [
+        ".pef"
+      ]
+    },
+    {
+      "type": "SRW",
+      "preferred_backend": "exiv2",
+      "sidecar_recommended": true,
+      "extensions": [
+        ".srw"
+      ]
+    },
+    {
+      "type": "PGF",
+      "preferred_backend": "exiv2",
+      "sidecar_recommended": false,
+      "extensions": [
+        ".pgf"
+      ]
+    },
+    {
+      "type": "PNG",
+      "preferred_backend": "exiv2",
+      "sidecar_recommended": false,
+      "extensions": [
+        ".png"
+      ]
+    },
+    {
+      "type": "WEBP",
+      "preferred_backend": "exiv2",
+      "sidecar_recommended": false,
+      "extensions": [
+        ".webp"
+      ]
+    },
+    {
+      "type": "EPS",
+      "preferred_backend": "exiv2",
+      "sidecar_recommended": false,
+      "extensions": [
+        ".eps"
+      ]
+    },
+    {
+      "type": "XMP",
+      "preferred_backend": "exiv2",
+      "sidecar_recommended": false,
+      "extensions": [
+        ".xmp"
+      ]
+    },
+    {
+      "type": "CRW",
+      "preferred_backend": "exiv2",
+      "sidecar_recommended": true,
+      "extensions": [
+        ".crw"
+      ]
+    },
+    {
+      "type": "DCP",
+      "preferred_backend": "exiv2",
+      "sidecar_recommended": true,
+      "extensions": [
+        ".dcp"
+      ]
+    },
+    {
+      "type": "CR3",
+      "preferred_backend": "exiftool",
+      "sidecar_recommended": true,
+      "extensions": [
+        ".cr3"
+      ]
+    },
+    {
+      "type": "HEIC",
+      "preferred_backend": "exiftool",
+      "sidecar_recommended": true,
+      "extensions": [
+        ".heic"
+      ]
+    },
+    {
+      "type": "HEIF",
+      "preferred_backend": "exiftool",
+      "sidecar_recommended": true,
+      "extensions": [
+        ".heif"
+      ]
+    },
+    {
+      "type": "AVIF",
+      "preferred_backend": "exiftool",
+      "sidecar_recommended": true,
+      "extensions": [
+        ".avif"
+      ]
+    },
+    {
+      "type": "JXL",
+      "preferred_backend": "exiftool",
+      "sidecar_recommended": true,
+      "extensions": [
+        ".jxl"
+      ]
+    },
+    {
+      "type": "RAF",
+      "preferred_backend": "exiftool",
+      "sidecar_recommended": true,
+      "extensions": [
+        ".raf"
+      ]
+    },
+    {
+      "type": "RW2",
+      "preferred_backend": "exiftool",
+      "sidecar_recommended": true,
+      "extensions": [
+        ".rw2"
+      ]
+    },
+    {
+      "type": "MRW",
+      "preferred_backend": "exiftool",
+      "sidecar_recommended": true,
+      "extensions": [
+        ".mrw"
+      ]
+    },
+    {
+      "type": "SR2",
+      "preferred_backend": "exiftool",
+      "sidecar_recommended": true,
+      "extensions": [
+        ".sr2"
+      ]
+    },
+    {
+      "type": "GIF",
+      "preferred_backend": "exiftool",
+      "sidecar_recommended": false,
+      "extensions": [
+        ".gif"
+      ]
+    },
+    {
+      "type": "BMP",
+      "preferred_backend": "exiftool",
+      "sidecar_recommended": false,
+      "extensions": [
+        ".bmp"
+      ]
+    },
+    {
+      "type": "TGA",
+      "preferred_backend": "exiv2",
+      "sidecar_recommended": false,
+      "extensions": [
+        ".tga"
+      ]
+    },
+    {
+      "type": "MOV",
+      "preferred_backend": "exiftool",
+      "sidecar_recommended": false,
+      "extensions": [
+        ".mov"
+      ]
+    },
+    {
+      "type": "MP4",
+      "preferred_backend": "exiftool",
+      "sidecar_recommended": false,
+      "extensions": [
+        ".mp4"
+      ]
+    },
+    {
+      "type": "MKV",
+      "preferred_backend": "exiftool",
+      "sidecar_recommended": false,
+      "extensions": [
+        ".mkv"
+      ]
+    },
+    {
+      "type": "AVI",
+      "preferred_backend": "exiftool",
+      "sidecar_recommended": false,
+      "extensions": [
+        ".avi"
+      ]
+    },
+    {
+      "type": "WAV",
+      "preferred_backend": "exiftool",
+      "sidecar_recommended": false,
+      "extensions": [
+        ".wav"
+      ]
+    },
+    {
+      "type": "ASF",
+      "preferred_backend": "exiftool",
+      "sidecar_recommended": false,
+      "extensions": [
+        ".asf"
+      ]
+    }
+  ]
+}

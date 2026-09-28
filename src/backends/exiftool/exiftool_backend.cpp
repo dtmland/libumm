@@ -9,6 +9,7 @@
 #include "exiftool/json.hpp"
 #include "exiftool/keys.hpp"
 #include "exiftool/process.hpp"
+#include "umm/capabilities.hpp"
 
 namespace umm::internal {
 namespace {
@@ -536,9 +537,24 @@ Result<void> ExifToolBackend::writeRaw(const std::filesystem::path& media,
   }
 }
 
-Result<void> ExifToolBackend::typeCapabilities(std::string_view) const {
-  return make_error(ErrorCode::internal, "typeCapabilities is not implemented",
-                    "");
+Result<void> ExifToolBackend::typeCapabilities(
+    std::string_view media_type) const {
+  resolve();
+  if (!absence_reason_.empty()) {
+    return make_error(ErrorCode::backend_unavailable, absence_reason_, "");
+  }
+  Result<Capabilities> caps = capabilitiesForType(media_type);
+  if (!caps.ok()) {
+    return caps.error();
+  }
+  for (const BackendCapability& row : caps.value().backends) {
+    if (row.backend == "exiftool") {
+      return {};
+    }
+  }
+  return make_error(ErrorCode::unsupported_type,
+                    "ExifTool does not list this media type",
+                    std::string(media_type));
 }
 
 ExifToolBackend::~ExifToolBackend() { shutdown(); }

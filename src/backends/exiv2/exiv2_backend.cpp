@@ -14,6 +14,7 @@
 #include <exiv2/exiv2.hpp>
 
 #include "exiv2_shim.hpp"
+#include "umm/capabilities.hpp"
 
 namespace umm::internal {
 namespace {
@@ -444,9 +445,19 @@ class Exiv2Backend final : public Backend {
     }
   }
 
-  Result<void> typeCapabilities(std::string_view) const override {
-    return make_error(ErrorCode::internal,
-                      "typeCapabilities is not implemented", "");
+  Result<void> typeCapabilities(std::string_view media_type) const override {
+    Result<Capabilities> caps = capabilitiesForType(media_type);
+    if (!caps.ok()) {
+      return caps.error();
+    }
+    for (const BackendCapability& row : caps.value().backends) {
+      if (row.backend == "exiv2") {
+        return {};
+      }
+    }
+    return make_error(ErrorCode::unsupported_type,
+                      "Exiv2 does not list this media type",
+                      std::string(media_type));
   }
 };
 

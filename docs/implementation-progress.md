@@ -23,7 +23,7 @@ Use it as a quick reference before starting work so you can confirm which phase 
 | 12 | [12-reconciliation-engine.md](implementation/12-reconciliation-engine.md) | Complete | Policy + `umm::read` maps raw JPEG entries to canonical Metadata with provenance. |
 | 13 | [13-write-path-and-safety.md](implementation/13-write-path-and-safety.md) | Complete | JPEG `umm::write` through both backends; write-sync; temp+atomic rename (M3). `makernote.jpg` still deferred (M6). |
 | 14 | [14-xmp-sidecar-and-policy.md](implementation/14-xmp-sidecar-and-policy.md) | Complete | JPEG+XMP sidecar pairing, read merge/conflict, sidecar-only write, StoragePolicy. Mixed sync deferred (Stage 8). |
-| 15 | [15-capabilities-engine.md](implementation/15-capabilities-engine.md) | Not started | Capability reporting and drift checks. |
+| 15 | [15-capabilities-engine.md](implementation/15-capabilities-engine.md) | Complete | `umm::capabilities()` from `registry/capabilities/`; generated `supported-types.md`; JPEG/XMP probe drift tests. |
 
 ## How to use this document
 

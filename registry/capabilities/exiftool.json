@@ -1,0 +1,3364 @@
+{
+  "schema_version": 1,
+  "coverage": "partial",
+  "source": {
+    "document": "ExifTool README file types and meta-information formats",
+    "version": "snapshot transcribed for libumm session 15",
+    "url": "https://github.com/exiftool/exiftool/blob/master/README",
+    "retrieval_date": "2026-09-27"
+  },
+  "overlap_types": [
+    {
+      "type": "ARW",
+      "listed": true,
+      "file": "read_write",
+      "location": {
+        "gps_exif": "read_write",
+        "named_place": "read_write",
+        "xmp_location": "read_write",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "",
+      "categories": {
+        "exif": "read_write",
+        "iptc": "read_write",
+        "xmp": "read_write",
+        "comments": "none",
+        "icc": "read_write",
+        "thumbnail": "read_write"
+      }
+    },
+    {
+      "type": "AVIF",
+      "listed": true,
+      "file": "read_write",
+      "location": {
+        "gps_exif": "read_write",
+        "named_place": "read_write",
+        "xmp_location": "read_write",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "Write requires ExifTool",
+      "categories": {
+        "exif": "read_write",
+        "iptc": "read_write",
+        "xmp": "read_write",
+        "comments": "none",
+        "icc": "none",
+        "thumbnail": "read_write"
+      }
+    },
+    {
+      "type": "BMP",
+      "listed": true,
+      "file": "read",
+      "location": {
+        "gps_exif": "none",
+        "named_place": "none",
+        "xmp_location": "none",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "Read only; no ExifTool write"
+    },
+    {
+      "type": "CR2",
+      "listed": true,
+      "file": "read_write",
+      "location": {
+        "gps_exif": "read_write",
+        "named_place": "read_write",
+        "xmp_location": "read_write",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "",
+      "categories": {
+        "exif": "read_write",
+        "iptc": "read_write",
+        "xmp": "read_write",
+        "comments": "none",
+        "icc": "read_write",
+        "thumbnail": "read_write"
+      }
+    },
+    {
+      "type": "CR3",
+      "listed": true,
+      "file": "read_write",
+      "location": {
+        "gps_exif": "read_write",
+        "named_place": "read_write",
+        "xmp_location": "read_write",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "Write requires ExifTool",
+      "categories": {
+        "exif": "read_write",
+        "iptc": "read_write",
+        "xmp": "read_write",
+        "comments": "none",
+        "icc": "none",
+        "thumbnail": "read_write"
+      }
+    },
+    {
+      "type": "CRW",
+      "listed": true,
+      "file": "read_write",
+      "location": {
+        "gps_exif": "read_write",
+        "named_place": "read_write",
+        "xmp_location": "read_write",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "Broader than Exiv2 GPS-only",
+      "categories": {
+        "exif": "read_write",
+        "iptc": "none",
+        "xmp": "read_write",
+        "comments": "none",
+        "icc": "none",
+        "thumbnail": "none"
+      }
+    },
+    {
+      "type": "DCP",
+      "listed": true,
+      "file": "read_write",
+      "location": {
+        "gps_exif": "read_write",
+        "named_place": "read_write",
+        "xmp_location": "read_write",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "Broader than Exiv2 GPS-only",
+      "categories": {
+        "exif": "read_write",
+        "iptc": "none",
+        "xmp": "read_write",
+        "comments": "none",
+        "icc": "none",
+        "thumbnail": "none"
+      }
+    },
+    {
+      "type": "DNG",
+      "listed": true,
+      "file": "read_write",
+      "location": {
+        "gps_exif": "read_write",
+        "named_place": "read_write",
+        "xmp_location": "read_write",
+        "container_gps": "none",
+        "geotiff": "create"
+      },
+      "notes": "",
+      "categories": {
+        "exif": "read_write",
+        "iptc": "read_write",
+        "xmp": "read_write",
+        "comments": "none",
+        "icc": "read_write",
+        "thumbnail": "read_write"
+      }
+    },
+    {
+      "type": "EPS",
+      "listed": true,
+      "file": "read_write",
+      "location": {
+        "gps_exif": "read_write",
+        "named_place": "read_write",
+        "xmp_location": "read_write",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "Broader than XMP-only",
+      "categories": {
+        "exif": "read_write",
+        "iptc": "read_write",
+        "xmp": "read_write",
+        "comments": "none",
+        "icc": "none",
+        "thumbnail": "none"
+      }
+    },
+    {
+      "type": "EXV",
+      "listed": true,
+      "file": "create",
+      "location": {
+        "gps_exif": "create",
+        "named_place": "create",
+        "xmp_location": "create",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "ExifTool can create EXV",
+      "categories": {
+        "exif": "create",
+        "iptc": "create",
+        "xmp": "create",
+        "comments": "none",
+        "icc": "create",
+        "thumbnail": "create"
+      }
+    },
+    {
+      "type": "GIF",
+      "listed": true,
+      "file": "read_write",
+      "location": {
+        "gps_exif": "read_write",
+        "named_place": "read_write",
+        "xmp_location": "read_write",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "Write location via ExifTool",
+      "categories": {
+        "exif": "read_write",
+        "iptc": "read_write",
+        "xmp": "read_write",
+        "comments": "none",
+        "icc": "none",
+        "thumbnail": "none"
+      }
+    },
+    {
+      "type": "HEIC",
+      "listed": true,
+      "file": "read_write",
+      "location": {
+        "gps_exif": "read_write",
+        "named_place": "read_write",
+        "xmp_location": "read_write",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "Write requires ExifTool",
+      "categories": {
+        "exif": "read_write",
+        "iptc": "read_write",
+        "xmp": "read_write",
+        "comments": "none",
+        "icc": "none",
+        "thumbnail": "read_write"
+      }
+    },
+    {
+      "type": "HEIF",
+      "listed": true,
+      "file": "read_write",
+      "location": {
+        "gps_exif": "read_write",
+        "named_place": "read_write",
+        "xmp_location": "read_write",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "Write requires ExifTool",
+      "categories": {
+        "exif": "read_write",
+        "iptc": "read_write",
+        "xmp": "read_write",
+        "comments": "none",
+        "icc": "none",
+        "thumbnail": "read_write"
+      }
+    },
+    {
+      "type": "JP2",
+      "listed": true,
+      "file": "read_write",
+      "location": {
+        "gps_exif": "read_write",
+        "named_place": "read_write",
+        "xmp_location": "read_write",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "",
+      "categories": {
+        "exif": "read_write",
+        "iptc": "read_write",
+        "xmp": "read_write",
+        "comments": "none",
+        "icc": "read_write",
+        "thumbnail": "read_write"
+      }
+    },
+    {
+      "type": "JPEG",
+      "listed": true,
+      "file": "read_write",
+      "location": {
+        "gps_exif": "read_write",
+        "named_place": "read_write",
+        "xmp_location": "read_write",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "",
+      "categories": {
+        "exif": "read_write",
+        "iptc": "read_write",
+        "xmp": "read_write",
+        "comments": "none",
+        "icc": "read_write",
+        "thumbnail": "read_write"
+      }
+    },
+    {
+      "type": "JXL",
+      "listed": true,
+      "file": "read_write",
+      "location": {
+        "gps_exif": "read_write",
+        "named_place": "read_write",
+        "xmp_location": "read_write",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "Write requires ExifTool",
+      "categories": {
+        "exif": "read_write",
+        "iptc": "read_write",
+        "xmp": "read_write",
+        "comments": "none",
+        "icc": "none",
+        "thumbnail": "read_write"
+      }
+    },
+    {
+      "type": "MRW",
+      "listed": true,
+      "file": "read_write",
+      "location": {
+        "gps_exif": "read_write",
+        "named_place": "read_write",
+        "xmp_location": "read_write",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "Write requires ExifTool",
+      "categories": {
+        "exif": "read_write",
+        "iptc": "read_write",
+        "xmp": "read_write",
+        "comments": "none",
+        "icc": "none",
+        "thumbnail": "read_write"
+      }
+    },
+    {
+      "type": "NEF",
+      "listed": true,
+      "file": "read_write",
+      "location": {
+        "gps_exif": "read_write",
+        "named_place": "read_write",
+        "xmp_location": "read_write",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "",
+      "categories": {
+        "exif": "read_write",
+        "iptc": "read_write",
+        "xmp": "read_write",
+        "comments": "none",
+        "icc": "read_write",
+        "thumbnail": "read_write"
+      }
+    },
+    {
+      "type": "ORF",
+      "listed": true,
+      "file": "read_write",
+      "location": {
+        "gps_exif": "read_write",
+        "named_place": "read_write",
+        "xmp_location": "read_write",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "",
+      "categories": {
+        "exif": "read_write",
+        "iptc": "read_write",
+        "xmp": "read_write",
+        "comments": "none",
+        "icc": "none",
+        "thumbnail": "read_write"
+      }
+    },
+    {
+      "type": "PEF",
+      "listed": true,
+      "file": "read_write",
+      "location": {
+        "gps_exif": "read_write",
+        "named_place": "read_write",
+        "xmp_location": "read_write",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "",
+      "categories": {
+        "exif": "read_write",
+        "iptc": "read_write",
+        "xmp": "read_write",
+        "comments": "none",
+        "icc": "read_write",
+        "thumbnail": "read_write"
+      }
+    },
+    {
+      "type": "PGF",
+      "listed": true,
+      "file": "read",
+      "location": {
+        "gps_exif": "read",
+        "named_place": "read",
+        "xmp_location": "read",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "ExifTool read-only; prefer Exiv2 to write",
+      "categories": {
+        "exif": "read",
+        "iptc": "read",
+        "xmp": "read",
+        "comments": "read",
+        "icc": "read",
+        "thumbnail": "none"
+      }
+    },
+    {
+      "type": "PNG",
+      "listed": true,
+      "file": "read_write",
+      "location": {
+        "gps_exif": "read_write",
+        "named_place": "read_write",
+        "xmp_location": "read_write",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "Includes EXIF GPS, which Exiv2 does not list",
+      "categories": {
+        "exif": "read_write",
+        "iptc": "read_write",
+        "xmp": "read_write",
+        "comments": "none",
+        "icc": "read_write",
+        "thumbnail": "read_write"
+      }
+    },
+    {
+      "type": "PSD",
+      "listed": true,
+      "file": "read_write",
+      "location": {
+        "gps_exif": "read_write",
+        "named_place": "read_write",
+        "xmp_location": "read_write",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "",
+      "categories": {
+        "exif": "read_write",
+        "iptc": "read_write",
+        "xmp": "read_write",
+        "comments": "none",
+        "icc": "none",
+        "thumbnail": "read_write"
+      }
+    },
+    {
+      "type": "RAF",
+      "listed": true,
+      "file": "read_write",
+      "location": {
+        "gps_exif": "read_write",
+        "named_place": "read_write",
+        "xmp_location": "read_write",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "Write requires ExifTool",
+      "categories": {
+        "exif": "read_write",
+        "iptc": "read_write",
+        "xmp": "read_write",
+        "comments": "none",
+        "icc": "none",
+        "thumbnail": "read_write"
+      }
+    },
+    {
+      "type": "RW2",
+      "listed": true,
+      "file": "read_write",
+      "location": {
+        "gps_exif": "read_write",
+        "named_place": "read_write",
+        "xmp_location": "read_write",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "Write requires ExifTool",
+      "categories": {
+        "exif": "read_write",
+        "iptc": "read_write",
+        "xmp": "read_write",
+        "comments": "none",
+        "icc": "none",
+        "thumbnail": "read_write"
+      }
+    },
+    {
+      "type": "SR2",
+      "listed": true,
+      "file": "read_write",
+      "location": {
+        "gps_exif": "read_write",
+        "named_place": "read_write",
+        "xmp_location": "read_write",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "Write requires ExifTool",
+      "categories": {
+        "exif": "read_write",
+        "iptc": "read_write",
+        "xmp": "read_write",
+        "comments": "none",
+        "icc": "none",
+        "thumbnail": "read_write"
+      }
+    },
+    {
+      "type": "SRW",
+      "listed": true,
+      "file": "read_write",
+      "location": {
+        "gps_exif": "read_write",
+        "named_place": "read_write",
+        "xmp_location": "read_write",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "",
+      "categories": {
+        "exif": "read_write",
+        "iptc": "read_write",
+        "xmp": "read_write",
+        "comments": "none",
+        "icc": "none",
+        "thumbnail": "read_write"
+      }
+    },
+    {
+      "type": "TGA",
+      "listed": false,
+      "file": "none",
+      "location": {
+        "gps_exif": "none",
+        "named_place": "none",
+        "xmp_location": "none",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "not listed"
+    },
+    {
+      "type": "TIFF",
+      "listed": true,
+      "file": "read_write",
+      "location": {
+        "gps_exif": "read_write",
+        "named_place": "read_write",
+        "xmp_location": "read_write",
+        "container_gps": "none",
+        "geotiff": "create"
+      },
+      "notes": "",
+      "categories": {
+        "exif": "read_write",
+        "iptc": "read_write",
+        "xmp": "read_write",
+        "comments": "none",
+        "icc": "read_write",
+        "thumbnail": "read_write"
+      }
+    },
+    {
+      "type": "WEBP",
+      "listed": true,
+      "file": "read_write",
+      "location": {
+        "gps_exif": "read_write",
+        "named_place": "read_write",
+        "xmp_location": "read_write",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "Exif/XMP; no separate IPTC column",
+      "categories": {
+        "exif": "read_write",
+        "iptc": "none",
+        "xmp": "read_write",
+        "comments": "none",
+        "icc": "read_write",
+        "thumbnail": "read_write"
+      }
+    },
+    {
+      "type": "XMP",
+      "listed": true,
+      "file": "create",
+      "location": {
+        "gps_exif": "none",
+        "named_place": "create",
+        "xmp_location": "create",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "ExifTool can create sidecars from scratch",
+      "categories": {
+        "exif": "none",
+        "iptc": "none",
+        "xmp": "create",
+        "comments": "none",
+        "icc": "none",
+        "thumbnail": "none"
+      }
+    },
+    {
+      "type": "MOV",
+      "listed": true,
+      "file": "read_write",
+      "location": {
+        "gps_exif": "none",
+        "named_place": "read_write",
+        "xmp_location": "read_write",
+        "container_gps": "read_write",
+        "geotiff": "none"
+      },
+      "notes": "GPSCoordinates / XMP; QuickTime-family write",
+      "categories": {
+        "exif": "none",
+        "iptc": "none",
+        "xmp": "read_write",
+        "comments": "none",
+        "icc": "none",
+        "thumbnail": "none"
+      }
+    },
+    {
+      "type": "MP4",
+      "listed": true,
+      "file": "read_write",
+      "location": {
+        "gps_exif": "none",
+        "named_place": "read_write",
+        "xmp_location": "read_write",
+        "container_gps": "read_write",
+        "geotiff": "none"
+      },
+      "notes": "GPSCoordinates / XMP; QuickTime-family write",
+      "categories": {
+        "exif": "none",
+        "iptc": "none",
+        "xmp": "read_write",
+        "comments": "none",
+        "icc": "none",
+        "thumbnail": "none"
+      }
+    },
+    {
+      "type": "MKV",
+      "listed": true,
+      "file": "read",
+      "location": {
+        "gps_exif": "none",
+        "named_place": "none",
+        "xmp_location": "none",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "Read-only; no location write"
+    },
+    {
+      "type": "AVI",
+      "listed": true,
+      "file": "read",
+      "location": {
+        "gps_exif": "none",
+        "named_place": "none",
+        "xmp_location": "none",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "Read-only; no location write"
+    },
+    {
+      "type": "WAV",
+      "listed": true,
+      "file": "read",
+      "location": {
+        "gps_exif": "none",
+        "named_place": "none",
+        "xmp_location": "none",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "Read-only in both backends; no location write"
+    },
+    {
+      "type": "ASF",
+      "listed": true,
+      "file": "read",
+      "location": {
+        "gps_exif": "none",
+        "named_place": "none",
+        "xmp_location": "none",
+        "container_gps": "none",
+        "geotiff": "none"
+      },
+      "notes": "Read-only; no location write"
+    }
+  ],
+  "extra_groups": [
+    {
+      "id": "still",
+      "title": "Additional still image and graphics",
+      "coverage": "complete",
+      "types": [
+        {
+          "type": "360",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "BPG",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "BTF",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "CUR",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "DPX",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "EXR",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "FLIF",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "FPX",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "HDR",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "ICO",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "J2C",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "JNG",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "MNG",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "MPO",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "MIFF",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "PBM",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "PCD",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "PCX",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "PFM",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "PGM",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "PICT",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "PPM",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "PS",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "PSB",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "PSP",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "QTIF",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "SVG",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "WPG",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "XCF",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "XISF",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "HDP",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": "TIFF-family"
+        },
+        {
+          "type": "WDP",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": "TIFF-family"
+        },
+        {
+          "type": "THM",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": "JPEG thumbnail naming"
+        }
+      ]
+    },
+    {
+      "id": "raw",
+      "title": "Additional camera RAW / vendor still",
+      "coverage": "complete",
+      "types": [
+        {
+          "type": "3FR",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "ARQ",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "CRM",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": "CR3 sibling"
+        },
+        {
+          "type": "CS1",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "DCR",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "ERF",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "FFF",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "GPR",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "IIQ",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "INSP",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "K25",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "KDC",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "MEF",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "MOS",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "NRW",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "ORI",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "RAW",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "RWL",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "SRF",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "X3F",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "id": "video",
+      "title": "Video and timed media (beyond the Exiv2 rudimentary set)",
+      "coverage": "complete",
+      "types": [
+        {
+          "type": "3G2",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "read_write",
+            "xmp_location": "read_write",
+            "container_gps": "read_write",
+            "geotiff": "none"
+          },
+          "notes": "QuickTime-family"
+        },
+        {
+          "type": "3GP",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "read_write",
+            "xmp_location": "read_write",
+            "container_gps": "read_write",
+            "geotiff": "none"
+          },
+          "notes": "QuickTime-family"
+        },
+        {
+          "type": "DIVX",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "DV",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "DVB",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "read_write",
+            "geotiff": "none"
+          },
+          "notes": "QuickTime-family"
+        },
+        {
+          "type": "DVR-MS",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "F4A",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "read_write",
+            "geotiff": "none"
+          },
+          "notes": "QuickTime-family"
+        },
+        {
+          "type": "F4V",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "read_write",
+            "geotiff": "none"
+          },
+          "notes": "QuickTime-family"
+        },
+        {
+          "type": "FLA",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "FLV",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "GLV",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "read_write",
+            "geotiff": "none"
+          },
+          "notes": "QuickTime-family"
+        },
+        {
+          "type": "INSV",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "LRV",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "read_write",
+            "geotiff": "none"
+          },
+          "notes": "QuickTime-family"
+        },
+        {
+          "type": "M2TS",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "M4A",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "read_write",
+            "geotiff": "none"
+          },
+          "notes": "QuickTime-family"
+        },
+        {
+          "type": "M4V",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "read_write",
+            "geotiff": "none"
+          },
+          "notes": "QuickTime-family"
+        },
+        {
+          "type": "MKS",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "MPG",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "MQV",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "read_write",
+            "geotiff": "none"
+          },
+          "notes": "QuickTime-family"
+        },
+        {
+          "type": "MXF",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "OGV",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "R3D",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "RM",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "SEQ",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "SWF",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "WEBM",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "WMV",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "WTV",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "id": "audio",
+      "title": "Audio",
+      "coverage": "complete",
+      "types": [
+        {
+          "type": "AAC",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "AAX",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "read_write",
+            "geotiff": "none"
+          },
+          "notes": "QuickTime-family writable exception"
+        },
+        {
+          "type": "AIFF",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "APE",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "DSF",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "DSS",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "FLAC",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "LA",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "MKA",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "MP3",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "MPC",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "OGG",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "OFR",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "OPUS",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "RA",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "WMA",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "WV",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "id": "documents",
+      "title": "Documents, office, ebook, page layout",
+      "coverage": "complete",
+      "types": [
+        {
+          "type": "AI",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "read_write",
+            "xmp_location": "read_write",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "DOC",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "DOCX",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "EPUB",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "HTML",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "IDML",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "IND",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "read_write",
+            "xmp_location": "read_write",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "INX",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "KEY",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "MAX",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "MOBI",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "NUMBERS",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "ODP",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "ODS",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "ODT",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "PAGES",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "PDF",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "read_write",
+            "xmp_location": "read_write",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": "Location typically XMP"
+        },
+        {
+          "type": "PPT",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "PPTX",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "RTF",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "VSD",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "VSDX",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "XLS",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "XLSX",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "AZW",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "CHM",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "DJVU",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "id": "sidecars",
+      "title": "Sidecars, metadata-only, and color",
+      "coverage": "complete",
+      "types": [
+        {
+          "type": "AAE",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "C2PA",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "DR4",
+          "listed": true,
+          "file": "create",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "EXIF",
+          "listed": true,
+          "file": "create",
+          "location": {
+            "gps_exif": "create",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": "Metadata-only EXIF file"
+        },
+        {
+          "type": "ICC",
+          "listed": true,
+          "file": "create",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "JSON",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "MIE",
+          "listed": true,
+          "file": "create",
+          "location": {
+            "gps_exif": "create",
+            "named_place": "create",
+            "xmp_location": "create",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "MODD",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "NKSC",
+          "listed": true,
+          "file": "read_write",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "ONP",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "VRD",
+          "listed": true,
+          "file": "create",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "id": "exotic",
+      "title": "Fonts, executables, archives, scientific, and other",
+      "coverage": "partial",
+      "types": [
+        {
+          "type": "7Z",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "A",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "AA",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "ACR",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "AFM",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "COS",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "CSV",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "CZI",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "DCM",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "DFONT",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "DLL",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "DYLIB",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "EIP",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "EXE",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "FIT",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "FITS",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "FPF",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "GZ",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "ICS",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "ISO",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "ITC",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "KVAR",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "LFP",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "LIF",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "LNK",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "MACOS",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "MOI",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "MRC",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "NKA",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "NXD",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "O",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "OTF",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "PAC",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "PCAP",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "PCAPNG",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "PDB",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "PFA",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "PFB",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "PLIST",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "PMP",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "RAM",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "RAR",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "RIFF",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "RSRC",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "RWZ",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "SKETCH",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "SO",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "TNEF",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "TORRENT",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "TTC",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "TTF",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "TXT",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "URL",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "VCF",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "VNT",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "WOFF",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "WOFF2",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        },
+        {
+          "type": "ZIP",
+          "listed": true,
+          "file": "read",
+          "location": {
+            "gps_exif": "none",
+            "named_place": "none",
+            "xmp_location": "none",
+            "container_gps": "none",
+            "geotiff": "none"
+          },
+          "notes": ""
+        }
+      ]
+    }
+  ],
+  "meta_formats": {
+    "read_write_create": [
+      "EXIF",
+      "GPS",
+      "IPTC",
+      "XMP",
+      "MakerNotes",
+      "Photoshop IRB",
+      "ICC Profile",
+      "MIE",
+      "JFIF",
+      "Ducky APP12",
+      "PDF",
+      "PNG",
+      "Canon VRD",
+      "Nikon Capture",
+      "GeoTIFF",
+      "CIFF",
+      "AFCP",
+      "Kodak Meta",
+      "FotoStation",
+      "PhotoMechanic"
+    ],
+    "read_only_examples": [
+      "JPEG 2000",
+      "DICOM",
+      "Flash",
+      "FlashPix",
+      "QuickTime",
+      "Matroska",
+      "MXF",
+      "PrintIM",
+      "FLAC",
+      "ID3",
+      "Ricoh RMETA",
+      "Picture Info",
+      "Adobe APP14",
+      "MPF",
+      "Stim",
+      "DPX",
+      "APE",
+      "Vorbis",
+      "SPIFF",
+      "DjVu",
+      "M2TS",
+      "PE/COFF",
+      "AVCHD",
+      "ZIP"
+    ]
+  }
+}

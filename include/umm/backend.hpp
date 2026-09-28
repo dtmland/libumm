@@ -99,7 +99,7 @@ class Backend {
   virtual Result<void> writeRaw(const std::filesystem::path& media,
                                 const RawChanges& changes) = 0;
 
-  // Per-type capability query. Declared here; implemented in session 15.
+  // Per-type capability query from registry/capabilities/ (session 15).
   // media_type is a container name such as "JPEG" or "XMP".
   virtual Result<void> typeCapabilities(std::string_view media_type) const = 0;
 };

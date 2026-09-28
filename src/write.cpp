@@ -14,10 +14,16 @@ Error unavailable(std::string message, std::string backend) {
                std::move(backend), ""};
 }
 
-Backend* select_backend(const WriteOptions& options) {
+Backend* select_backend(const WriteOptions& options,
+                        const StorageDecision& decision) {
   BackendManager& manager = BackendManager::instance();
   if (!options.backend.empty()) {
     return manager.get(options.backend);
+  }
+  if (!decision.backend.empty()) {
+    if (Backend* backend = manager.get(decision.backend)) {
+      return backend;
+    }
   }
   return manager.firstAvailable();
 }
@@ -87,7 +93,7 @@ Result<WriteReport> write(const std::filesystem::path& media,
     return decision.error();
   }
 
-  Backend* backend = select_backend(options);
+  Backend* backend = select_backend(options, decision.value());
   if (!backend) {
     if (!options.backend.empty()) {
       return unavailable("unknown backend: " + options.backend,
