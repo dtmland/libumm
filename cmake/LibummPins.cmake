@@ -24,7 +24,8 @@ foreach(_umm_required IN ITEMS
     UMM_EXIV2_SHA256
     UMM_EXIFTOOL_VERSION
     UMM_EXIFTOOL_SHA256
-    UMM_STRAWBERRY_PERL_VERSION)
+    UMM_STRAWBERRY_PERL_VERSION
+    UMM_FFMPEG_VERSION)
   if("${${_umm_required}}" STREQUAL "")
     message(FATAL_ERROR "libumm pins: missing ${_umm_required} in ${_umm_backends_env}")
   endif()

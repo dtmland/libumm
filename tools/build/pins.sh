@@ -15,7 +15,7 @@ env_file=${1:-"$script_dir/backends.env"}
 
 [ -f "$env_file" ] || umm_pins_die "missing pin file: $env_file"
 
-required_keys="UMM_EXIV2_VERSION UMM_EXIV2_SHA256 UMM_EXIFTOOL_VERSION UMM_EXIFTOOL_SHA256 UMM_STRAWBERRY_PERL_VERSION"
+required_keys="UMM_EXIV2_VERSION UMM_EXIV2_SHA256 UMM_EXIFTOOL_VERSION UMM_EXIFTOOL_SHA256 UMM_STRAWBERRY_PERL_VERSION UMM_FFMPEG_VERSION"
 sha_keys="UMM_EXIV2_SHA256 UMM_EXIFTOOL_SHA256"
 
 for key in $required_keys; do
