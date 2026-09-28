@@ -10,7 +10,10 @@ option(BUILD_SHARED_LIBS "Build shared libraries instead of static (decision M4c
 option(UMM_BUILD_TESTS "Build unit tests" ON)
 option(UMM_ENABLE_FAILING_SELFTEST "Build and register the deliberately failing self-test" OFF)
 option(UMM_REQUIRE_EXIV2 "Require Exiv2 at configure time (placeholder; no effect yet)" OFF)
-option(UMM_REQUIRE_EXIFTOOL "Require ExifTool at configure time (placeholder; no effect yet)" OFF)
+option(UMM_REQUIRE_EXIFTOOL "Require ExifTool at configure time" OFF)
+
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/LibummPins.cmake")
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/LibummExifTool.cmake")
 
 add_library(umm src/version.cpp)
 add_library(umm::umm ALIAS umm)
@@ -47,5 +50,18 @@ if(UMM_BUILD_TESTS)
   if(UMM_ENABLE_FAILING_SELFTEST)
     add_executable(test_failing_selftest tests/unit/test_failing_selftest.cpp)
     add_test(NAME test_failing_selftest COMMAND test_failing_selftest)
+  endif()
+
+  if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)
+    add_test(
+      NAME exiftool_smoke
+      COMMAND "${CMAKE_COMMAND}"
+        "-DUMM_TEST_EXIFTOOL_SCRIPT=${UMM_EXIFTOOL_SCRIPT}"
+        "-DUMM_TEST_EXIFTOOL_PERL=${UMM_PERL_EXECUTABLE}"
+        "-DUMM_TEST_EXIFTOOL_VERSION=${UMM_EXIFTOOL_VERSION}"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/backend/test_exiftool_smoke.cmake"
+    )
+  elseif(UMM_REQUIRE_EXIFTOOL)
+    message(FATAL_ERROR "UMM_REQUIRE_EXIFTOOL=ON but exiftool_smoke cannot be registered")
   endif()
 endif()

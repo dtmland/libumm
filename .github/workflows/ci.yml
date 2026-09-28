@@ -95,7 +95,11 @@ jobs:
           key: ${{ runner.os }}-${{ env.UMM_EXIV2_VERSION }}-${{ env.UMM_EXIV2_SHA256 }}-${{ env.UMM_EXIFTOOL_VERSION }}-${{ env.UMM_EXIFTOOL_SHA256 }}-${{ env.UMM_STRAWBERRY_PERL_VERSION }}
 
       - name: Configure
-        run: cmake --preset default ${{ inputs.failing_selftest && '-DUMM_ENABLE_FAILING_SELFTEST=ON' || '' }}
+        run: cmake --preset default -DUMM_REQUIRE_EXIFTOOL=ON ${{ inputs.failing_selftest && '-DUMM_ENABLE_FAILING_SELFTEST=ON' || '' }}
+
+      - name: Report acquired backends
+        shell: bash
+        run: cat build/default/backends-acquired.txt
 
       - name: Build
         run: cmake --build --preset default

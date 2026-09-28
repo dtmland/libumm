@@ -136,6 +136,27 @@ class TestPins(unittest.TestCase):
         mode = PINS_SH.stat().st_mode
         self.assertTrue(stat.S_IXUSR & mode or shutil.which("sh"), "pins.sh should be runnable")
 
+    def test_exiftool_cmake_has_no_literal_pins(self) -> None:
+        values = parse_backends_env(BACKENDS_ENV)
+        cmake_dir = REPO_ROOT / "cmake"
+        for path in (cmake_dir / "LibummExifTool.cmake", cmake_dir / "LibummPins.cmake"):
+            text = path.read_text(encoding="utf-8")
+            self.assertNotIn(
+                values["UMM_EXIFTOOL_VERSION"],
+                text,
+                f"{path.name} must not hardcode UMM_EXIFTOOL_VERSION",
+            )
+            self.assertNotIn(
+                values["UMM_EXIFTOOL_SHA256"],
+                text,
+                f"{path.name} must not hardcode UMM_EXIFTOOL_SHA256",
+            )
+            self.assertNotRegex(
+                text,
+                r"(?i)image-exiftool-\d",
+                f"{path.name} must not embed a literal ExifTool archive version",
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
