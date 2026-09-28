@@ -5,6 +5,7 @@
 #ifdef UMM_HAS_EXIV2
 #include "exiv2/exiv2_backend.hpp"
 #endif
+#include "exiftool/exiftool_backend.hpp"
 
 namespace umm {
 namespace {
@@ -66,10 +67,18 @@ BackendManager& BackendManager::instance() {
 
 BackendManager::BackendManager() {
   backends_.push_back(make_registered_exiv2());
+  backends_.push_back(internal::make_exiftool_backend(ExifToolConfig{}));
 }
 
 void BackendManager::configureExifTool(ExifToolConfig config) {
-  exiftool_config_ = std::move(config);
+  exiftool_config_ = config;
+  if (Backend* backend = get("exiftool")) {
+    static_cast<internal::ExifToolBackend*>(backend)->configure(
+        std::move(config));
+  } else {
+    backends_.push_back(
+        internal::make_exiftool_backend(std::move(config)));
+  }
 }
 
 std::vector<std::string> BackendManager::backendIds() const {
