@@ -1,6 +1,7 @@
 #include "umm/umm.hpp"
 
 #include "core/reconcile.hpp"
+#include "core/sidecar.hpp"
 
 namespace umm {
 namespace {
@@ -16,6 +17,19 @@ Backend* select_backend(const ReadOptions& options) {
     return manager.get(options.backend);
   }
   return manager.firstAvailable();
+}
+
+Result<Metadata> finish_read(Result<Metadata> metadata, const ReadOptions& options,
+                             std::string_view backend_id) {
+  if (!metadata.ok()) {
+    return metadata;
+  }
+  if (options.conflicts_as_errors &&
+      !metadata.value().conflictedPropertyIds().empty()) {
+    return Error{ErrorCode::conflict_unresolved,
+                 "unresolved metadata conflicts", std::string(backend_id), ""};
+  }
+  return metadata;
 }
 
 }  // namespace
@@ -41,17 +55,27 @@ Result<Metadata> read(const std::filesystem::path& media, ReadOptions options) {
     return raw.error();
   }
 
-  Result<Metadata> metadata =
-      internal::reconcile(raw.value(), backend->id());
-  if (!metadata.ok()) {
-    return metadata.error();
+  if (internal::is_xmp_sidecar_path(media)) {
+    RawDocument embedded;
+    return finish_read(
+        internal::reconcile(embedded, backend->id(), &raw.value()), options,
+        backend->id());
   }
-  if (options.conflicts_as_errors &&
-      !metadata.value().conflictedPropertyIds().empty()) {
-    return Error{ErrorCode::conflict_unresolved,
-                 "unresolved metadata conflicts", backend->id(), ""};
+
+  const RawDocument* sidecar = nullptr;
+  Result<RawDocument> sidecar_raw{RawDocument{}};
+  if (options.merge_sidecar) {
+    if (const auto path = findSidecar(media)) {
+      sidecar_raw = backend->readRaw(*path);
+      if (!sidecar_raw.ok()) {
+        return sidecar_raw.error();
+      }
+      sidecar = &sidecar_raw.value();
+    }
   }
-  return metadata;
+
+  return finish_read(internal::reconcile(raw.value(), backend->id(), sidecar),
+                     options, backend->id());
 }
 
 }  // namespace umm

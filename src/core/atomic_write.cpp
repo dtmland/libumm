@@ -39,10 +39,11 @@ void remove_quietly(const std::filesystem::path& path) {
 
 std::filesystem::path make_temp_path(const std::filesystem::path& destination) {
   const std::uint64_t n = g_temp_counter.fetch_add(1) + 1;
-  std::filesystem::path temp = destination;
+  std::filesystem::path temp = destination.parent_path();
+  temp /= destination.stem();
   temp += ".umm-";
   temp += std::to_string(n);
-  temp += ".tmp";
+  temp += destination.extension();
   return temp;
 }
 
@@ -114,16 +115,18 @@ void set_atomic_write_fault_for_test(AtomicWriteFault fault) {
 Result<void> mutate_file_atomically(
     const std::filesystem::path& destination,
     const std::function<Result<void>(const std::filesystem::path& working_copy)>&
-        mutate) {
+        mutate,
+    bool create_if_missing) {
   if (destination.empty()) {
     return io_error(ErrorCode::io_not_found, "media file not found", "");
   }
   std::error_code ec;
-  if (!std::filesystem::exists(destination, ec)) {
+  const bool exists = std::filesystem::exists(destination, ec);
+  if (!exists && !create_if_missing) {
     return io_error(ErrorCode::io_not_found, "media file not found",
                     path_utf8(destination));
   }
-  if (!std::filesystem::is_regular_file(destination, ec)) {
+  if (exists && !std::filesystem::is_regular_file(destination, ec)) {
     return io_error(ErrorCode::io_write_failed, "media path is not a file",
                     path_utf8(destination));
   }
@@ -132,10 +135,18 @@ Result<void> mutate_file_atomically(
   }
 
   const std::filesystem::path temp = make_temp_path(destination);
-  Result<void> copied = copy_file_bytes(destination, temp);
-  if (!copied.ok()) {
-    remove_quietly(temp);
-    return copied;
+  if (exists) {
+    Result<void> copied = copy_file_bytes(destination, temp);
+    if (!copied.ok()) {
+      remove_quietly(temp);
+      return copied;
+    }
+  } else {
+    std::ofstream out(temp, std::ios::binary | std::ios::trunc);
+    if (!out) {
+      return io_error(ErrorCode::io_write_failed, "failed to create temp file",
+                      path_utf8(temp));
+    }
   }
 
   if (static_cast<AtomicWriteFault>(g_fault.load()) ==

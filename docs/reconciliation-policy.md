@@ -1,7 +1,7 @@
 # Reconciliation policy (Phase 1)
 
-Status: **normative** for JPEG embedded read (session 12) and write-synchronization
-(session 13). XMP sidecar pairing is session 14.
+Status: **normative** for JPEG embedded read (session 12), write-synchronization
+(session 13), and XMP sidecar pairing (session 14).
 
 This is the written, testable policy required by decision **S4a**. Classification
 and provenance shapes are those in `include/umm/provenance.hpp` (concept.md §15,
@@ -230,8 +230,45 @@ Phase 1 stores one `Structure` with fields `city`, `provinceState`,
 
 ## Sidecars
 
-`ReadOptions::merge_sidecar` is ignored until session 14. This session reads
-embedded JPEG metadata only.
+A media file and an XMP sidecar with the **same stem** in the **same directory**
+are one asset (concept.md §28). Pairing uses the `.xmp` extension. On
+case-sensitive filesystems `.xmp` is tried first, then `.XMP`. On
+case-insensitive filesystems the OS resolves the name. A path that is itself
+`.xmp` is a standalone sidecar and is not paired with another sidecar.
+
+`ReadOptions::merge_sidecar` (default true) reads the paired sidecar when it
+exists and feeds it to reconciliation as an additional source. `false` reads
+embedded metadata only. A missing sidecar is not an error. A sidecar that
+exists but cannot be parsed fails the read.
+
+`SourceRef::container` is `"embedded"` or `"sidecar"`. No source is dropped.
+
+### Sidecar vs embedded precedence
+
+Sidecar XMP and embedded XMP are **same-tier XMP**. They are grouped separately
+so a sidecar `Xmp.dc.creator` is never concatenated with the embedded XMP list.
+
+- Equal after normalization: `equivalent` (or `reconciled` against IIM/EXIF if
+  those disagree).
+- Unequal: `conflict`. libumm does **not** pick a winner by mtime. The
+  sidecar-newer vs embedded-newer situation is this conflict class (the
+  `sidecar/paired.*` fixtures). `value` is the first group in document order
+  (embedded XMP, then sidecar XMP, then IIM, then EXIF for default-ranked
+  properties). `preferred_source` is that group's primary key. Every origin
+  remains in `sources`.
+- Sidecar XMP present and embedded XMP absent: sidecar XMP is the XMP group
+  and still outranks IIM/EXIF (`reconciled` / `single` as usual).
+
+`conflicts_as_errors` treats sidecar-vs-embedded `conflict` like any other.
+
+### Sidecar write
+
+`StoragePolicy::sidecar_only` and `sidecar_required` write **only** the XMP
+representations of write-sync to the paired `.xmp` path (create if missing)
+through the same temp + atomic rename path (M3). The JPEG file is not
+modified. Mixed embedded+sidecar synchronization is Stage 8.
+`sidecar_required` has the same Phase 1 write effect as `sidecar_only`; the
+sidecar is required to be written.
 
 ## Cross-backend identity
 

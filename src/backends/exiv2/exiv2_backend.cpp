@@ -108,8 +108,50 @@ std::vector<Exiv2::byte> read_media_bytes(const std::filesystem::path& media) {
   return bytes;
 }
 
+bool looks_like_xmp(const std::vector<Exiv2::byte>& bytes) {
+  std::string_view text(reinterpret_cast<const char*>(bytes.data()),
+                        bytes.size());
+  if (text.size() >= 3 && static_cast<unsigned char>(text[0]) == 0xEF &&
+      static_cast<unsigned char>(text[1]) == 0xBB &&
+      static_cast<unsigned char>(text[2]) == 0xBF) {
+    text.remove_prefix(3);
+  }
+  return text.find("xpacket") != std::string_view::npos ||
+         text.find("x:xmpmeta") != std::string_view::npos;
+}
+
+bool path_looks_like_xmp(const std::filesystem::path& media) {
+  std::string ext = path_as_utf8(media.extension());
+  for (char& c : ext) {
+    if (c >= 'A' && c <= 'Z') {
+      c = static_cast<char>(c - 'A' + 'a');
+    }
+  }
+  return ext == ".xmp";
+}
+
+Exiv2::Image::UniquePtr open_xmp_mem(std::vector<Exiv2::byte> bytes) {
+  auto io = std::make_unique<Exiv2::MemIo>();
+  if (!bytes.empty() && io->write(bytes.data(), bytes.size()) != bytes.size()) {
+    throw std::runtime_error("failed to open media");
+  }
+  if (io->seek(0, Exiv2::BasicIo::beg) != 0) {
+    throw std::runtime_error("failed to open media");
+  }
+  try {
+    return Exiv2::ImageFactory::open(std::move(io));
+  } catch (const Exiv2::Error&) {
+    auto created = std::make_unique<Exiv2::MemIo>();
+    return Exiv2::ImageFactory::create(Exiv2::ImageType::xmp,
+                                       std::move(created));
+  }
+}
+
 Exiv2::Image::UniquePtr open_image_mem(const std::filesystem::path& media) {
   std::vector<Exiv2::byte> bytes = read_media_bytes(media);
+  if (bytes.empty() || looks_like_xmp(bytes) || path_looks_like_xmp(media)) {
+    return open_xmp_mem(std::move(bytes));
+  }
   auto io = std::make_unique<Exiv2::MemIo>();
   if (!bytes.empty() && io->write(bytes.data(), bytes.size()) != bytes.size()) {
     throw std::runtime_error("failed to open media");

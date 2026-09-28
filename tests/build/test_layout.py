@@ -32,6 +32,9 @@ ATOMIC_WRITE = REPO_ROOT / "src" / "core" / "atomic_write.cpp"
 WRITE_SYNC = REPO_ROOT / "src" / "core" / "write_sync.cpp"
 WRITE_CPP = REPO_ROOT / "src" / "write.cpp"
 TEST_WRITE = REPO_ROOT / "tests" / "backend" / "test_write.cpp"
+SIDECAR_CPP = REPO_ROOT / "src" / "core" / "sidecar.cpp"
+TEST_STORAGE_POLICY = REPO_ROOT / "tests" / "unit" / "test_storage_policy.cpp"
+TEST_SIDECAR = REPO_ROOT / "tests" / "backend" / "test_sidecar.cpp"
 PUBLIC_INCLUDE = REPO_ROOT / "include"
 
 
@@ -60,6 +63,9 @@ class TestLayout(unittest.TestCase):
             WRITE_SYNC,
             WRITE_CPP,
             TEST_WRITE,
+            SIDECAR_CPP,
+            TEST_STORAGE_POLICY,
+            TEST_SIDECAR,
         ):
             self.assertTrue(path.is_file(), f"missing required file: {path}")
 

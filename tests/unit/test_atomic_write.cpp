@@ -76,6 +76,21 @@ int main() {
     return fail("failed mutator mutated the original");
   }
 
+  const std::filesystem::path created = dir / "new-sidecar.xmp";
+  const auto created_ok = umm::internal::mutate_file_atomically(
+      created,
+      [](const std::filesystem::path& working) {
+        write_all(working, "sidecar-bytes");
+        return umm::Result<void>{};
+      },
+      true);
+  if (!created_ok.ok()) {
+    return fail("create_if_missing failed");
+  }
+  if (read_all(created) != "sidecar-bytes") {
+    return fail("create_if_missing did not write destination");
+  }
+
   std::filesystem::remove_all(dir);
   return 0;
 }

@@ -9,4 +9,7 @@ namespace umm::internal {
 // by docs/reconciliation-policy.md write-sync rules.
 RawChanges write_sync(const Metadata& metadata);
 
+// XMP-family upserts/removals only (sidecar writes).
+RawChanges write_sync_xmp(const Metadata& metadata);
+
 }  // namespace umm::internal

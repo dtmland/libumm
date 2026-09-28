@@ -1,12 +1,12 @@
 // Application-facing entry points (concept.md §32).
-// umm::read is implemented in session 12 against docs/reconciliation-policy.md.
-// umm::write is implemented in session 13 (embedded JPEG, decision M3).
-// Sidecar storage policy is session 14.
+// umm::read reconciles embedded JPEG metadata and, by default, a paired XMP
+// sidecar (session 14). umm::write applies StoragePolicy (concept.md §12).
 #pragma once
 
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "umm/backend.hpp"
@@ -50,15 +50,43 @@ struct WriteReport {
   std::vector<RawKey> written;  // every raw representation updated (write-sync)
 };
 
+// --- Asset pairing (concept.md §28) -----------------------------------------
+// A media file and an XMP sidecar with the same stem in the same directory
+// are one asset. The sidecar extension is ".xmp".
+// On case-sensitive filesystems, ".xmp" is tried first, then ".XMP".
+// On case-insensitive filesystems the OS resolves the name.
+// A path that is itself an XMP sidecar is not paired with another sidecar.
+
+bool isXmpSidecarPath(const std::filesystem::path& path);
+
+// Canonical write path (same directory, same stem, ".xmp"), even if missing.
+std::filesystem::path sidecarPath(const std::filesystem::path& media);
+
+// Existing sidecar next to `media`, if any.
+std::optional<std::filesystem::path> findSidecar(
+    const std::filesystem::path& media);
+
 // --- Entry points ------------------------------------------------------------
 
 // Read + reconcile (docs/reconciliation-policy.md) into canonical Metadata.
+// JPEG: embedded metadata, plus sidecar XMP when merge_sidecar and a pair exists.
+// A standalone .xmp file is readable as sidecar-only.
 Result<Metadata> read(const std::filesystem::path& media, ReadOptions options = {});
 
 // Write canonical metadata through the mapping engine to synchronized
 // representations, with temp-file + atomic-rename safety (decision M3).
+// JPEG + preferred/embedded_only: embedded XMP+EXIF+IPTC-IIM.
+// JPEG + sidecar_only/sidecar_required: XMP sidecar only (JPEG bytes unchanged).
 Result<WriteReport> write(const std::filesystem::path& media,
                           const Metadata& metadata,
                           WriteOptions options = {});
+
+Result<WriteReport> write(const std::filesystem::path& media,
+                          const Metadata& metadata, StoragePolicy policy);
+
+// JPEG: Preferred/EmbeddedOnly → Embedded(XMP+EXIF+IPTC-IIM);
+// SidecarOnly/SidecarRequired → Sidecar(XMP). Mixed sync is Stage 8.
+Result<StorageDecision> evaluateStorage(const std::filesystem::path& media,
+                                        WriteOptions options = {});
 
 }  // namespace umm

@@ -24,6 +24,7 @@ void set_atomic_write_fault_for_test(AtomicWriteFault fault);
 Result<void> mutate_file_atomically(
     const std::filesystem::path& destination,
     const std::function<Result<void>(const std::filesystem::path& working_copy)>&
-        mutate);
+        mutate,
+    bool create_if_missing = false);
 
 }  // namespace umm::internal

@@ -1,7 +1,10 @@
 #include "umm/umm.hpp"
 
 #include "core/atomic_write.hpp"
+#include "core/sidecar.hpp"
 #include "core/write_sync.hpp"
+
+#include <system_error>
 
 namespace umm {
 namespace {
@@ -32,10 +35,9 @@ std::string family_format(std::string_view family) {
   return std::string(family);
 }
 
-WriteReport make_report(const RawChanges& changes, std::string backend) {
+WriteReport make_report(const RawChanges& changes, StorageDecision decision) {
   WriteReport report;
-  report.decision.method = StorageDecision::Method::embedded;
-  report.decision.backend = std::move(backend);
+  report.decision = std::move(decision);
   for (const RawEntry& entry : changes.upserts) {
     report.written.push_back(entry.key);
     const std::string format = family_format(entry.key.family);
@@ -53,14 +55,36 @@ WriteReport make_report(const RawChanges& changes, std::string backend) {
   return report;
 }
 
+Result<void> write_working_copy(Backend& backend,
+                                const std::filesystem::path& working,
+                                const RawChanges& changes, bool new_sidecar) {
+  if (new_sidecar) {
+    std::error_code ec;
+    const auto size = std::filesystem::file_size(working, ec);
+    if (ec || size == 0) {
+      Result<void> stub = internal::write_xmp_stub(working);
+      if (!stub.ok()) {
+        return stub;
+      }
+    }
+  }
+  return backend.writeRaw(working, changes);
+}
+
 }  // namespace
 
 Result<WriteReport> write(const std::filesystem::path& media,
+                          const Metadata& metadata, StoragePolicy policy) {
+  WriteOptions options;
+  options.policy = policy;
+  return write(media, metadata, options);
+}
+
+Result<WriteReport> write(const std::filesystem::path& media,
                           const Metadata& metadata, WriteOptions options) {
-  if (options.policy == StoragePolicy::sidecar_only ||
-      options.policy == StoragePolicy::sidecar_required) {
-    return Error{ErrorCode::unsupported_capability,
-                 "sidecar writes are not implemented", "", ""};
+  Result<StorageDecision> decision = evaluateStorage(media, options);
+  if (!decision.ok()) {
+    return decision.error();
   }
 
   Backend* backend = select_backend(options);
@@ -77,10 +101,32 @@ Result<WriteReport> write(const std::filesystem::path& media,
                                              : status.reason,
                        backend->id());
   }
+  StorageDecision decided = decision.value();
+  decided.backend = backend->id();
 
-  const RawChanges changes = internal::write_sync(metadata);
-  WriteReport report = make_report(changes, backend->id());
+  const bool sidecar_write =
+      decided.method == StorageDecision::Method::sidecar;
+  const RawChanges changes =
+      sidecar_write ? internal::write_sync_xmp(metadata)
+                    : internal::write_sync(metadata);
+  WriteReport report = make_report(changes, decided);
   if (options.dry_run) {
+    return report;
+  }
+
+  if (sidecar_write) {
+    const std::filesystem::path dest = sidecarPath(media);
+    std::error_code ec;
+    const bool exists = std::filesystem::is_regular_file(dest, ec);
+    Result<void> written = internal::mutate_file_atomically(
+        dest,
+        [&](const std::filesystem::path& working_copy) {
+          return write_working_copy(*backend, working_copy, changes, !exists);
+        },
+        true);
+    if (!written.ok()) {
+      return written.error();
+    }
     return report;
   }
 
