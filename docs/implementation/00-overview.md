@@ -32,20 +32,16 @@ and [docs/test-media-plan.md](../test-media-plan.md) into **session-sized work p
 | **Stage 3 — Core model & fixtures** | [08](08-core-semantic-model.md), [09](09-fixture-corpus.md) | Value/Result/provenance types implemented; Tier A JPEG+sidecar corpus |
 | **Stage 4 — Phase 1 read/write (JPEG + XMP sidecar, decision S3)** | [10](10-exiv2-backend-read.md), [11](11-exiftool-adapter-read.md), [12](12-reconciliation-engine.md), [13](13-write-path-and-safety.md), [14](14-xmp-sidecar-and-policy.md) | `read()`/`write()` round-trip on JPEG + sidecars via both backends with reconciliation and write safety |
 | **Stage 5 — Capabilities** | [15](15-capabilities-engine.md) | `capabilities(media)` from machine-readable data; supported-types generated; drift checks (decision M2) |
-| **Stage 6+ — later stages** | authored when reached | See below |
+| **Stage 6 — Stills expansion** | [16](16-format-dispatch-generalization.md), [17](17-tiff-support.md), [18](18-png-webp-support.md), [19](19-raw-read-and-sidecar-write.md) | Capability-driven write dispatch (review decision R1) + hardening; TIFF; PNG + WebP (capability-divergent); common RAW read + sidecar-write pattern |
+| **Stage 7 — Video** | [20](20-vmh-registry-import.md), [21](21-video-read-mp4-mov.md), [22](22-video-write-and-location.md) | IPTC Video Metadata Hub registry (registry-first, R2); MP4/MOV read/write via ExifTool-primary incl. QuickTime `GPSCoordinates` |
+| **Stage 8 — Sidecar synchronization** | [23](23-conflict-api-detect-merge.md), [24](24-synchronize-and-mixed-storage.md) | `detectConflict()` / `merge()` / `synchronize()`; mixed storage; `SidecarRequired` completion |
+| **Stage 9 — GPS track engine** | [25](25-gps-track-import.md), [26](26-track-correlation-and-location-write.md) | GPX/NMEA/KML import; time correlation/interpolation; location write through the normal path |
+| **Stage 10 — Cross-backend verification** | [27](27-tier-b-corpus-infrastructure.md), [28](28-cross-backend-verification.md) | Tier B checksummed corpus (closes makernote/proprietary-RAW deferrals, R4); write-with-one/read-with-other comparison suite |
 
-## Later stages (session docs to be authored when Stage 5 completes)
-
-These are deliberately not broken into sessions yet — their shape depends on Stage 4/5 learnings.
-Their scope is fixed by concept.md and the analysis decisions:
-
-| Stage | Content |
-|---|---|
-| Stage 6 — Stills expansion | TIFF, then PNG (no EXIF in Exiv2 — capability-driven), WebP (no IPTC in Exiv2), then common RAW read + sidecar-write pattern. One format (or format pair) per session. |
-| Stage 7 — Video | IPTC Video Metadata Hub adoption; MP4/MOV via ExifTool-primary (Exiv2 read supplement); QuickTime `GPSCoordinates`. |
-| Stage 8 — Sidecar synchronization | `detectConflict()` / `merge()` / `synchronize()`; embedded-vs-sidecar policy engine completion. |
-| Stage 9 — GPS track engine | GPX/NMEA/KML import, time correlation/interpolation, write through the normal location path. |
-| Stage 10 — Cross-backend verification | Tier B corpus (checksummed downloads per test-media-plan §3); write-with-one/read-with-other comparison suite. |
+The Stage 6–10 session breakdown was authored after the Stage 1–5 implementation review; see
+[docs/analysis/2026-09-28-stage-5-review-and-later-stage-plan.md](../analysis/2026-09-28-stage-5-review-and-later-stage-plan.md)
+for the findings (R1–R8) and decisions these sessions implement. BMFF types (HEIC/AVIF/CR3/JXL)
+are deliberately outside Stages 6–10 (decision R6) and will be planned after Stage 10.
 
 ## Standing constraints (from the decision index)
 
