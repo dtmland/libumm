@@ -31,8 +31,11 @@ Sessions 05, 08, 09 merged.
 - `BackendManager` minimal: register/enumerate backends, fetch by id.
 - Tests (`tests/backend/test_exiv2_read.cpp`) against fixtures: exif-only yields only Exif keys;
   full-agreeing yields all three families with expected values (creator, dates, GPS from
-  `gps.jpg`); unicode fixture values match UTF-8 expectations; truncated fixture returns
-  `format` error, not a crash.
+  `gps.jpg`); unicode fixture values match UTF-8 expectations; the non-ASCII filename fixture
+  opens on Windows; truncated fixture returns `format` error, not a crash.
+- Windows Unicode paths: Exiv2 0.28 `FileIo::open` uses `fopen` (ANSI code page), and there is
+  no `wstring` `ImageFactory::open`. `readRaw` loads the file through `std::filesystem::path` /
+  `ifstream` into `MemIo`. Unix still passes a UTF-8 path to `ImageFactory::open`.
 
 ## Steps
 

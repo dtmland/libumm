@@ -28,8 +28,10 @@ set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 set(_umm_saved_build_shared_libs "${BUILD_SHARED_LIBS}")
 set(BUILD_SHARED_LIBS OFF)
 
-# Session 05: BMFF on (CR3/HEIC/AVIF read). Samples/tests/docs off. Extra third-party
-# deps off so the same source build is dep-free on Linux, Windows, and macOS.
+# Session 05: BMFF on (CR3/HEIC/AVIF read). Samples/tests/docs off. Extra
+# third-party deps off except Expat, which Exiv2 requires for XMP (session 10
+# JPEG read of Xmp.* keys). Brotli/inih/curl/png stay off so the same source
+# build remains otherwise dep-free on Linux, Windows, and macOS.
 set(EXIV2_ENABLE_BMFF ON)
 set(EXIV2_BUILD_SAMPLES OFF)
 set(EXIV2_BUILD_EXIV2_COMMAND OFF)
@@ -42,10 +44,52 @@ set(EXIV2_ENABLE_WEBREADY OFF)
 set(EXIV2_ENABLE_CURL OFF)
 set(EXIV2_ENABLE_NLS OFF)
 set(EXIV2_ENABLE_VIDEO OFF)
-set(EXIV2_ENABLE_XMP OFF)
+set(EXIV2_ENABLE_XMP ON)
 set(EXIV2_ENABLE_EXTERNAL_XMP OFF)
 set(EXIV2_ENABLE_PNG OFF)
 set(BUILD_WITH_CCACHE OFF)
+
+# Exiv2 find_package(EXPAT REQUIRED) when XMP is on. Prefer a system Expat
+# (linux-packages.txt already lists libexpat1-dev); FetchContent only when
+# CMake cannot find one (typical on Windows CI).
+find_package(EXPAT QUIET)
+if(NOT EXPAT_FOUND)
+  set(EXPAT_SHARED_LIBS OFF)
+  set(EXPAT_BUILD_TOOLS OFF)
+  set(EXPAT_BUILD_EXAMPLES OFF)
+  set(EXPAT_BUILD_TESTS OFF)
+  set(EXPAT_BUILD_DOCS OFF)
+  FetchContent_Declare(umm_expat
+    URL "https://github.com/libexpat/libexpat/releases/download/R_2_6_4/expat-2.6.4.tar.gz"
+    URL_HASH SHA256=fd03b7172b3bd7427a3e7a812063f74754f24542429b634e0db6511b53fb2278
+    DOWNLOAD_DIR "${PROJECT_SOURCE_DIR}/.cache/expat"
+    SOURCE_DIR "${PROJECT_SOURCE_DIR}/.cache/expat/src"
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+  )
+  FetchContent_MakeAvailable(umm_expat)
+  if(NOT TARGET EXPAT::EXPAT)
+    add_library(EXPAT::EXPAT ALIAS expat)
+  endif()
+  # Exiv2 find_package(EXPAT REQUIRED) in module mode. xmpsdk uses
+  # EXPAT_INCLUDE_DIRS (plural) for ExpatAdapter.cpp; exiv2lib also uses
+  # EXPAT_INCLUDE_DIR and EXPAT::EXPAT. Match CMake's FindEXPAT variables.
+  file(TO_CMAKE_PATH "${umm_expat_SOURCE_DIR}/lib" _umm_expat_include_dir)
+  file(WRITE "${CMAKE_BINARY_DIR}/expat-config-shim/FindEXPAT.cmake"
+    "if(NOT TARGET EXPAT::EXPAT)\n"
+    "  add_library(EXPAT::EXPAT ALIAS expat)\n"
+    "endif()\n"
+    "set(EXPAT_FOUND TRUE)\n"
+    "set(EXPAT_INCLUDE_DIR \"${_umm_expat_include_dir}\")\n"
+    "set(EXPAT_INCLUDE_DIRS \"${_umm_expat_include_dir}\")\n"
+    "set(EXPAT_LIBRARY expat)\n"
+    "set(EXPAT_LIBRARIES expat)\n")
+  list(PREPEND CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR}/expat-config-shim")
+  set(EXPAT_INCLUDE_DIR "${_umm_expat_include_dir}")
+  set(EXPAT_INCLUDE_DIRS "${_umm_expat_include_dir}")
+  set(EXPAT_FOUND TRUE)
+  unset(_umm_expat_include_dir)
+  message(STATUS "Expat not found on system; fetched for Exiv2 XMP")
+endif()
 
 FetchContent_Declare(umm_exiv2
   URL "${_umm_exiv2_url}"
@@ -64,20 +108,26 @@ if(NOT TARGET exiv2lib)
 endif()
 
 # Shim lives in src/; Exiv2 writes exv_conf.h / exiv2lib_export.h to CMAKE_BINARY_DIR.
-target_sources(umm PRIVATE "${PROJECT_SOURCE_DIR}/src/exiv2_shim.cpp")
+target_sources(umm PRIVATE
+  "${PROJECT_SOURCE_DIR}/src/exiv2_shim.cpp"
+  "${PROJECT_SOURCE_DIR}/src/backends/exiv2/exiv2_backend.cpp"
+)
 target_include_directories(umm
   PRIVATE
     "${PROJECT_SOURCE_DIR}/src"
+    "${PROJECT_SOURCE_DIR}/src/backends"
     "${CMAKE_BINARY_DIR}"
 )
+target_compile_definitions(umm PRIVATE UMM_HAS_EXIV2=1)
 target_link_libraries(umm PRIVATE exiv2lib)
 
 set(UMM_EXIV2_ACQUIRED TRUE)
 
 file(APPEND "${CMAKE_BINARY_DIR}/backends-acquired.txt"
   "exiv2.version=${UMM_EXIV2_VERSION}\n"
-  "exiv2.bmff=ON\n")
-message(STATUS "Exiv2 ${UMM_EXIV2_VERSION} (BMFF=ON) linked privately into umm")
+  "exiv2.bmff=ON\n"
+  "exiv2.xmp=ON\n")
+message(STATUS "Exiv2 ${UMM_EXIV2_VERSION} (BMFF=ON, XMP=ON) linked privately into umm")
 
 unset(_umm_exiv2_url)
 unset(_umm_exiv2_download_dir)

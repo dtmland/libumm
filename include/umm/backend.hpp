@@ -1,28 +1,52 @@
-// ============================================================================
-// DESIGN DRAFT — NOT BUILT, NOT TESTED.
-// Normative statement of API shape per docs/analysis decision M7.
-// Promoted to a real header by docs/implementation/10-exiv2-backend-read.md.
+// Backend adapter contract (decisions S1a/S1b/S1c). Promoted from design draft
+// by docs/implementation/10-exiv2-backend-read.md.
 //
-// The backend adapter contract (decisions S1a/S1b/S1c):
 //  - Backends are optional at RUNTIME. Absence is reported through
 //    availability(), never a load failure. CI requires both.
 //  - Exiv2 is in-process; ExifTool is an out-of-process adapter using
 //    `-stay_open` batch mode with JSON output. Same contract for both.
 //  - Backend types (Exiv2 classes, ExifTool JSON) never leak through this
 //    interface; the neutral raw vocabulary below is the boundary.
-// ============================================================================
+//
+// Thread-safety: each Backend instance is single-threaded. Callers must not
+// share an instance across threads. BackendManager may pool instances later;
+// this session's manager holds one instance per registered id.
+//
+// Timeout: Exiv2 is in-process and has no adapter-level timeout. ExifTool
+// uses ExifToolConfig::command_timeout (session 11): on expiry the adapter
+// kills the child and returns ErrorCode::backend_timeout.
+//
+// Error mapping: missing/unreadable files -> io_*; unrecognized, truncated,
+// or corrupt containers -> format_*; thrown backend diagnostics ->
+// backend_failed. Exceptions never escape (decision M1).
 #pragma once
 
 #include <chrono>
 #include <filesystem>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "umm/metadata.hpp"  // RawKey, RawEntry
 #include "umm/result.hpp"
 
 namespace umm {
+
+enum class BackendId {
+  exiv2,
+  exiftool,
+};
+
+inline std::string_view to_string(BackendId id) noexcept {
+  switch (id) {
+    case BackendId::exiv2:
+      return "exiv2";
+    case BackendId::exiftool:
+      return "exiftool";
+  }
+  return {};
+}
 
 struct BackendAvailability {
   bool available{false};
@@ -58,8 +82,13 @@ class Backend {
 
   // Write via temp-file + atomic rename, owned by core (decision M3.3);
   // the backend writes to the temp path it is handed.
+  // Declared here; implemented in session 13.
   virtual Result<void> writeRaw(const std::filesystem::path& media,
                                 const RawChanges& changes) = 0;
+
+  // Per-type capability query. Declared here; implemented in session 15.
+  // media_type is a container name such as "JPEG" or "XMP".
+  virtual Result<void> typeCapabilities(std::string_view media_type) const = 0;
 };
 
 // ExifTool adapter configuration (decision S1c: locate, never bundle).
@@ -77,8 +106,16 @@ class BackendManager {
   // Registration order defines default read preference.
   void configureExifTool(ExifToolConfig config);
   std::vector<std::string> backendIds() const;
-  Backend* get(std::string_view id);          // nullptr if unknown
-  Backend* firstAvailable();                  // nullptr if none (S1b)
+  Backend* get(std::string_view id);  // nullptr if unknown
+  Backend* firstAvailable();          // nullptr if none (S1b)
+
+ private:
+  BackendManager();
+  BackendManager(const BackendManager&) = delete;
+  BackendManager& operator=(const BackendManager&) = delete;
+
+  std::vector<std::unique_ptr<Backend>> backends_;
+  ExifToolConfig exiftool_config_;
 };
 
 }  // namespace umm

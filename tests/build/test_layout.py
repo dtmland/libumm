@@ -17,6 +17,7 @@ LIBUMM_EXIV2_CMAKE = REPO_ROOT / "cmake" / "LibummExiv2.cmake"
 LIBUMM_REGISTRY_CMAKE = REPO_ROOT / "cmake" / "LibummRegistry.cmake"
 EXIFTOOL_SMOKE = REPO_ROOT / "tests" / "backend" / "test_exiftool_smoke.cmake"
 EXIV2_SMOKE = REPO_ROOT / "tests" / "backend" / "test_exiv2_smoke.cpp"
+EXIV2_READ = REPO_ROOT / "tests" / "backend" / "test_exiv2_read.cpp"
 PUBLIC_INCLUDE = REPO_ROOT / "include"
 
 
@@ -32,8 +33,28 @@ class TestLayout(unittest.TestCase):
             LIBUMM_REGISTRY_CMAKE,
             EXIFTOOL_SMOKE,
             EXIV2_SMOKE,
+            EXIV2_READ,
         ):
             self.assertTrue(path.is_file(), f"missing required file: {path}")
+
+    def test_exiv2_expat_shim_exports_include_dirs(self) -> None:
+        text = LIBUMM_EXIV2_CMAKE.read_text(encoding="utf-8")
+        self.assertIn("EXIV2_ENABLE_XMP ON", text)
+        # Exiv2 0.28 xmpsdk compiles ExpatAdapter.cpp with EXPAT_INCLUDE_DIRS.
+        self.assertRegex(text, r'set\(EXPAT_INCLUDE_DIRS ')
+        self.assertRegex(text, r'set\(EXPAT_INCLUDE_DIR ')
+
+    def test_exiv2_windows_unicode_paths_use_memio(self) -> None:
+        # Exiv2 0.28 FileIo::open uses fopen (ACP on Windows). Unicode fixture
+        # paths must be read via ifstream + MemIo, not ImageFactory::open(utf8).
+        text = (
+            REPO_ROOT / "src" / "backends" / "exiv2" / "exiv2_backend.cpp"
+        ).read_text(encoding="utf-8")
+        self.assertIn("#if defined(_WIN32)", text)
+        self.assertIn("std::ifstream", text)
+        self.assertIn("MemIo", text)
+        self.assertIn("ImageFactory::open(std::move(io))", text)
+        self.assertIn("ImageFactory::open(path_as_utf8(media))", text)
 
     def test_public_headers_do_not_include_exiv2(self) -> None:
         headers = list(PUBLIC_INCLUDE.rglob("*"))
