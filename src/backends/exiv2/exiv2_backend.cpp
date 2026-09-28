@@ -117,7 +117,7 @@ bool looks_like_xmp(const std::vector<Exiv2::byte>& bytes) {
     text.remove_prefix(3);
   }
   return text.find("xpacket") != std::string_view::npos ||
-         text.find("x:xmpmeta") != std::string_view::npos;
+         text.find("x:" "xmpmeta") != std::string_view::npos;
 }
 
 bool path_looks_like_xmp(const std::filesystem::path& media) {
