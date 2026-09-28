@@ -13,7 +13,10 @@ PINS_SH = REPO_ROOT / "tools" / "build" / "pins.sh"
 LINUX_PACKAGES = REPO_ROOT / "tools" / "build" / "linux-packages.txt"
 LIBUMM_PINS_CMAKE = REPO_ROOT / "cmake" / "LibummPins.cmake"
 LIBUMM_EXIFTOOL_CMAKE = REPO_ROOT / "cmake" / "LibummExifTool.cmake"
+LIBUMM_EXIV2_CMAKE = REPO_ROOT / "cmake" / "LibummExiv2.cmake"
 EXIFTOOL_SMOKE = REPO_ROOT / "tests" / "backend" / "test_exiftool_smoke.cmake"
+EXIV2_SMOKE = REPO_ROOT / "tests" / "backend" / "test_exiv2_smoke.cpp"
+PUBLIC_INCLUDE = REPO_ROOT / "include"
 
 
 class TestLayout(unittest.TestCase):
@@ -24,9 +27,24 @@ class TestLayout(unittest.TestCase):
             LINUX_PACKAGES,
             LIBUMM_PINS_CMAKE,
             LIBUMM_EXIFTOOL_CMAKE,
+            LIBUMM_EXIV2_CMAKE,
             EXIFTOOL_SMOKE,
+            EXIV2_SMOKE,
         ):
             self.assertTrue(path.is_file(), f"missing required file: {path}")
+
+    def test_public_headers_do_not_include_exiv2(self) -> None:
+        headers = list(PUBLIC_INCLUDE.rglob("*"))
+        self.assertTrue(headers, f"no files under {PUBLIC_INCLUDE}")
+        for path in headers:
+            if path.suffix.lower() not in {".h", ".hh", ".hpp", ".hxx"}:
+                continue
+            text = path.read_text(encoding="utf-8")
+            self.assertNotRegex(
+                text,
+                r'(?m)^\s*#\s*include\s*[<"]exiv2/',
+                f"public header must not include Exiv2: {path.relative_to(REPO_ROOT)}",
+            )
 
     def test_default_presets_and_no_tests_action(self) -> None:
         data = json.loads(PRESETS_PATH.read_text(encoding="utf-8"))

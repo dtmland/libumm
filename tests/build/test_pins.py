@@ -136,21 +136,23 @@ class TestPins(unittest.TestCase):
         mode = PINS_SH.stat().st_mode
         self.assertTrue(stat.S_IXUSR & mode or shutil.which("sh"), "pins.sh should be runnable")
 
-    def test_exiftool_cmake_has_no_literal_pins(self) -> None:
+    def test_cmake_has_no_literal_backend_pins(self) -> None:
         values = parse_backends_env(BACKENDS_ENV)
         cmake_dir = REPO_ROOT / "cmake"
-        for path in (cmake_dir / "LibummExifTool.cmake", cmake_dir / "LibummPins.cmake"):
+        forbidden = (
+            ("UMM_EXIFTOOL_VERSION", values["UMM_EXIFTOOL_VERSION"]),
+            ("UMM_EXIFTOOL_SHA256", values["UMM_EXIFTOOL_SHA256"]),
+            ("UMM_EXIV2_VERSION", values["UMM_EXIV2_VERSION"]),
+            ("UMM_EXIV2_SHA256", values["UMM_EXIV2_SHA256"]),
+        )
+        for path in sorted(cmake_dir.glob("*.cmake")):
             text = path.read_text(encoding="utf-8")
-            self.assertNotIn(
-                values["UMM_EXIFTOOL_VERSION"],
-                text,
-                f"{path.name} must not hardcode UMM_EXIFTOOL_VERSION",
-            )
-            self.assertNotIn(
-                values["UMM_EXIFTOOL_SHA256"],
-                text,
-                f"{path.name} must not hardcode UMM_EXIFTOOL_SHA256",
-            )
+            for key, pin in forbidden:
+                self.assertNotIn(
+                    pin,
+                    text,
+                    f"{path.name} must not hardcode {key}",
+                )
             self.assertNotRegex(
                 text,
                 r"(?i)image-exiftool-\d",
