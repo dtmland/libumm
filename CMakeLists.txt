@@ -27,6 +27,8 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/LibummRegistry.cmake")
 
 add_library(umm
   src/version.cpp
+  src/value.cpp
+  src/metadata.cpp
   "${UMM_REGISTRY_GENERATED_CPP}"
 )
 add_library(umm::umm ALIAS umm)
@@ -67,6 +69,18 @@ if(UMM_BUILD_TESTS)
   add_executable(test_registry_lookup tests/unit/test_registry_lookup.cpp)
   target_link_libraries(test_registry_lookup PRIVATE umm::umm)
   add_test(NAME test_registry_lookup COMMAND test_registry_lookup)
+
+  add_executable(test_result tests/unit/test_result.cpp)
+  target_link_libraries(test_result PRIVATE umm::umm)
+  add_test(NAME test_result COMMAND test_result)
+
+  add_executable(test_value tests/unit/test_value.cpp)
+  target_link_libraries(test_value PRIVATE umm::umm)
+  add_test(NAME test_value COMMAND test_value)
+
+  add_executable(test_metadata tests/unit/test_metadata.cpp)
+  target_link_libraries(test_metadata PRIVATE umm::umm)
+  add_test(NAME test_metadata COMMAND test_metadata)
 
   if(UMM_ENABLE_FAILING_SELFTEST)
     add_executable(test_failing_selftest tests/unit/test_failing_selftest.cpp)
