@@ -29,9 +29,10 @@ set(_umm_saved_build_shared_libs "${BUILD_SHARED_LIBS}")
 set(BUILD_SHARED_LIBS OFF)
 
 # Session 05: BMFF on (CR3/HEIC/AVIF read). Samples/tests/docs off. Extra
-# third-party deps off except Expat, which Exiv2 requires for XMP (session 10
-# JPEG read of Xmp.* keys). Brotli/inih/curl/png stay off so the same source
-# build remains otherwise dep-free on Linux, Windows, and macOS.
+# third-party deps off except Expat (XMP) and zlib (PNG metadata, session 18).
+# Brotli/inih/curl stay off so the same source build remains otherwise
+# dep-free on Linux, Windows, and macOS. Exiv2 PNG support uses zlib only,
+# not libpng.
 set(EXIV2_ENABLE_BMFF ON)
 set(EXIV2_BUILD_SAMPLES OFF)
 set(EXIV2_BUILD_EXIV2_COMMAND OFF)
@@ -46,7 +47,7 @@ set(EXIV2_ENABLE_NLS OFF)
 set(EXIV2_ENABLE_VIDEO OFF)
 set(EXIV2_ENABLE_XMP ON)
 set(EXIV2_ENABLE_EXTERNAL_XMP OFF)
-set(EXIV2_ENABLE_PNG OFF)
+set(EXIV2_ENABLE_PNG ON)
 set(BUILD_WITH_CCACHE OFF)
 
 # Exiv2 find_package(EXPAT REQUIRED) when XMP is on. Prefer a system Expat
@@ -91,6 +92,43 @@ if(NOT EXPAT_FOUND)
   message(STATUS "Expat not found on system; fetched for Exiv2 XMP")
 endif()
 
+# Exiv2 find_package(ZLIB REQUIRED) when PNG is on. Prefer a system zlib
+# (linux-packages.txt lists zlib1g-dev; macOS has it). FetchContent only when
+# CMake cannot find one (typical on Windows CI).
+find_package(ZLIB QUIET)
+if(NOT ZLIB_FOUND)
+  set(ZLIB_BUILD_EXAMPLES OFF)
+  FetchContent_Declare(umm_zlib
+    URL "https://github.com/madler/zlib/releases/download/v1.3.1/zlib-1.3.1.tar.gz"
+    URL_HASH SHA256=9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23
+    DOWNLOAD_DIR "${PROJECT_SOURCE_DIR}/.cache/zlib"
+    SOURCE_DIR "${PROJECT_SOURCE_DIR}/.cache/zlib/src"
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+  )
+  FetchContent_MakeAvailable(umm_zlib)
+  if(NOT TARGET ZLIB::ZLIB)
+    add_library(ZLIB::ZLIB ALIAS zlibstatic)
+  endif()
+  file(TO_CMAKE_PATH "${umm_zlib_SOURCE_DIR}" _umm_zlib_include_dir)
+  file(TO_CMAKE_PATH "${umm_zlib_BINARY_DIR}" _umm_zlib_binary_dir)
+  file(WRITE "${CMAKE_BINARY_DIR}/zlib-config-shim/FindZLIB.cmake"
+    "if(NOT TARGET ZLIB::ZLIB)\n"
+    "  add_library(ZLIB::ZLIB ALIAS zlibstatic)\n"
+    "endif()\n"
+    "set(ZLIB_FOUND TRUE)\n"
+    "set(ZLIB_INCLUDE_DIR \"${_umm_zlib_include_dir}\")\n"
+    "set(ZLIB_INCLUDE_DIRS \"${_umm_zlib_include_dir};${_umm_zlib_binary_dir}\")\n"
+    "set(ZLIB_LIBRARY zlibstatic)\n"
+    "set(ZLIB_LIBRARIES zlibstatic)\n")
+  list(PREPEND CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR}/zlib-config-shim")
+  set(ZLIB_INCLUDE_DIR "${_umm_zlib_include_dir}")
+  set(ZLIB_INCLUDE_DIRS "${_umm_zlib_include_dir};${_umm_zlib_binary_dir}")
+  set(ZLIB_FOUND TRUE)
+  unset(_umm_zlib_include_dir)
+  unset(_umm_zlib_binary_dir)
+  message(STATUS "Zlib not found on system; fetched for Exiv2 PNG")
+endif()
+
 FetchContent_Declare(umm_exiv2
   URL "${_umm_exiv2_url}"
   URL_HASH "SHA256=${UMM_EXIV2_SHA256}"
@@ -126,8 +164,9 @@ set(UMM_EXIV2_ACQUIRED TRUE)
 file(APPEND "${CMAKE_BINARY_DIR}/backends-acquired.txt"
   "exiv2.version=${UMM_EXIV2_VERSION}\n"
   "exiv2.bmff=ON\n"
-  "exiv2.xmp=ON\n")
-message(STATUS "Exiv2 ${UMM_EXIV2_VERSION} (BMFF=ON, XMP=ON) linked privately into umm")
+  "exiv2.xmp=ON\n"
+  "exiv2.png=ON\n")
+message(STATUS "Exiv2 ${UMM_EXIV2_VERSION} (BMFF=ON, XMP=ON, PNG=ON) linked privately into umm")
 
 unset(_umm_exiv2_url)
 unset(_umm_exiv2_download_dir)

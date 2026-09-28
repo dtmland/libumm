@@ -156,6 +156,97 @@ int probe_backend(const std::string& backend_id) {
   if (!tiff_has_gps || !tiff_has_place) {
     return fail("tiff gps fixture vs GPS/named-place split");
   }
+
+  const auto png_caps = umm::capabilitiesForType("PNG");
+  if (!png_caps.ok()) {
+    return fail("probe PNG caps");
+  }
+  const umm::BackendCapability* png_row =
+      find_backend(png_caps.value(), backend_id);
+  if (!png_row || png_row->categories.xmp != umm::Access::read_write ||
+      png_row->categories.iptc_iim != umm::Access::read_write) {
+    return fail("PNG XMP/IPTC capability data mismatch");
+  }
+  if (backend_id == "exiv2") {
+    if (png_row->categories.exif != umm::Access::none ||
+        png_row->location.gps_exif != umm::Access::none) {
+      return fail("PNG Exiv2 should report no EXIF GPS");
+    }
+  } else if (png_row->categories.exif != umm::Access::read_write ||
+             png_row->location.gps_exif != umm::Access::read_write) {
+    return fail("PNG ExifTool should report EXIF GPS");
+  }
+  const auto png_ok = backend->typeCapabilities("PNG");
+  if (!png_ok.ok()) {
+    return fail("typeCapabilities PNG");
+  }
+  const auto sniffed_png = umm::capabilities(raw_stem("png", "gps", ".png"));
+  if (!sniffed_png.ok() || sniffed_png.value().file_type != "PNG") {
+    return fail("sniff gps.png");
+  }
+  const auto png_xmp = backend->readRaw(raw_stem("png", "xmp-only", ".png"));
+  if (!png_xmp.ok() || !raw_has_family(png_xmp.value(), "Xmp")) {
+    return fail("png xmp-only fixture vs XMP capability");
+  }
+  const auto png_agree =
+      backend->readRaw(raw_stem("png", "full-agreeing", ".png"));
+  if (!png_agree.ok() || !raw_has_family(png_agree.value(), "Xmp") ||
+      !raw_has_family(png_agree.value(), "Iptc")) {
+    return fail("png full-agreeing fixture vs IPTC/XMP capability");
+  }
+  const auto png_gps = backend->readRaw(raw_stem("png", "gps", ".png"));
+  if (!png_gps.ok()) {
+    return fail("png gps fixture");
+  }
+  bool png_has_gps = false;
+  bool png_has_exif_gps = false;
+  for (const umm::RawEntry& entry : png_gps.value().entries) {
+    if (entry.key.key.find("GPSLatitude") != std::string::npos) {
+      png_has_gps = true;
+    }
+    if (entry.key.key.find("Exif.GPSInfo.GPSLatitude") != std::string::npos) {
+      png_has_exif_gps = true;
+    }
+  }
+  if (!png_has_gps) {
+    return fail("png gps fixture missing GPSLatitude");
+  }
+  if (backend_id == "exiftool" && !png_has_exif_gps) {
+    return fail("png gps ExifTool missing EXIF GPS");
+  }
+
+  const auto webp_caps = umm::capabilitiesForType("WEBP");
+  if (!webp_caps.ok()) {
+    return fail("probe WEBP caps");
+  }
+  const umm::BackendCapability* webp_row =
+      find_backend(webp_caps.value(), backend_id);
+  if (!webp_row || webp_row->categories.exif != umm::Access::read_write ||
+      webp_row->categories.xmp != umm::Access::read_write ||
+      webp_row->categories.iptc_iim != umm::Access::none) {
+    return fail("WEBP capability data mismatch");
+  }
+  const auto webp_ok = backend->typeCapabilities("WEBP");
+  if (!webp_ok.ok()) {
+    return fail("typeCapabilities WEBP");
+  }
+  const auto sniffed_webp =
+      umm::capabilities(raw_stem("webp", "full-agreeing", ".webp"));
+  if (!sniffed_webp.ok() || sniffed_webp.value().file_type != "WEBP") {
+    return fail("sniff full-agreeing.webp");
+  }
+  const auto webp_xmp =
+      backend->readRaw(raw_stem("webp", "xmp-only", ".webp"));
+  if (!webp_xmp.ok() || !raw_has_family(webp_xmp.value(), "Xmp")) {
+    return fail("webp xmp-only fixture vs XMP capability");
+  }
+  const auto webp_agree =
+      backend->readRaw(raw_stem("webp", "full-agreeing", ".webp"));
+  if (!webp_agree.ok() || !raw_has_family(webp_agree.value(), "Exif") ||
+      !raw_has_family(webp_agree.value(), "Xmp") ||
+      raw_has_family(webp_agree.value(), "Iptc")) {
+    return fail("webp full-agreeing fixture vs EXIF/XMP capability");
+  }
   return 0;
 }
 

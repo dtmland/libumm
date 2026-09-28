@@ -87,6 +87,7 @@ class TestLayout(unittest.TestCase):
     def test_exiv2_expat_shim_exports_include_dirs(self) -> None:
         text = LIBUMM_EXIV2_CMAKE.read_text(encoding="utf-8")
         self.assertIn("EXIV2_ENABLE_XMP ON", text)
+        self.assertIn("EXIV2_ENABLE_PNG ON", text)
         # Exiv2 0.28 xmpsdk compiles ExpatAdapter.cpp with EXPAT_INCLUDE_DIRS.
         self.assertRegex(text, r'set\(EXPAT_INCLUDE_DIRS ')
         self.assertRegex(text, r'set\(EXPAT_INCLUDE_DIR ')

@@ -231,9 +231,10 @@ inline int check_png_raw_reads(umm::Backend& backend, const char* backend_id) {
                  xmp_only.error().message.c_str());
     return 1;
   }
-  if (!raw_only_family(xmp_only.value(), "Xmp") ||
-      !raw_has_key_with_value(xmp_only.value(), "Xmp.dc.creator",
-                              "XMP Creator")) {
+  if (!raw_has_key_with_value(xmp_only.value(), "Xmp.dc.creator",
+                              "XMP Creator") ||
+      raw_has_family(xmp_only.value(), "Exif") ||
+      raw_has_family(xmp_only.value(), "Iptc")) {
     return raw_fail("png xmp-only missing XMP creator");
   }
 
@@ -286,9 +287,10 @@ inline int check_webp_raw_reads(umm::Backend& backend, const char* backend_id) {
                  xmp_only.error().message.c_str());
     return 1;
   }
-  if (!raw_only_family(xmp_only.value(), "Xmp") ||
-      !raw_has_key_with_value(xmp_only.value(), "Xmp.dc.creator",
-                              "XMP Creator")) {
+  if (!raw_has_key_with_value(xmp_only.value(), "Xmp.dc.creator",
+                              "XMP Creator") ||
+      raw_has_family(xmp_only.value(), "Exif") ||
+      raw_has_family(xmp_only.value(), "Iptc")) {
     return raw_fail("webp xmp-only missing XMP creator");
   }
 
