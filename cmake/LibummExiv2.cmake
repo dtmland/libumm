@@ -139,6 +139,14 @@ FetchContent_Declare(umm_exiv2
 
 FetchContent_MakeAvailable(umm_exiv2)
 
+# zlib 1.3.x install(TARGETS zlib zlibstatic) has no EXPORT. Static
+# exiv2lib privately links ZLIB::ZLIB (resolved to zlibstatic), so
+# generate-time install(EXPORT exiv2Targets) fails unless zlibstatic is
+# in an export set. Happens on Windows CI where zlib is FetchContent'd.
+if(TARGET zlibstatic)
+  install(TARGETS zlibstatic EXPORT exiv2Targets)
+endif()
+
 set(BUILD_SHARED_LIBS "${_umm_saved_build_shared_libs}")
 
 if(NOT TARGET exiv2lib)
