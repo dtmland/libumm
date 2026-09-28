@@ -1,0 +1,190 @@
+#!/usr/bin/env python3
+"""Offline contract tests for registry C++ code generation (session 07)."""
+
+from __future__ import annotations
+
+import json
+import re
+import shutil
+import subprocess
+import tempfile
+import unittest
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+GENERATOR = REPO_ROOT / "tools" / "registry" / "generate_cpp.py"
+REGISTRY_DIR = REPO_ROOT / "registry" / "iptc-photo"
+REGISTRY_JSON = REGISTRY_DIR / "iptc-photo.json"
+OVERLAY = REPO_ROOT / "registry" / "mappings" / "iptc-exif-overlay.json"
+GENERATED_DIR = REPO_ROOT / "src" / "generated"
+GENERATED_HPP = GENERATED_DIR / "property_registry.hpp"
+GENERATED_CPP = GENERATED_DIR / "property_registry.cpp"
+GITATTRIBUTES = REPO_ROOT / ".gitattributes"
+CMAKE_REGISTRY = REPO_ROOT / "cmake" / "LibummRegistry.cmake"
+
+XMP_STYLE_STRING = re.compile(r'"[A-Za-z][A-Za-z0-9]*:[A-Za-z][A-Za-z0-9.]*"')
+KPROPERTY_COUNT = re.compile(
+    r"inline constexpr std::size_t kPropertyCount = (\d+);"
+)
+
+
+def run_generator(
+    registry_dir: Path, overlay: Path, output_dir: Path
+) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [
+            "python3",
+            str(GENERATOR),
+            "--registry-dir",
+            str(registry_dir),
+            "--overlay",
+            str(overlay),
+            "--output-dir",
+            str(output_dir),
+        ],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+class TestCodegen(unittest.TestCase):
+    def test_required_files_exist(self) -> None:
+        for path in (
+            GENERATOR,
+            OVERLAY,
+            GENERATED_HPP,
+            GENERATED_CPP,
+            CMAKE_REGISTRY,
+        ):
+            self.assertTrue(path.is_file(), f"missing {path}")
+
+    def test_committed_generated_sources_match_generator(self) -> None:
+        committed_hpp = GENERATED_HPP.read_bytes()
+        committed_cpp = GENERATED_CPP.read_bytes()
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp)
+            result = run_generator(REGISTRY_DIR, OVERLAY, output)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            generated_hpp = (output / GENERATED_HPP.name).read_bytes()
+            generated_cpp = (output / GENERATED_CPP.name).read_bytes()
+        self.assertEqual(generated_hpp, committed_hpp)
+        self.assertEqual(generated_cpp, committed_cpp)
+        self.assertTrue(committed_hpp.endswith(b"\n"))
+        self.assertTrue(committed_cpp.endswith(b"\n"))
+        self.assertNotIn(b"\r\n", committed_hpp)
+        self.assertNotIn(b"\r\n", committed_cpp)
+        self.assertTrue(committed_hpp.startswith(b"// GENERATED"))
+        self.assertTrue(committed_cpp.startswith(b"// GENERATED"))
+
+    def test_generator_is_byte_identical_across_runs(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            first = Path(tmp) / "a"
+            second = Path(tmp) / "b"
+            r1 = run_generator(REGISTRY_DIR, OVERLAY, first)
+            r2 = run_generator(REGISTRY_DIR, OVERLAY, second)
+            self.assertEqual(r1.returncode, 0, r1.stderr)
+            self.assertEqual(r2.returncode, 0, r2.stderr)
+            self.assertEqual(
+                (first / GENERATED_HPP.name).read_bytes(),
+                (second / GENERATED_HPP.name).read_bytes(),
+            )
+            self.assertEqual(
+                (first / GENERATED_CPP.name).read_bytes(),
+                (second / GENERATED_CPP.name).read_bytes(),
+            )
+
+    def test_property_count_matches_registry_json(self) -> None:
+        registry = json.loads(REGISTRY_JSON.read_text(encoding="utf-8"))
+        header = GENERATED_HPP.read_text(encoding="utf-8")
+        match = KPROPERTY_COUNT.search(header)
+        self.assertIsNotNone(match)
+        self.assertEqual(int(match.group(1)), len(registry["properties"]))
+        self.assertEqual(header.count('"iptc.photo.'), len(registry["properties"]))
+
+    def test_editing_registry_changes_generated_entry(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            registry_dir = tmp_path / "iptc-photo"
+            shutil.copytree(REGISTRY_DIR, registry_dir)
+            registry_path = registry_dir / REGISTRY_JSON.name
+            data = json.loads(registry_path.read_text(encoding="utf-8"))
+            found = False
+            for record in data["properties"]:
+                if record["id"] == "iptc.photo.creator":
+                    record["representations"]["xmp"]["property"] = "dc:editedCreator"
+                    found = True
+            self.assertTrue(found)
+            registry_path.write_text(
+                json.dumps(data, indent=2, ensure_ascii=False) + "\n",
+                encoding="utf-8",
+                newline="\n",
+            )
+            output = tmp_path / "generated"
+            result = run_generator(registry_dir, OVERLAY, output)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            text = (output / GENERATED_HPP.name).read_text(encoding="utf-8")
+            self.assertIn('"dc:editedCreator"', text)
+            self.assertNotIn('"dc:creator"', text)
+
+    def test_src_has_no_hand_written_xmp_style_strings(self) -> None:
+        src = REPO_ROOT / "src"
+        generated = src / "generated"
+        offenders: list[str] = []
+        for path in src.rglob("*"):
+            if not path.is_file():
+                continue
+            if generated in path.parents or path.parent == generated:
+                continue
+            if path.suffix.lower() not in {".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp", ".hxx"}:
+                continue
+            text = path.read_text(encoding="utf-8")
+            matches = XMP_STYLE_STRING.findall(text)
+            if matches:
+                rel = path.relative_to(REPO_ROOT)
+                offenders.append(f"{rel}: {matches}")
+        self.assertEqual(offenders, [])
+
+    def test_gitattributes_pins_generated_sources_to_lf(self) -> None:
+        text = GITATTRIBUTES.read_text(encoding="utf-8")
+        lines = [
+            line.strip()
+            for line in text.splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        ]
+        self.assertTrue(
+            any("src/generated/**" in line and "eol=lf" in line for line in lines),
+            ".gitattributes must pin generated C++ to LF",
+        )
+
+    def test_overlay_is_partial_stage4_subset(self) -> None:
+        overlay = json.loads(OVERLAY.read_text(encoding="utf-8"))
+        self.assertTrue(overlay["partial"])
+        ids = [item["id"] for item in overlay["mappings"]]
+        self.assertEqual(ids, sorted(ids))
+        self.assertIn("iptc.photo.creator", ids)
+        self.assertIn("iptc.photo.description", ids)
+        self.assertIn("iptc.photo.dateCreated", ids)
+        self.assertIn("iptc.photo.copyrightNotice", ids)
+        self.assertTrue(any("gpsLatitude" in item for item in ids))
+
+    def test_overlay_conflict_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            overlay_path = Path(tmp) / "overlay.json"
+            overlay = json.loads(OVERLAY.read_text(encoding="utf-8"))
+            for mapping in overlay["mappings"]:
+                if mapping["id"] == "iptc.photo.creator":
+                    mapping["exif_tag"] = "IFD0:WrongTag"
+            overlay_path.write_text(
+                json.dumps(overlay, indent=2, ensure_ascii=False) + "\n",
+                encoding="utf-8",
+                newline="\n",
+            )
+            result = run_generator(REGISTRY_DIR, overlay_path, Path(tmp) / "out")
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("EXIF conflict", result.stderr)
+
+
+if __name__ == "__main__":
+    unittest.main()

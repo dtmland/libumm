@@ -1,0 +1,44 @@
+{
+  "partial": true,
+  "source": {
+    "document": "IPTC Photo Metadata Mapping Guidelines",
+    "version": "2025.1",
+    "url": "https://www.iptc.org/std/photometadata/documentation/mappingguidelines/",
+    "retrieval_date": "2026-09-28",
+    "note": "HTML, not machine-readable. Curated Stage 4 subset (creator, description, dates, copyright, GPS); completion tracked for Stage 6."
+  },
+  "mappings": [
+    {
+      "id": "iptc.photo.copyrightNotice",
+      "exif_tag": "IFD0:Copyright"
+    },
+    {
+      "id": "iptc.photo.creator",
+      "exif_tag": "IFD0:Artist"
+    },
+    {
+      "id": "iptc.photo.dateCreated",
+      "exif_tag": "ExifIFD:DateTimeOriginal+ExifIFD:SubSecTimeOriginal+ExifIFD:OffsetTimeOriginal"
+    },
+    {
+      "id": "iptc.photo.description",
+      "exif_tag": "IFD0:ImageDescription"
+    },
+    {
+      "id": "iptc.photo.struct.Location.gpsAltitude",
+      "exif_tag": "GPS:GPSAltitude"
+    },
+    {
+      "id": "iptc.photo.struct.Location.gpsAltitudeRef",
+      "exif_tag": "GPS:GPSAltitudeRef"
+    },
+    {
+      "id": "iptc.photo.struct.Location.gpsLatitude",
+      "exif_tag": "GPS:GPSLatitude+GPS:GPSLatitudeRef"
+    },
+    {
+      "id": "iptc.photo.struct.Location.gpsLongitude",
+      "exif_tag": "GPS:GPSLongitude+GPS:GPSLongitudeRef"
+    }
+  ]
+}

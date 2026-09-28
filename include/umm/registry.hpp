@@ -1,14 +1,9 @@
-// ============================================================================
-// DESIGN DRAFT — NOT BUILT, NOT TESTED.
-// Normative statement of API shape per docs/analysis decision M7.
-// Promoted to a real header by docs/implementation/07-registry-codegen.md.
-//
 // The registry is generated from IPTC's machine-readable Technical Reference
 // (concept.md §5, §20; decisions S2, M5). No property definition is hand-typed
 // in C++; semantics remain owned by the standards.
-// ============================================================================
 #pragma once
 
+#include <cstddef>
 #include <optional>
 #include <string_view>
 #include <vector>
@@ -37,7 +32,7 @@ struct Representations {
   std::string_view xmp_namespace;   // e.g. "http://purl.org/dc/elements/1.1/"
   std::string_view xmp_property;    // e.g. "dc:creator"
   std::string_view iim_dataset;     // e.g. "2:80" (IPTC IIM)
-  std::string_view exif_tag;        // e.g. "Exif.Image.Artist" (from IPTC Mapping Guidelines)
+  std::string_view exif_tag;        // e.g. "IFD0:Artist" (TR / IPTC Mapping Guidelines)
 };
 
 // One adopted standard property. Semantics are inherited from the standard
@@ -69,5 +64,7 @@ class Registry {
   };
   std::vector<StandardInfo> standards() const;
 };
+
+const Registry& registry() noexcept;
 
 }  // namespace umm
