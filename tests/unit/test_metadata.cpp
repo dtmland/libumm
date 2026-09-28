@@ -35,16 +35,6 @@ bool require_error(const umm::Result<void>& result, umm::ErrorCode code,
   return true;
 }
 
-const umm::Value& require_value(const std::optional<umm::PropertyValue>& property,
-                                const char* what) {
-  if (!property) {
-    std::fprintf(stderr, "%s missing\n", what);
-    static const umm::Value empty;
-    return empty;
-  }
-  return property->value;
-}
-
 }  // namespace
 
 int main() {
@@ -75,8 +65,11 @@ int main() {
   if (!require_ok(md.setDescription(description), "setDescription")) {
     return 1;
   }
-  const auto* desc =
-      std::get_if<umm::LangAlt>(&require_value(md.description(), "description").data);
+  const auto description_property = md.description();
+  if (!description_property) {
+    return fail("description missing after set");
+  }
+  const auto* desc = std::get_if<umm::LangAlt>(&description_property->value.data);
   if (!desc || *desc != description) {
     return fail("description round-trip");
   }
@@ -84,8 +77,12 @@ int main() {
   if (!require_ok(md.setHeadline("Headline"), "setHeadline")) {
     return 1;
   }
+  const auto headline_property = md.headline();
+  if (!headline_property) {
+    return fail("headline missing after set");
+  }
   const auto* headline =
-      std::get_if<std::string>(&require_value(md.headline(), "headline").data);
+      std::get_if<std::string>(&headline_property->value.data);
   if (!headline || *headline != "Headline") {
     return fail("headline round-trip");
   }
@@ -97,8 +94,11 @@ int main() {
   if (!require_ok(md.setDateCreated(created), "setDateCreated")) {
     return 1;
   }
-  const auto* when =
-      std::get_if<umm::DateTime>(&require_value(md.dateCreated(), "dateCreated").data);
+  const auto date_property = md.dateCreated();
+  if (!date_property) {
+    return fail("dateCreated missing after set");
+  }
+  const auto* when = std::get_if<umm::DateTime>(&date_property->value.data);
   if (!when || *when != created) {
     return fail("dateCreated round-trip");
   }
@@ -107,8 +107,12 @@ int main() {
   if (!require_ok(md.setCopyrightNotice(notice), "setCopyrightNotice")) {
     return 1;
   }
-  const auto* copied = std::get_if<umm::LangAlt>(
-      &require_value(md.copyrightNotice(), "copyrightNotice").data);
+  const auto copyright_property = md.copyrightNotice();
+  if (!copyright_property) {
+    return fail("copyrightNotice missing after set");
+  }
+  const auto* copied =
+      std::get_if<umm::LangAlt>(&copyright_property->value.data);
   if (!copied || *copied != notice) {
     return fail("copyrightNotice round-trip");
   }
@@ -116,8 +120,11 @@ int main() {
   if (!require_ok(md.setCreditLine("Credit"), "setCreditLine")) {
     return 1;
   }
-  const auto* credit =
-      std::get_if<std::string>(&require_value(md.creditLine(), "creditLine").data);
+  const auto credit_property = md.creditLine();
+  if (!credit_property) {
+    return fail("creditLine missing after set");
+  }
+  const auto* credit = std::get_if<std::string>(&credit_property->value.data);
   if (!credit || *credit != "Credit") {
     return fail("creditLine round-trip");
   }
@@ -125,8 +132,12 @@ int main() {
   if (!require_ok(md.setKeywords({"lake", "dawn"}), "setKeywords")) {
     return 1;
   }
-  const auto* keywords = std::get_if<std::vector<std::string>>(
-      &require_value(md.keywords(), "keywords").data);
+  const auto keywords_property = md.keywords();
+  if (!keywords_property) {
+    return fail("keywords missing after set");
+  }
+  const auto* keywords =
+      std::get_if<std::vector<std::string>>(&keywords_property->value.data);
   if (!keywords || *keywords != std::vector<std::string>{"lake", "dawn"}) {
     return fail("keywords round-trip");
   }
@@ -134,8 +145,11 @@ int main() {
   if (!require_ok(md.setRating(4.0), "setRating")) {
     return 1;
   }
-  const auto* rating =
-      std::get_if<double>(&require_value(md.rating(), "rating").data);
+  const auto rating_property = md.rating();
+  if (!rating_property) {
+    return fail("rating missing after set");
+  }
+  const auto* rating = std::get_if<double>(&rating_property->value.data);
   if (!rating || *rating != 4.0) {
     return fail("rating round-trip");
   }
@@ -147,8 +161,12 @@ int main() {
   if (!require_ok(md.setGps(gps), "setGps")) {
     return 1;
   }
+  const auto gps_property = md.gps();
+  if (!gps_property) {
+    return fail("gps missing after set");
+  }
   const auto* position =
-      std::get_if<umm::GpsCoordinate>(&require_value(md.gps(), "gps").data);
+      std::get_if<umm::GpsCoordinate>(&gps_property->value.data);
   if (!position || *position != gps) {
     return fail("gps round-trip");
   }
@@ -160,8 +178,12 @@ int main() {
   if (!require_ok(md.setLocationCreated({paris}), "setLocationCreated")) {
     return 1;
   }
+  const auto location_property = md.locationCreated();
+  if (!location_property) {
+    return fail("locationCreated missing after set");
+  }
   const auto* locations = std::get_if<std::vector<umm::Structure>>(
-      &require_value(md.locationCreated(), "locationCreated").data);
+      &location_property->value.data);
   if (!locations || locations->size() != 1 ||
       locations->front().at("city") != city) {
     return fail("locationCreated round-trip");
