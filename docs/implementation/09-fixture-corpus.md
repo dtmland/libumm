@@ -43,6 +43,8 @@ Sessions 04–05 merged (pinned ExifTool + Exiv2 available as generation tools).
   compares parsed metadata, not necessarily bytes).
 - All test-media-plan §2.2 fixtures present, manifest-verified, < 1 MB total.
 - Unicode filename fixture round-trips checkout on Windows CI.
+- Unicode *values* are written through an ExifTool UTF-8 argfile (`-charset utf8 -@`)
+  so Windows Perl argv does not replace non-ASCII characters with `?`.
 
 ## Cut line
 

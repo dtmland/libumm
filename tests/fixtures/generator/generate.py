@@ -13,6 +13,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -218,11 +219,16 @@ class ExifTool:
             raise GeneratorError(f"ExifTool config not found: {config}")
 
     def prefix(self) -> list[str]:
+        # -charset utf8 must precede -@ so ExifTool decodes the argfile as UTF-8.
+        # Windows Perl/ExifTool argv uses the system ACP (and cp65001 is unreliable),
+        # so Unicode tag values cannot be passed on the command line.
         return [
             self.perl,
             self.script,
             "-config",
             str(self.config),
+            "-charset",
+            "utf8",
             "-charset",
             "filename=UTF8",
             "-charset",
@@ -230,8 +236,15 @@ class ExifTool:
         ]
 
     def run(self, args: list[str]) -> None:
-        cmd = self.prefix() + args
-        result = subprocess.run(cmd, capture_output=True, check=False)
+        fd, name = tempfile.mkstemp(prefix="umm-exiftool-", suffix=".args")
+        os.close(fd)
+        argfile = Path(name)
+        try:
+            argfile.write_text("\n".join(args) + "\n", encoding="utf-8", newline="\n")
+            cmd = self.prefix() + ["-@", str(argfile)]
+            result = subprocess.run(cmd, capture_output=True, check=False)
+        finally:
+            argfile.unlink(missing_ok=True)
         if result.returncode != 0:
             stderr = result.stderr.decode("utf-8", errors="replace")
             stdout = result.stdout.decode("utf-8", errors="replace")

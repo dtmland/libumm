@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
 import os
 import re
@@ -117,6 +118,15 @@ def discover_exiftool() -> tuple[str, str] | None:
     return None
 
 
+def load_generator():
+    spec = importlib.util.spec_from_file_location("umm_fixture_generate", GENERATOR)
+    if spec is None or spec.loader is None:
+        raise AssertionError(f"cannot load generator {GENERATOR}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def exiftool_json(perl: str, script: str, path: Path) -> dict:
     result = subprocess.run(
         [
@@ -124,6 +134,12 @@ def exiftool_json(perl: str, script: str, path: Path) -> dict:
             script,
             "-config",
             str(CONFIG),
+            "-charset",
+            "utf8",
+            "-charset",
+            "filename=UTF8",
+            "-charset",
+            "IPTC=UTF8",
             "-j",
             "-G1",
             "-a",
@@ -157,6 +173,51 @@ class TestFixtureCorpus(unittest.TestCase):
     def test_required_generator_files_exist(self) -> None:
         for path in (GENERATOR, BASE_JPEG, CONFIG, MANIFEST, GITATTRIBUTES):
             self.assertTrue(path.is_file(), f"missing {path}")
+
+    def test_generator_passes_unicode_via_utf8_argfile(self) -> None:
+        text = GENERATOR.read_text(encoding="utf-8")
+        self.assertIn('"-charset"', text)
+        self.assertIn('"utf8"', text)
+        self.assertIn('"-@"', text)
+
+    def test_exiftool_run_writes_unicode_argfile(self) -> None:
+        gen = load_generator()
+        captured: dict[str, object] = {}
+
+        def fake_run(cmd, **_kwargs):
+            argfile = Path(cmd[-1])
+            captured["cmd"] = cmd
+            captured["text"] = argfile.read_text(encoding="utf-8")
+
+            class Result:
+                returncode = 0
+                stdout = b""
+                stderr = b""
+
+            return Result()
+
+        original = gen.subprocess.run
+        tool = gen.ExifTool(sys.executable, str(GENERATOR), CONFIG)
+        try:
+            gen.subprocess.run = fake_run
+            tool.run(
+                [
+                    "-overwrite_original",
+                    "-XMP-dc:Creator=Jürgen Müller",
+                    "-XMP-dc:Description=café — 日本語",
+                    "unicode.jpg",
+                ]
+            )
+        finally:
+            gen.subprocess.run = original
+        cmd = captured["cmd"]
+        self.assertIsInstance(cmd, list)
+        self.assertIn("-charset", cmd)
+        self.assertIn("utf8", cmd)
+        self.assertEqual(cmd[-2], "-@")
+        text = str(captured["text"])
+        self.assertIn("Jürgen Müller", text)
+        self.assertIn("日本語", text)
 
     def test_gitattributes_pins_fixture_encodings(self) -> None:
         text = GITATTRIBUTES.read_text(encoding="utf-8")
@@ -268,6 +329,29 @@ class TestFixtureExifTool(unittest.TestCase):
         self.assertIn("café", str(record.get("XMP-dc:Description", "")))
         self.assertIn("日本語", str(record.get("XMP-dc:Description", "")))
         self.assertEqual(record.get("IPTC:By-line"), "Jürgen Müller")
+
+    def test_generator_write_tags_preserves_unicode(self) -> None:
+        gen = load_generator()
+        tool = gen.ExifTool(self.perl, self.script, CONFIG)
+        with tempfile.TemporaryDirectory() as tmp:
+            dest = Path(tmp) / "unicode.jpg"
+            shutil.copyfile(BASE_JPEG, dest)
+            gen.write_tags(
+                tool,
+                dest,
+                [
+                    ("XMP-dc:Creator", "Jürgen Müller"),
+                    ("XMP-dc:Description", "café — 日本語"),
+                    ("IPTC:CodedCharacterSet", "UTF8"),
+                    ("IPTC:By-line", "Jürgen Müller"),
+                    ("IPTC:Caption-Abstract", "café — 日本語"),
+                ],
+            )
+            record = exiftool_json(self.perl, self.script, dest)
+        self.assertEqual(record.get("XMP-dc:Creator"), "Jürgen Müller")
+        self.assertIn("日本語", str(record.get("XMP-dc:Description", "")))
+        self.assertEqual(record.get("IPTC:By-line"), "Jürgen Müller")
+        self.assertIn("日本語", str(record.get("IPTC:Caption-Abstract", "")))
 
     def test_sidecar_conflicts_with_embedded(self) -> None:
         embedded = exiftool_json(
