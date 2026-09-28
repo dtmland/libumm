@@ -1,6 +1,7 @@
 // Application-facing entry points (concept.md §32).
-// umm::read reconciles embedded JPEG metadata and, by default, a paired XMP
-// sidecar (session 14). umm::write applies StoragePolicy (concept.md §12).
+// umm::read reconciles embedded metadata and, by default, a paired XMP
+// sidecar (session 14). umm::write applies StoragePolicy (concept.md §12)
+// using capability data for the sniffed type (session 16).
 #pragma once
 
 #include <filesystem>
@@ -68,14 +69,15 @@ std::optional<std::filesystem::path> findSidecar(
 // --- Entry points ------------------------------------------------------------
 
 // Read + reconcile (docs/reconciliation-policy.md) into canonical Metadata.
-// JPEG: embedded metadata, plus sidecar XMP when merge_sidecar and a pair exists.
+// Embedded metadata, plus sidecar XMP when merge_sidecar and a pair exists.
 // A standalone .xmp file is readable as sidecar-only.
 Result<Metadata> read(const std::filesystem::path& media, ReadOptions options = {});
 
 // Write canonical metadata through the mapping engine to synchronized
 // representations, with temp-file + atomic-rename safety (decision M3).
-// JPEG + preferred/embedded_only: embedded XMP+EXIF+IPTC-IIM.
-// JPEG + sidecar_only/sidecar_required: XMP sidecar only (JPEG bytes unchanged).
+// preferred/embedded_only: writable embedded categories from capabilities().
+// sidecar_only/sidecar_required: XMP sidecar (media bytes unchanged).
+// Types with sidecar_recommended prefer sidecar writes. Mixed sync is Stage 8.
 Result<WriteReport> write(const std::filesystem::path& media,
                           const Metadata& metadata,
                           WriteOptions options = {});
@@ -83,8 +85,10 @@ Result<WriteReport> write(const std::filesystem::path& media,
 Result<WriteReport> write(const std::filesystem::path& media,
                           const Metadata& metadata, StoragePolicy policy);
 
-// JPEG: Preferred/EmbeddedOnly → Embedded formats from capabilities();
-// SidecarOnly/SidecarRequired → Sidecar(XMP). Mixed sync is Stage 8.
+// preferred: sidecar when the path is an XMP sidecar or sidecar_recommended,
+// else embedded formats from capabilities(); embedded_only requires writable
+// embedded categories; sidecar_only/sidecar_required → Sidecar(XMP).
+// Mixed sync is Stage 8.
 Result<StorageDecision> evaluateStorage(const std::filesystem::path& media,
                                         WriteOptions options = {});
 

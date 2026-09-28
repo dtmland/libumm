@@ -11,21 +11,11 @@
 #include <variant>
 #include <vector>
 
+#include "core/property_ids.hpp"
 #include "umm/registry.hpp"
 
 namespace umm::internal {
 namespace {
-
-constexpr std::string_view kCreator = "iptc.photo.creator";
-constexpr std::string_view kDescription = "iptc.photo.description";
-constexpr std::string_view kHeadline = "iptc.photo.headline";
-constexpr std::string_view kDateCreated = "iptc.photo.dateCreated";
-constexpr std::string_view kCopyright = "iptc.photo.copyrightNotice";
-constexpr std::string_view kCredit = "iptc.photo.creditLine";
-constexpr std::string_view kKeywords = "iptc.photo.keywords";
-constexpr std::string_view kRating = "iptc.photo.imageRating";
-constexpr std::string_view kLocation = "iptc.photo.locationCreated";
-constexpr std::string_view kGps = "exif.gps.position";
 
 constexpr double kGpsDegEps = 1e-5;
 constexpr double kGpsAltEps = 0.5;

@@ -90,13 +90,18 @@ std::vector<std::string> BackendManager::backendIds() const {
   return ids;
 }
 
-Backend* BackendManager::get(std::string_view id) {
-  for (auto& backend : backends_) {
+const Backend* BackendManager::get(std::string_view id) const {
+  for (const auto& backend : backends_) {
     if (backend->id() == id) {
       return backend.get();
     }
   }
   return nullptr;
+}
+
+Backend* BackendManager::get(std::string_view id) {
+  return const_cast<Backend*>(
+      static_cast<const BackendManager*>(this)->get(id));
 }
 
 Backend* BackendManager::firstAvailable() {

@@ -81,9 +81,35 @@ int main() {
     return fail("XMP embedded_only");
   }
 
-  const auto png = umm::evaluateStorage(std::filesystem::path("a.png"), preferred);
-  if (png.ok() || png.error().code != umm::ErrorCode::unsupported_type) {
-    return fail("PNG unsupported");
+  const auto tiff =
+      umm::evaluateStorage(std::filesystem::path("a.tiff"), preferred);
+  if (!tiff.ok() ||
+      tiff.value().method != umm::StorageDecision::Method::embedded ||
+      !formats_are(tiff.value(), {"XMP", "EXIF", "IPTC-IIM"})) {
+    return fail("TIFF embedded-capable");
+  }
+
+  const auto arw = umm::evaluateStorage(std::filesystem::path("a.arw"), preferred);
+  if (!arw.ok() || arw.value().method != umm::StorageDecision::Method::sidecar ||
+      !formats_are(arw.value(), {"XMP"})) {
+    return fail("ARW sidecar_recommended");
+  }
+
+  const auto bmp = umm::evaluateStorage(std::filesystem::path("a.bmp"), preferred);
+  if (bmp.ok() || bmp.error().code != umm::ErrorCode::unsupported_capability) {
+    return fail("BMP no write capability");
+  }
+  const auto bmp_embedded =
+      umm::evaluateStorage(std::filesystem::path("a.bmp"), embedded);
+  if (bmp_embedded.ok() ||
+      bmp_embedded.error().code != umm::ErrorCode::unsupported_capability) {
+    return fail("BMP embedded_only");
+  }
+
+  const umm::BackendManager& manager = umm::BackendManager::instance();
+  const umm::Backend* listed = manager.get("exiv2");
+  if (!listed || listed->id() != "exiv2") {
+    return fail("const BackendManager::get");
   }
   return 0;
 }
