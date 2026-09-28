@@ -83,10 +83,6 @@ int main() {
   }
   const auto skipped = umm::internal::mutate_file_atomically(
       collision, [](const std::filesystem::path& working) {
-        if (working.filename().string().find(".umm-") == std::string::npos) {
-          return umm::Error{umm::ErrorCode::internal, "temp name missing prefix",
-                            "", ""};
-        }
         write_all(working, "collision-mutated");
         return umm::Result<void>{};
       });

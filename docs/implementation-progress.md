@@ -24,7 +24,7 @@ Use it as a quick reference before starting work so you can confirm which phase 
 | 13 | [13-write-path-and-safety.md](implementation/13-write-path-and-safety.md) | Complete | JPEG `umm::write` through both backends; write-sync; temp+atomic rename (M3). `makernote.jpg` still deferred (M6). |
 | 14 | [14-xmp-sidecar-and-policy.md](implementation/14-xmp-sidecar-and-policy.md) | Complete | JPEG+XMP sidecar pairing, read merge/conflict, sidecar-only write, StoragePolicy. Mixed sync deferred (Stage 8). |
 | 15 | [15-capabilities-engine.md](implementation/15-capabilities-engine.md) | Complete | `umm::capabilities()` from `registry/capabilities/`; generated `supported-types.md`; JPEG/XMP probe drift tests. |
-| 16 | [16-format-dispatch-generalization.md](implementation/16-format-dispatch-generalization.md) | In progress | Capability-driven write dispatch replaces the JPEG gate; property-ID dedup; hardening (review R1/R3/R8). |
+| 16 | [16-format-dispatch-generalization.md](implementation/16-format-dispatch-generalization.md) | Complete | Capability-driven write dispatch replaces the JPEG gate; property-ID dedup; hardening (review R1/R3/R8). |
 | 17 | [17-tiff-support.md](implementation/17-tiff-support.md) | Not started | TIFF fixtures, read/write/round-trip both backends, probe extension. |
 | 18 | [18-png-webp-support.md](implementation/18-png-webp-support.md) | Not started | PNG + WebP: capability-divergent categories (PNG no EXIF in Exiv2; WebP no IPTC). |
 | 19 | [19-raw-read-and-sidecar-write.md](implementation/19-raw-read-and-sidecar-write.md) | Not started | DNG read/write; read-only-RAW sidecar-write pattern; proprietary RAW deferred to Tier B. |
