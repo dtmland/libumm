@@ -1,12 +1,6 @@
-// ============================================================================
-// DESIGN DRAFT — NOT BUILT, NOT TESTED.
-// Normative statement of API shape per docs/analysis decision M7.
-// Promoted to a real header by docs/implementation/08-core-semantic-model.md.
-//
 // Provenance is first-class (concept.md §17): because several standards can
 // represent the same concept, every canonical value records where it came
 // from and how disagreement was resolved.
-// ============================================================================
 #pragma once
 
 #include <string>
@@ -18,8 +12,10 @@ namespace umm {
 
 // A raw metadata origin, e.g. "Exif.Image.DateTime" read by backend "exiv2".
 struct SourceRef {
-  std::string raw_key;   // neutral raw vocabulary (Exiv2 key syntax; see backend.hpp)
-  std::string backend;   // backend id that produced it
+  std::string raw_key;  // neutral raw vocabulary (Exiv2 key syntax; see backend.hpp)
+  std::string backend;  // backend id that produced it
+
+  bool operator==(const SourceRef&) const = default;
 };
 
 enum class Resolution {
@@ -33,10 +29,12 @@ enum class Resolution {
 // The reconciliation rules themselves live in docs/reconciliation-policy.md
 // (decision S4a) and are implemented in the core engine, not here.
 struct PropertyValue {
-  Value value;                      // canonical value (for `conflict`: the preferred candidate)
-  std::vector<SourceRef> sources;   // every raw origin, never silently dropped
+  Value value;                     // canonical value (for `conflict`: the preferred candidate)
+  std::vector<SourceRef> sources;  // every raw origin, never silently dropped
   Resolution resolution{Resolution::single};
-  std::string preferred_source;     // raw_key of the winning source when reconciled/conflict
+  std::string preferred_source;  // raw_key of the winning source when reconciled/conflict
+
+  bool operator==(const PropertyValue&) const = default;
 };
 
 }  // namespace umm
