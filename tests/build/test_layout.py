@@ -17,6 +17,7 @@ LIBUMM_EXIV2_CMAKE = REPO_ROOT / "cmake" / "LibummExiv2.cmake"
 LIBUMM_REGISTRY_CMAKE = REPO_ROOT / "cmake" / "LibummRegistry.cmake"
 EXIFTOOL_SMOKE = REPO_ROOT / "tests" / "backend" / "test_exiftool_smoke.cmake"
 EXIV2_SMOKE = REPO_ROOT / "tests" / "backend" / "test_exiv2_smoke.cpp"
+EXIV2_READ = REPO_ROOT / "tests" / "backend" / "test_exiv2_read.cpp"
 PUBLIC_INCLUDE = REPO_ROOT / "include"
 
 
@@ -32,6 +33,7 @@ class TestLayout(unittest.TestCase):
             LIBUMM_REGISTRY_CMAKE,
             EXIFTOOL_SMOKE,
             EXIV2_SMOKE,
+            EXIV2_READ,
         ):
             self.assertTrue(path.is_file(), f"missing required file: {path}")
 

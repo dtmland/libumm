@@ -70,12 +70,18 @@ if(NOT EXPAT_FOUND)
   if(NOT TARGET EXPAT::EXPAT)
     add_library(EXPAT::EXPAT ALIAS expat)
   endif()
-  file(WRITE "${CMAKE_BINARY_DIR}/expat-config-shim/EXPATConfig.cmake"
+  # Exiv2 calls find_package(EXPAT REQUIRED) in module mode and also uses
+  # EXPAT_INCLUDE_DIR. Provide a FindEXPAT that wraps the fetched target.
+  file(WRITE "${CMAKE_BINARY_DIR}/expat-config-shim/FindEXPAT.cmake"
     "if(NOT TARGET EXPAT::EXPAT)\n"
     "  add_library(EXPAT::EXPAT ALIAS expat)\n"
     "endif()\n"
-    "set(EXPAT_FOUND TRUE)\n")
-  list(PREPEND CMAKE_PREFIX_PATH "${CMAKE_BINARY_DIR}/expat-config-shim")
+    "set(EXPAT_FOUND TRUE)\n"
+    "set(EXPAT_INCLUDE_DIR \"${umm_expat_SOURCE_DIR}/lib\")\n"
+    "set(EXPAT_LIBRARY expat)\n")
+  list(PREPEND CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR}/expat-config-shim")
+  set(EXPAT_INCLUDE_DIR "${umm_expat_SOURCE_DIR}/lib")
+  set(EXPAT_FOUND TRUE)
   message(STATUS "Expat not found on system; fetched for Exiv2 XMP")
 endif()
 

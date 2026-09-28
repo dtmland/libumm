@@ -21,8 +21,8 @@ int fail(const char* message) {
   return 1;
 }
 
-std::string utf8(std::u8string_view text) {
-  return std::string(reinterpret_cast<const char*>(text.data()), text.size());
+std::string from_u8(const char8_t* text) {
+  return std::string(reinterpret_cast<const char*>(text));
 }
 
 std::filesystem::path fixtures_dir() {
@@ -158,8 +158,16 @@ int main() {
                  unicode.error().message.c_str());
     return 1;
   }
-  const std::string jurgen = utf8(u8"Jürgen Müller");
-  const std::string cafe = utf8(u8"café — 日本語");
+  // UTF-8 for: Jürgen Müller
+  static constexpr char8_t kJurgen[] = {
+      'J', 0xC3, 0xBC, 'r', 'g', 'e', 'n', ' ', 'M', 0xC3, 0xBC, 'l', 'l',
+      'e', 'r', 0};
+  // UTF-8 for: café — 日本語
+  static constexpr char8_t kCafe[] = {
+      'c', 'a', 'f', 0xC3, 0xA9, ' ', 0xE2, 0x80, 0x94, ' ', 0xE6, 0x97,
+      0xA5, 0xE6, 0x9C, 0xAC, 0xE8, 0xAA, 0x9E, 0};
+  const std::string jurgen = from_u8(kJurgen);
+  const std::string cafe = from_u8(kCafe);
   if (!has_key_with_value(unicode.value(), "Iptc.Application2.Byline", jurgen) ||
       !has_key_with_value(unicode.value(), "Xmp.dc.creator", jurgen) ||
       !has_key_with_value(unicode.value(), "Iptc.Application2.Caption", cafe) ||
@@ -167,7 +175,8 @@ int main() {
     return fail("unicode.jpg values did not match UTF-8 expectations");
   }
 
-  const auto truncated = backend->readRaw(jpeg("truncated.jpg"));
+  const auto truncated =
+      backend->readRaw(fixtures_dir() / "corrupt" / "truncated.jpg");
   if (truncated.ok()) {
     return fail("truncated.jpg unexpectedly succeeded");
   }
