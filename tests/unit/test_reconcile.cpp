@@ -304,8 +304,8 @@ int main() {
 
   {
     const auto written = umm::write(std::filesystem::path("x.jpg"), {});
-    if (written.ok() || written.error().code != umm::ErrorCode::internal) {
-      return fail("write stub");
+    if (written.ok() || written.error().code != umm::ErrorCode::io_not_found) {
+      return fail("write missing file");
     }
   }
 

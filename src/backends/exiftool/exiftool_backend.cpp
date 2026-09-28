@@ -286,7 +286,6 @@ Result<void> ExifToolBackend::ensure_process() {
       "-@",
       "-",
       "-common_args",
-      "-j",
       "-G1",
       "-struct",
       "-b",
@@ -368,7 +367,8 @@ Result<RawDocument> ExifToolBackend::readRaw(
                         path_to_utf8(media));
     }
 
-    std::string command = path_to_utf8(media);
+    std::string command = "-j\n";
+    command += path_to_utf8(media);
     command += "\n-execute\n";
     Result<std::string> body = execute(command);
     if (!body.ok()) {
@@ -435,9 +435,103 @@ Result<RawDocument> ExifToolBackend::readRaw(
   }
 }
 
-Result<void> ExifToolBackend::writeRaw(const std::filesystem::path&,
-                                       const RawChanges&) {
-  return make_error(ErrorCode::internal, "writeRaw is not implemented", "");
+Result<void> ExifToolBackend::writeRaw(const std::filesystem::path& media,
+                                       const RawChanges& changes) {
+  try {
+    resolve();
+    if (!absence_reason_.empty()) {
+      return make_error(ErrorCode::backend_unavailable, absence_reason_, "");
+    }
+    if (media.empty() || !std::filesystem::exists(media)) {
+      return make_error(ErrorCode::io_not_found, "media file not found",
+                        path_to_utf8(media));
+    }
+    if (!std::filesystem::is_regular_file(media)) {
+      return make_error(ErrorCode::io_write_failed, "media path is not a file",
+                        path_to_utf8(media));
+    }
+
+    std::filesystem::path out = media;
+    out += ".umm-out";
+    std::error_code ec;
+    std::filesystem::remove(out, ec);
+
+    std::string command;
+    auto line = [&](std::string_view text) {
+      command.append(text.begin(), text.end());
+      command += '\n';
+    };
+    for (const RawKey& key : changes.removals) {
+      const auto tag = exiftool_tag_for_raw_key(key.key);
+      if (tag) {
+        line("-" + *tag + "=");
+      }
+    }
+    for (const RawEntry& entry : changes.upserts) {
+      const auto tag = exiftool_tag_for_raw_key(entry.key.key);
+      if (!tag) {
+        continue;
+      }
+      line("-" + *tag + "=" + entry.value);
+    }
+    line("-o");
+    line(path_to_utf8(out));
+    line(path_to_utf8(media));
+    line("-execute");
+
+    Result<std::string> body = execute(command);
+    if (!body.ok()) {
+      std::filesystem::remove(out, ec);
+      return body.error();
+    }
+
+    std::string json_text = std::move(body.value());
+    while (!json_text.empty() &&
+           (json_text.back() == '\n' || json_text.back() == '\r')) {
+      json_text.pop_back();
+    }
+    std::string parse_error;
+    const auto parsed = parse_json(json_text, &parse_error);
+    if (parsed) {
+      const JsonValue* object = nullptr;
+      if (parsed->kind == JsonValue::Kind::array && !parsed->array.empty()) {
+        object = &parsed->array.front();
+      } else if (parsed->kind == JsonValue::Kind::object) {
+        object = &*parsed;
+      }
+      if (object && object->kind == JsonValue::Kind::object) {
+        if (const JsonValue* error_field =
+                find_named_field(*object, "Error", "ExifTool")) {
+          std::filesystem::remove(out, ec);
+          return map_exiftool_error_text(error_field->as_text());
+        }
+      }
+    }
+
+    if (!std::filesystem::is_regular_file(out, ec)) {
+      return make_error(ErrorCode::backend_failed,
+                        "ExifTool did not write the output file", json_text);
+    }
+    std::filesystem::rename(out, media, ec);
+    if (ec) {
+#if defined(_WIN32)
+      std::filesystem::remove(media, ec);
+      std::filesystem::rename(out, media, ec);
+#endif
+    }
+    if (ec) {
+      std::filesystem::remove(out, ec);
+      return make_error(ErrorCode::io_write_failed,
+                        "failed to replace working copy", ec.message());
+    }
+    return {};
+  } catch (const std::exception& error) {
+    return make_error(ErrorCode::backend_failed, "ExifTool write failed",
+                      error.what());
+  } catch (...) {
+    return make_error(ErrorCode::internal, "unknown exception from ExifTool",
+                      "");
+  }
 }
 
 Result<void> ExifToolBackend::typeCapabilities(std::string_view) const {

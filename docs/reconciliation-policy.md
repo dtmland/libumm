@@ -1,8 +1,7 @@
 # Reconciliation policy (Phase 1)
 
-Status: **normative** for JPEG embedded read (session 12). Write-synchronization
-rules are recorded here for session 13; they are not implemented in this session.
-XMP sidecar pairing is session 14.
+Status: **normative** for JPEG embedded read (session 12) and write-synchronization
+(session 13). XMP sidecar pairing is session 14.
 
 This is the written, testable policy required by decision **S4a**. Classification
 and provenance shapes are those in `include/umm/provenance.hpp` (concept.md §15,

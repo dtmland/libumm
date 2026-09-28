@@ -1,6 +1,7 @@
 // Application-facing entry points (concept.md §32).
 // umm::read is implemented in session 12 against docs/reconciliation-policy.md.
-// umm::write / storage policy are declared here and implemented in sessions 13/14.
+// umm::write is implemented in session 13 (embedded JPEG, decision M3).
+// Sidecar storage policy is session 14.
 #pragma once
 
 #include <filesystem>

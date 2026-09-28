@@ -30,7 +30,10 @@ add_library(umm
   src/value.cpp
   src/metadata.cpp
   src/read.cpp
+  src/write.cpp
   src/core/reconcile.cpp
+  src/core/write_sync.cpp
+  src/core/atomic_write.cpp
   src/backends/backend_manager.cpp
   src/backends/exiftool/json.cpp
   src/backends/exiftool/keys.cpp
@@ -114,6 +117,22 @@ if(UMM_BUILD_TESTS)
   )
   add_test(NAME test_reconcile COMMAND test_reconcile)
 
+  add_executable(test_atomic_write tests/unit/test_atomic_write.cpp)
+  target_link_libraries(test_atomic_write PRIVATE umm::umm)
+  target_include_directories(test_atomic_write
+    PRIVATE
+      "${CMAKE_CURRENT_SOURCE_DIR}/src"
+  )
+  add_test(NAME test_atomic_write COMMAND test_atomic_write)
+
+  add_executable(test_write_sync tests/unit/test_write_sync.cpp)
+  target_link_libraries(test_write_sync PRIVATE umm::umm)
+  target_include_directories(test_write_sync
+    PRIVATE
+      "${CMAKE_CURRENT_SOURCE_DIR}/src"
+  )
+  add_test(NAME test_write_sync COMMAND test_write_sync)
+
   add_executable(test_fixtures_path tests/unit/test_fixtures_path.cpp)
   umm_apply_fixture_dir(test_fixtures_path)
   add_test(NAME test_fixtures_path COMMAND test_fixtures_path)
@@ -195,6 +214,26 @@ if(UMM_BUILD_TESTS)
   add_test(NAME test_exiftool_unavailable COMMAND test_exiftool_unavailable)
 
   if(UMM_EXIV2_ACQUIRED OR (UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE))
+    add_executable(test_write tests/backend/test_write.cpp)
+    target_link_libraries(test_write PRIVATE umm::umm)
+    target_include_directories(test_write
+      PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/backend"
+    )
+    umm_apply_fixture_dir(test_write)
+    if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)
+      file(TO_CMAKE_PATH "${UMM_EXIFTOOL_SCRIPT}" UMM_TEST_WRITE_EXIFTOOL_SCRIPT)
+      file(TO_CMAKE_PATH "${UMM_PERL_EXECUTABLE}" UMM_TEST_WRITE_EXIFTOOL_PERL)
+      target_compile_definitions(test_write
+        PRIVATE
+          "UMM_TEST_EXIFTOOL_SCRIPT=R\"(${UMM_TEST_WRITE_EXIFTOOL_SCRIPT})\""
+          "UMM_TEST_EXIFTOOL_PERL=R\"(${UMM_TEST_WRITE_EXIFTOOL_PERL})\""
+      )
+    endif()
+    add_test(NAME test_write COMMAND test_write)
+    umm_apply_fixture_dir_to_test(test_write)
+
     add_executable(test_read tests/backend/test_read.cpp)
     target_link_libraries(test_read PRIVATE umm::umm)
     target_include_directories(test_read
