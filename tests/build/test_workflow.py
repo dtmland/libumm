@@ -95,6 +95,8 @@ class TestWorkflow(unittest.TestCase):
         self.assertIn("failing_selftest", text)
         self.assertIn("UMM_ENABLE_FAILING_SELFTEST", text)
         self.assertIn("python3 -m unittest discover -s tests/build -v", text)
+        self.assertIn("-DUMM_REQUIRE_EXIFTOOL=ON", text)
+        self.assertIn("backends-acquired.txt", text)
 
 
 if __name__ == "__main__":

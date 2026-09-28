@@ -11,11 +11,21 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 PRESETS_PATH = REPO_ROOT / "CMakePresets.json"
 PINS_SH = REPO_ROOT / "tools" / "build" / "pins.sh"
 LINUX_PACKAGES = REPO_ROOT / "tools" / "build" / "linux-packages.txt"
+LIBUMM_PINS_CMAKE = REPO_ROOT / "cmake" / "LibummPins.cmake"
+LIBUMM_EXIFTOOL_CMAKE = REPO_ROOT / "cmake" / "LibummExifTool.cmake"
+EXIFTOOL_SMOKE = REPO_ROOT / "tests" / "backend" / "test_exiftool_smoke.cmake"
 
 
 class TestLayout(unittest.TestCase):
     def test_required_files_exist(self) -> None:
-        for path in (PRESETS_PATH, PINS_SH, LINUX_PACKAGES):
+        for path in (
+            PRESETS_PATH,
+            PINS_SH,
+            LINUX_PACKAGES,
+            LIBUMM_PINS_CMAKE,
+            LIBUMM_EXIFTOOL_CMAKE,
+            EXIFTOOL_SMOKE,
+        ):
             self.assertTrue(path.is_file(), f"missing required file: {path}")
 
     def test_default_presets_and_no_tests_action(self) -> None:
