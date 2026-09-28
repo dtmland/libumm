@@ -1,0 +1,8 @@
+# Linux apt prerequisites for libumm CI and Exiv2 source builds.
+# One package per line. Comments and blank lines are allowed.
+
+ninja-build
+perl
+zlib1g-dev
+libexpat1-dev
+ccache
