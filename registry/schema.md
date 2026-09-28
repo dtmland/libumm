@@ -15,7 +15,10 @@ answered from the data alone.
 | --- | --- |
 | `registry/sources/` | Vendored Technical Reference input plus `SOURCE.md` |
 | `registry/iptc-photo/iptc-photo.json` | Importer output (generated-but-committed) |
+| `registry/mappings/iptc-exif-overlay.json` | Curated EXIF mappings from the IPTC Mapping Guidelines (session 07; `partial: true` until Stage 6) |
 | `tools/registry/import_iptc.py` | Stdlib-only importer |
+| `tools/registry/generate_cpp.py` | Stdlib-only C++ table generator |
+| `src/generated/` | Committed generated `property_registry.hpp` / `.cpp` |
 
 Output JSON is UTF-8, LF newlines, 2-space indent, a trailing newline, and
 stable key/array ordering. Re-running the importer must be byte-identical.
@@ -72,8 +75,41 @@ by the Photo Metadata Standard. The importer fails closed on an unknown XMP
 prefix rather than inventing a URI.
 
 EXIF columns from the IPTC Photo Metadata **Mapping Guidelines** (HTML, not
-machine-readable) are out of scope here and may land as a curated overlay in
-session 07. EXIF values present in the Technical Reference itself are imported.
+machine-readable) are a curated overlay (`registry/mappings/iptc-exif-overlay.json`)
+merged by `tools/registry/generate_cpp.py`. EXIF values present in the Technical
+Reference itself are imported here; the overlay fills gaps and must not disagree
+with a TR tag. The overlay is marked `partial: true` until Stage 6 completes it.
+
+## EXIF overlay (`registry/mappings/iptc-exif-overlay.json`)
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `partial` | boolean | `true` while the overlay is a Stage 4 subset |
+| `source` | object | Mapping Guidelines document, version, URL, retrieval date, note |
+| `mappings` | array | Sorted by `id`; each entry is `id` + `exif_tag` |
+
+`id` is a registry property id or struct-field id. Overlay tags use the same
+ExifTool-style names as the Technical Reference (`IFD0:Artist`, `GPS:GPSLatitude`).
+
+## C++ table (`src/generated/`)
+
+Session 07 generates `umm::PropertyDef` rows from `properties` (not structs).
+JSON `datatype` + `cardinality` map onto `include/umm/registry.hpp`:
+
+| Registry JSON | `umm::Datatype` |
+| --- | --- |
+| `string`/`uri` + `one` | `text` |
+| `string`/`uri` + `many` | `text_list` |
+| `lang-alt` | `lang_alt` |
+| `integer` | `integer` |
+| `number` | `real` |
+| `date-time` | `date_time` |
+| `struct` + `one` | `structure` |
+| `struct` + `many` | `structure_list` |
+
+`boolean`, `rational`, and `gps_coordinate` are reserved for later value shapes
+(session 08). Generated C++ is UTF-8 with LF newlines. `.gitattributes` pins
+`src/generated/**` to LF.
 
 ## Struct record
 

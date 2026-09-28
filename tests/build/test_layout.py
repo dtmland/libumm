@@ -14,6 +14,7 @@ LINUX_PACKAGES = REPO_ROOT / "tools" / "build" / "linux-packages.txt"
 LIBUMM_PINS_CMAKE = REPO_ROOT / "cmake" / "LibummPins.cmake"
 LIBUMM_EXIFTOOL_CMAKE = REPO_ROOT / "cmake" / "LibummExifTool.cmake"
 LIBUMM_EXIV2_CMAKE = REPO_ROOT / "cmake" / "LibummExiv2.cmake"
+LIBUMM_REGISTRY_CMAKE = REPO_ROOT / "cmake" / "LibummRegistry.cmake"
 EXIFTOOL_SMOKE = REPO_ROOT / "tests" / "backend" / "test_exiftool_smoke.cmake"
 EXIV2_SMOKE = REPO_ROOT / "tests" / "backend" / "test_exiv2_smoke.cpp"
 PUBLIC_INCLUDE = REPO_ROOT / "include"
@@ -28,6 +29,7 @@ class TestLayout(unittest.TestCase):
             LIBUMM_PINS_CMAKE,
             LIBUMM_EXIFTOOL_CMAKE,
             LIBUMM_EXIV2_CMAKE,
+            LIBUMM_REGISTRY_CMAKE,
             EXIFTOOL_SMOKE,
             EXIV2_SMOKE,
         ):

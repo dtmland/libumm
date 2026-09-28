@@ -23,13 +23,19 @@ endif()
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/LibummPins.cmake")
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/LibummExifTool.cmake")
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/LibummRegistry.cmake")
 
-add_library(umm src/version.cpp)
+add_library(umm
+  src/version.cpp
+  "${UMM_REGISTRY_GENERATED_CPP}"
+)
 add_library(umm::umm ALIAS umm)
 
 target_include_directories(umm
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  PRIVATE
+    "${UMM_REGISTRY_GENERATED_DIR}"
 )
 
 target_compile_definitions(umm
@@ -57,6 +63,10 @@ if(UMM_BUILD_TESTS)
       "UMM_PROJECT_VERSION=\"${PROJECT_VERSION}\""
   )
   add_test(NAME test_version COMMAND test_version)
+
+  add_executable(test_registry_lookup tests/unit/test_registry_lookup.cpp)
+  target_link_libraries(test_registry_lookup PRIVATE umm::umm)
+  add_test(NAME test_registry_lookup COMMAND test_registry_lookup)
 
   if(UMM_ENABLE_FAILING_SELFTEST)
     add_executable(test_failing_selftest tests/unit/test_failing_selftest.cpp)

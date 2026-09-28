@@ -15,7 +15,7 @@ Use it as a quick reference before starting work so you can confirm which phase 
 | 04 | [04-exiftool-acquisition.md](implementation/04-exiftool-acquisition.md) | Complete | Checksum-pinned ExifTool FetchContent, Perl discovery, smoke test, CI require flag. |
 | 05 | [05-exiv2-acquisition.md](implementation/05-exiv2-acquisition.md) | Complete | Checksum-pinned Exiv2 FetchContent, BMFF, private link, smoke test. |
 | 06 | [06-registry-importer.md](implementation/06-registry-importer.md) | Complete | IPTC TR 2025.1 vendored; importer + Core 1.5/Extension 1.9 registry JSON. |
-| 07 | [07-registry-codegen.md](implementation/07-registry-codegen.md) | Not started | Typed property model generation. |
+| 07 | [07-registry-codegen.md](implementation/07-registry-codegen.md) | Complete | Generated `umm::Registry` tables from IPTC JSON + partial EXIF overlay. |
 | 08 | [08-core-semantic-model.md](implementation/08-core-semantic-model.md) | Not started | Core value/result/provenance model. |
 | 09 | [09-fixture-corpus.md](implementation/09-fixture-corpus.md) | Not started | Fixture corpus and test media setup. |
 | 10 | [10-exiv2-backend-read.md](implementation/10-exiv2-backend-read.md) | Not started | Exiv2 backend read path. |
