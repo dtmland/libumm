@@ -1,6 +1,7 @@
 #include "exiv2/exiv2_backend.hpp"
 
 #include <exception>
+#include <string>
 #include <utility>
 
 #include <exiv2/exiv2.hpp>
@@ -54,12 +55,15 @@ void append_entries(RawDocument& document, const Data& data,
   }
 }
 
+std::string path_as_utf8(const std::filesystem::path& path) {
+  const std::u8string utf8 = path.u8string();
+  return {utf8.begin(), utf8.end()};
+}
+
 Exiv2::Image::UniquePtr open_image(const std::filesystem::path& media) {
-#ifdef _WIN32
-  return Exiv2::ImageFactory::open(media.wstring());
-#else
-  return Exiv2::ImageFactory::open(media.string());
-#endif
+  // Exiv2 0.28 ImageFactory::open takes UTF-8 std::string on every platform
+  // (Windows converts internally). There is no std::wstring overload.
+  return Exiv2::ImageFactory::open(path_as_utf8(media));
 }
 
 class Exiv2Backend final : public Backend {
@@ -79,17 +83,17 @@ class Exiv2Backend final : public Backend {
     try {
       if (media.empty() || !std::filesystem::exists(media)) {
         return make_error(ErrorCode::io_not_found, "media file not found",
-                          media.string());
+                          path_as_utf8(media));
       }
       if (!std::filesystem::is_regular_file(media)) {
         return make_error(ErrorCode::io_read_failed, "media path is not a file",
-                          media.string());
+                          path_as_utf8(media));
       }
 
       auto image = open_image(media);
       if (!image) {
         return make_error(ErrorCode::format_unrecognized,
-                          "Exiv2 could not open media", media.string());
+                          "Exiv2 could not open media", path_as_utf8(media));
       }
       image->readMetadata();
 

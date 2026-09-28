@@ -35,6 +35,15 @@ std::filesystem::path jpeg(const char* name) {
   return fixtures_dir() / "jpeg" / name;
 }
 
+std::filesystem::path unicode_filename() {
+  // UTF-8 for: übüng ünïcode.jpg
+  static constexpr char8_t kName[] = {
+      0xC3, 0xBC, 'b', 0xC3, 0xBC, 'n', 'g', ' ',
+      0xC3, 0xBC, 'n', 0xC3, 0xAF, 'c', 'o', 'd', 'e',
+      '.', 'j', 'p', 'g', 0};
+  return fixtures_dir() / "naming" / std::filesystem::path(std::u8string(kName));
+}
+
 bool only_family(const umm::RawDocument& document, std::string_view family) {
   if (document.entries.empty()) {
     return false;
@@ -173,6 +182,16 @@ int main() {
       !has_key_with_value(unicode.value(), "Iptc.Application2.Caption", cafe) ||
       !has_key_with_value(unicode.value(), "Xmp.dc.description", cafe)) {
     return fail("unicode.jpg values did not match UTF-8 expectations");
+  }
+
+  const auto unicode_path = backend->readRaw(unicode_filename());
+  if (!unicode_path.ok()) {
+    std::fprintf(stderr, "unicode filename read failed: %s\n",
+                 unicode_path.error().message.c_str());
+    return 1;
+  }
+  if (!has_key_with_value(unicode_path.value(), "Xmp.dc.creator", jurgen)) {
+    return fail("unicode filename fixture did not match UTF-8 creator");
   }
 
   const auto truncated =
