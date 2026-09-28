@@ -16,6 +16,7 @@ SCHEMA_MD = REPO_ROOT / "registry" / "schema.md"
 SOURCE_DIR = REPO_ROOT / "registry" / "sources"
 SOURCE_MD = SOURCE_DIR / "SOURCE.md"
 REGISTRY_JSON = REPO_ROOT / "registry" / "iptc-photo" / "iptc-photo.json"
+GITATTRIBUTES = REPO_ROOT / ".gitattributes"
 
 PROPERTY_REQUIRED = (
     "id",
@@ -68,7 +69,7 @@ def run_importer(source_dir: Path, output: Path) -> subprocess.CompletedProcess[
 
 class TestRegistry(unittest.TestCase):
     def test_required_files_exist(self) -> None:
-        for path in (IMPORTER, SCHEMA_MD, SOURCE_MD, REGISTRY_JSON):
+        for path in (IMPORTER, SCHEMA_MD, SOURCE_MD, REGISTRY_JSON, GITATTRIBUTES):
             self.assertTrue(path.is_file(), f"missing {path}")
         filename = None
         for line in SOURCE_MD.read_text(encoding="utf-8").splitlines():
@@ -87,6 +88,21 @@ class TestRegistry(unittest.TestCase):
         self.assertEqual(generated, committed)
         self.assertTrue(committed.endswith(b"\n"))
         self.assertNotIn(b"\r\n", committed)
+
+    def test_gitattributes_pins_registry_json_to_lf(self) -> None:
+        text = GITATTRIBUTES.read_text(encoding="utf-8")
+        lines = [
+            line.strip()
+            for line in text.splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        ]
+        self.assertTrue(
+            any(
+                "registry/**/*.json" in line and "eol=lf" in line
+                for line in lines
+            ),
+            ".gitattributes must pin registry JSON to LF",
+        )
 
     def test_importer_is_byte_identical_across_runs(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -19,6 +19,8 @@ answered from the data alone.
 
 Output JSON is UTF-8, LF newlines, 2-space indent, a trailing newline, and
 stable key/array ordering. Re-running the importer must be byte-identical.
+`.gitattributes` pins `registry/**/*.json` to LF so Windows checkouts stay
+byte-identical to the importer.
 
 ## Envelope (`registry/iptc-photo/iptc-photo.json`)
 
