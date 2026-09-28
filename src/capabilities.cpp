@@ -126,11 +126,13 @@ std::string sniff_type(const std::filesystem::path& media) {
     if (looks_like_jpeg(bytes)) {
       return "JPEG";
     }
-    if (looks_like_xmp(bytes)) {
-      return "XMP";
-    }
+    // Container magics before XMP text: embedded XMP packets in TIFF/JPEG
+    // must not classify the file as a sidecar (session 17).
     if (looks_like_tiff(bytes)) {
       return "TIFF";
+    }
+    if (looks_like_xmp(bytes)) {
+      return "XMP";
     }
   }
   return type_from_extension(media);

@@ -302,7 +302,8 @@ int main() {
     }
   }
 
-  {
+  if (umm::Backend* backend = umm::BackendManager::instance().firstAvailable();
+      backend && backend->availability().available) {
     const auto written = umm::write(std::filesystem::path("x.jpg"), {});
     if (written.ok() || written.error().code != umm::ErrorCode::io_not_found) {
       return fail("write missing file");

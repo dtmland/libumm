@@ -105,6 +105,57 @@ int probe_backend(const std::string& backend_id) {
   if (!sidecar_caps.ok() || sidecar_caps.value().file_type != "XMP") {
     return fail("sniff orphan.xmp");
   }
+
+  const auto tiff_caps = umm::capabilitiesForType("TIFF");
+  if (!tiff_caps.ok()) {
+    return fail("probe TIFF caps");
+  }
+  const umm::BackendCapability* tiff_row =
+      find_backend(tiff_caps.value(), backend_id);
+  if (!tiff_row || tiff_row->categories.exif != umm::Access::read_write ||
+      tiff_row->categories.iptc_iim != umm::Access::read_write ||
+      tiff_row->categories.xmp != umm::Access::read_write ||
+      tiff_row->location.gps_exif != umm::Access::read_write ||
+      tiff_row->location.named_place != umm::Access::read_write) {
+    return fail("TIFF capability data mismatch");
+  }
+  const auto tiff_ok = backend->typeCapabilities("TIFF");
+  if (!tiff_ok.ok()) {
+    return fail("typeCapabilities TIFF");
+  }
+  const auto sniffed_tiff = umm::capabilities(raw_tiff("gps.tif"));
+  if (!sniffed_tiff.ok() || sniffed_tiff.value().file_type != "TIFF") {
+    return fail("sniff gps.tif");
+  }
+  const auto tiff_exif = backend->readRaw(raw_tiff("exif-only.tif"));
+  if (!tiff_exif.ok() || !raw_has_family(tiff_exif.value(), "Exif")) {
+    return fail("tiff exif-only fixture vs EXIF capability");
+  }
+  const auto tiff_iptc = backend->readRaw(raw_tiff("iptc-only.tif"));
+  if (!tiff_iptc.ok() || !raw_has_family(tiff_iptc.value(), "Iptc")) {
+    return fail("tiff iptc-only fixture vs IPTC capability");
+  }
+  const auto tiff_xmp = backend->readRaw(raw_tiff("xmp-only.tif"));
+  if (!tiff_xmp.ok() || !raw_has_family(tiff_xmp.value(), "Xmp")) {
+    return fail("tiff xmp-only fixture vs XMP capability");
+  }
+  const auto tiff_gps = backend->readRaw(raw_tiff("gps.tif"));
+  if (!tiff_gps.ok()) {
+    return fail("tiff gps fixture");
+  }
+  bool tiff_has_gps = false;
+  bool tiff_has_place = false;
+  for (const umm::RawEntry& entry : tiff_gps.value().entries) {
+    if (entry.key.key.find("GPSLatitude") != std::string::npos) {
+      tiff_has_gps = true;
+    }
+    if (entry.key.key.find("City") != std::string::npos) {
+      tiff_has_place = true;
+    }
+  }
+  if (!tiff_has_gps || !tiff_has_place) {
+    return fail("tiff gps fixture vs GPS/named-place split");
+  }
   return 0;
 }
 

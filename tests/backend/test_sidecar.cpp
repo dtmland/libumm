@@ -150,15 +150,17 @@ int test_orphan_read(const std::string& backend) {
   return 0;
 }
 
-int test_sidecar_only_write(const std::string& backend) {
-  const auto jpeg = copy_named(raw_jpeg("minimal.jpg"), backend + "-sc.jpg");
-  const auto before = read_bytes(jpeg);
+int test_sidecar_only_write(const std::string& backend, const char* folder,
+                            const char* ext) {
+  const auto media = copy_named(raw_stem(folder, "minimal", ext),
+                                backend + "-sc" + ext);
+  const auto before = read_bytes(media);
   umm::Metadata metadata;
   if (!metadata.setHeadline("sidecar-headline").ok()) {
     return fail("setHeadline");
   }
   const auto written =
-      umm::write(jpeg, metadata, wopts(backend, umm::StoragePolicy::sidecar_only));
+      umm::write(media, metadata, wopts(backend, umm::StoragePolicy::sidecar_only));
   if (!written.ok()) {
     std::fprintf(stderr, "sidecar_only write failed: %s (%s)\n",
                  written.error().message.c_str(),
@@ -168,10 +170,10 @@ int test_sidecar_only_write(const std::string& backend) {
   if (written.value().decision.method != umm::StorageDecision::Method::sidecar) {
     return fail("sidecar_only decision");
   }
-  if (read_bytes(jpeg) != before) {
-    return fail("sidecar_only mutated JPEG");
+  if (read_bytes(media) != before) {
+    return fail("sidecar_only mutated media");
   }
-  const auto sidecar = umm::sidecarPath(jpeg);
+  const auto sidecar = umm::sidecarPath(media);
   if (!std::filesystem::is_regular_file(sidecar)) {
     return fail("sidecar_only did not create sidecar");
   }
@@ -235,7 +237,12 @@ int check_backend(const std::string& backend) {
   if (const int rc = test_orphan_read(backend); rc != 0) {
     return rc;
   }
-  if (const int rc = test_sidecar_only_write(backend); rc != 0) {
+  if (const int rc = test_sidecar_only_write(backend, "jpeg", ".jpg");
+      rc != 0) {
+    return rc;
+  }
+  if (const int rc = test_sidecar_only_write(backend, "tiff", ".tif");
+      rc != 0) {
     return rc;
   }
   if (const int rc = test_unicode_pair(backend); rc != 0) {

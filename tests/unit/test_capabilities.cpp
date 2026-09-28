@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <filesystem>
+#include <fstream>
 #include <string>
 
 namespace {
@@ -102,9 +103,56 @@ int main() {
     return fail("CR3 BMFF note");
   }
 
+  const auto tiff = umm::capabilitiesForType("TIFF");
+  if (!tiff.ok() || tiff.value().file_type != "TIFF" ||
+      tiff.value().preferred_backend != "exiv2" ||
+      tiff.value().sidecar_recommended) {
+    return fail("TIFF policy");
+  }
+  const umm::BackendCapability* tiff_exiv2 = find_backend(tiff.value(), "exiv2");
+  const umm::BackendCapability* tiff_et = find_backend(tiff.value(), "exiftool");
+  if (!tiff_exiv2 || tiff_exiv2->categories.exif != umm::Access::read_write ||
+      tiff_exiv2->categories.iptc_iim != umm::Access::read_write ||
+      tiff_exiv2->categories.xmp != umm::Access::read_write ||
+      tiff_exiv2->location.gps_exif != umm::Access::read_write ||
+      tiff_exiv2->location.named_place != umm::Access::read_write) {
+    return fail("TIFF Exiv2 categories");
+  }
+  if (!tiff_et || tiff_et->categories.exif != umm::Access::read_write ||
+      tiff_et->categories.iptc_iim != umm::Access::read_write ||
+      tiff_et->categories.xmp != umm::Access::read_write) {
+    return fail("TIFF ExifTool categories");
+  }
+
   const auto by_path = umm::capabilities(std::filesystem::path("photo.jpg"));
   if (!by_path.ok() || by_path.value().file_type != "JPEG") {
     return fail("path extension JPEG");
+  }
+  const auto by_tif = umm::capabilities(std::filesystem::path("photo.tif"));
+  const auto by_tiff = umm::capabilities(std::filesystem::path("photo.tiff"));
+  if (!by_tif.ok() || by_tif.value().file_type != "TIFF" || !by_tiff.ok() ||
+      by_tiff.value().file_type != "TIFF") {
+    return fail("path extension TIFF");
+  }
+
+  {
+    const std::filesystem::path dir =
+        std::filesystem::temp_directory_path() / "umm-sniff-tiff-xmp";
+    std::filesystem::create_directories(dir);
+    const std::filesystem::path tiff_xmp = dir / "packet.tif";
+    std::string bytes(256, '\0');
+    bytes[0] = 'I';
+    bytes[1] = 'I';
+    bytes[2] = '*';
+    bytes[3] = '\0';
+    bytes.replace(212, 7, "xpacket");
+    std::ofstream out(tiff_xmp, std::ios::binary | std::ios::trunc);
+    out.write(bytes.data(), static_cast<std::streamsize>(bytes.size()));
+    out.close();
+    const auto sniffed = umm::capabilities(tiff_xmp);
+    if (!sniffed.ok() || sniffed.value().file_type != "TIFF") {
+      return fail("TIFF magic before embedded XMP text");
+    }
   }
   const auto by_xmp = umm::capabilities(std::filesystem::path("photo.xmp"));
   if (!by_xmp.ok() || by_xmp.value().file_type != "XMP") {

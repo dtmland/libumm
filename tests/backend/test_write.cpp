@@ -2,6 +2,7 @@
 #include "read_raw_checks.hpp"
 #include "umm/umm.hpp"
 
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
@@ -34,14 +35,132 @@ std::vector<std::uint8_t> read_bytes(const std::filesystem::path& path) {
   return {std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>()};
 }
 
-std::vector<std::uint8_t> jpeg_sos(const std::filesystem::path& path) {
-  const auto bytes = read_bytes(path);
+std::uint16_t tiff_u16(const std::vector<std::uint8_t>& bytes, std::size_t off,
+                       bool le) {
+  if (off + 1 >= bytes.size()) {
+    return 0;
+  }
+  if (le) {
+    return static_cast<std::uint16_t>(bytes[off] |
+                                      (static_cast<unsigned>(bytes[off + 1])
+                                       << 8));
+  }
+  return static_cast<std::uint16_t>((static_cast<unsigned>(bytes[off]) << 8) |
+                                    bytes[off + 1]);
+}
+
+std::uint32_t tiff_u32(const std::vector<std::uint8_t>& bytes, std::size_t off,
+                       bool le) {
+  if (off + 3 >= bytes.size()) {
+    return 0;
+  }
+  if (le) {
+    return static_cast<std::uint32_t>(bytes[off]) |
+           (static_cast<std::uint32_t>(bytes[off + 1]) << 8) |
+           (static_cast<std::uint32_t>(bytes[off + 2]) << 16) |
+           (static_cast<std::uint32_t>(bytes[off + 3]) << 24);
+  }
+  return (static_cast<std::uint32_t>(bytes[off]) << 24) |
+         (static_cast<std::uint32_t>(bytes[off + 1]) << 16) |
+         (static_cast<std::uint32_t>(bytes[off + 2]) << 8) |
+         static_cast<std::uint32_t>(bytes[off + 3]);
+}
+
+std::vector<std::uint32_t> tiff_values(const std::vector<std::uint8_t>& bytes,
+                                       std::size_t field, std::uint16_t type,
+                                       std::uint32_t count, bool le) {
+  std::vector<std::uint32_t> out;
+  const std::size_t elem = (type == 3) ? 2 : 4;
+  std::size_t data = field;
+  if (count * elem > 4) {
+    data = tiff_u32(bytes, field, le);
+  }
+  out.reserve(count);
+  for (std::uint32_t i = 0; i < count; ++i) {
+    const std::size_t o = data + static_cast<std::size_t>(i) * elem;
+    out.push_back(type == 3 ? tiff_u16(bytes, o, le)
+                            : tiff_u32(bytes, o, le));
+  }
+  return out;
+}
+
+std::vector<std::uint8_t> tiff_strips(const std::vector<std::uint8_t>& bytes) {
+  if (bytes.size() < 8) {
+    return {};
+  }
+  const bool le = bytes[0] == 'I' && bytes[1] == 'I';
+  const bool be = bytes[0] == 'M' && bytes[1] == 'M';
+  if (!le && !be) {
+    return {};
+  }
+  const std::uint32_t ifd = tiff_u32(bytes, 4, le);
+  if (ifd + 2 > bytes.size()) {
+    return {};
+  }
+  const std::uint16_t n = tiff_u16(bytes, ifd, le);
+  bool have_off = false;
+  bool have_count = false;
+  std::uint16_t off_type = 0;
+  std::uint16_t count_type = 0;
+  std::uint32_t off_count = 0;
+  std::uint32_t count_count = 0;
+  std::size_t off_field = 0;
+  std::size_t count_field = 0;
+  for (std::uint16_t i = 0; i < n; ++i) {
+    const std::size_t e = ifd + 2 + static_cast<std::size_t>(i) * 12;
+    if (e + 12 > bytes.size()) {
+      return {};
+    }
+    const std::uint16_t tag = tiff_u16(bytes, e, le);
+    if (tag == 273) {
+      off_type = tiff_u16(bytes, e + 2, le);
+      off_count = tiff_u32(bytes, e + 4, le);
+      off_field = e + 8;
+      have_off = true;
+    } else if (tag == 279) {
+      count_type = tiff_u16(bytes, e + 2, le);
+      count_count = tiff_u32(bytes, e + 4, le);
+      count_field = e + 8;
+      have_count = true;
+    }
+  }
+  if (!have_off || !have_count || off_count == 0 || off_count != count_count) {
+    return {};
+  }
+  const auto offsets = tiff_values(bytes, off_field, off_type, off_count, le);
+  const auto lengths =
+      tiff_values(bytes, count_field, count_type, count_count, le);
+  if (offsets.size() != lengths.size()) {
+    return {};
+  }
+  std::vector<std::uint8_t> payload;
+  for (std::size_t i = 0; i < offsets.size(); ++i) {
+    const std::size_t start = offsets[i];
+    const std::size_t len = lengths[i];
+    if (start + len > bytes.size()) {
+      return {};
+    }
+    payload.insert(payload.end(), bytes.begin() + static_cast<std::ptrdiff_t>(start),
+                   bytes.begin() + static_cast<std::ptrdiff_t>(start + len));
+  }
+  return payload;
+}
+
+std::vector<std::uint8_t> jpeg_sos(const std::vector<std::uint8_t>& bytes) {
   for (std::size_t i = 0; i + 1 < bytes.size(); ++i) {
     if (bytes[i] == 0xFF && bytes[i + 1] == 0xDA) {
       return {bytes.begin() + static_cast<std::ptrdiff_t>(i), bytes.end()};
     }
   }
   return {};
+}
+
+std::vector<std::uint8_t> image_payload(const std::filesystem::path& path) {
+  const auto bytes = read_bytes(path);
+  if (bytes.size() >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8) {
+    return jpeg_sos(bytes);
+  }
+  return tiff_strips(bytes);
 }
 
 std::filesystem::path work_dir() {
@@ -78,12 +197,13 @@ const umm::LangAlt* as_lang(const umm::PropertyValue& property) {
   return std::get_if<umm::LangAlt>(&property.value.data);
 }
 
-int test_payload(const std::string& backend) {
-  const auto file = copy_fixture(raw_jpeg("minimal.jpg"),
-                                 backend + "-payload.jpg");
-  const auto before = jpeg_sos(file);
+int test_payload(const std::string& backend, const char* folder,
+                 const char* ext) {
+  const auto file = copy_fixture(raw_stem(folder, "minimal", ext),
+                                 backend + "-payload" + ext);
+  const auto before = image_payload(file);
   if (before.empty()) {
-    return fail("payload fixture missing SOS");
+    return fail("payload fixture missing image data");
   }
   umm::Metadata metadata;
   if (!metadata.setHeadline("payload-test").ok()) {
@@ -96,9 +216,9 @@ int test_payload(const std::string& backend) {
                  written.error().detail.c_str());
     return 1;
   }
-  const auto after = jpeg_sos(file);
+  const auto after = image_payload(file);
   if (before != after) {
-    return fail("JPEG scan data changed after metadata write");
+    return fail("image payload changed after metadata write");
   }
   return 0;
 }
@@ -169,9 +289,10 @@ int test_unknown(const std::string& backend) {
   return 0;
 }
 
-int test_atomicity(const std::string& backend) {
-  const auto file = copy_fixture(raw_jpeg("minimal.jpg"),
-                                 backend + "-atomic.jpg");
+int test_atomicity(const std::string& backend, const char* folder,
+                   const char* ext) {
+  const auto file = copy_fixture(raw_stem(folder, "minimal", ext),
+                                 backend + "-atomic" + ext);
   const auto before = read_bytes(file);
   umm::internal::set_atomic_write_fault_for_test(
       umm::internal::AtomicWriteFault::before_rename);
@@ -190,7 +311,8 @@ int test_atomicity(const std::string& backend) {
 }
 
 int test_encoding(const std::string& backend,
-                  const std::vector<std::string>& readers) {
+                  const std::vector<std::string>& readers, const char* folder,
+                  const char* ext) {
   static constexpr char8_t kJurgen[] = {
       'J', 0xC3, 0xBC, 'r', 'g', 'e', 'n', ' ', 'M', 0xC3, 0xBC, 'l', 'l',
       'e', 'r', 0};
@@ -200,8 +322,8 @@ int test_encoding(const std::string& backend,
   const std::string jurgen = raw_from_u8(kJurgen);
   const std::string cafe = raw_from_u8(kCafe);
 
-  const auto file = copy_fixture(raw_jpeg("minimal.jpg"),
-                                 backend + "-encoding.jpg");
+  const auto file = copy_fixture(raw_stem(folder, "minimal", ext),
+                                 backend + "-encoding" + ext);
   umm::Metadata metadata;
   if (!metadata.setCreator({jurgen}).ok()) {
     return fail("set unicode creator");
@@ -246,13 +368,12 @@ int test_encoding(const std::string& backend,
     }
   }
 
-  static constexpr char8_t kName[] = {
-      0xC3, 0xBC, 'b', 0xC3, 0xBC, 'n', 'g', '-', 'w', 'r', 'i', 't', 'e',
-      '.', 'j', 'p', 'g', 0};
+  const std::string uname = std::string("\xC3\xBC""b\xC3\xBCng-write") + ext;
   const auto unicode_path =
-      work_dir() / std::filesystem::path(std::u8string(kName));
+      work_dir() / std::filesystem::path(std::u8string(
+                       reinterpret_cast<const char8_t*>(uname.c_str())));
   std::filesystem::copy_file(
-      raw_jpeg("minimal.jpg"), unicode_path,
+      raw_stem(folder, "minimal", ext), unicode_path,
       std::filesystem::copy_options::overwrite_existing);
   const auto unicode_written =
       umm::write(unicode_path, metadata, opts(backend));
@@ -275,9 +396,10 @@ int test_encoding(const std::string& backend,
 }
 
 int test_roundtrip(const std::string& backend,
-                   const std::vector<std::string>& readers) {
-  const auto file = copy_fixture(raw_jpeg("full-agreeing.jpg"),
-                                 backend + "-roundtrip.jpg");
+                   const std::vector<std::string>& readers, const char* folder,
+                   const char* ext) {
+  const auto file = copy_fixture(raw_stem(folder, "full-agreeing", ext),
+                                 backend + "-roundtrip" + ext);
   const auto original = umm::read(file, ropts(backend));
   if (!original.ok()) {
     return fail("roundtrip initial read");
@@ -341,19 +463,33 @@ int test_roundtrip(const std::string& backend,
 
 int check_backend(const std::string& backend,
                   const std::vector<std::string>& readers) {
-  if (const int rc = test_payload(backend); rc != 0) {
+  if (const int rc = test_payload(backend, "jpeg", ".jpg"); rc != 0) {
+    return rc;
+  }
+  if (const int rc = test_payload(backend, "tiff", ".tif"); rc != 0) {
     return rc;
   }
   if (const int rc = test_unknown(backend); rc != 0) {
     return rc;
   }
-  if (const int rc = test_atomicity(backend); rc != 0) {
+  if (const int rc = test_atomicity(backend, "jpeg", ".jpg"); rc != 0) {
     return rc;
   }
-  if (const int rc = test_encoding(backend, readers); rc != 0) {
+  if (const int rc = test_atomicity(backend, "tiff", ".tif"); rc != 0) {
     return rc;
   }
-  if (const int rc = test_roundtrip(backend, readers); rc != 0) {
+  if (const int rc = test_encoding(backend, readers, "jpeg", ".jpg"); rc != 0) {
+    return rc;
+  }
+  if (const int rc = test_encoding(backend, readers, "tiff", ".tif"); rc != 0) {
+    return rc;
+  }
+  if (const int rc = test_roundtrip(backend, readers, "jpeg", ".jpg");
+      rc != 0) {
+    return rc;
+  }
+  if (const int rc = test_roundtrip(backend, readers, "tiff", ".tif");
+      rc != 0) {
     return rc;
   }
   return 0;

@@ -55,5 +55,11 @@ int main() {
     return 1;
   }
 
+  const std::filesystem::path tiff = root / "tiff" / "minimal.tif";
+  if (!file_nonempty(tiff)) {
+    std::fprintf(stderr, "missing tiff/minimal.tif under fixture dir\n");
+    return 1;
+  }
+
   return 0;
 }
