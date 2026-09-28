@@ -24,6 +24,19 @@ Use it as a quick reference before starting work so you can confirm which phase 
 | 13 | [13-write-path-and-safety.md](implementation/13-write-path-and-safety.md) | Complete | JPEG `umm::write` through both backends; write-sync; temp+atomic rename (M3). `makernote.jpg` still deferred (M6). |
 | 14 | [14-xmp-sidecar-and-policy.md](implementation/14-xmp-sidecar-and-policy.md) | Complete | JPEG+XMP sidecar pairing, read merge/conflict, sidecar-only write, StoragePolicy. Mixed sync deferred (Stage 8). |
 | 15 | [15-capabilities-engine.md](implementation/15-capabilities-engine.md) | Complete | `umm::capabilities()` from `registry/capabilities/`; generated `supported-types.md`; JPEG/XMP probe drift tests. |
+| 16 | [16-format-dispatch-generalization.md](implementation/16-format-dispatch-generalization.md) | Not started | Capability-driven write dispatch replaces the JPEG gate; property-ID dedup; hardening (review R1/R3/R8). |
+| 17 | [17-tiff-support.md](implementation/17-tiff-support.md) | Not started | TIFF fixtures, read/write/round-trip both backends, probe extension. |
+| 18 | [18-png-webp-support.md](implementation/18-png-webp-support.md) | Not started | PNG + WebP: capability-divergent categories (PNG no EXIF in Exiv2; WebP no IPTC). |
+| 19 | [19-raw-read-and-sidecar-write.md](implementation/19-raw-read-and-sidecar-write.md) | Not started | DNG read/write; read-only-RAW sidecar-write pattern; proprietary RAW deferred to Tier B. |
+| 20 | [20-vmh-registry-import.md](implementation/20-vmh-registry-import.md) | Not started | Vendored IPTC Video Metadata Hub spec; `registry/iptc-video/` importer + codegen. |
+| 21 | [21-video-read-mp4-mov.md](implementation/21-video-read-mp4-mov.md) | Not started | ffmpeg-generated video fixtures; QuickTime key mappings; video reconciliation. |
+| 22 | [22-video-write-and-location.md](implementation/22-video-write-and-location.md) | Not started | ExifTool-only MP4/MOV write incl. `GPSCoordinates`; M3 safety for video. |
+| 23 | [23-conflict-api-detect-merge.md](implementation/23-conflict-api-detect-merge.md) | Not started | Public `detectConflict()` / `merge()` over the existing provenance model. |
+| 24 | [24-synchronize-and-mixed-storage.md](implementation/24-synchronize-and-mixed-storage.md) | Not started | `synchronize()`; `Method::mixed`; `SidecarRequired` completion (session 14 deferral). |
+| 25 | [25-gps-track-import.md](implementation/25-gps-track-import.md) | Not started | GPX/NMEA/KML track import; text fixtures. |
+| 26 | [26-track-correlation-and-location-write.md](implementation/26-track-correlation-and-location-write.md) | Not started | `match(media, track)`; interpolation; location write via the normal path. |
+| 27 | [27-tier-b-corpus-infrastructure.md](implementation/27-tier-b-corpus-infrastructure.md) | Not started | Checksummed download corpus; closes makernote + proprietary-RAW deferrals. |
+| 28 | [28-cross-backend-verification.md](implementation/28-cross-backend-verification.md) | Not started | Write-with-one/read-with-other comparison suite; divergence ledger. |
 
 ## How to use this document
 
