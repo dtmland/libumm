@@ -70,18 +70,24 @@ if(NOT EXPAT_FOUND)
   if(NOT TARGET EXPAT::EXPAT)
     add_library(EXPAT::EXPAT ALIAS expat)
   endif()
-  # Exiv2 calls find_package(EXPAT REQUIRED) in module mode and also uses
-  # EXPAT_INCLUDE_DIR. Provide a FindEXPAT that wraps the fetched target.
+  # Exiv2 find_package(EXPAT REQUIRED) in module mode. xmpsdk uses
+  # EXPAT_INCLUDE_DIRS (plural) for ExpatAdapter.cpp; exiv2lib also uses
+  # EXPAT_INCLUDE_DIR and EXPAT::EXPAT. Match CMake's FindEXPAT variables.
+  file(TO_CMAKE_PATH "${umm_expat_SOURCE_DIR}/lib" _umm_expat_include_dir)
   file(WRITE "${CMAKE_BINARY_DIR}/expat-config-shim/FindEXPAT.cmake"
     "if(NOT TARGET EXPAT::EXPAT)\n"
     "  add_library(EXPAT::EXPAT ALIAS expat)\n"
     "endif()\n"
     "set(EXPAT_FOUND TRUE)\n"
-    "set(EXPAT_INCLUDE_DIR \"${umm_expat_SOURCE_DIR}/lib\")\n"
-    "set(EXPAT_LIBRARY expat)\n")
+    "set(EXPAT_INCLUDE_DIR \"${_umm_expat_include_dir}\")\n"
+    "set(EXPAT_INCLUDE_DIRS \"${_umm_expat_include_dir}\")\n"
+    "set(EXPAT_LIBRARY expat)\n"
+    "set(EXPAT_LIBRARIES expat)\n")
   list(PREPEND CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR}/expat-config-shim")
-  set(EXPAT_INCLUDE_DIR "${umm_expat_SOURCE_DIR}/lib")
+  set(EXPAT_INCLUDE_DIR "${_umm_expat_include_dir}")
+  set(EXPAT_INCLUDE_DIRS "${_umm_expat_include_dir}")
   set(EXPAT_FOUND TRUE)
+  unset(_umm_expat_include_dir)
   message(STATUS "Expat not found on system; fetched for Exiv2 XMP")
 endif()
 

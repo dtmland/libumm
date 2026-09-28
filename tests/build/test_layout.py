@@ -37,6 +37,13 @@ class TestLayout(unittest.TestCase):
         ):
             self.assertTrue(path.is_file(), f"missing required file: {path}")
 
+    def test_exiv2_expat_shim_exports_include_dirs(self) -> None:
+        text = LIBUMM_EXIV2_CMAKE.read_text(encoding="utf-8")
+        self.assertIn("EXIV2_ENABLE_XMP ON", text)
+        # Exiv2 0.28 xmpsdk compiles ExpatAdapter.cpp with EXPAT_INCLUDE_DIRS.
+        self.assertRegex(text, r'set\(EXPAT_INCLUDE_DIRS ')
+        self.assertRegex(text, r'set\(EXPAT_INCLUDE_DIR ')
+
     def test_public_headers_do_not_include_exiv2(self) -> None:
         headers = list(PUBLIC_INCLUDE.rglob("*"))
         self.assertTrue(headers, f"no files under {PUBLIC_INCLUDE}")
