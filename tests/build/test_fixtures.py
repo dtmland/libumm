@@ -128,33 +128,48 @@ def load_generator():
 
 
 def exiftool_json(perl: str, script: str, path: Path) -> dict:
-    result = subprocess.run(
-        [
-            perl,
-            script,
-            "-config",
-            str(CONFIG),
-            "-charset",
-            "utf8",
-            "-charset",
-            "filename=UTF8",
-            "-charset",
-            "IPTC=UTF8",
-            "-j",
-            "-G1",
-            "-a",
-            "-s",
-            "-n",
-            str(path),
-        ],
-        capture_output=True,
-        check=False,
-    )
-    if result.returncode != 0:
-        raise AssertionError(
-            f"exiftool failed on {path}: {result.stderr.decode('utf-8', errors='replace')}"
+    # Same Windows constraint as the generator: Perl argv uses the system ACP, so
+    # Unicode filenames must go through a UTF-8 argfile after `-charset utf8`.
+    args = [
+        "-charset",
+        "filename=UTF8",
+        "-charset",
+        "IPTC=UTF8",
+        "-j",
+        "-G1",
+        "-a",
+        "-s",
+        "-n",
+        str(path),
+    ]
+    fd, name = tempfile.mkstemp(prefix="umm-exiftool-", suffix=".args")
+    os.close(fd)
+    argfile = Path(name)
+    try:
+        argfile.write_text("\n".join(args) + "\n", encoding="utf-8", newline="\n")
+        result = subprocess.run(
+            [
+                perl,
+                script,
+                "-config",
+                str(CONFIG),
+                "-charset",
+                "utf8",
+                "-@",
+                str(argfile),
+            ],
+            capture_output=True,
+            check=False,
         )
-    payload = json.loads(result.stdout.decode("utf-8"))
+    finally:
+        argfile.unlink(missing_ok=True)
+    stderr = result.stderr.decode("utf-8", errors="replace")
+    stdout = result.stdout.decode("utf-8", errors="replace")
+    if result.returncode != 0:
+        raise AssertionError(f"exiftool failed on {path}: {stderr}")
+    if not stdout.strip():
+        raise AssertionError(f"exiftool produced empty JSON for {path}: {stderr}")
+    payload = json.loads(stdout)
     if not payload:
         return {}
     return payload[0]
@@ -179,6 +194,38 @@ class TestFixtureCorpus(unittest.TestCase):
         self.assertIn('"-charset"', text)
         self.assertIn('"utf8"', text)
         self.assertIn('"-@"', text)
+
+    def test_exiftool_json_passes_path_via_utf8_argfile(self) -> None:
+        captured: dict[str, object] = {}
+
+        def fake_run(cmd, **_kwargs):
+            argfile = Path(cmd[-1])
+            captured["cmd"] = cmd
+            captured["text"] = argfile.read_text(encoding="utf-8")
+
+            class Result:
+                returncode = 0
+                stdout = b'[{"SourceFile":"x","XMP-dc:Creator":"ok"}]'
+                stderr = b""
+
+            return Result()
+
+        original = subprocess.run
+        try:
+            subprocess.run = fake_run
+            record = exiftool_json(
+                "perl", str(GENERATOR), FIXTURES / "naming" / UNICODE_FILENAME
+            )
+        finally:
+            subprocess.run = original
+        cmd = captured["cmd"]
+        self.assertIsInstance(cmd, list)
+        self.assertIn("-charset", cmd)
+        self.assertIn("utf8", cmd)
+        self.assertEqual(cmd[-2], "-@")
+        self.assertIn(UNICODE_FILENAME, str(captured["text"]))
+        self.assertNotIn(UNICODE_FILENAME, " ".join(str(part) for part in cmd[:-1]))
+        self.assertEqual(record.get("XMP-dc:Creator"), "ok")
 
     def test_exiftool_run_writes_unicode_argfile(self) -> None:
         gen = load_generator()
@@ -322,6 +369,13 @@ class TestFixtureExifTool(unittest.TestCase):
         self.assertNotEqual(exif_date[:10].replace(":", "-"), iptc_date[:10].replace(":", "-"))
         self.assertNotIn(iptc_date[:10], xmp_date)
         self.assertNotIn("2020:01:01", xmp_date)
+
+    def test_unicode_filename_is_readable(self) -> None:
+        record = exiftool_json(
+            self.perl, self.script, FIXTURES / "naming" / UNICODE_FILENAME
+        )
+        self.assertEqual(record.get("XMP-dc:Creator"), "Jürgen Müller")
+        self.assertIn("日本語", str(record.get("XMP-dc:Description", "")))
 
     def test_unicode_values_survive(self) -> None:
         record = exiftool_json(self.perl, self.script, FIXTURES / "jpeg" / "unicode.jpg")

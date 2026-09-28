@@ -45,6 +45,8 @@ Sessions 04–05 merged (pinned ExifTool + Exiv2 available as generation tools).
 - Unicode filename fixture round-trips checkout on Windows CI.
 - Unicode *values* are written through an ExifTool UTF-8 argfile (`-charset utf8 -@`)
   so Windows Perl argv does not replace non-ASCII characters with `?`.
+- Unicode *filenames* are also passed to ExifTool through that UTF-8 argfile on read
+  (Windows Perl argv plus `-charset filename=UTF8` otherwise fails to open the file).
 
 ## Cut line
 
