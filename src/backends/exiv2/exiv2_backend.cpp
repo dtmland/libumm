@@ -1,8 +1,11 @@
 #include "exiv2/exiv2_backend.hpp"
 
 #include <exception>
+#include <fstream>
+#include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include <exiv2/exiv2.hpp>
 
@@ -61,9 +64,35 @@ std::string path_as_utf8(const std::filesystem::path& path) {
 }
 
 Exiv2::Image::UniquePtr open_image(const std::filesystem::path& media) {
-  // Exiv2 0.28 ImageFactory::open takes UTF-8 std::string on every platform
-  // (Windows converts internally). There is no std::wstring overload.
+#if defined(_WIN32)
+  // Exiv2 0.28 FileIo::open uses ::fopen, which on Windows is the ANSI code
+  // page, not UTF-8. ImageFactory::open(std::string) therefore cannot open
+  // Unicode paths (and there is no wstring overload). Read via
+  // std::filesystem::path (UTF-16) and hand owned bytes to MemIo.
+  std::ifstream in(media, std::ios::binary);
+  if (!in) {
+    throw std::runtime_error("failed to open media");
+  }
+  in.seekg(0, std::ios::end);
+  const std::streamoff n = in.tellg();
+  if (n < 0) {
+    throw std::runtime_error("failed to open media");
+  }
+  in.seekg(0, std::ios::beg);
+  std::vector<Exiv2::byte> bytes(static_cast<std::size_t>(n));
+  if (!bytes.empty() &&
+      !in.read(reinterpret_cast<char*>(bytes.data()),
+               static_cast<std::streamsize>(bytes.size()))) {
+    throw std::runtime_error("failed to open media");
+  }
+  auto io = std::make_unique<Exiv2::MemIo>();
+  if (!bytes.empty() && io->write(bytes.data(), bytes.size()) != bytes.size()) {
+    throw std::runtime_error("failed to open media");
+  }
+  return Exiv2::ImageFactory::open(std::move(io));
+#else
   return Exiv2::ImageFactory::open(path_as_utf8(media));
+#endif
 }
 
 class Exiv2Backend final : public Backend {
