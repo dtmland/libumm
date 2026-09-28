@@ -82,6 +82,15 @@ DNG_FILES = (
     "raw/full-agreeing.dng",
 )
 
+# docs/implementation/21-video-read-mp4-mov.md
+VIDEO_FILES = (
+    "video/minimal.mp4",
+    "video/minimal.mov",
+    "video/full.mp4",
+    "video/gps.mp4",
+    "video/conflicting.mp4",
+)
+
 ENTRY_RE = re.compile(
     r"^### `([^`]+)`\n"
     r"\n"
@@ -92,7 +101,17 @@ ENTRY_RE = re.compile(
     re.MULTILINE,
 )
 
-IGNORE_JSON_PREFIXES = ("ExifTool:", "System:", "Composite:", "SourceFile")
+IGNORE_JSON_PREFIXES = (
+    "ExifTool:",
+    "System:",
+    "Composite:",
+    "SourceFile",
+    "QuickTime:",
+    "Track1:",
+    "Track2:",
+    "Track3:",
+)
+IGNORE_JSON_KEYS = ("ItemList:Encoder",)
 
 
 def nfc(text: str) -> str:
@@ -213,7 +232,8 @@ def comparable_metadata(record: dict) -> dict:
     return {
         key: value
         for key, value in record.items()
-        if not any(key == prefix or key.startswith(prefix) for prefix in IGNORE_JSON_PREFIXES)
+        if key not in IGNORE_JSON_KEYS
+        and not any(key == prefix or key.startswith(prefix) for prefix in IGNORE_JSON_PREFIXES)
         and not key.startswith("File:")
     }
 
@@ -340,6 +360,14 @@ class TestFixtureCorpus(unittest.TestCase):
             ".gitattributes must mark DNG fixtures as binary",
         )
         self.assertTrue(
+            any("tests/fixtures/**/*.mp4" in line and "binary" in line for line in lines),
+            ".gitattributes must mark MP4 fixtures as binary",
+        )
+        self.assertTrue(
+            any("tests/fixtures/**/*.mov" in line and "binary" in line for line in lines),
+            ".gitattributes must mark MOV fixtures as binary",
+        )
+        self.assertTrue(
             any(
                 "tests/fixtures/**/*.xmp" in line and "eol=lf" in line
                 for line in lines
@@ -403,6 +431,22 @@ class TestFixtureCorpus(unittest.TestCase):
             any("RAF/RW2/SR2" in item for item in open_items),
             "MANIFEST must defer proprietary RAW to Tier B",
         )
+
+    def test_video_matrix_is_present(self) -> None:
+        text = MANIFEST.read_text(encoding="utf-8")
+        entries = parse_manifest(text)
+        for relpath in VIDEO_FILES:
+            path = FIXTURES / relpath
+            self.assertIn(relpath, entries, f"{relpath} missing from MANIFEST.md")
+            self.assertTrue(path.is_file(), f"missing fixture {relpath}")
+            data = path.read_bytes()
+            self.assertGreaterEqual(len(data), 12, relpath)
+            self.assertEqual(data[4:8], b"ftyp", f"{relpath} is not ISO BMFF ftyp")
+            brand = data[8:12]
+            if relpath.endswith(".mov"):
+                self.assertEqual(brand, b"qt  ", f"{relpath} brand is not qt")
+            else:
+                self.assertNotEqual(brand, b"qt  ", f"{relpath} should not be MOV brand")
 
     def test_webp_matrix_is_present(self) -> None:
         text = MANIFEST.read_text(encoding="utf-8")
@@ -543,6 +587,38 @@ class TestFixtureExifTool(unittest.TestCase):
         self.assertEqual(record.get("IFD0:Artist"), "Agreeing Creator")
         self.assertEqual(record.get("IPTC:By-line"), "Agreeing Creator")
         self.assertEqual(record.get("XMP-dc:Creator"), "Agreeing Creator")
+
+    def test_video_full_has_quicktime_and_xmp(self) -> None:
+        record = exiftool_json(
+            self.perl, self.script, FIXTURES / "video" / "full.mp4"
+        )
+        self.assertEqual(record.get("ItemList:Title"), "Agreeing Title")
+        self.assertEqual(record.get("XMP-dc:Title"), "Agreeing Title")
+        self.assertTrue(record.get("Keys:CreationDate"))
+        self.assertTrue(record.get("XMP-photoshop:DateCreated"))
+
+    def test_video_gps_has_coordinates_and_xmp(self) -> None:
+        record = exiftool_json(self.perl, self.script, FIXTURES / "video" / "gps.mp4")
+        self.assertTrue(
+            record.get("Keys:GPSCoordinates")
+            or record.get("ItemList:GPSCoordinates"),
+            "video/gps.mp4 missing GPSCoordinates",
+        )
+        self.assertTrue(
+            any(key.startswith("XMP-exif:") and "GPSLatitude" in key for key in record),
+            "video/gps.mp4 missing XMP GPS",
+        )
+
+    def test_video_conflicting_dates_differ(self) -> None:
+        record = exiftool_json(
+            self.perl, self.script, FIXTURES / "video" / "conflicting.mp4"
+        )
+        qt_date = str(record.get("Keys:CreationDate", ""))
+        xmp_date = str(record.get("XMP-photoshop:DateCreated", ""))
+        self.assertTrue(qt_date)
+        self.assertTrue(xmp_date)
+        self.assertNotIn("2020:01:01", xmp_date)
+        self.assertNotIn("2020:03:03", qt_date)
 
     def test_webp_full_agreeing_has_exif_and_xmp_not_iptc(self) -> None:
         record = exiftool_json(

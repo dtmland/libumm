@@ -11,5 +11,7 @@ tests/fixtures/**/*.tif binary
 tests/fixtures/**/*.png binary
 tests/fixtures/**/*.webp binary
 tests/fixtures/**/*.dng binary
+tests/fixtures/**/*.mp4 binary
+tests/fixtures/**/*.mov binary
 # XMP sidecars are UTF-8 text; pin LF for byte-stable checkouts.
 tests/fixtures/**/*.xmp text eol=lf
