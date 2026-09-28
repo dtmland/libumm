@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <exception>
+#include <string_view>
 #include <system_error>
 #include <utility>
 
@@ -71,14 +72,17 @@ bool is_file(const std::filesystem::path& path) {
   return !path.empty() && std::filesystem::is_regular_file(path, ec);
 }
 
-const JsonValue* find_error_field(const JsonValue& object) {
-  if (const JsonValue* field = object.field("Error")) {
+const JsonValue* find_named_field(const JsonValue& object, std::string_view bare,
+                                  std::string_view group) {
+  if (const JsonValue* field = object.field(bare)) {
     return field;
   }
-  if (const JsonValue* field = object.field("ExifTool:Error")) {
-    return field;
-  }
-  return nullptr;
+  std::string grouped;
+  grouped.reserve(group.size() + 1 + bare.size());
+  grouped.append(group.begin(), group.end());
+  grouped.push_back(':');
+  grouped.append(bare.begin(), bare.end());
+  return object.field(grouped);
 }
 
 Error map_exiftool_error_text(std::string text) {
@@ -400,8 +404,17 @@ Result<RawDocument> ExifToolBackend::readRaw(
                         "ExifTool JSON was not an object", json_text);
     }
 
-    if (const JsonValue* error_field = find_error_field(*object)) {
+    if (const JsonValue* error_field =
+            find_named_field(*object, "Error", "ExifTool")) {
       return map_exiftool_error_text(error_field->as_text());
+    }
+    if (const JsonValue* warning_field =
+            find_named_field(*object, "Warning", "ExifTool")) {
+      Error mapped = map_exiftool_error_text(warning_field->as_text());
+      if (mapped.code == ErrorCode::format_corrupt ||
+          mapped.code == ErrorCode::format_unrecognized) {
+        return mapped;
+      }
     }
 
     RawDocument document;

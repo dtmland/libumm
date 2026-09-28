@@ -311,8 +311,10 @@ std::string ChildProcess::spawn(const std::filesystem::path& exe,
     raw.push_back(nullptr);
     const std::string exe_utf8 = path_to_utf8(exe);
     ::execv(exe_utf8.c_str(), raw.data());
-    const char* msg = "exec failed\n";
-    ::write(STDERR_FILENO, msg, std::strlen(msg));
+    const char msg[] = "exec failed\n";
+    if (::write(STDERR_FILENO, msg, sizeof(msg) - 1) < 0) {
+      _exit(127);
+    }
     _exit(127);
   }
 

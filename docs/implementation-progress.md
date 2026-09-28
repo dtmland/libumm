@@ -19,7 +19,7 @@ Use it as a quick reference before starting work so you can confirm which phase 
 | 08 | [08-core-semantic-model.md](implementation/08-core-semantic-model.md) | Complete | `Result`/`Value`/`Metadata`; rating is `iptc.photo.imageRating`; GPS is `exif.gps.position`. |
 | 09 | [09-fixture-corpus.md](implementation/09-fixture-corpus.md) | Complete | Tier A JPEG+XMP corpus, generator, MANIFEST, CMake fixture path. `makernote.jpg` deferred (M6). |
 | 10 | [10-exiv2-backend-read.md](implementation/10-exiv2-backend-read.md) | Complete | Backend contract + Exiv2 `readRaw()` for JPEG fixtures. |
-| 11 | [11-exiftool-adapter-read.md](implementation/11-exiftool-adapter-read.md) | In progress | ExifTool `-stay_open` JSON read adapter, key translation, process reuse/timeout tests. |
+| 11 | [11-exiftool-adapter-read.md](implementation/11-exiftool-adapter-read.md) | Complete | ExifTool `-stay_open` JSON `readRaw()`, Group1:Tag translation, process reuse/timeout/unavailable tests. |
 | 12 | [12-reconciliation-engine.md](implementation/12-reconciliation-engine.md) | Not started | Reconciliation logic and policy. |
 | 13 | [13-write-path-and-safety.md](implementation/13-write-path-and-safety.md) | Not started | Write path and safety constraints. |
 | 14 | [14-xmp-sidecar-and-policy.md](implementation/14-xmp-sidecar-and-policy.md) | Not started | XMP sidecar preservation and policy. |
