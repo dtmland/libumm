@@ -29,6 +29,7 @@ add_library(umm
   src/version.cpp
   src/value.cpp
   src/metadata.cpp
+  src/backends/backend_manager.cpp
   "${UMM_REGISTRY_GENERATED_CPP}"
 )
 add_library(umm::umm ALIAS umm)
@@ -38,6 +39,7 @@ target_include_directories(umm
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   PRIVATE
     "${UMM_REGISTRY_GENERATED_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/backends"
 )
 
 target_compile_definitions(umm
@@ -147,6 +149,16 @@ if(UMM_BUILD_TESTS)
         "UMM_TEST_EXIV2_VERSION=\"${UMM_EXIV2_VERSION}\""
     )
     add_test(NAME exiv2_smoke COMMAND test_exiv2_smoke)
+
+    add_executable(test_exiv2_read tests/backend/test_exiv2_read.cpp)
+    target_link_libraries(test_exiv2_read PRIVATE umm::umm)
+    umm_apply_fixture_dir(test_exiv2_read)
+    target_compile_definitions(test_exiv2_read
+      PRIVATE
+        "UMM_TEST_EXIV2_VERSION=\"${UMM_EXIV2_VERSION}\""
+    )
+    add_test(NAME test_exiv2_read COMMAND test_exiv2_read)
+    umm_apply_fixture_dir_to_test(test_exiv2_read)
   elseif(UMM_REQUIRE_EXIV2)
     message(FATAL_ERROR "UMM_REQUIRE_EXIV2=ON but exiv2_smoke cannot be registered")
   endif()
