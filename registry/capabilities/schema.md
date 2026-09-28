@@ -19,7 +19,9 @@ published coverage and records provenance so drift is testable.
 | `tools/registry/generate_supported_types.py` | Regenerates `supported-types.md` and `src/generated/capabilities_data.hpp` |
 
 JSON is UTF-8, LF newlines, 2-space indent, a trailing newline, and stable
-key/array ordering. `.gitattributes` pins `registry/**/*.json` to LF.
+key/array ordering. `.gitattributes` pins `registry/**/*.json` and
+`supported-types.md` to LF so Windows checkouts stay byte-identical to the
+generator.
 
 ## Access vocabulary
 

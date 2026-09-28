@@ -149,8 +149,18 @@ class TestCapabilitiesCodegen(unittest.TestCase):
 
     def test_gitattributes_pins_capability_json_to_lf(self) -> None:
         text = GITATTRIBUTES.read_text(encoding="utf-8")
+        lines = [
+            line.strip()
+            for line in text.splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        ]
         self.assertTrue(
-            any("registry/**/*.json" in line and "eol=lf" in line for line in text.splitlines())
+            any("registry/**/*.json" in line and "eol=lf" in line for line in lines),
+            ".gitattributes must pin capability JSON to LF",
+        )
+        self.assertTrue(
+            any("supported-types.md" in line and "eol=lf" in line for line in lines),
+            ".gitattributes must pin generated supported-types.md to LF",
         )
 
     def test_exiv2_bmff_enabled_in_cmake(self) -> None:
