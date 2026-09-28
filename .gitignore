@@ -1,8 +1,12 @@
-# Build trees (CMake presets use build/<preset>)
-build/
+# Build trees (CMake presets use build/<preset> at the repository root)
+/build/
 
 # Backend download / tool caches
 .cache/
+
+# Python contract-test caches
+__pycache__/
+*.py[cod]
 
 # CMake user overrides
 CMakeUserPresets.json
