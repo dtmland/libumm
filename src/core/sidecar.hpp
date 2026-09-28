@@ -9,7 +9,6 @@
 namespace umm::internal {
 
 bool is_xmp_sidecar_path(const std::filesystem::path& path);
-bool is_jpeg_path(const std::filesystem::path& path);
 
 std::string ascii_lower_ext(const std::filesystem::path& path);
 

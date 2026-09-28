@@ -32,18 +32,36 @@ std::string path_utf8(const std::filesystem::path& path) {
   return {utf8.begin(), utf8.end()};
 }
 
-void remove_quietly(const std::filesystem::path& path) {
+bool remove_quietly(const std::filesystem::path& path) {
   std::error_code ec;
   std::filesystem::remove(path, ec);
+  return !ec;
+}
+
+Error with_temp_cleanup(Error error, const std::filesystem::path& temp) {
+  if (!remove_quietly(temp)) {
+    if (!error.detail.empty()) {
+      error.detail += "; ";
+    }
+    error.detail += "failed to remove temp file " + path_utf8(temp);
+  }
+  return error;
 }
 
 std::filesystem::path make_temp_path(const std::filesystem::path& destination) {
-  const std::uint64_t n = g_temp_counter.fetch_add(1) + 1;
-  std::filesystem::path temp = destination.parent_path();
-  temp /= destination.stem();
-  temp += ".umm-";
-  temp += std::to_string(n);
-  temp += destination.extension();
+  std::error_code ec;
+  std::filesystem::path temp;
+  for (int attempt = 0; attempt < 1024; ++attempt) {
+    const std::uint64_t n = g_temp_counter.fetch_add(1) + 1;
+    temp = destination.parent_path();
+    temp /= destination.stem();
+    temp += ".umm-";
+    temp += std::to_string(n);
+    temp += destination.extension();
+    if (!std::filesystem::exists(temp, ec)) {
+      return temp;
+    }
+  }
   return temp;
 }
 
@@ -138,8 +156,7 @@ Result<void> mutate_file_atomically(
   if (exists) {
     Result<void> copied = copy_file_bytes(destination, temp);
     if (!copied.ok()) {
-      remove_quietly(temp);
-      return copied;
+      return with_temp_cleanup(copied.error(), temp);
     }
   } else {
     std::ofstream out(temp, std::ios::binary | std::ios::trunc);
@@ -151,28 +168,28 @@ Result<void> mutate_file_atomically(
 
   if (static_cast<AtomicWriteFault>(g_fault.load()) ==
       AtomicWriteFault::before_write) {
-    remove_quietly(temp);
-    return io_error(ErrorCode::io_write_failed, "injected write failure",
-                    "before_write");
+    return with_temp_cleanup(
+        io_error(ErrorCode::io_write_failed, "injected write failure",
+                 "before_write"),
+        temp);
   }
 
   Result<void> mutated = mutate(temp);
   if (!mutated.ok()) {
-    remove_quietly(temp);
-    return mutated;
+    return with_temp_cleanup(mutated.error(), temp);
   }
 
   if (static_cast<AtomicWriteFault>(g_fault.load()) ==
       AtomicWriteFault::before_rename) {
-    remove_quietly(temp);
-    return io_error(ErrorCode::io_write_failed, "injected write failure",
-                    "before_rename");
+    return with_temp_cleanup(
+        io_error(ErrorCode::io_write_failed, "injected write failure",
+                 "before_rename"),
+        temp);
   }
 
   Result<void> replaced = replace_file(destination, temp);
   if (!replaced.ok()) {
-    remove_quietly(temp);
-    return replaced;
+    return with_temp_cleanup(replaced.error(), temp);
   }
   return {};
 }

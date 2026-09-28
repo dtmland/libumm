@@ -7,19 +7,10 @@
 #include <string_view>
 #include <variant>
 
+#include "core/property_ids.hpp"
+
 namespace umm::internal {
 namespace {
-
-constexpr std::string_view kCreator = "iptc.photo.creator";
-constexpr std::string_view kDescription = "iptc.photo.description";
-constexpr std::string_view kHeadline = "iptc.photo.headline";
-constexpr std::string_view kDateCreated = "iptc.photo.dateCreated";
-constexpr std::string_view kCopyright = "iptc.photo.copyrightNotice";
-constexpr std::string_view kCredit = "iptc.photo.creditLine";
-constexpr std::string_view kKeywords = "iptc.photo.keywords";
-constexpr std::string_view kRating = "iptc.photo.imageRating";
-constexpr std::string_view kLocation = "iptc.photo.locationCreated";
-constexpr std::string_view kGps = "exif.gps.position";
 
 void add(RawChanges& changes, std::string family, std::string key,
          std::string value, std::string type_hint = {}) {

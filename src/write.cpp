@@ -112,9 +112,29 @@ Result<WriteReport> write(const std::filesystem::path& media,
 
   const bool sidecar_write =
       decided.method == StorageDecision::Method::sidecar;
-  const RawChanges changes =
-      sidecar_write ? internal::write_sync_xmp(metadata)
-                    : internal::write_sync(metadata);
+  RawChanges changes = internal::write_sync(metadata);
+  if (!decided.formats.empty()) {
+    RawChanges filtered;
+    for (RawEntry& entry : changes.upserts) {
+      const std::string format = family_format(entry.key.family);
+      for (const std::string& allowed : decided.formats) {
+        if (allowed == format) {
+          filtered.upserts.push_back(std::move(entry));
+          break;
+        }
+      }
+    }
+    for (RawKey& key : changes.removals) {
+      const std::string format = family_format(key.family);
+      for (const std::string& allowed : decided.formats) {
+        if (allowed == format) {
+          filtered.removals.push_back(std::move(key));
+          break;
+        }
+      }
+    }
+    changes = std::move(filtered);
+  }
   WriteReport report = make_report(changes, decided);
   if (options.dry_run) {
     return report;

@@ -58,23 +58,33 @@ const BackendCapability* backend_row(const Capabilities& caps,
   return caps.backends.empty() ? nullptr : &caps.backends.front();
 }
 
-StorageDecision jpeg_embedded(std::string backend, CategoryAccess categories) {
+StorageDecision embedded_decision(std::string backend,
+                                  CategoryAccess categories) {
   StorageDecision decision;
   decision.method = StorageDecision::Method::embedded;
   decision.formats = embedded_formats(categories);
-  if (decision.formats.empty()) {
-    decision.formats = {"XMP", "EXIF", "IPTC-IIM"};
-  }
   decision.backend = std::move(backend);
   return decision;
 }
 
-StorageDecision xmp_sidecar(std::string backend) {
+StorageDecision sidecar_decision(std::string backend) {
   StorageDecision decision;
   decision.method = StorageDecision::Method::sidecar;
   decision.formats = {"XMP"};
   decision.backend = std::move(backend);
   return decision;
+}
+
+bool can_write_embedded(const BackendCapability* row) {
+  if (!row || row->identify_only) {
+    return false;
+  }
+  return !embedded_formats(row->categories).empty();
+}
+
+Error unsupported_write(std::string message, std::string backend) {
+  return Error{ErrorCode::unsupported_capability, std::move(message),
+               std::move(backend), ""};
 }
 
 std::string selected_backend(const WriteOptions& options,
@@ -110,11 +120,6 @@ std::string ascii_lower_ext(const std::filesystem::path& path) {
 
 bool is_xmp_sidecar_path(const std::filesystem::path& path) {
   return ascii_lower_ext(path) == ".xmp";
-}
-
-bool is_jpeg_path(const std::filesystem::path& path) {
-  const std::string ext = ascii_lower_ext(path);
-  return ext == ".jpg" || ext == ".jpeg";
 }
 
 Result<void> write_xmp_stub(const std::filesystem::path& path) {
@@ -187,27 +192,32 @@ Result<StorageDecision> evaluateStorage(const std::filesystem::path& media,
   const std::string backend = selected_backend(options, reported);
   const BackendCapability* row = backend_row(reported, backend);
   const CategoryAccess categories = row ? row->categories : CategoryAccess{};
+  const bool sidecar_file = internal::is_xmp_sidecar_path(media);
+  const bool embed = can_write_embedded(row);
 
-  if (reported.file_type == "XMP") {
-    if (options.policy == StoragePolicy::embedded_only) {
-      return Error{ErrorCode::unsupported_capability,
-                   "embedded writes are not available for XMP sidecars",
-                   backend, ""};
-    }
-    return xmp_sidecar(backend);
-  }
-  if (reported.file_type != "JPEG") {
-    return Error{ErrorCode::unsupported_type,
-                 "storage policy is implemented for JPEG and XMP sidecar",
-                 backend, ""};
-  }
   switch (options.policy) {
     case StoragePolicy::preferred:
+      if (sidecar_file || reported.sidecar_recommended) {
+        return sidecar_decision(backend);
+      }
+      if (!embed) {
+        return unsupported_write(
+            "no writable metadata categories for this type", backend);
+      }
+      return embedded_decision(backend, categories);
     case StoragePolicy::embedded_only:
-      return jpeg_embedded(backend, categories);
+      if (sidecar_file) {
+        return unsupported_write(
+            "embedded writes are not available for XMP sidecars", backend);
+      }
+      if (!embed) {
+        return unsupported_write(
+            "embedded writes are not available for this type", backend);
+      }
+      return embedded_decision(backend, categories);
     case StoragePolicy::sidecar_only:
     case StoragePolicy::sidecar_required:
-      return xmp_sidecar(backend);
+      return sidecar_decision(backend);
   }
   return Error{ErrorCode::internal, "unknown storage policy", backend, ""};
 }

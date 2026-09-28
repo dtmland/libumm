@@ -5,24 +5,25 @@
 #include <utility>
 #include <variant>
 
+#include "core/property_ids.hpp"
 #include "umm/registry.hpp"
 
 namespace umm {
 namespace {
 
-constexpr std::string_view kCreatorId = "iptc.photo.creator";
-constexpr std::string_view kDescriptionId = "iptc.photo.description";
-constexpr std::string_view kHeadlineId = "iptc.photo.headline";
-constexpr std::string_view kDateCreatedId = "iptc.photo.dateCreated";
-constexpr std::string_view kCopyrightNoticeId = "iptc.photo.copyrightNotice";
-constexpr std::string_view kCreditLineId = "iptc.photo.creditLine";
-constexpr std::string_view kKeywordsId = "iptc.photo.keywords";
-constexpr std::string_view kImageRatingId = "iptc.photo.imageRating";
-constexpr std::string_view kLocationCreatedId = "iptc.photo.locationCreated";
-constexpr std::string_view kGpsPositionId = "exif.gps.position";
+using internal::kCopyright;
+using internal::kCreator;
+using internal::kCredit;
+using internal::kDateCreated;
+using internal::kDescription;
+using internal::kGps;
+using internal::kHeadline;
+using internal::kKeywords;
+using internal::kLocation;
+using internal::kRating;
 
 std::optional<Datatype> datatypeFor(std::string_view property_id) {
-  if (property_id == kGpsPositionId) {
+  if (property_id == kGps) {
     return Datatype::gps_coordinate;
   }
   if (const auto def = registry().find(property_id)) {
@@ -122,80 +123,80 @@ std::vector<std::string> Metadata::propertyIds() const {
   return ids;
 }
 
-std::optional<PropertyValue> Metadata::creator() const { return get(kCreatorId); }
+std::optional<PropertyValue> Metadata::creator() const { return get(kCreator); }
 
 std::optional<PropertyValue> Metadata::description() const {
-  return get(kDescriptionId);
+  return get(kDescription);
 }
 
 std::optional<PropertyValue> Metadata::headline() const {
-  return get(kHeadlineId);
+  return get(kHeadline);
 }
 
 std::optional<PropertyValue> Metadata::dateCreated() const {
-  return get(kDateCreatedId);
+  return get(kDateCreated);
 }
 
 std::optional<PropertyValue> Metadata::copyrightNotice() const {
-  return get(kCopyrightNoticeId);
+  return get(kCopyright);
 }
 
 std::optional<PropertyValue> Metadata::creditLine() const {
-  return get(kCreditLineId);
+  return get(kCredit);
 }
 
 std::optional<PropertyValue> Metadata::keywords() const {
-  return get(kKeywordsId);
+  return get(kKeywords);
 }
 
 std::optional<PropertyValue> Metadata::rating() const {
-  return get(kImageRatingId);
+  return get(kRating);
 }
 
-std::optional<PropertyValue> Metadata::gps() const { return get(kGpsPositionId); }
+std::optional<PropertyValue> Metadata::gps() const { return get(kGps); }
 
 std::optional<PropertyValue> Metadata::locationCreated() const {
-  return get(kLocationCreatedId);
+  return get(kLocation);
 }
 
 Result<void> Metadata::setCreator(std::vector<std::string> names) {
-  return set(kCreatorId, makeValue(std::move(names)));
+  return set(kCreator, makeValue(std::move(names)));
 }
 
 Result<void> Metadata::setDescription(LangAlt text) {
-  return set(kDescriptionId, makeValue(std::move(text)));
+  return set(kDescription, makeValue(std::move(text)));
 }
 
 Result<void> Metadata::setHeadline(std::string headline) {
-  return set(kHeadlineId, makeValue(std::move(headline)));
+  return set(kHeadline, makeValue(std::move(headline)));
 }
 
 Result<void> Metadata::setDateCreated(DateTime when) {
-  return set(kDateCreatedId, makeValue(when));
+  return set(kDateCreated, makeValue(when));
 }
 
 Result<void> Metadata::setCopyrightNotice(LangAlt text) {
-  return set(kCopyrightNoticeId, makeValue(std::move(text)));
+  return set(kCopyright, makeValue(std::move(text)));
 }
 
 Result<void> Metadata::setCreditLine(std::string credit) {
-  return set(kCreditLineId, makeValue(std::move(credit)));
+  return set(kCredit, makeValue(std::move(credit)));
 }
 
 Result<void> Metadata::setKeywords(std::vector<std::string> keywords) {
-  return set(kKeywordsId, makeValue(std::move(keywords)));
+  return set(kKeywords, makeValue(std::move(keywords)));
 }
 
 Result<void> Metadata::setRating(double rating) {
-  return set(kImageRatingId, makeValue(rating));
+  return set(kRating, makeValue(rating));
 }
 
 Result<void> Metadata::setGps(GpsCoordinate position) {
-  return set(kGpsPositionId, makeValue(position));
+  return set(kGps, makeValue(position));
 }
 
 Result<void> Metadata::setLocationCreated(std::vector<Structure> locations) {
-  return set(kLocationCreatedId, makeValue(std::move(locations)));
+  return set(kLocation, makeValue(std::move(locations)));
 }
 
 std::vector<std::string> Metadata::conflictedPropertyIds() const {

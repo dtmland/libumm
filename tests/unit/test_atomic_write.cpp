@@ -76,6 +76,29 @@ int main() {
     return fail("failed mutator mutated the original");
   }
 
+  const std::filesystem::path collision = dir / "collision.txt";
+  write_all(collision, "collision-original");
+  for (int i = 1; i <= 256; ++i) {
+    write_all(dir / ("collision.umm-" + std::to_string(i) + ".txt"), "occupied");
+  }
+  const auto skipped = umm::internal::mutate_file_atomically(
+      collision, [](const std::filesystem::path& working) {
+        write_all(working, "collision-mutated");
+        return umm::Result<void>{};
+      });
+  if (!skipped.ok()) {
+    return fail("collision skip failed");
+  }
+  if (read_all(collision) != "collision-mutated") {
+    return fail("collision skip did not replace destination");
+  }
+  for (int i = 1; i <= 256; ++i) {
+    if (read_all(dir / ("collision.umm-" + std::to_string(i) + ".txt")) !=
+        "occupied") {
+      return fail("collision skip overwrote an existing temp name");
+    }
+  }
+
   const std::filesystem::path created = dir / "new-sidecar.xmp";
   const auto created_ok = umm::internal::mutate_file_atomically(
       created,

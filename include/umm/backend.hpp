@@ -121,8 +121,9 @@ class BackendManager {
   // Registration order defines default read preference.
   void configureExifTool(ExifToolConfig config);
   std::vector<std::string> backendIds() const;
-  Backend* get(std::string_view id);  // nullptr if unknown
-  Backend* firstAvailable();          // nullptr if none (S1b)
+  Backend* get(std::string_view id);              // nullptr if unknown
+  const Backend* get(std::string_view id) const;  // nullptr if unknown
+  Backend* firstAvailable();                      // nullptr if none (S1b)
 
  private:
   BackendManager();
