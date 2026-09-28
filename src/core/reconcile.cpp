@@ -921,16 +921,65 @@ void classify(Metadata& metadata, std::string_view property_id,
   (void)metadata.set(property_id, std::move(property));
 }
 
+bool is_xmp_array_type(std::string_view type) {
+  return type == "XmpBag" || type == "XmpSeq" || type == "seq";
+}
+
+bool is_xmp_array_token(std::string_view value) {
+  return value == "XmpBag" || value == "XmpSeq" || value == "XmpAlt";
+}
+
+std::vector<std::string> split_joined_list(std::string_view text) {
+  std::vector<std::string> out;
+  std::size_t start = 0;
+  while (start <= text.size()) {
+    const auto pos = text.find(", ", start);
+    const std::string_view part =
+        pos == std::string_view::npos ? text.substr(start)
+                                      : text.substr(start, pos - start);
+    const std::string value = trimmed(part);
+    if (!value.empty() && !is_xmp_array_token(value)) {
+      out.push_back(value);
+    }
+    if (pos == std::string_view::npos) {
+      break;
+    }
+    start = pos + 2;
+  }
+  return out;
+}
+
 std::vector<std::string> collect_list(const RawDocument& document,
                                       std::string_view base) {
-  std::vector<std::string> values;
+  std::vector<std::string> indexed;
+  std::vector<std::string> unindexed;
+  std::vector<std::string> from_container;
   for (const RawEntry* entry : matching(document, base)) {
     const std::string value = trimmed(entry->value);
-    if (!value.empty()) {
-      values.push_back(value);
+    if (value.empty() || is_xmp_array_token(value)) {
+      continue;
     }
+    const bool indexed_key =
+        entry->key.key.size() > base.size() &&
+        entry->key.key[base.size()] == '[';
+    if (indexed_key) {
+      indexed.push_back(value);
+      continue;
+    }
+    if (is_xmp_array_type(entry->type_hint)) {
+      auto parts = split_joined_list(value);
+      from_container.insert(from_container.end(), parts.begin(), parts.end());
+      continue;
+    }
+    unindexed.push_back(value);
   }
-  return values;
+  if (!indexed.empty()) {
+    return indexed;
+  }
+  if (!from_container.empty()) {
+    return from_container;
+  }
+  return unindexed;
 }
 
 std::optional<Group> text_list_group(const RawDocument& document,

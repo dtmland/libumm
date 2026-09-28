@@ -45,7 +45,9 @@ No source is dropped: `PropertyValue::sources` lists every raw entry that contri
   `CodedCharacterSet` is not a semantic property; backends already emit UTF-8
   (M3). A missing charset marker does not change equivalence.
 - Indexed raw keys (`Xmp.dc.creator[1]`, `Iptc.Application2.Keywords[2]`) belong
-  to the same group as the unindexed key.
+  to the same group as the unindexed key. An XMP Bag/Seq container whose
+  `type_hint` is `XmpBag`/`XmpSeq` (Exiv2 joins items with `", "`) is not itself
+  a list item; use indexed children, or those joined components, instead.
 - Empty values are ignored.
 - Partial values never invent missing fields (unknown EXIF offset is not UTC).
 

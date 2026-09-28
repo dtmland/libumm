@@ -15,10 +15,12 @@ int fail(const char* message) {
   return 1;
 }
 
-umm::RawEntry entry(std::string family, std::string key, std::string value) {
+umm::RawEntry entry(std::string family, std::string key, std::string value,
+                    std::string type_hint = {}) {
   umm::RawEntry out;
   out.key.family = std::move(family);
   out.key.key = std::move(key);
+  out.type_hint = std::move(type_hint);
   out.value = std::move(value);
   return out;
 }
@@ -247,6 +249,45 @@ int main() {
     }
     if (gps->resolution != umm::Resolution::single) {
       return fail("rational gps not single");
+    }
+  }
+
+  {
+    const auto result = umm::internal::reconcile(
+        doc({entry("Xmp", "Xmp.dc.subject[1]", "alpha"),
+             entry("Xmp", "Xmp.dc.subject[2]", "beta"),
+             entry("Iptc", "Iptc.Application2.Keywords", "alpha"),
+             entry("Iptc", "Iptc.Application2.Keywords", "beta")}),
+        "test");
+    if (!result.ok()) {
+      return fail("indexed keywords reconcile failed");
+    }
+    const auto keywords = result.value().keywords();
+    if (!keywords || keywords->resolution != umm::Resolution::equivalent) {
+      return fail("indexed keywords not equivalent");
+    }
+    const auto* terms = as_list(*keywords);
+    if (!terms || terms->size() != 2) {
+      return fail("indexed keywords value");
+    }
+  }
+
+  {
+    const auto result = umm::internal::reconcile(
+        doc({entry("Xmp", "Xmp.dc.subject", "alpha, beta", "XmpBag"),
+             entry("Iptc", "Iptc.Application2.Keywords", "beta"),
+             entry("Iptc", "Iptc.Application2.Keywords", "alpha")}),
+        "test");
+    if (!result.ok()) {
+      return fail("joined XmpBag keywords reconcile failed");
+    }
+    const auto keywords = result.value().keywords();
+    if (!keywords || keywords->resolution != umm::Resolution::equivalent) {
+      return fail("joined XmpBag keywords not equivalent");
+    }
+    const auto* terms = as_list(*keywords);
+    if (!terms || terms->size() != 2) {
+      return fail("joined XmpBag keywords value");
     }
   }
 
