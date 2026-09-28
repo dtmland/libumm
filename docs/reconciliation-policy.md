@@ -249,6 +249,9 @@ read.
 
 Sidecar XMP and embedded XMP are **same-tier XMP**. They are grouped separately
 so a sidecar `Xmp.dc.creator` is never concatenated with the embedded XMP list.
+Read-only RAW types with `sidecar_recommended` (session 19) use this same
+pairing: sidecar XMP is still same-tier as any embedded XMP; writes under
+`StoragePolicy::preferred` go to the sidecar without a format-specific path.
 
 - Equal after normalization: `equivalent` (or `reconciled` against IIM/EXIF if
   those disagree).

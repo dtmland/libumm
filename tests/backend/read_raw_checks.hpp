@@ -279,6 +279,31 @@ inline int check_png_raw_reads(umm::Backend& backend, const char* backend_id) {
   return 0;
 }
 
+inline int check_dng_raw_reads(umm::Backend& backend, const char* backend_id) {
+  (void)backend_id;
+  const auto agreeing =
+      backend.readRaw(raw_stem("raw", "full-agreeing", ".dng"));
+  if (!agreeing.ok()) {
+    std::fprintf(stderr, "raw/full-agreeing.dng read failed: %s\n",
+                 agreeing.error().message.c_str());
+    return 1;
+  }
+  if (!raw_has_family(agreeing.value(), "Exif") ||
+      !raw_has_family(agreeing.value(), "Iptc") ||
+      !raw_has_family(agreeing.value(), "Xmp")) {
+    return raw_fail("dng full-agreeing missing a metadata family");
+  }
+  if (!raw_has_key_with_value(agreeing.value(), "Exif.Image.Artist",
+                              "Agreeing Creator") ||
+      !raw_has_key_with_value(agreeing.value(), "Iptc.Application2.Byline",
+                              "Agreeing Creator") ||
+      !raw_has_key_with_value(agreeing.value(), "Xmp.dc.creator",
+                              "Agreeing Creator")) {
+    return raw_fail("dng full-agreeing missing creator in all families");
+  }
+  return 0;
+}
+
 inline int check_webp_raw_reads(umm::Backend& backend, const char* backend_id) {
   (void)backend_id;
   const auto xmp_only = backend.readRaw(raw_stem("webp", "xmp-only", ".webp"));

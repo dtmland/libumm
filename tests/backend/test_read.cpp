@@ -401,6 +401,71 @@ int check_truncated(const std::string& backend_id) {
   return 0;
 }
 
+int check_dng_backend(const std::string& backend_id) {
+  umm::ReadOptions options;
+  options.backend = backend_id;
+
+  const auto minimal = umm::read(raw_stem("raw", "minimal", ".dng"), options);
+  if (!minimal.ok()) {
+    std::fprintf(stderr, "dng minimal read failed: %s\n",
+                 minimal.error().message.c_str());
+    return 1;
+  }
+  if (!minimal.value().propertyIds().empty()) {
+    return fail_read("dng minimal should have no Phase 1 properties");
+  }
+
+  const auto agreeing =
+      umm::read(raw_stem("raw", "full-agreeing", ".dng"), options);
+  if (!agreeing.ok()) {
+    std::fprintf(stderr, "dng full-agreeing read failed: %s\n",
+                 agreeing.error().message.c_str());
+    return 1;
+  }
+  const umm::Metadata& agree = agreeing.value();
+  const auto creator = agree.creator();
+  const auto description = agree.description();
+  const auto copyright = agree.copyrightNotice();
+  const auto date = agree.dateCreated();
+  const auto keywords = agree.keywords();
+  const auto location = agree.locationCreated();
+  if (!creator || creator->resolution != umm::Resolution::equivalent) {
+    return fail_read("dng full-agreeing creator not equivalent");
+  }
+  const auto* names = as_list(*creator);
+  if (!names || names->empty() || names->front() != "Agreeing Creator") {
+    return fail_read("dng full-agreeing creator value");
+  }
+  if (!description || description->resolution != umm::Resolution::equivalent) {
+    return fail_read("dng full-agreeing description not equivalent");
+  }
+  const auto* desc = as_lang(*description);
+  if (!desc || !has_x_default(*desc, "Agreeing description")) {
+    return fail_read("dng full-agreeing description value");
+  }
+  if (!copyright || copyright->resolution != umm::Resolution::equivalent) {
+    return fail_read("dng full-agreeing copyright not equivalent");
+  }
+  if (!date || date->resolution != umm::Resolution::equivalent) {
+    return fail_read("dng full-agreeing date not equivalent");
+  }
+  const auto* dt = as_date(*date);
+  if (!dt || dt->year != 2020 || dt->month != 1 || dt->day != 2 ||
+      dt->hour != 3 || dt->minute != 4 || dt->second != 5) {
+    return fail_read("dng full-agreeing date value");
+  }
+  if (!keywords || keywords->resolution != umm::Resolution::equivalent) {
+    return fail_read("dng full-agreeing keywords not equivalent");
+  }
+  if (!location || location->resolution != umm::Resolution::equivalent) {
+    return fail_read("dng full-agreeing location not equivalent");
+  }
+  if (creator->sources.size() < 3 || date->sources.size() < 3) {
+    return fail_read("dng full-agreeing dropped sources");
+  }
+  return 0;
+}
+
 int compare_agreeing_backends(const std::string& a, const std::string& b,
                               const char* folder, const char* ext) {
   umm::ReadOptions left;
@@ -454,6 +519,10 @@ int main() {
       std::fprintf(stderr, "backend %s webp failed\n", id.c_str());
       return rc;
     }
+    if (const int rc = check_dng_backend(id); rc != 0) {
+      std::fprintf(stderr, "backend %s dng failed\n", id.c_str());
+      return rc;
+    }
     tested.push_back(id);
   }
   if (tested.empty()) {
@@ -475,7 +544,12 @@ int main() {
         rc != 0) {
       return rc;
     }
-    return compare_agreeing_backends(tested[0], tested[1], "webp", ".webp");
+    if (const int rc =
+            compare_agreeing_backends(tested[0], tested[1], "webp", ".webp");
+        rc != 0) {
+      return rc;
+    }
+    return compare_agreeing_backends(tested[0], tested[1], "raw", ".dng");
   }
   return 0;
 }

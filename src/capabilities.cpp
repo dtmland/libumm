@@ -149,6 +149,10 @@ std::string sniff_type(const std::filesystem::path& media) {
     // Container magics before XMP text: embedded XMP packets in stills
     // must not classify the file as a sidecar (sessions 17–18).
     if (looks_like_tiff(bytes)) {
+      // DNG is TIFF-based; discriminate by extension (session 19).
+      if (type_from_extension(media) == "DNG") {
+        return "DNG";
+      }
       return "TIFF";
     }
     if (looks_like_png(bytes)) {

@@ -114,10 +114,38 @@ int main() {
     return fail("WEBP Exiv2 preferred has no IPTC");
   }
 
+  const auto dng =
+      umm::evaluateStorage(std::filesystem::path("a.dng"), preferred);
+  if (!dng.ok() || dng.value().method != umm::StorageDecision::Method::embedded ||
+      !formats_are(dng.value(), {"XMP", "EXIF", "IPTC-IIM"})) {
+    return fail("DNG embedded-capable");
+  }
+
   const auto arw = umm::evaluateStorage(std::filesystem::path("a.arw"), preferred);
   if (!arw.ok() || arw.value().method != umm::StorageDecision::Method::sidecar ||
       !formats_are(arw.value(), {"XMP"})) {
     return fail("ARW sidecar_recommended");
+  }
+
+  const auto raf = umm::evaluateStorage(std::filesystem::path("a.raf"), preferred);
+  if (!raf.ok() || raf.value().method != umm::StorageDecision::Method::sidecar ||
+      !formats_are(raf.value(), {"XMP"})) {
+    return fail("RAF preferred sidecar_recommended");
+  }
+  umm::WriteOptions raf_embedded;
+  raf_embedded.policy = umm::StoragePolicy::embedded_only;
+  raf_embedded.backend = "exiv2";
+  const auto raf_emb =
+      umm::evaluateStorage(std::filesystem::path("a.raf"), raf_embedded);
+  if (raf_emb.ok() ||
+      raf_emb.error().code != umm::ErrorCode::unsupported_capability) {
+    return fail("RAF Exiv2 embedded_only");
+  }
+  const auto rw2 = umm::evaluateStorage(std::filesystem::path("a.rw2"), preferred);
+  const auto sr2 = umm::evaluateStorage(std::filesystem::path("a.sr2"), preferred);
+  if (!rw2.ok() || rw2.value().method != umm::StorageDecision::Method::sidecar ||
+      !sr2.ok() || sr2.value().method != umm::StorageDecision::Method::sidecar) {
+    return fail("RW2/SR2 preferred sidecar_recommended");
   }
 
   const auto bmp = umm::evaluateStorage(std::filesystem::path("a.bmp"), preferred);
