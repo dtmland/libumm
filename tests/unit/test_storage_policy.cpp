@@ -89,6 +89,31 @@ int main() {
     return fail("TIFF embedded-capable");
   }
 
+  const auto png =
+      umm::evaluateStorage(std::filesystem::path("a.png"), preferred);
+  if (!png.ok() || png.value().method != umm::StorageDecision::Method::embedded ||
+      !formats_are(png.value(), {"XMP", "IPTC-IIM"})) {
+    return fail("PNG Exiv2 preferred has no EXIF");
+  }
+  umm::WriteOptions png_et;
+  png_et.policy = umm::StoragePolicy::preferred;
+  png_et.backend = "exiftool";
+  const auto png_exiftool =
+      umm::evaluateStorage(std::filesystem::path("a.png"), png_et);
+  if (!png_exiftool.ok() ||
+      png_exiftool.value().method != umm::StorageDecision::Method::embedded ||
+      !formats_are(png_exiftool.value(), {"XMP", "EXIF", "IPTC-IIM"})) {
+    return fail("PNG ExifTool includes EXIF");
+  }
+
+  const auto webp =
+      umm::evaluateStorage(std::filesystem::path("a.webp"), preferred);
+  if (!webp.ok() ||
+      webp.value().method != umm::StorageDecision::Method::embedded ||
+      !formats_are(webp.value(), {"XMP", "EXIF"})) {
+    return fail("WEBP Exiv2 preferred has no IPTC");
+  }
+
   const auto arw = umm::evaluateStorage(std::filesystem::path("a.arw"), preferred);
   if (!arw.ok() || arw.value().method != umm::StorageDecision::Method::sidecar ||
       !formats_are(arw.value(), {"XMP"})) {

@@ -66,6 +66,12 @@ int main() {
   if (const int rc = check_tiff_raw_reads(*backend, "exiftool"); rc != 0) {
     return rc;
   }
+  if (const int rc = check_png_raw_reads(*backend, "exiftool"); rc != 0) {
+    return rc;
+  }
+  if (const int rc = check_webp_raw_reads(*backend, "exiftool"); rc != 0) {
+    return rc;
+  }
 
   auto* adapter = as_exiftool(backend);
   const std::uint64_t after_fixtures = adapter->spawnCount();

@@ -87,9 +87,38 @@ class TestLayout(unittest.TestCase):
     def test_exiv2_expat_shim_exports_include_dirs(self) -> None:
         text = LIBUMM_EXIV2_CMAKE.read_text(encoding="utf-8")
         self.assertIn("EXIV2_ENABLE_XMP ON", text)
+        self.assertIn("EXIV2_ENABLE_PNG ON", text)
         # Exiv2 0.28 xmpsdk compiles ExpatAdapter.cpp with EXPAT_INCLUDE_DIRS.
         self.assertRegex(text, r'set\(EXPAT_INCLUDE_DIRS ')
         self.assertRegex(text, r'set\(EXPAT_INCLUDE_DIR ')
+
+    def test_exiv2_fetched_deps_skip_install_rules(self) -> None:
+        # zlib 1.3.x install(TARGETS) has no EXPORT. Putting zlibstatic in
+        # exiv2Targets then fails generate: INTERFACE_INCLUDE_DIRECTORIES
+        # is prefixed in the source/build directory. Skip install rules for
+        # FetchContent deps instead; libumm links exiv2lib privately.
+        text = LIBUMM_EXIV2_CMAKE.read_text(encoding="utf-8")
+        self.assertIn("CMAKE_SKIP_INSTALL_RULES", text)
+        self.assertNotIn(
+            "install(TARGETS zlibstatic EXPORT exiv2Targets)", text
+        )
+        self.assertIn("Zlib not found on system; fetched for Exiv2 PNG", text)
+
+    def test_exiv2_zlib_shim_includes_generated_zconf(self) -> None:
+        # zlib CMake generates zconf.h in BINARY_DIR. Exiv2 0.28 compiles
+        # pngchunk_int.cpp with ZLIB_INCLUDE_DIR only, so the shim must list
+        # both the source tree (zlib.h) and the build tree (zconf.h).
+        text = LIBUMM_EXIV2_CMAKE.read_text(encoding="utf-8")
+        self.assertRegex(
+            text,
+            r'set\(ZLIB_INCLUDE_DIR "\$\{_umm_zlib_include_dir\}" '
+            r'"\$\{_umm_zlib_binary_dir\}"\)',
+        )
+        self.assertRegex(
+            text,
+            r'set\(ZLIB_INCLUDE_DIRS "\$\{_umm_zlib_include_dir\}" '
+            r'"\$\{_umm_zlib_binary_dir\}"\)',
+        )
 
     def test_exiv2_windows_unicode_paths_use_memio(self) -> None:
         # Exiv2 0.28 FileIo::open uses fopen (ACP on Windows). Unicode fixture

@@ -61,5 +61,17 @@ int main() {
     return 1;
   }
 
+  const std::filesystem::path png = root / "png" / "minimal.png";
+  if (!file_nonempty(png)) {
+    std::fprintf(stderr, "missing png/minimal.png under fixture dir\n");
+    return 1;
+  }
+
+  const std::filesystem::path webp = root / "webp" / "minimal.webp";
+  if (!file_nonempty(webp)) {
+    std::fprintf(stderr, "missing webp/minimal.webp under fixture dir\n");
+    return 1;
+  }
+
   return 0;
 }

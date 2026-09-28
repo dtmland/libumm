@@ -21,6 +21,8 @@ FIXTURES = REPO_ROOT / "tests" / "fixtures"
 GENERATOR = FIXTURES / "generator" / "generate.py"
 BASE_JPEG = FIXTURES / "generator" / "base-16x16-gray.jpg"
 BASE_TIFF = FIXTURES / "generator" / "base-16x16-gray.tif"
+BASE_PNG = FIXTURES / "generator" / "base-16x16-gray.png"
+BASE_WEBP = FIXTURES / "generator" / "base-16x16-gray.webp"
 CONFIG = FIXTURES / "generator" / "exiftool.config"
 MANIFEST = FIXTURES / "MANIFEST.md"
 GITATTRIBUTES = REPO_ROOT / ".gitattributes"
@@ -59,6 +61,19 @@ TIFF_FILES = (
     "tiff/full-conflicting.tif",
     "tiff/gps.tif",
     "tiff/unicode.tif",
+)
+
+# docs/implementation/18-png-webp-support.md
+PNG_FILES = (
+    "png/minimal.png",
+    "png/xmp-only.png",
+    "png/full-agreeing.png",
+    "png/gps.png",
+)
+WEBP_FILES = (
+    "webp/minimal.webp",
+    "webp/xmp-only.webp",
+    "webp/full-agreeing.webp",
 )
 
 ENTRY_RE = re.compile(
@@ -199,7 +214,16 @@ def comparable_metadata(record: dict) -> dict:
 
 class TestFixtureCorpus(unittest.TestCase):
     def test_required_generator_files_exist(self) -> None:
-        for path in (GENERATOR, BASE_JPEG, BASE_TIFF, CONFIG, MANIFEST, GITATTRIBUTES):
+        for path in (
+            GENERATOR,
+            BASE_JPEG,
+            BASE_TIFF,
+            BASE_PNG,
+            BASE_WEBP,
+            CONFIG,
+            MANIFEST,
+            GITATTRIBUTES,
+        ):
             self.assertTrue(path.is_file(), f"missing {path}")
 
     def test_generator_passes_unicode_via_utf8_argfile(self) -> None:
@@ -295,6 +319,17 @@ class TestFixtureCorpus(unittest.TestCase):
             ".gitattributes must mark TIFF fixtures as binary",
         )
         self.assertTrue(
+            any("tests/fixtures/**/*.png" in line and "binary" in line for line in lines),
+            ".gitattributes must mark PNG fixtures as binary",
+        )
+        self.assertTrue(
+            any(
+                "tests/fixtures/**/*.webp" in line and "binary" in line
+                for line in lines
+            ),
+            ".gitattributes must mark WebP fixtures as binary",
+        )
+        self.assertTrue(
             any(
                 "tests/fixtures/**/*.xmp" in line and "eol=lf" in line
                 for line in lines
@@ -327,6 +362,31 @@ class TestFixtureCorpus(unittest.TestCase):
             self.assertTrue(
                 (data.startswith(b"II*\x00") or data.startswith(b"MM\x00*")),
                 f"{relpath} is not TIFF magic",
+            )
+
+    def test_png_matrix_is_present(self) -> None:
+        text = MANIFEST.read_text(encoding="utf-8")
+        entries = parse_manifest(text)
+        for relpath in PNG_FILES:
+            path = FIXTURES / relpath
+            self.assertIn(relpath, entries, f"{relpath} missing from MANIFEST.md")
+            self.assertTrue(path.is_file(), f"missing fixture {relpath}")
+            self.assertTrue(
+                path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n"),
+                f"{relpath} is not PNG magic",
+            )
+
+    def test_webp_matrix_is_present(self) -> None:
+        text = MANIFEST.read_text(encoding="utf-8")
+        entries = parse_manifest(text)
+        for relpath in WEBP_FILES:
+            path = FIXTURES / relpath
+            self.assertIn(relpath, entries, f"{relpath} missing from MANIFEST.md")
+            self.assertTrue(path.is_file(), f"missing fixture {relpath}")
+            data = path.read_bytes()
+            self.assertTrue(
+                data.startswith(b"RIFF") and data[8:12] == b"WEBP",
+                f"{relpath} is not WebP magic",
             )
 
     def test_manifest_matches_files_on_disk(self) -> None:
@@ -430,6 +490,31 @@ class TestFixtureExifTool(unittest.TestCase):
         self.assertNotEqual(exif_date[:10].replace(":", "-"), iptc_date[:10].replace(":", "-"))
         self.assertNotIn(iptc_date[:10], xmp_date)
         self.assertNotIn("2020:01:01", xmp_date)
+
+    def test_png_gps_has_xmp_and_exif(self) -> None:
+        record = exiftool_json(self.perl, self.script, FIXTURES / "png" / "gps.png")
+        self.assertTrue(record.get("GPS:GPSLatitude") or record.get("ExifIFD:GPSLatitude")
+                        or any("GPSLatitude" in key for key in record))
+        self.assertTrue(
+            any(key.startswith("XMP-exif:") and "GPSLatitude" in key for key in record),
+            "png/gps.png missing XMP GPS",
+        )
+
+    def test_png_full_agreeing_has_iptc_and_xmp_not_exif_artist(self) -> None:
+        record = exiftool_json(
+            self.perl, self.script, FIXTURES / "png" / "full-agreeing.png"
+        )
+        self.assertEqual(record.get("IPTC:By-line"), "Agreeing Creator")
+        self.assertEqual(record.get("XMP-dc:Creator"), "Agreeing Creator")
+        self.assertIsNone(record.get("IFD0:Artist"))
+
+    def test_webp_full_agreeing_has_exif_and_xmp_not_iptc(self) -> None:
+        record = exiftool_json(
+            self.perl, self.script, FIXTURES / "webp" / "full-agreeing.webp"
+        )
+        self.assertEqual(record.get("IFD0:Artist"), "Agreeing Creator")
+        self.assertEqual(record.get("XMP-dc:Creator"), "Agreeing Creator")
+        self.assertIsNone(record.get("IPTC:By-line"))
 
     def test_tiff_unicode_values_survive(self) -> None:
         record = exiftool_json(self.perl, self.script, FIXTURES / "tiff" / "unicode.tif")

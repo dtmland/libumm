@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Generate the Tier A JPEG + TIFF + XMP-sidecar fixture corpus.
+"""Generate the Tier A JPEG + TIFF + PNG + WebP + XMP-sidecar fixture corpus.
 
 Uses the pinned ExifTool (and checked-in 16x16 gray bases, or ImageMagick if
 the JPEG base is missing) so every committed fixture is synthetic (decision M6).
-JPEG corpus: session 09 / test-media-plan §2.2. TIFF corpus: session 17.
+JPEG corpus: session 09 / test-media-plan §2.2. TIFF: session 17.
+PNG + WebP: session 18 (capability-divergent pair).
 """
 
 from __future__ import annotations
@@ -16,6 +17,7 @@ import struct
 import subprocess
 import sys
 import tempfile
+import zlib
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -23,6 +25,8 @@ GENERATOR_DIR = Path(__file__).resolve().parent
 DEFAULT_OUTPUT_DIR = GENERATOR_DIR.parent
 BASE_JPEG_NAME = "base-16x16-gray.jpg"
 BASE_TIFF_NAME = "base-16x16-gray.tif"
+BASE_PNG_NAME = "base-16x16-gray.png"
+BASE_WEBP_NAME = "base-16x16-gray.webp"
 CONFIG_NAME = "exiftool.config"
 UNICODE_FILENAME = "übüng ünïcode.jpg"
 
@@ -83,6 +87,19 @@ PURPOSES = {
     "tiff/gps.tif": "EXIF GPS IFD + XMP GPS + IPTC named place",
     "tiff/unicode.tif": (
         "Non-ASCII values (UTF-8 XMP, IPTC charset marker) in creator/description"
+    ),
+    "png/minimal.png": "No metadata at all — read returns empty, write starts from scratch",
+    "png/xmp-only.png": "XMP without EXIF/IPTC (both backends)",
+    "png/full-agreeing.png": (
+        "IPTC+XMP agree — categories both backends can see on PNG"
+    ),
+    "png/gps.png": (
+        "XMP GPS + ExifTool-written EXIF GPS (Exiv2 is EXIF-blind on PNG)"
+    ),
+    "webp/minimal.webp": "No metadata at all — read returns empty, write starts from scratch",
+    "webp/xmp-only.webp": "XMP without EXIF/IPTC (both backends)",
+    "webp/full-agreeing.webp": (
+        "EXIF+XMP agree — categories both backends can see on WebP (no IPTC)"
     ),
 }
 
@@ -243,6 +260,87 @@ def ensure_base_tiff(base_path: Path) -> Path:
     return base_path
 
 
+def png_chunk(tag: bytes, data: bytes) -> bytes:
+    crc = zlib.crc32(tag + data) & 0xFFFFFFFF
+    return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", crc)
+
+
+def write_constant_gray_png(path: Path, width: int = 16, height: int = 16) -> None:
+    """Write an 8-bit grayscale PNG filled with mid-gray (128)."""
+    raw = b"".join([b"\x00" + bytes([128] * width) for _ in range(height)])
+    ihdr = struct.pack(">IIBBBBB", width, height, 8, 0, 0, 0, 0)
+    path.write_bytes(
+        b"\x89PNG\r\n\x1a\n"
+        + png_chunk(b"IHDR", ihdr)
+        + png_chunk(b"IDAT", zlib.compress(raw, 9))
+        + png_chunk(b"IEND", b"")
+    )
+
+
+def ensure_base_png(base_path: Path) -> Path:
+    if base_path.is_file():
+        return base_path
+    write_constant_gray_png(base_path)
+    return base_path
+
+
+class _BitWriter:
+    def __init__(self) -> None:
+        self.bits = 0
+        self.n = 0
+        self.buf = bytearray()
+
+    def write(self, value: int, nbits: int) -> None:
+        self.bits |= (value & ((1 << nbits) - 1)) << self.n
+        self.n += nbits
+        while self.n >= 8:
+            self.buf.append(self.bits & 0xFF)
+            self.bits >>= 8
+            self.n -= 8
+
+    def finish(self) -> bytes:
+        if self.n:
+            self.buf.append(self.bits & 0xFF)
+        return bytes(self.buf)
+
+
+def write_constant_gray_webp(path: Path, width: int = 16, height: int = 16) -> None:
+    """Write a lossless VP8L WebP filled with opaque mid-gray (128)."""
+    bits = _BitWriter()
+    bits.write(0x2F, 8)
+    bits.write(width - 1, 14)
+    bits.write(height - 1, 14)
+    bits.write(0, 1)  # no alpha used
+    bits.write(0, 3)  # version
+    bits.write(0, 1)  # no transform
+    bits.write(0, 1)  # no color cache
+    bits.write(0, 1)  # one Huffman group
+
+    def simple_huffman(symbol: int) -> None:
+        bits.write(0, 1)  # simple code
+        bits.write(0, 1)  # one symbol
+        bits.write(1, 1)  # 8-bit first symbol
+        bits.write(symbol, 8)
+
+    simple_huffman(128)  # green
+    simple_huffman(128)  # red
+    simple_huffman(128)  # blue
+    simple_huffman(255)  # alpha
+    simple_huffman(0)  # distance (unused; all pixels are the same literal)
+    payload = bits.finish()
+    chunk = b"VP8L" + struct.pack("<I", len(payload)) + payload
+    if len(payload) % 2:
+        chunk += b"\x00"
+    path.write_bytes(b"RIFF" + struct.pack("<I", 4 + len(chunk)) + b"WEBP" + chunk)
+
+
+def ensure_base_webp(base_path: Path) -> Path:
+    if base_path.is_file():
+        return base_path
+    write_constant_gray_webp(base_path)
+    return base_path
+
+
 def find_perl(explicit: str | None) -> str:
     if explicit:
         return explicit
@@ -399,7 +497,7 @@ def write_manifest(
     lines = [
         "# Fixture corpus manifest",
         "",
-        "Tier A JPEG + TIFF + XMP-sidecar corpus from [docs/test-media-plan.md](../../../docs/test-media-plan.md) §2.2.",
+        "Tier A JPEG + TIFF + PNG + WebP + XMP-sidecar corpus from [docs/test-media-plan.md](../../../docs/test-media-plan.md) §2.2.",
         "Generated by `tests/fixtures/generator/generate.py` with the pinned ExifTool.",
         "Do not edit by hand.",
         "",
@@ -434,7 +532,14 @@ def write_manifest(
     (output_dir / "MANIFEST.md").write_text("\n".join(lines), encoding="utf-8")
 
 
-def generate(output_dir: Path, tool: ExifTool, base: Path, tiff_base: Path) -> None:
+def generate(
+    output_dir: Path,
+    tool: ExifTool,
+    base: Path,
+    tiff_base: Path,
+    png_base: Path,
+    webp_base: Path,
+) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     entries: list[tuple[str, list[str]]] = []
 
@@ -829,6 +934,116 @@ def generate(output_dir: Path, tool: ExifTool, base: Path, tiff_base: Path) -> N
         ),
     )
 
+    add(
+        "png/minimal.png",
+        make_image(tool, png_base, output_dir / "png/minimal.png", []),
+    )
+    add(
+        "png/xmp-only.png",
+        make_image(
+            tool,
+            png_base,
+            output_dir / "png/xmp-only.png",
+            [
+                ("XMP-dc:Creator", "XMP Creator"),
+                ("XMP-dc:Description", "XMP description"),
+                ("XMP-dc:Title", "XMP title"),
+                ("XMP-dc:Rights", "XMP copyright"),
+                ("XMP-photoshop:DateCreated", DATE_AGREE.replace(" ", "T")),
+            ],
+        ),
+    )
+    add(
+        "png/full-agreeing.png",
+        make_image(
+            tool,
+            png_base,
+            output_dir / "png/full-agreeing.png",
+            [
+                ("IPTC:CodedCharacterSet", "UTF8"),
+                ("IPTC:By-line", "Agreeing Creator"),
+                ("IPTC:Caption-Abstract", "Agreeing description"),
+                ("IPTC:ObjectName", "Agreeing headline"),
+                ("IPTC:CopyrightNotice", "Agreeing Copyright"),
+                ("IPTC:Keywords", "alpha"),
+                ("IPTC:Keywords", "beta"),
+                ("IPTC:City", "Agreeing City"),
+                ("IPTC:DateCreated", DATE_AGREE[:10]),
+                ("IPTC:TimeCreated", DATE_AGREE[11:]),
+                ("XMP-dc:Creator", "Agreeing Creator"),
+                ("XMP-dc:Description", "Agreeing description"),
+                ("XMP-dc:Title", "Agreeing headline"),
+                ("XMP-dc:Rights", "Agreeing Copyright"),
+                ("XMP-dc:Subject", "alpha"),
+                ("XMP-dc:Subject", "beta"),
+                ("XMP-photoshop:City", "Agreeing City"),
+                ("XMP-photoshop:DateCreated", DATE_AGREE.replace(" ", "T")),
+            ],
+        ),
+    )
+    add(
+        "png/gps.png",
+        make_image(
+            tool,
+            png_base,
+            output_dir / "png/gps.png",
+            [
+                ("EXIF:GPSLatitude", GPS_LAT),
+                ("EXIF:GPSLatitudeRef", "N"),
+                ("EXIF:GPSLongitude", GPS_LON),
+                ("EXIF:GPSLongitudeRef", "W"),
+                ("EXIF:GPSAltitude", "10"),
+                ("EXIF:GPSAltitudeRef", "Above Sea Level"),
+                ("XMP-exif:GPSLatitude", f"{GPS_LAT}N"),
+                ("XMP-exif:GPSLongitude", f"{GPS_LON}W"),
+            ],
+        ),
+    )
+
+    add(
+        "webp/minimal.webp",
+        make_image(tool, webp_base, output_dir / "webp/minimal.webp", []),
+    )
+    add(
+        "webp/xmp-only.webp",
+        make_image(
+            tool,
+            webp_base,
+            output_dir / "webp/xmp-only.webp",
+            [
+                ("XMP-dc:Creator", "XMP Creator"),
+                ("XMP-dc:Description", "XMP description"),
+                ("XMP-dc:Title", "XMP title"),
+                ("XMP-dc:Rights", "XMP copyright"),
+                ("XMP-photoshop:DateCreated", DATE_AGREE.replace(" ", "T")),
+            ],
+        ),
+    )
+    add(
+        "webp/full-agreeing.webp",
+        make_image(
+            tool,
+            webp_base,
+            output_dir / "webp/full-agreeing.webp",
+            [
+                ("EXIF:Artist", "Agreeing Creator"),
+                ("EXIF:Copyright", "Agreeing Copyright"),
+                ("EXIF:DateTimeOriginal", DATE_AGREE),
+                ("EXIF:CreateDate", DATE_AGREE),
+                ("EXIF:ModifyDate", DATE_AGREE),
+                ("EXIF:ImageDescription", "Agreeing description"),
+                ("XMP-dc:Creator", "Agreeing Creator"),
+                ("XMP-dc:Description", "Agreeing description"),
+                ("XMP-dc:Title", "Agreeing headline"),
+                ("XMP-dc:Rights", "Agreeing Copyright"),
+                ("XMP-dc:Subject", "alpha"),
+                ("XMP-dc:Subject", "beta"),
+                ("XMP-photoshop:City", "Agreeing City"),
+                ("XMP-photoshop:DateCreated", DATE_AGREE.replace(" ", "T")),
+            ],
+        ),
+    )
+
     write_manifest(
         output_dir,
         entries,
@@ -860,8 +1075,10 @@ def main(argv: list[str]) -> int:
         script = find_exiftool(args.exiftool, repo_root)
         base = ensure_base_jpeg(GENERATOR_DIR / BASE_JPEG_NAME)
         tiff_base = ensure_base_tiff(GENERATOR_DIR / BASE_TIFF_NAME)
+        png_base = ensure_base_png(GENERATOR_DIR / BASE_PNG_NAME)
+        webp_base = ensure_base_webp(GENERATOR_DIR / BASE_WEBP_NAME)
         tool = ExifTool(perl, script, GENERATOR_DIR / CONFIG_NAME)
-        generate(output_dir, tool, base, tiff_base)
+        generate(output_dir, tool, base, tiff_base, png_base, webp_base)
     except (GeneratorError, subprocess.CalledProcessError) as exc:
         print(f"generate.py: {exc}", file=sys.stderr)
         return 1

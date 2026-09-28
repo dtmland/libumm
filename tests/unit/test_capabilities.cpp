@@ -84,12 +84,33 @@ int main() {
   }
   const umm::BackendCapability* png_exiv2 = find_backend(png.value(), "exiv2");
   const umm::BackendCapability* png_et = find_backend(png.value(), "exiftool");
-  if (!png_exiv2 || png_exiv2->location.gps_exif != umm::Access::none ||
+  if (!png_exiv2 || png_exiv2->categories.exif != umm::Access::none ||
+      png_exiv2->location.gps_exif != umm::Access::none ||
+      png_exiv2->categories.iptc_iim != umm::Access::read_write ||
+      png_exiv2->categories.xmp != umm::Access::read_write ||
       png_exiv2->location.named_place != umm::Access::read_write) {
     return fail("PNG Exiv2 has no EXIF GPS");
   }
-  if (!png_et || png_et->location.gps_exif != umm::Access::read_write) {
+  if (!png_et || png_et->categories.exif != umm::Access::read_write ||
+      png_et->location.gps_exif != umm::Access::read_write) {
     return fail("PNG ExifTool EXIF GPS");
+  }
+
+  const auto webp = umm::capabilitiesForType("WEBP");
+  if (!webp.ok() || webp.value().preferred_backend != "exiv2") {
+    return fail("WEBP policy");
+  }
+  const umm::BackendCapability* webp_exiv2 = find_backend(webp.value(), "exiv2");
+  const umm::BackendCapability* webp_et = find_backend(webp.value(), "exiftool");
+  if (!webp_exiv2 || webp_exiv2->categories.iptc_iim != umm::Access::none ||
+      webp_exiv2->categories.exif != umm::Access::read_write ||
+      webp_exiv2->categories.xmp != umm::Access::read_write) {
+    return fail("WEBP Exiv2 has no IPTC");
+  }
+  if (!webp_et || webp_et->categories.iptc_iim != umm::Access::none ||
+      webp_et->categories.exif != umm::Access::read_write ||
+      webp_et->categories.xmp != umm::Access::read_write) {
+    return fail("WEBP ExifTool Exif/XMP, no IPTC");
   }
 
   const auto cr3 = umm::capabilitiesForType("CR3");
@@ -134,6 +155,12 @@ int main() {
       by_tiff.value().file_type != "TIFF") {
     return fail("path extension TIFF");
   }
+  const auto by_png = umm::capabilities(std::filesystem::path("photo.png"));
+  const auto by_webp = umm::capabilities(std::filesystem::path("photo.webp"));
+  if (!by_png.ok() || by_png.value().file_type != "PNG" || !by_webp.ok() ||
+      by_webp.value().file_type != "WEBP") {
+    return fail("path extension PNG/WEBP");
+  }
 
   {
     const std::filesystem::path dir =
@@ -152,6 +179,41 @@ int main() {
     const auto sniffed = umm::capabilities(tiff_xmp);
     if (!sniffed.ok() || sniffed.value().file_type != "TIFF") {
       return fail("TIFF magic before embedded XMP text");
+    }
+  }
+  {
+    const std::filesystem::path dir =
+        std::filesystem::temp_directory_path() / "umm-sniff-png-webp-xmp";
+    std::filesystem::create_directories(dir);
+    const std::filesystem::path png_xmp = dir / "packet.png";
+    std::string png(256, '\0');
+    png[0] = static_cast<char>(0x89);
+    png[1] = 'P';
+    png[2] = 'N';
+    png[3] = 'G';
+    png[4] = '\r';
+    png[5] = '\n';
+    png[6] = 0x1A;
+    png[7] = '\n';
+    png.replace(64, 7, "xpacket");
+    std::ofstream png_out(png_xmp, std::ios::binary | std::ios::trunc);
+    png_out.write(png.data(), static_cast<std::streamsize>(png.size()));
+    png_out.close();
+    const auto sniffed_png = umm::capabilities(png_xmp);
+    if (!sniffed_png.ok() || sniffed_png.value().file_type != "PNG") {
+      return fail("PNG magic before embedded XMP text");
+    }
+    const std::filesystem::path webp_xmp = dir / "packet.webp";
+    std::string webp(256, '\0');
+    webp.replace(0, 4, "RIFF");
+    webp.replace(8, 4, "WEBP");
+    webp.replace(64, 7, "xpacket");
+    std::ofstream webp_out(webp_xmp, std::ios::binary | std::ios::trunc);
+    webp_out.write(webp.data(), static_cast<std::streamsize>(webp.size()));
+    webp_out.close();
+    const auto sniffed_webp = umm::capabilities(webp_xmp);
+    if (!sniffed_webp.ok() || sniffed_webp.value().file_type != "WEBP") {
+      return fail("WEBP magic before embedded XMP text");
     }
   }
   const auto by_xmp = umm::capabilities(std::filesystem::path("photo.xmp"));

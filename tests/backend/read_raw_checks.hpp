@@ -223,3 +223,96 @@ inline int check_jpeg_raw_reads(umm::Backend& backend,
 inline int check_tiff_raw_reads(umm::Backend& backend, const char* backend_id) {
   return check_still_raw_reads(backend, backend_id, "tiff", ".tif");
 }
+
+inline int check_png_raw_reads(umm::Backend& backend, const char* backend_id) {
+  const auto xmp_only = backend.readRaw(raw_stem("png", "xmp-only", ".png"));
+  if (!xmp_only.ok()) {
+    std::fprintf(stderr, "png/xmp-only.png read failed: %s\n",
+                 xmp_only.error().message.c_str());
+    return 1;
+  }
+  if (!raw_has_key_with_value(xmp_only.value(), "Xmp.dc.creator",
+                              "XMP Creator") ||
+      raw_has_family(xmp_only.value(), "Exif") ||
+      raw_has_family(xmp_only.value(), "Iptc")) {
+    return raw_fail("png xmp-only missing XMP creator");
+  }
+
+  const auto agreeing =
+      backend.readRaw(raw_stem("png", "full-agreeing", ".png"));
+  if (!agreeing.ok()) {
+    std::fprintf(stderr, "png/full-agreeing.png read failed: %s\n",
+                 agreeing.error().message.c_str());
+    return 1;
+  }
+  if (!raw_has_family(agreeing.value(), "Iptc") ||
+      !raw_has_family(agreeing.value(), "Xmp")) {
+    return raw_fail("png full-agreeing missing IPTC/XMP");
+  }
+  if (raw_has_family(agreeing.value(), "Exif")) {
+    return raw_fail("png full-agreeing unexpectedly has EXIF");
+  }
+  if (!raw_has_key_with_value(agreeing.value(), "Iptc.Application2.Byline",
+                              "Agreeing Creator") ||
+      !raw_has_key_with_value(agreeing.value(), "Xmp.dc.creator",
+                              "Agreeing Creator")) {
+    return raw_fail("png full-agreeing missing creator");
+  }
+
+  const auto gps = backend.readRaw(raw_stem("png", "gps", ".png"));
+  if (!gps.ok()) {
+    std::fprintf(stderr, "png/gps.png read failed: %s\n",
+                 gps.error().message.c_str());
+    return 1;
+  }
+  const bool xmp_gps =
+      raw_value_of(gps.value(), "Xmp.exif.GPSLatitude").has_value() ||
+      raw_has_key_with_value(gps.value(), "Xmp.exif.GPSLatitude", "37");
+  const bool exif_gps =
+      raw_value_of(gps.value(), "Exif.GPSInfo.GPSLatitude").has_value();
+  if (!xmp_gps) {
+    return raw_fail("png gps missing XMP GPS");
+  }
+  if (std::string_view(backend_id) == "exiftool" && !exif_gps) {
+    return raw_fail("png gps ExifTool missing EXIF GPS");
+  }
+  return 0;
+}
+
+inline int check_webp_raw_reads(umm::Backend& backend, const char* backend_id) {
+  (void)backend_id;
+  const auto xmp_only = backend.readRaw(raw_stem("webp", "xmp-only", ".webp"));
+  if (!xmp_only.ok()) {
+    std::fprintf(stderr, "webp/xmp-only.webp read failed: %s\n",
+                 xmp_only.error().message.c_str());
+    return 1;
+  }
+  if (!raw_has_key_with_value(xmp_only.value(), "Xmp.dc.creator",
+                              "XMP Creator") ||
+      raw_has_family(xmp_only.value(), "Exif") ||
+      raw_has_family(xmp_only.value(), "Iptc")) {
+    return raw_fail("webp xmp-only missing XMP creator");
+  }
+
+  const auto agreeing =
+      backend.readRaw(raw_stem("webp", "full-agreeing", ".webp"));
+  if (!agreeing.ok()) {
+    std::fprintf(stderr, "webp/full-agreeing.webp read failed: %s\n",
+                 agreeing.error().message.c_str());
+    return 1;
+  }
+  if (!raw_has_family(agreeing.value(), "Exif") ||
+      !raw_has_family(agreeing.value(), "Xmp")) {
+    return raw_fail("webp full-agreeing missing EXIF/XMP");
+  }
+  if (raw_has_family(agreeing.value(), "Iptc")) {
+    return raw_fail("webp full-agreeing unexpectedly has IPTC");
+  }
+  if (!raw_has_key_with_value(agreeing.value(), "Exif.Image.Artist",
+                              "Agreeing Creator") ||
+      !raw_has_key_with_value(agreeing.value(), "Xmp.dc.creator",
+                              "Agreeing Creator")) {
+    return raw_fail("webp full-agreeing missing creator");
+  }
+  return 0;
+}
