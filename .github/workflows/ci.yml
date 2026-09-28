@@ -1,0 +1,116 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      failing_selftest:
+        description: Build and run the deliberately failing self-test
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build-and-test:
+    name: build-and-test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-24.04
+          - windows-2025
+          - macos-15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Ensure python3 on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if (-not (Get-Command python3 -ErrorAction SilentlyContinue)) {
+            $python = (Get-Command python).Source
+            $dir = Join-Path $env:RUNNER_TEMP 'python3-shim'
+            New-Item -ItemType Directory -Force -Path $dir | Out-Null
+            Copy-Item $python (Join-Path $dir 'python3.exe')
+            Add-Content -Path $env:GITHUB_PATH -Value $dir
+          }
+
+      - name: Run build-contract tests
+        run: python3 -m unittest discover -s tests/build -v
+
+      - name: Load pins
+        shell: bash
+        run: sh tools/build/pins.sh
+
+      - name: Install Linux packages
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -eu
+          packages=$(grep -E -v '^[[:space:]]*(#|$)' tools/build/linux-packages.txt)
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends $packages
+
+      - name: Setup Ninja
+        if: runner.os != 'Linux'
+        uses: seanmiddleditch/gha-setup-ninja@v5
+
+      - name: Enable MSVC developer environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install pinned Strawberry Perl
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ver = $env:UMM_STRAWBERRY_PERL_VERSION
+          if ([string]::IsNullOrWhiteSpace($ver)) {
+            throw "UMM_STRAWBERRY_PERL_VERSION is not set"
+          }
+          $compact = $ver -replace '\.', ''
+          $url = "https://github.com/StrawberryPerl/Perl-Dist-Strawberry/releases/download/SP_${compact}_64bit/strawberry-perl-${ver}-64bit-portable.zip"
+          $zip = Join-Path $env:TEMP "strawberry-perl.zip"
+          $dest = "C:\Strawberry"
+          New-Item -ItemType Directory -Force -Path $dest | Out-Null
+          Invoke-WebRequest -Uri $url -OutFile $zip
+          Expand-Archive -Path $zip -DestinationPath $dest -Force
+          Add-Content -Path $env:GITHUB_PATH -Value "$dest\perl\bin"
+
+      - name: Cache backend downloads
+        uses: actions/cache@v4
+        with:
+          path: .cache
+          key: ${{ runner.os }}-${{ env.UMM_EXIV2_VERSION }}-${{ env.UMM_EXIV2_SHA256 }}-${{ env.UMM_EXIFTOOL_VERSION }}-${{ env.UMM_EXIFTOOL_SHA256 }}-${{ env.UMM_STRAWBERRY_PERL_VERSION }}
+
+      - name: Configure
+        run: cmake --preset default ${{ inputs.failing_selftest && '-DUMM_ENABLE_FAILING_SELFTEST=ON' || '' }}
+
+      - name: Build
+        run: cmake --build --preset default
+
+      - name: Test
+        run: |
+          cmake -E make_directory build/default/test-results
+          ctest --preset default --output-junit build/default/test-results/junit.xml
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: |
+            build/default/test-results/
+            build/default/Testing/
+          if-no-files-found: ignore
