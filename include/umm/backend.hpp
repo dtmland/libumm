@@ -95,8 +95,7 @@ class Backend {
   virtual Result<RawDocument> readRaw(const std::filesystem::path& media) = 0;
 
   // Write via temp-file + atomic rename, owned by core (decision M3.3);
-  // the backend writes to the temp path it is handed.
-  // Declared here; implemented in session 13.
+  // the backend writes to the temp path it is handed (a working copy).
   virtual Result<void> writeRaw(const std::filesystem::path& media,
                                 const RawChanges& changes) = 0;
 

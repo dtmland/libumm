@@ -13,4 +13,8 @@ namespace umm::internal {
 // ExifTool, Composite, SourceFile, Error/Warning).
 std::optional<RawKey> map_exiftool_tag(std::string_view json_key);
 
+// Inverse of map_exiftool_tag for write commands. Indexed/struct suffixes
+// are stripped. nullopt means the raw key cannot be expressed as a tag.
+std::optional<std::string> exiftool_tag_for_raw_key(std::string_view raw_key);
+
 }  // namespace umm::internal

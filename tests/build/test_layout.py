@@ -28,6 +28,10 @@ RECONCILE_POLICY = REPO_ROOT / "docs" / "reconciliation-policy.md"
 RECONCILE_CPP = REPO_ROOT / "src" / "core" / "reconcile.cpp"
 TEST_RECONCILE = REPO_ROOT / "tests" / "unit" / "test_reconcile.cpp"
 TEST_READ = REPO_ROOT / "tests" / "backend" / "test_read.cpp"
+ATOMIC_WRITE = REPO_ROOT / "src" / "core" / "atomic_write.cpp"
+WRITE_SYNC = REPO_ROOT / "src" / "core" / "write_sync.cpp"
+WRITE_CPP = REPO_ROOT / "src" / "write.cpp"
+TEST_WRITE = REPO_ROOT / "tests" / "backend" / "test_write.cpp"
 PUBLIC_INCLUDE = REPO_ROOT / "include"
 
 
@@ -52,6 +56,10 @@ class TestLayout(unittest.TestCase):
             RECONCILE_CPP,
             TEST_RECONCILE,
             TEST_READ,
+            ATOMIC_WRITE,
+            WRITE_SYNC,
+            WRITE_CPP,
+            TEST_WRITE,
         ):
             self.assertTrue(path.is_file(), f"missing required file: {path}")
 
@@ -73,6 +81,17 @@ class TestLayout(unittest.TestCase):
         self.assertIn("MemIo", text)
         self.assertIn("ImageFactory::open(std::move(io))", text)
         self.assertIn("ImageFactory::open(path_as_utf8(media))", text)
+
+    def test_write_path_uses_temp_and_not_overwrite_original(self) -> None:
+        atomic = ATOMIC_WRITE.read_text(encoding="utf-8")
+        self.assertIn("ReplaceFileW", atomic)
+        self.assertIn("mutate_file_atomically", atomic)
+        exiftool = EXIFTOOL_BACKEND.read_text(encoding="utf-8")
+        self.assertNotIn("-overwrite_original", exiftool)
+        self.assertIn("-o", exiftool)
+        write_cpp = WRITE_CPP.read_text(encoding="utf-8")
+        self.assertIn("mutate_file_atomically", write_cpp)
+        self.assertIn("write_sync", write_cpp)
 
     def test_public_headers_do_not_include_exiv2(self) -> None:
         headers = list(PUBLIC_INCLUDE.rglob("*"))

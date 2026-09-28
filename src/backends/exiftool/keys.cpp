@@ -166,4 +166,114 @@ std::optional<RawKey> map_exiftool_tag(std::string_view json_key) {
   return key;
 }
 
+std::string strip_index_and_field(std::string_view key) {
+  const auto slash = key.find('/');
+  if (slash != std::string_view::npos) {
+    key = key.substr(0, slash);
+  }
+  const auto bracket = key.find('[');
+  if (bracket != std::string_view::npos) {
+    key = key.substr(0, bracket);
+  }
+  return std::string(key);
+}
+
+std::string capitalize_dc(std::string_view tag) {
+  std::string out(tag);
+  if (!out.empty() && out.front() >= 'a' && out.front() <= 'z') {
+    out.front() = static_cast<char>(out.front() - 'a' + 'A');
+  }
+  return out;
+}
+
+std::string iptc_exiftool_name(std::string_view tag) {
+  if (tag == "Byline") {
+    return "By-line";
+  }
+  if (tag == "BylineTitle") {
+    return "By-lineTitle";
+  }
+  if (tag == "Caption") {
+    return "Caption-Abstract";
+  }
+  if (tag == "Writer") {
+    return "Writer-Editor";
+  }
+  if (tag == "ProvinceState") {
+    return "Province-State";
+  }
+  if (tag == "CountryName") {
+    return "Country-PrimaryLocationName";
+  }
+  if (tag == "CountryCode") {
+    return "Country-PrimaryLocationCode";
+  }
+  if (tag == "CharacterSet") {
+    return "CodedCharacterSet";
+  }
+  if (tag == "SuppCategory") {
+    return "SupplementalCategories";
+  }
+  if (tag == "TransmissionReference") {
+    return "OriginalTransmissionReference";
+  }
+  return std::string(tag);
+}
+
+std::string xmp_exiftool_ns(std::string_view ns) {
+  if (ns == "Iptc4xmpExt") {
+    return "iptcExt";
+  }
+  return std::string(ns);
+}
+
+std::optional<std::string> exiftool_tag_for_raw_key(std::string_view raw_key) {
+  const std::string key = strip_index_and_field(raw_key);
+  auto after_prefix = [&](std::string_view prefix) -> std::optional<std::string> {
+    if (key.rfind(prefix, 0) != 0) {
+      return std::nullopt;
+    }
+    return key.substr(prefix.size());
+  };
+
+  if (const auto name = after_prefix("Exif.Image.")) {
+    if (*name == "DateTime") {
+      return std::string("IFD0") + ":" + "ModifyDate";
+    }
+    return "IFD0:" + *name;
+  }
+  if (const auto name = after_prefix("Exif.Thumbnail.")) {
+    return "IFD1:" + *name;
+  }
+  if (const auto name = after_prefix("Exif.Photo.")) {
+    if (*name == "DateTimeDigitized") {
+      return std::string("ExifIFD") + ":" + "CreateDate";
+    }
+    return "ExifIFD:" + *name;
+  }
+  if (const auto name = after_prefix("Exif.GPSInfo.")) {
+    return "GPS:" + *name;
+  }
+  if (const auto name = after_prefix("Iptc.Application2.")) {
+    return "IPTC:" + iptc_exiftool_name(*name);
+  }
+  if (const auto name = after_prefix("Iptc.Envelope.")) {
+    return "IPTC:" + iptc_exiftool_name(*name);
+  }
+  if (key.rfind("Xmp.", 0) == 0) {
+    const std::string rest = key.substr(4);
+    const auto dot = rest.find('.');
+    if (dot == std::string::npos) {
+      return std::nullopt;
+    }
+    const std::string ns = xmp_exiftool_ns(rest.substr(0, dot));
+    std::string tag = rest.substr(dot + 1);
+    if (ns == "dc") {
+      tag = capitalize_dc(tag);
+    }
+    return "XMP-" + ns + ":" + tag;
+  }
+  return std::nullopt;
+}
+
 }  // namespace umm::internal

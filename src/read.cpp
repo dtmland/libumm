@@ -54,9 +54,4 @@ Result<Metadata> read(const std::filesystem::path& media, ReadOptions options) {
   return metadata;
 }
 
-Result<WriteReport> write(const std::filesystem::path&, const Metadata&,
-                          WriteOptions) {
-  return Error{ErrorCode::internal, "write is not implemented", "", ""};
-}
-
 }  // namespace umm

@@ -61,5 +61,16 @@ int main() {
       expect_skip("Composite:GPSPosition") != 0 || expect_skip("Error") != 0) {
     return 1;
   }
+
+  const auto artist = umm::internal::exiftool_tag_for_raw_key("Exif.Image.Artist");
+  const auto byline =
+      umm::internal::exiftool_tag_for_raw_key("Iptc.Application2.Byline");
+  const auto creator =
+      umm::internal::exiftool_tag_for_raw_key("Xmp.dc.creator[1]");
+  if (!artist || *artist != "IFD0:Artist" || !byline ||
+      *byline != "IPTC:By-line" || !creator || *creator != "XMP-dc:Creator") {
+    std::fprintf(stderr, "reverse key mapping failed\n");
+    return 1;
+  }
   return 0;
 }
