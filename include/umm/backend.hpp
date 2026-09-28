@@ -13,8 +13,22 @@
 // this session's manager holds one instance per registered id.
 //
 // Timeout: Exiv2 is in-process and has no adapter-level timeout. ExifTool
-// uses ExifToolConfig::command_timeout (session 11): on expiry the adapter
-// kills the child and returns ErrorCode::backend_timeout.
+// uses ExifToolConfig::command_timeout: on expiry the adapter kills the
+// child and returns ErrorCode::backend_timeout; the next call respawns.
+//
+// ExifTool process (decision S1a): one `-stay_open True -@ -` child per
+// adapter instance; commands are UTF-8 argfile lines on stdin ending with
+// `-execute`; responses end at `{ready}`. Shutdown writes
+// `-stay_open False` and waits. `-charset utf8` is passed before `-@`
+// so Windows Unicode paths and values survive (stdin is the argfile).
+//
+// ExifTool key mapping: JSON `-j -G1` names (`Group1:Tag`) are translated
+// into the Exiv2-syntax vocabulary. Phase 1 tags have an explicit table
+// (IFD0:Artist -> Exif.Image.Artist, IPTC:By-line -> Iptc.Application2.Byline,
+// XMP-dc:Creator -> Xmp.dc.creator, GPS:* -> Exif.GPSInfo.*, ...). Unmapped
+// XMP-ns:Tag keys become Xmp.ns.Tag; anything else is kept as the
+// adapter-specific key ExifTool.<Group1>.<Tag>. File/ExifTool/Composite
+// groups are omitted (not stored metadata).
 //
 // Error mapping: missing/unreadable files -> io_*; unrecognized, truncated,
 // or corrupt containers -> format_*; thrown backend diagnostics ->
@@ -92,7 +106,9 @@ class Backend {
 };
 
 // ExifTool adapter configuration (decision S1c: locate, never bundle).
-// Discovery order: explicit paths here -> UMM_EXIFTOOL env var -> PATH.
+// Discovery order: non-empty paths here -> UMM_EXIFTOOL env var -> PATH.
+// An explicit path that does not exist is absent (no env/PATH fallback).
+// Perl: non-empty perl_interpreter here, else PATH (`perl` / `perl.exe`).
 struct ExifToolConfig {
   std::filesystem::path exiftool_script;  // empty = discover
   std::filesystem::path perl_interpreter; // empty = discover

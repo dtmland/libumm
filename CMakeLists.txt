@@ -30,6 +30,10 @@ add_library(umm
   src/value.cpp
   src/metadata.cpp
   src/backends/backend_manager.cpp
+  src/backends/exiftool/json.cpp
+  src/backends/exiftool/keys.cpp
+  src/backends/exiftool/process.cpp
+  src/backends/exiftool/exiftool_backend.cpp
   "${UMM_REGISTRY_GENERATED_CPP}"
 )
 add_library(umm::umm ALIAS umm)
@@ -152,6 +156,10 @@ if(UMM_BUILD_TESTS)
 
     add_executable(test_exiv2_read tests/backend/test_exiv2_read.cpp)
     target_link_libraries(test_exiv2_read PRIVATE umm::umm)
+    target_include_directories(test_exiv2_read
+      PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/backend"
+    )
     umm_apply_fixture_dir(test_exiv2_read)
     target_compile_definitions(test_exiv2_read
       PRIVATE
@@ -161,5 +169,39 @@ if(UMM_BUILD_TESTS)
     umm_apply_fixture_dir_to_test(test_exiv2_read)
   elseif(UMM_REQUIRE_EXIV2)
     message(FATAL_ERROR "UMM_REQUIRE_EXIV2=ON but exiv2_smoke cannot be registered")
+  endif()
+
+  add_executable(test_exiftool_keys tests/backend/test_exiftool_keys.cpp)
+  target_link_libraries(test_exiftool_keys PRIVATE umm::umm)
+  target_include_directories(test_exiftool_keys
+    PRIVATE
+      "${CMAKE_CURRENT_SOURCE_DIR}/src/backends"
+  )
+  add_test(NAME test_exiftool_keys COMMAND test_exiftool_keys)
+
+  add_executable(test_exiftool_unavailable tests/backend/test_exiftool_unavailable.cpp)
+  target_link_libraries(test_exiftool_unavailable PRIVATE umm::umm)
+  add_test(NAME test_exiftool_unavailable COMMAND test_exiftool_unavailable)
+
+  if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)
+    file(TO_CMAKE_PATH "${UMM_EXIFTOOL_SCRIPT}" UMM_EXIFTOOL_SCRIPT_CMAKE)
+    file(TO_CMAKE_PATH "${UMM_PERL_EXECUTABLE}" UMM_PERL_EXECUTABLE_CMAKE)
+
+    add_executable(test_exiftool_read tests/backend/test_exiftool_read.cpp)
+    target_link_libraries(test_exiftool_read PRIVATE umm::umm)
+    target_include_directories(test_exiftool_read
+      PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/backends"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/backend"
+    )
+    umm_apply_fixture_dir(test_exiftool_read)
+    target_compile_definitions(test_exiftool_read
+      PRIVATE
+        "UMM_TEST_EXIFTOOL_SCRIPT=R\"(${UMM_EXIFTOOL_SCRIPT_CMAKE})\""
+        "UMM_TEST_EXIFTOOL_PERL=R\"(${UMM_PERL_EXECUTABLE_CMAKE})\""
+        "UMM_TEST_EXIFTOOL_VERSION=\"${UMM_EXIFTOOL_VERSION}\""
+    )
+    add_test(NAME test_exiftool_read COMMAND test_exiftool_read)
+    umm_apply_fixture_dir_to_test(test_exiftool_read)
   endif()
 endif()
