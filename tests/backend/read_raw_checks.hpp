@@ -31,6 +31,10 @@ inline std::filesystem::path raw_jpeg(const char* name) {
   return raw_fixtures_dir() / "jpeg" / name;
 }
 
+inline std::filesystem::path raw_sidecar(const char* name) {
+  return raw_fixtures_dir() / "sidecar" / name;
+}
+
 inline std::filesystem::path raw_unicode_filename() {
   static constexpr char8_t kName[] = {
       0xC3, 0xBC, 'b', 0xC3, 0xBC, 'n', 'g', ' ',

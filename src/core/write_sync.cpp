@@ -349,6 +349,22 @@ bool writes_iptc_application(const RawChanges& changes) {
 
 }  // namespace
 
+RawChanges write_sync_xmp(const Metadata& metadata) {
+  RawChanges all = write_sync(metadata);
+  RawChanges xmp;
+  for (RawEntry& entry : all.upserts) {
+    if (entry.key.family == "Xmp" || entry.key.key.rfind("Xmp.", 0) == 0) {
+      xmp.upserts.push_back(std::move(entry));
+    }
+  }
+  for (RawKey& key : all.removals) {
+    if (key.family == "Xmp" || key.key.rfind("Xmp.", 0) == 0) {
+      xmp.removals.push_back(std::move(key));
+    }
+  }
+  return xmp;
+}
+
 RawChanges write_sync(const Metadata& metadata) {
   RawChanges changes;
   for (const std::string& id : metadata.propertyIds()) {

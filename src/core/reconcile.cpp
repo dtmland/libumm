@@ -781,6 +781,19 @@ struct Group {
   Value value;
 };
 
+void stamp_container(Group& group, std::string_view container) {
+  for (SourceRef& source : group.sources) {
+    source.container = std::string(container);
+  }
+}
+
+void stamp_container(std::vector<Group>& groups, std::size_t from,
+                     std::string_view container) {
+  for (std::size_t i = from; i < groups.size(); ++i) {
+    stamp_container(groups[i], container);
+  }
+}
+
 bool values_equivalent(std::string_view property_id, const Value& a,
                        const Value& b) {
   if (property_id == kDateCreated) {
@@ -1232,14 +1245,14 @@ std::optional<Group> gps_group(const RawDocument& document,
   return group;
 }
 
-void reconcile_registry_property(Metadata& metadata, const RawDocument& document,
-                                 std::string_view backend,
-                                 std::string_view property_id) {
+void collect_registry_property(std::vector<Group>& groups,
+                               const RawDocument& document,
+                               std::string_view backend,
+                               std::string_view property_id) {
   const auto def = registry().find(property_id);
   if (!def) {
     return;
   }
-  std::vector<Group> groups;
   const Representations& rep = def->representations;
 
   auto push = [&](std::optional<Group> group) {
@@ -1285,7 +1298,6 @@ void reconcile_registry_property(Metadata& metadata, const RawDocument& document
     if (!iim_date.empty()) {
       push(date_group(document, backend, iim_date, iim_time, "", "iim", 2));
     }
-    classify(metadata, property_id, std::move(groups));
     return;
   }
 
@@ -1321,7 +1333,6 @@ void reconcile_registry_property(Metadata& metadata, const RawDocument& document
       group.value = make_value(std::vector<Structure>{std::move(*fields)});
       groups.push_back(std::move(group));
     }
-    classify(metadata, property_id, std::move(groups));
     return;
   }
 
@@ -1346,7 +1357,6 @@ void reconcile_registry_property(Metadata& metadata, const RawDocument& document
     if (!exif.empty()) {
       push(text_list_group(document, backend, exif, "exif", 2));
     }
-    classify(metadata, property_id, std::move(groups));
     return;
   }
   if (property_id == kDescription || property_id == kCopyright) {
@@ -1359,7 +1369,6 @@ void reconcile_registry_property(Metadata& metadata, const RawDocument& document
     if (!exif.empty()) {
       push(lang_group(document, backend, exif, "exif", 2));
     }
-    classify(metadata, property_id, std::move(groups));
     return;
   }
   if (property_id == kRating) {
@@ -1377,7 +1386,6 @@ void reconcile_registry_property(Metadata& metadata, const RawDocument& document
         }
       }
     }
-    classify(metadata, property_id, std::move(groups));
     return;
   }
 
@@ -1390,12 +1398,10 @@ void reconcile_registry_property(Metadata& metadata, const RawDocument& document
   if (!exif.empty()) {
     push(text_group(document, backend, exif, "exif", 2));
   }
-  classify(metadata, property_id, std::move(groups));
 }
 
-void reconcile_gps(Metadata& metadata, const RawDocument& document,
-                   std::string_view backend) {
-  std::vector<Group> groups;
+void collect_gps(std::vector<Group>& groups, const RawDocument& document,
+                 std::string_view backend) {
   auto push = [&](std::optional<Group> group) {
     if (group) {
       groups.push_back(std::move(*group));
@@ -1409,25 +1415,52 @@ void reconcile_gps(Metadata& metadata, const RawDocument& document,
                  "Xmp.exif.GPSLatitudeRef", "Xmp.exif.GPSLongitude",
                  "Xmp.exif.GPSLongitudeRef", "Xmp.exif.GPSAltitude",
                  "Xmp.exif.GPSAltitudeRef", "xmp", 1));
-  classify(metadata, kGps, std::move(groups));
+}
+
+void add_document_groups(std::vector<Group>& groups, const RawDocument& document,
+                         std::string_view backend, std::string_view property_id,
+                         std::string_view container) {
+  const std::size_t from = groups.size();
+  if (property_id == kGps) {
+    collect_gps(groups, document, backend);
+  } else {
+    collect_registry_property(groups, document, backend, property_id);
+  }
+  stamp_container(groups, from, container);
+}
+
+void reconcile_property(Metadata& metadata, const RawDocument& embedded,
+                        const RawDocument* sidecar, std::string_view backend,
+                        std::string_view property_id) {
+  std::vector<Group> groups;
+  add_document_groups(groups, embedded, backend, property_id, "embedded");
+  if (sidecar) {
+    add_document_groups(groups, *sidecar, backend, property_id, "sidecar");
+  }
+  classify(metadata, property_id, std::move(groups));
 }
 
 }  // namespace
 
 Result<Metadata> reconcile(const RawDocument& document,
-                           std::string_view backend_id) {
+                           std::string_view backend_id,
+                           const RawDocument* sidecar) {
   Metadata metadata;
-  metadata.assignRaw(document.entries);
-  reconcile_registry_property(metadata, document, backend_id, kCreator);
-  reconcile_registry_property(metadata, document, backend_id, kDescription);
-  reconcile_registry_property(metadata, document, backend_id, kHeadline);
-  reconcile_registry_property(metadata, document, backend_id, kDateCreated);
-  reconcile_registry_property(metadata, document, backend_id, kCopyright);
-  reconcile_registry_property(metadata, document, backend_id, kCredit);
-  reconcile_registry_property(metadata, document, backend_id, kKeywords);
-  reconcile_registry_property(metadata, document, backend_id, kRating);
-  reconcile_registry_property(metadata, document, backend_id, kLocation);
-  reconcile_gps(metadata, document, backend_id);
+  std::vector<RawEntry> raw = document.entries;
+  if (sidecar) {
+    raw.insert(raw.end(), sidecar->entries.begin(), sidecar->entries.end());
+  }
+  metadata.assignRaw(std::move(raw));
+  reconcile_property(metadata, document, sidecar, backend_id, kCreator);
+  reconcile_property(metadata, document, sidecar, backend_id, kDescription);
+  reconcile_property(metadata, document, sidecar, backend_id, kHeadline);
+  reconcile_property(metadata, document, sidecar, backend_id, kDateCreated);
+  reconcile_property(metadata, document, sidecar, backend_id, kCopyright);
+  reconcile_property(metadata, document, sidecar, backend_id, kCredit);
+  reconcile_property(metadata, document, sidecar, backend_id, kKeywords);
+  reconcile_property(metadata, document, sidecar, backend_id, kRating);
+  reconcile_property(metadata, document, sidecar, backend_id, kLocation);
+  reconcile_property(metadata, document, sidecar, backend_id, kGps);
   return metadata;
 }
 

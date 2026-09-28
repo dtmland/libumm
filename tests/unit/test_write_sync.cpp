@@ -92,5 +92,16 @@ int main() {
   if (!has_value(changes, "Iptc.Envelope.CharacterSet", "UTF8")) {
     return fail("IIM charset marker");
   }
+
+  const umm::RawChanges xmp = umm::internal::write_sync_xmp(metadata);
+  if (!has_value(xmp, "Xmp.dc.creator", "Alice") ||
+      !has_value(xmp, "Xmp.photoshop.DateCreated", "2020-01-02T03:04:05")) {
+    return fail("xmp write-sync missing XMP");
+  }
+  for (const umm::RawEntry& entry : xmp.upserts) {
+    if (entry.key.family != "Xmp" && entry.key.key.rfind("Xmp.", 0) != 0) {
+      return fail("xmp write-sync leaked non-XMP");
+    }
+  }
   return 0;
 }

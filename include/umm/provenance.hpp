@@ -12,8 +12,9 @@ namespace umm {
 
 // A raw metadata origin, e.g. "Exif.Image.DateTime" read by backend "exiv2".
 struct SourceRef {
-  std::string raw_key;  // neutral raw vocabulary (Exiv2 key syntax; see backend.hpp)
-  std::string backend;  // backend id that produced it
+  std::string raw_key;     // neutral raw vocabulary (Exiv2 key syntax; see backend.hpp)
+  std::string backend;     // backend id that produced it
+  std::string container;   // "embedded" | "sidecar" (docs/reconciliation-policy.md)
 
   bool operator==(const SourceRef&) const = default;
 };

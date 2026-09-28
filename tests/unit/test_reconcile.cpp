@@ -309,5 +309,44 @@ int main() {
     }
   }
 
+  {
+    const auto embedded =
+        doc({entry("Xmp", "Xmp.dc.creator", "Embedded Creator"),
+             entry("Xmp", "Xmp.photoshop.DateCreated", "2020-01-01T00:00:00"),
+             entry("Exif", "Exif.Image.Artist", "Embedded Creator")});
+    const auto sidecar =
+        doc({entry("Xmp", "Xmp.dc.creator", "Sidecar Creator"),
+             entry("Xmp", "Xmp.photoshop.DateCreated", "2021-02-02T00:00:00")});
+    const auto result =
+        umm::internal::reconcile(embedded, "test", &sidecar);
+    if (!result.ok()) {
+      return fail("sidecar conflict reconcile failed");
+    }
+    const auto creator = result.value().creator();
+    const auto date = result.value().dateCreated();
+    if (!creator || creator->resolution != umm::Resolution::conflict) {
+      return fail("sidecar creator not conflict");
+    }
+    if (!date || date->resolution != umm::Resolution::conflict) {
+      return fail("sidecar date not conflict");
+    }
+    bool saw_embedded = false;
+    bool saw_sidecar = false;
+    for (const auto& source : creator->sources) {
+      if (source.container == "embedded") {
+        saw_embedded = true;
+      }
+      if (source.container == "sidecar") {
+        saw_sidecar = true;
+      }
+    }
+    if (!saw_embedded || !saw_sidecar) {
+      return fail("sidecar conflict dropped a container");
+    }
+    if (result.value().conflictedPropertyIds().empty()) {
+      return fail("conflictedPropertyIds empty");
+    }
+  }
+
   return 0;
 }

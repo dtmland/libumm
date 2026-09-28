@@ -451,8 +451,10 @@ Result<void> ExifToolBackend::writeRaw(const std::filesystem::path& media,
                         path_to_utf8(media));
     }
 
-    std::filesystem::path out = media;
+    std::filesystem::path out = media.parent_path();
+    out /= media.stem();
     out += ".umm-out";
+    out += media.extension();
     std::error_code ec;
     std::filesystem::remove(out, ec);
 

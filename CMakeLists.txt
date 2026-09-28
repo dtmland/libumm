@@ -34,6 +34,7 @@ add_library(umm
   src/core/reconcile.cpp
   src/core/write_sync.cpp
   src/core/atomic_write.cpp
+  src/core/sidecar.cpp
   src/backends/backend_manager.cpp
   src/backends/exiftool/json.cpp
   src/backends/exiftool/keys.cpp
@@ -132,6 +133,10 @@ if(UMM_BUILD_TESTS)
       "${CMAKE_CURRENT_SOURCE_DIR}/src"
   )
   add_test(NAME test_write_sync COMMAND test_write_sync)
+
+  add_executable(test_storage_policy tests/unit/test_storage_policy.cpp)
+  target_link_libraries(test_storage_policy PRIVATE umm::umm)
+  add_test(NAME test_storage_policy COMMAND test_storage_policy)
 
   add_executable(test_fixtures_path tests/unit/test_fixtures_path.cpp)
   umm_apply_fixture_dir(test_fixtures_path)
@@ -252,6 +257,26 @@ if(UMM_BUILD_TESTS)
     endif()
     add_test(NAME test_read COMMAND test_read)
     umm_apply_fixture_dir_to_test(test_read)
+
+    add_executable(test_sidecar tests/backend/test_sidecar.cpp)
+    target_link_libraries(test_sidecar PRIVATE umm::umm)
+    target_include_directories(test_sidecar
+      PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/backend"
+    )
+    umm_apply_fixture_dir(test_sidecar)
+    if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)
+      file(TO_CMAKE_PATH "${UMM_EXIFTOOL_SCRIPT}" UMM_TEST_SIDECAR_EXIFTOOL_SCRIPT)
+      file(TO_CMAKE_PATH "${UMM_PERL_EXECUTABLE}" UMM_TEST_SIDECAR_EXIFTOOL_PERL)
+      target_compile_definitions(test_sidecar
+        PRIVATE
+          "UMM_TEST_EXIFTOOL_SCRIPT=R\"(${UMM_TEST_SIDECAR_EXIFTOOL_SCRIPT})\""
+          "UMM_TEST_EXIFTOOL_PERL=R\"(${UMM_TEST_SIDECAR_EXIFTOOL_PERL})\""
+      )
+    endif()
+    add_test(NAME test_sidecar COMMAND test_sidecar)
+    umm_apply_fixture_dir_to_test(test_sidecar)
   endif()
 
   if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)

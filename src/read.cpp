@@ -1,6 +1,7 @@
 #include "umm/umm.hpp"
 
 #include "core/reconcile.hpp"
+#include "core/sidecar.hpp"
 
 namespace umm {
 namespace {
@@ -16,6 +17,29 @@ Backend* select_backend(const ReadOptions& options) {
     return manager.get(options.backend);
   }
   return manager.firstAvailable();
+}
+
+void keep_xmp_entries(RawDocument& document) {
+  std::vector<RawEntry> xmp;
+  for (RawEntry& entry : document.entries) {
+    if (entry.key.family == "Xmp" || entry.key.key.rfind("Xmp.", 0) == 0) {
+      xmp.push_back(std::move(entry));
+    }
+  }
+  document.entries = std::move(xmp);
+}
+
+Result<Metadata> finish_read(Result<Metadata> metadata, const ReadOptions& options,
+                             std::string_view backend_id) {
+  if (!metadata.ok()) {
+    return metadata;
+  }
+  if (options.conflicts_as_errors &&
+      !metadata.value().conflictedPropertyIds().empty()) {
+    return Error{ErrorCode::conflict_unresolved,
+                 "unresolved metadata conflicts", std::string(backend_id), ""};
+  }
+  return metadata;
 }
 
 }  // namespace
@@ -40,18 +64,32 @@ Result<Metadata> read(const std::filesystem::path& media, ReadOptions options) {
   if (!raw.ok()) {
     return raw.error();
   }
+  RawDocument document = std::move(raw).value();
 
-  Result<Metadata> metadata =
-      internal::reconcile(raw.value(), backend->id());
-  if (!metadata.ok()) {
-    return metadata.error();
+  if (internal::is_xmp_sidecar_path(media)) {
+    keep_xmp_entries(document);
+    RawDocument embedded;
+    return finish_read(
+        internal::reconcile(embedded, backend->id(), &document), options,
+        backend->id());
   }
-  if (options.conflicts_as_errors &&
-      !metadata.value().conflictedPropertyIds().empty()) {
-    return Error{ErrorCode::conflict_unresolved,
-                 "unresolved metadata conflicts", backend->id(), ""};
+
+  RawDocument sidecar_document;
+  const RawDocument* sidecar = nullptr;
+  if (options.merge_sidecar) {
+    if (const auto path = findSidecar(media)) {
+      Result<RawDocument> sidecar_raw = backend->readRaw(*path);
+      if (!sidecar_raw.ok()) {
+        return sidecar_raw.error();
+      }
+      sidecar_document = std::move(sidecar_raw).value();
+      keep_xmp_entries(sidecar_document);
+      sidecar = &sidecar_document;
+    }
   }
-  return metadata;
+
+  return finish_read(internal::reconcile(document, backend->id(), sidecar),
+                     options, backend->id());
 }
 
 }  // namespace umm
