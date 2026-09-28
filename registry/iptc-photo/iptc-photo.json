@@ -1,0 +1,4631 @@
+{
+  "standard": "IPTC Photo Metadata",
+  "standard_version": "2025.1",
+  "source": {
+    "document": "IPTC Photo Metadata Technical Reference",
+    "version": "2025.1",
+    "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+    "retrieval_date": "2026-09-28"
+  },
+  "counts": {
+    "properties": 66,
+    "core": 25,
+    "extension": 41,
+    "structs": 18
+  },
+  "properties": [
+    {
+      "id": "iptc.photo.additionalModelInformation",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Additional Model Information",
+      "definition": "Enter information like ethnicity or other details about the model(s) in this image",
+      "datatype": "string",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+          "property": "Iptc4xmpExt:AddlModelInfo"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "Use the Model Age field for the age of model(s).",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.aiPromptInformation",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "AI Prompt Information",
+      "definition": "Enter the information given to the generative AI service as “prompt(s)” in order to generate this image.",
+      "datatype": "string",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+          "property": "Iptc4xmpExt:AIPromptInformation"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "This may include negative [excludes] and positive [includes] statements in the prompt.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.aiPromptWriterName",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "AI Prompt Writer Name",
+      "definition": "Enter the name of the person who wrote the prompt used for generating this image.",
+      "datatype": "string",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+          "property": "Iptc4xmpExt:AIPromptWriterName"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "This person should not be considered as the image creator.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.aiSystemUsed",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "AI System Used",
+      "definition": "Enter the name of the AI system and/or the model name used to generate this image.",
+      "datatype": "string",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+          "property": "Iptc4xmpExt:AISystemUsed"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "For example, ChatGPT DALL-E, Google Gemini, ChatGPT.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.aiSystemVersionUsed",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "AI System Version Used",
+      "definition": "Enter the name or number of the version of the AI system used to generate this image.",
+      "datatype": "string",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+          "property": "Iptc4xmpExt:AISystemVersionUsed"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.altTextAccessibility",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Core 1.5",
+      "standard_property_name": "Alt Text (Accessibility)",
+      "definition": "Enter text describing the appearance of the image from a visual perspective, focusing on details that are relevant to the purpose and meaning of the image",
+      "datatype": "lang-alt",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/",
+          "property": "Iptc4xmpCore:AltTextAccessibility"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "This property should not be confused with the IPTC property Headline, which is a brief synopsis or summary of the contents of the image. This property is required for conformance with the W3C Web Content Accessibility Guidelines (WCAG).",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.artworkOrObjectInTheImage",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Artwork or Object in the Image",
+      "definition": "Enter details about artwork or objects shown in this image",
+      "datatype": "struct",
+      "cardinality": "many",
+      "struct_type": "ArtworkOrObject",
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+          "property": "Iptc4xmpExt:ArtworkOrObject"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.cityLegacy",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Core 1.5",
+      "standard_property_name": "City (legacy)",
+      "definition": "Enter the name of the city pictured in this image",
+      "datatype": "string",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://ns.adobe.com/photoshop/1.0/",
+          "property": "photoshop:City"
+        },
+        "iptc_iim": {
+          "dataset": "2:90",
+          "name": "City"
+        },
+        "exif": null
+      },
+      "mapping_notes": "This is a detail of a location with blurred semantics as it does not clearly indicate whether it is the location in the image or the location the photo was taken - which can be different. Two more concise properties are available in IPTC Extension with Location Created and Location Shown in the Image.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.codeOfOrganisationFeaturedInTheImage",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Code of Organisation Featured in the Image",
+      "definition": "Enter an identifier for the controlled vocabulary, then a colon, and finally the code from the vocabulary assigned to the organisation shown in this image (e.g. nasdaq:companyA)",
+      "datatype": "string",
+      "cardinality": "many",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+          "property": "Iptc4xmpExt:OrganisationInImageCode"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "For example a stock ticker symbol may be used.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.contributor",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Contributor",
+      "definition": "Enter person(s) or party/parties or organisation(s) having contributed to making the image. An added role helps to refine the kind of contribution.",
+      "datatype": "struct",
+      "cardinality": "many",
+      "struct_type": "EntityWRole",
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+          "property": "Iptc4xmpExt:Contributor"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "A distinction between contributor and creator should follow rights laws, contracts or common business rules.\nA vocabulary of roles of persons contributiong to an image should be based on industry wide practices such as https://cv.iptc.org/newscodes/contentprodpartyrole/",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.copyrightNotice",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Core 1.5",
+      "standard_property_name": "Copyright Notice",
+      "definition": "Enter a Notice on the current owner of the Copyright for this image, such as ©2008 Jane Doe",
+      "datatype": "lang-alt",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://purl.org/dc/elements/1.1/",
+          "property": "dc:rights"
+        },
+        "iptc_iim": {
+          "dataset": "2:116",
+          "name": "Copyright Notice"
+        },
+        "exif": {
+          "tag": "IFD0:Copyright"
+        }
+      },
+      "mapping_notes": "Copyright ownership can be expressed in a more controlled way using the PLUS fields \"Copyright Owner\", \"Copyright Owner ID\", \"Copyright Owner Name\" of the IPTC Extension. It is the user's responsibility to keep the values of the four fields in sync.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.copyrightOwner",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Copyright Owner",
+      "definition": "Enter the owner or owners of the copyright in the licensed image",
+      "datatype": "struct",
+      "cardinality": "many",
+      "struct_type": "CopyrightOwner",
+      "representations": {
+        "xmp": {
+          "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+          "property": "plus:CopyrightOwner"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "Serves to identify the rights holder/s for the image. The Copyright Owner, Image Creator and Licensor may be the same or different entities.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.countryCodeLegacy",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Core 1.5",
+      "standard_property_name": "Country Code (legacy)",
+      "definition": "Enter the 2 or 3 letter ISO 3166 Country Code of the Country pictured in this image",
+      "datatype": "string",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/",
+          "property": "Iptc4xmpCore:CountryCode"
+        },
+        "iptc_iim": {
+          "dataset": "2:100",
+          "name": "Country/Primary Location Code"
+        },
+        "exif": null
+      },
+      "mapping_notes": "This is a detail of a location with blurred semantics as it does not clearly indicate whether it is the location in the image or the location the photo was taken - which can be different. Two more concise properties are available in IPTC Extension with Location Created and Location Shown in the Image.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.countryLegacy",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Core 1.5",
+      "standard_property_name": "Country (legacy)",
+      "definition": "Enter the name of the country pictured in this image",
+      "datatype": "string",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://ns.adobe.com/photoshop/1.0/",
+          "property": "photoshop:Country"
+        },
+        "iptc_iim": {
+          "dataset": "2:101",
+          "name": "Country/Primary Location Name"
+        },
+        "exif": null
+      },
+      "mapping_notes": "This is a detail of a location with blurred semantics as it does not clearly indicate whether it is the location in the image or the location the photo was taken - which can be different. Two more concise properties are available in IPTC Extension with Location Created and Location Shown in the Image.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.creator",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Core 1.5",
+      "standard_property_name": "Creator",
+      "definition": "Enter the name of the person that created this image",
+      "datatype": "string",
+      "cardinality": "many",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://purl.org/dc/elements/1.1/",
+          "property": "dc:creator"
+        },
+        "iptc_iim": {
+          "dataset": "2:80",
+          "name": "By-line"
+        },
+        "exif": {
+          "tag": "IFD0:Artist"
+        }
+      },
+      "mapping_notes": "The creator can be expressed in a more controlled way using the \"Image Creator\" of PLUS  in the IPTC Extension additionally. It is the user's responsibility to keep the values of the IPTC Core and the PLUS fields in sync.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.creatorsContactInfo",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Core 1.5",
+      "standard_property_name": "Creator's Contact Info",
+      "definition": "",
+      "datatype": "struct",
+      "cardinality": "one",
+      "struct_type": "CreatorContactInfo",
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/",
+          "property": "Iptc4xmpCore:CreatorContactInfo"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "The IPTC Extension Licensor fields should be used instead of these Creator's Contact Info fields if you are using IPTC Extension fields. If the creator is also the licensor his or her contact information should be provided in the Licensor fields.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.creatorsJobtitle",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Core 1.5",
+      "standard_property_name": "Creator's jobtitle",
+      "definition": "Enter the Job Title of the person listed in the Creator field",
+      "datatype": "string",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://ns.adobe.com/photoshop/1.0/",
+          "property": "photoshop:AuthorsPosition"
+        },
+        "iptc_iim": {
+          "dataset": "2:85",
+          "name": "By-line Title"
+        },
+        "exif": null
+      },
+      "mapping_notes": "",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.creditLine",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Core 1.5",
+      "standard_property_name": "Credit Line",
+      "definition": "Enter who should be credited when this image is published",
+      "datatype": "string",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://ns.adobe.com/photoshop/1.0/",
+          "property": "photoshop:Credit"
+        },
+        "iptc_iim": {
+          "dataset": "2:110",
+          "name": "Credit"
+        },
+        "exif": null
+      },
+      "mapping_notes": "Note 1: For more formal identifications of the creator or the owner of the copyrights of this image other rights properties may be used. \nNote 2: This property was named \"Credit\" by the IIM metadata, then it was renamed to \"Provider\" in IPTC Core 1.0. In IPTC Core 1.1. it has been renamed to \"Credit Line\" as the field is used for this purpose by many users.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.cvTermAboutImage",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "CV-Term About Image",
+      "definition": "Enter one or more topics, themes or entities the image is about, each one expressed by a term from a Controlled Vocabulary",
+      "datatype": "struct",
+      "cardinality": "many",
+      "struct_type": "CvTerm",
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+          "property": "Iptc4xmpExt:AboutCvTerm"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.dataMining",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Data Mining",
+      "definition": "",
+      "datatype": "uri",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+          "property": "plus:DataMining"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "Regional laws applying to an asset may prohibit, constrain, or allow data mining for certain purposes (such as search indexing or research), and may overrule the value selected for this property. Similarly, the absence of a prohibition does not indicate that the asset owner grants permission for data mining or any other use of an asset.   +\nThe prohibition “Prohibited except for search engine indexing” only permits data mining by search engines available to the public to identify the URL for an asset and its associated data (for the purpose of assisting the public in navigating to the URL for the asset), and prohibits all other uses, such as AI/ML training.  +\nThe PLUS link:#other-constraints[Other Constraints] property is human readable. The IPTC properties link:#embedded-encoded-rights-expression[Embedded Encoded Rights Expression] and link:#linked-encoded-rights-expression[Linked Encoded Rights Expression] are machine readable.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.dateCreated",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Core 1.5",
+      "standard_property_name": "Date Created",
+      "definition": "Enter the Date the image was taken",
+      "datatype": "date-time",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://ns.adobe.com/photoshop/1.0/",
+          "property": "photoshop:DateCreated"
+        },
+        "iptc_iim": {
+          "dataset": "2:55",
+          "name": "Date Created+2:60 Time Created"
+        },
+        "exif": {
+          "tag": "ExifIFD:DateTimeOriginal+ExifIFD:SubSecTimeOriginal+ExifIFD:OffsetTimeOriginal"
+        }
+      },
+      "mapping_notes": "",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.description",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Core 1.5",
+      "standard_property_name": "Description",
+      "definition": "Enter a \"caption\" describing the who, what, and why of what is happening in this image, this might include names of people, and/or their role in the action that is taking place within the image",
+      "datatype": "lang-alt",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://purl.org/dc/elements/1.1/",
+          "property": "dc:description"
+        },
+        "iptc_iim": {
+          "dataset": "2:120",
+          "name": "Caption/Abstract"
+        },
+        "exif": {
+          "tag": "IFD0:ImageDescription"
+        }
+      },
+      "mapping_notes": "",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.descriptionWriter",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Core 1.5",
+      "standard_property_name": "Description Writer",
+      "definition": "Enter the name of the person(s) involved in writing, editing or correcting the Description, Alt Text (Accessibility), or Extended Description (Accessibility) of the image, separated by commas",
+      "datatype": "string",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://ns.adobe.com/photoshop/1.0/",
+          "property": "photoshop:CaptionWriter"
+        },
+        "iptc_iim": {
+          "dataset": "2:122",
+          "name": "Writer/Editor"
+        },
+        "exif": null
+      },
+      "mapping_notes": "Multiple description writers can be given. May have to be separated by a comma in the user interface.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.digitalImageGuid",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Digital Image GUID",
+      "definition": "If an ID already exists, don't change - otherwise enter a globally unique identifier for this digital image",
+      "datatype": "string",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+          "property": "Iptc4xmpExt:DigImageGUID"
+        },
+        "iptc_iim": null,
+        "exif": {
+          "tag": "ExifIFD:ImageUniqueID"
+        }
+      },
+      "mapping_notes": "The identifier will probably be generated by the technical means of an imaging device or software and should be applied to the digital image file as early as possible in its life cycle. This identifier does not identify any pictured content, particularly in case of a scan of non-digital images, only this digital representation.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.digitalSourceType",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Digital Source Type",
+      "definition": "Select one of the values for identifying the type of the source of the digital image from the controlled vocabulary",
+      "datatype": "uri",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+          "property": "Iptc4xmpExt:DigitalSourceType"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "Please check the Digital Source Type NewsCodes vocabulary, it was updated in 2022.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.embeddedEncodedRightsExpression",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Embedded Encoded Rights Expression",
+      "definition": "Shows an encoded rights expression. These values cannot be changed by metadata panels",
+      "datatype": "struct",
+      "cardinality": "many",
+      "struct_type": "EmbdEncRightsExpr",
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+          "property": "Iptc4xmpExt:EmbdEncRightsExpr"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.eventIdentifier",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Event Identifier",
+      "definition": "Enter one or more identifiers of the event where this image was taken",
+      "datatype": "uri",
+      "cardinality": "many",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+          "property": "Iptc4xmpExt:EventId"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "The URL/URI of a persistent calendar showing this event can be used.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.eventName",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Event Name",
+      "definition": "Enter the name or description of the event where this image was taken",
+      "datatype": "lang-alt",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+          "property": "Iptc4xmpExt:Event"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "Examples are: a press conference, dedication ceremony, etc. If this is a sub-event of a larger event both can be provided by the field: e.g. \"XXXIII Olympic Summer Games (Paris): opening ceremony\". Unplanned events could be named by this property too.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.extendedDescriptionAccessibility",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Core 1.5",
+      "standard_property_name": "Extended Description (Accessibility)",
+      "definition": "Enter the text describing the appearance of an image from a visual perspective, focusing on relevant details that further describe the meaning and purpose of the image",
+      "datatype": "lang-alt",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/",
+          "property": "Iptc4xmpCore:ExtDescrAccessibility"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "This property should not be confused with the IPTC property Description/Caption, which is the who, what, when, where, why, how of an image. This property can be combined with Alt Text (Accessibility) if and when a brief description is not sufficient to convey the purpose and meaning of an image. It should not repeat the information in the Alt Text (Accessibility) property. It is required for conformance with the W3C Web Content Accessibility Guidelines (WCAG).",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.genre",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Genre",
+      "definition": "",
+      "datatype": "struct",
+      "cardinality": "many",
+      "struct_type": "CvTerm",
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+          "property": "Iptc4xmpExt:Genre"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.headline",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Core 1.5",
+      "standard_property_name": "Headline",
+      "definition": "Enter a brief publishable synopsis or summary of the contents of the image",
+      "datatype": "string",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://ns.adobe.com/photoshop/1.0/",
+          "property": "photoshop:Headline"
+        },
+        "iptc_iim": {
+          "dataset": "2:105",
+          "name": "Headline"
+        },
+        "exif": null
+      },
+      "mapping_notes": "",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.imageCreator",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Image Creator",
+      "definition": "Enter details about the creator or creators of this image",
+      "datatype": "struct",
+      "cardinality": "many",
+      "struct_type": "ImageCreator",
+      "representations": {
+        "xmp": {
+          "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+          "property": "plus:ImageCreator"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "The creator can be additionally expressed in free-text using the IPTC Core Creator field. In many countries, the Image Creator must be attributed in association with any use of the image. The Image Creator, Copyright Owner, Image Supplier and Licensor may be the same or different entities.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.imageRating",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Image Rating",
+      "definition": "",
+      "datatype": "number",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://ns.adobe.com/xap/1.0/",
+          "property": "xmp:Rating"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.imageRegion",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Image Region",
+      "definition": "",
+      "datatype": "struct",
+      "cardinality": "many",
+      "struct_type": "ImageRegion",
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+          "property": "Iptc4xmpExt:ImageRegion"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.imageRegistryEntry",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Image Registry Entry",
+      "definition": "Enter IDs for this image and the registry issuing the image ID",
+      "datatype": "struct",
+      "cardinality": "many",
+      "struct_type": "RegistryEntry",
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+          "property": "Iptc4xmpExt:RegistryId"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "Typically an id from a registry is negotiated and applied after the creation of the digital image.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.imageSupplier",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Image Supplier",
+      "definition": "Enter the identifier for the most recent supplier of this image - note that this might not be the creator or owner of the image",
+      "datatype": "struct",
+      "cardinality": "many",
+      "struct_type": "ImageSupplier",
+      "representations": {
+        "xmp": {
+          "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+          "property": "plus:ImageSupplier"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "For identifying the supplier either a well known and/or registered company name or a URL of the company's web site may be used. \nThis property succeeds the Provider property of IPTC Core 1.0 by its semantics as that Provider was renamed to Credit Line.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.imageSupplierImageId",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Image Supplier Image ID",
+      "definition": "Enter the unique identifier created by the image supplier",
+      "datatype": "string",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+          "property": "plus:ImageSupplierImageID"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.instructions",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Core 1.5",
+      "standard_property_name": "Instructions",
+      "definition": "Enter information about embargoes, or other restrictions not covered by the Rights Usage field",
+      "datatype": "string",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://ns.adobe.com/photoshop/1.0/",
+          "property": "photoshop:Instructions"
+        },
+        "iptc_iim": {
+          "dataset": "2:40",
+          "name": "Special Instruction"
+        },
+        "exif": null
+      },
+      "mapping_notes": "The Instructions may include any of the following: embargoes (NewsMagazines OUT) and other restrictions not covered by the \"Rights Usage Terms\" field; information regarding the original means of capture (scanning notes, colourspace info) or other specific text information that the user may need for accurate reproduction; additional permissions required when publishing; credits for publishing if they exceed the IIM length of the credit field",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.intellectualGenreLegacy",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Core 1.5",
+      "standard_property_name": "Intellectual Genre (legacy)",
+      "definition": "Enter a term to describe the nature of the image in terms of its intellectual or journalistic characteristics",
+      "datatype": "string",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/",
+          "property": "Iptc4xmpCore:IntellectualGenre"
+        },
+        "iptc_iim": {
+          "dataset": "2:04",
+          "name": "Object Attribute Reference"
+        },
+        "exif": null
+      },
+      "mapping_notes": "Note on \"legacy\": the Intellectual Genre can be expressed in a more controlled way using the \"Genre\" property of the IPTC Extension, IPTC recommends using it.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.jobId",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Core 1.5",
+      "standard_property_name": "Job Id",
+      "definition": "Enter a number or identifier needed for workflow control or tracking",
+      "datatype": "string",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://ns.adobe.com/photoshop/1.0/",
+          "property": "photoshop:TransmissionReference"
+        },
+        "iptc_iim": {
+          "dataset": "2:103",
+          "name": "Original Transmission Reference"
+        },
+        "exif": null
+      },
+      "mapping_notes": "",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.keywords",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Core 1.5",
+      "standard_property_name": "Keywords",
+      "definition": "Enter any number of keywords, terms or phrases to express the subject and other aspects of the content of the image.",
+      "datatype": "string",
+      "cardinality": "many",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://purl.org/dc/elements/1.1/",
+          "property": "dc:subject"
+        },
+        "iptc_iim": {
+          "dataset": "2:25",
+          "name": "Keywords"
+        },
+        "exif": null
+      },
+      "mapping_notes": "",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.licensor",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Licensor",
+      "definition": "Enter the person or company that should be contacted for obtaining a license for this image",
+      "datatype": "struct",
+      "cardinality": "many",
+      "struct_type": "Licensor",
+      "representations": {
+        "xmp": {
+          "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+          "property": "plus:Licensor"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.linkedEncodedRightsExpression",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Linked  Encoded Rights Expression",
+      "definition": "Enter the details of a linked rights expression",
+      "datatype": "struct",
+      "cardinality": "many",
+      "struct_type": "LinkedEncRightsExpr",
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+          "property": "Iptc4xmpExt:LinkedEncRightsExpr"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.locationCreated",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Location Created",
+      "definition": "Enter the details about a location where this image was created",
+      "datatype": "struct",
+      "cardinality": "many",
+      "struct_type": "Location",
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+          "property": "Iptc4xmpExt:LocationCreated"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "If the location in the image is different from the location the photo was taken the IPTC Extension property Location Shown in the Image should be used.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.locationShownInTheImage",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Location Shown in the Image",
+      "definition": "Enter the details about a location which is shown in this image",
+      "datatype": "struct",
+      "cardinality": "many",
+      "struct_type": "Location",
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+          "property": "Iptc4xmpExt:LocationShown"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "If the location the image was taken in is different from this location the property Location Created should be used too.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.maxAvailHeight",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Max Avail Height",
+      "definition": "Enter the maximum available height in pixels of the original photo from which this photo has been derived by downsizing",
+      "datatype": "integer",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+          "property": "Iptc4xmpExt:MaxAvailHeight"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.maxAvailWidth",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Max Avail Width",
+      "definition": "Enter the maximum available width in pixels of the original photo from which this photo has been derived by downsizing",
+      "datatype": "integer",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+          "property": "Iptc4xmpExt:MaxAvailWidth"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.minorModelAgeDisclosure",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Minor Model Age Disclosure",
+      "definition": "Enter the age of the youngest model pictured in this image, at the time that this image was made",
+      "datatype": "uri",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+          "property": "plus:MinorModelAgeDisclosure"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "This age should not be displayed to the public on open web portals and the like. But it may be used by image repositories in a B2B enviroment.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.modelAge",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Model Age",
+      "definition": "Enter the age of the human model(s) at the time this image was made",
+      "datatype": "integer",
+      "cardinality": "many",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+          "property": "Iptc4xmpExt:ModelAge"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "The user should be aware of any legal implications of providing ages for young models. Ages below 18 years should not be included.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.modelReleaseId",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Model Release Id",
+      "definition": "Enter an identifier for each Model Release",
+      "datatype": "string",
+      "cardinality": "many",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+          "property": "plus:ModelReleaseID"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.modelReleaseStatus",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Model Release Status",
+      "definition": "Select one of the values for summarising the availability and scope of model releases authorising usage of the likenesses of persons appearing in the photograph",
+      "datatype": "uri",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+          "property": "plus:ModelReleaseStatus"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "It is recommended to apply the PLUS controlled value Unlimited Model Releases (MR-UMR) very carefully and to check the wording of the model release thoroughly before applying it.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.nameOfOrganisationFeaturedInTheImage",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Name of Organisation Featured in the Image",
+      "definition": "Enter the name of the organisation which is featured by this image",
+      "datatype": "string",
+      "cardinality": "many",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+          "property": "Iptc4xmpExt:OrganisationInImageName"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "May be supplemented by values from a controlled vocabulary in the Organisation Code field.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.otherConstraints",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Other Constraints",
+      "definition": "",
+      "datatype": "lang-alt",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+          "property": "plus:OtherConstraints"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "Constraints may limit the scope of usage allowed",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.personShownInTheImage",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Person Shown in the Image",
+      "definition": "Enter the name of the person shown in this image",
+      "datatype": "string",
+      "cardinality": "many",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+          "property": "Iptc4xmpExt:PersonInImage"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.personShownInTheImageWithDetails",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Person Shown in the Image with Details",
+      "definition": "Enter details about person(s) shown in the image. It is not required to list all, just those details which can be recognized",
+      "datatype": "struct",
+      "cardinality": "many",
+      "struct_type": "PersonWDetails",
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+          "property": "Iptc4xmpExt:PersonInImageWDetails"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.productShownInTheImage",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Product Shown in the Image",
+      "definition": "Enter details about a product shown in the image",
+      "datatype": "struct",
+      "cardinality": "many",
+      "struct_type": "ProductWGtin",
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+          "property": "Iptc4xmpExt:ProductInImage"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.propertyReleaseId",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Property Release Id",
+      "definition": "Enter an identifier for each Property Release",
+      "datatype": "string",
+      "cardinality": "many",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+          "property": "plus:PropertyReleaseID"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.propertyReleaseStatus",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Property Release Status",
+      "definition": "Select one of the values for summarising the availability and scope of property releases authorising usage of the properties appearing in the photograph",
+      "datatype": "uri",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+          "property": "plus:PropertyReleaseStatus"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "It is recommended to apply the value PR-UPR very carefully and to check the wording of the property release thoroughly before applying it.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.provinceOrStateLegacy",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Core 1.5",
+      "standard_property_name": "Province or State (legacy)",
+      "definition": "Enter the name of the province or state pictured in this image",
+      "datatype": "string",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://ns.adobe.com/photoshop/1.0/",
+          "property": "photoshop:State"
+        },
+        "iptc_iim": {
+          "dataset": "2:95",
+          "name": "Province/State"
+        },
+        "exif": null
+      },
+      "mapping_notes": "This is a detail of a location with blurred semantics as it does not clearly indicate whether it is the location in the image or the location the photo was taken - which can be different. Two more concise properties are available in IPTC Extension with Location Created and Location Shown in the Image.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.rightsUsageTerms",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Core 1.5",
+      "standard_property_name": "Rights Usage Terms",
+      "definition": "Enter instructions on how this image can legally be used",
+      "datatype": "lang-alt",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://ns.adobe.com/xap/1.0/rights/",
+          "property": "xmpRights:UsageTerms"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "Rights and licensing related properties of the IPTC Extension can be used in parallel to express the licensed usage in more controlled terms.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.sceneCode",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Core 1.5",
+      "standard_property_name": "Scene Code",
+      "definition": "Enter only the 6-digit codes from the IPTC Scene NewsCodes Controlled Vocabulary (see: http://cv.iptc.org/newscodes/scene)",
+      "datatype": "string",
+      "cardinality": "many",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/",
+          "property": "Iptc4xmpCore:Scene"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.sourceSupplyChain",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Core 1.5",
+      "standard_property_name": "Source (Supply Chain)",
+      "definition": "Enter or edit the name of a person or party who has a role in the content supply chain, such as a person or entity from whom you received this image from",
+      "datatype": "string",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://ns.adobe.com/photoshop/1.0/",
+          "property": "photoshop:Source"
+        },
+        "iptc_iim": {
+          "dataset": "2:115",
+          "name": "Source"
+        },
+        "exif": null
+      },
+      "mapping_notes": "",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.subjectCodeLegacy",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Core 1.5",
+      "standard_property_name": "Subject Code (legacy)",
+      "definition": "Enter only the 8-digit codes from the IPTC Subject NewsCode Controlled Vocabulary (see: http://cv.iptc.org/newscodes/subjectcode)",
+      "datatype": "string",
+      "cardinality": "many",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/",
+          "property": "Iptc4xmpCore:SubjectCode"
+        },
+        "iptc_iim": {
+          "dataset": "2:12",
+          "name": "Subject Reference"
+        },
+        "exif": null
+      },
+      "mapping_notes": "Note on \"legacy\": The Subject Codes were retired by IPTC before 2010. For the classification of images use the IPTC Media Topics vocabulary now, see: http://cv.iptc.org/newscodes/mediatopic For the Media Topics  the CV Term About Image property must be used.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.sublocationLegacy",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Core 1.5",
+      "standard_property_name": "Sublocation (legacy)",
+      "definition": "Enter the name of the Sublocation pictured in this image",
+      "datatype": "string",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/",
+          "property": "Iptc4xmpCore:Location"
+        },
+        "iptc_iim": {
+          "dataset": "2:92",
+          "name": "Sublocation"
+        },
+        "exif": null
+      },
+      "mapping_notes": "This is a detail of a location with blurred semantics as it does not clearly indicate whether it is the location in the image or the location the photo was taken - which can be different. Two more concise properties are available in IPTC Extension with Location Created and Location Shown in the Image.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.title",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Core 1.5",
+      "standard_property_name": "Title",
+      "definition": "Enter a short verbal and human readable name for the image, this may be the file name",
+      "datatype": "lang-alt",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://purl.org/dc/elements/1.1/",
+          "property": "dc:title"
+        },
+        "iptc_iim": {
+          "dataset": "2:05",
+          "name": "Object Name"
+        },
+        "exif": null
+      },
+      "mapping_notes": "Many use the Title field to store the filename of the image, though the field may be used in many ways. Formal identifiers are provided by the Digital Image Id, or the Registry Entry property of the IPTC Extension.",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    },
+    {
+      "id": "iptc.photo.webStatementOfRights",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "schema": "Extension 1.9",
+      "standard_property_name": "Web Statement of Rights",
+      "definition": "",
+      "datatype": "uri",
+      "cardinality": "one",
+      "struct_type": null,
+      "representations": {
+        "xmp": {
+          "namespace": "http://ns.adobe.com/xap/1.0/rights/",
+          "property": "xmpRights:WebStatement"
+        },
+        "iptc_iim": null,
+        "exif": null
+      },
+      "mapping_notes": "",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      }
+    }
+  ],
+  "structs": [
+    {
+      "id": "iptc.photo.struct.ArtworkOrObject",
+      "name": "ArtworkOrObject",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      },
+      "fields": [
+        {
+          "id": "iptc.photo.struct.ArtworkOrObject.circaDateCreated",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Circa Date Created",
+          "definition": "Enter the approximate date or range of dates associated with the creation and production of an artwork or object or its components",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:AOCircaDateCreated"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.ArtworkOrObject.contentDescription",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Content Description",
+          "definition": "Describe the content depicted in the artwork or object in free-text",
+          "datatype": "lang-alt",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:AOContentDescription"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.ArtworkOrObject.contributionDescription",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Contribution Description",
+          "definition": "Describe any contributions made to the artwork or object as free-text. Include the type, date and location of contribution, and details about the contributor",
+          "datatype": "lang-alt",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:AOContributionDescription"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "Should include the type, date and location of contribution, and details about the contributor.",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.ArtworkOrObject.copyrightNotice",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Copyright Notice",
+          "definition": "Enter any necessary copyright notice for claiming the intellectual property for artwork or an object in this image",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:AOCopyrightNotice"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.ArtworkOrObject.creatorIdentifiers",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Creator ID",
+          "definition": "Enter globally unique identifier(s) for the artist who has created artwork or an object e.g.\nissued by an online registry of persons or companies. Enter in the same sequence\nas the creator names.",
+          "datatype": "uri",
+          "cardinality": "many",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:AOCreatorId"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "Add the IDs in the same sequence as the Creator names",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.ArtworkOrObject.creatorNames",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Creator",
+          "definition": "Enter the name of the artist who has created artwork or an object in this image",
+          "datatype": "string",
+          "cardinality": "many",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:AOCreator"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.ArtworkOrObject.currentCopyrightOwnerIdentifier",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Current Copyright Owner ID",
+          "definition": "Enter a globally unique identifier for the current\ncopyright owner e.g. issued by an online registry of persons or companies",
+          "datatype": "uri",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:AOCurrentCopyrightOwnerId"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.ArtworkOrObject.currentCopyrightOwnerName",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Current Copyright Owner Name",
+          "definition": "Enter the name of the current owner of the copyright of the artwork or object",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:AOCurrentCopyrightOwnerName"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.ArtworkOrObject.currentLicensorIdentifier",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Current Licensor ID",
+          "definition": "Enter a globally unique identifier for the current licensor e.g. issued by an online registry of persons or companies",
+          "datatype": "uri",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:AOCurrentLicensorId"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.ArtworkOrObject.currentLicensorName",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Current Licensor Name",
+          "definition": "Enter the name of the current licensor of the artwork or object",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:AOCurrentLicensorName"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.ArtworkOrObject.dateCreated",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Date Created",
+          "definition": "Enter the date and optionally the time when the artwork or object in this image was created",
+          "datatype": "date-time",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:AODateCreated"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.ArtworkOrObject.physicalDescription",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Physical Description",
+          "definition": "Describe the physical characteristics of the artwork or object as free-text, without referring to the subject depicted. Object type, materials-techniques and measurements may be described",
+          "datatype": "lang-alt",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:AOPhysicalDescription"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "Object type, materials-techniques and measurements may be described.",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.ArtworkOrObject.source",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Source",
+          "definition": "Enter the name of the organisation or body holding and registering the artwork or object in this image for inventory purposes",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:AOSource"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.ArtworkOrObject.sourceInventoryNr",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Source Inventory Number",
+          "definition": "Enter the inventory number issued by the organisation or body holding and registering the artwork or object in this image",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:AOSourceInvNo"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.ArtworkOrObject.sourceInventoryUrl",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Source Inventory URL",
+          "definition": "Enter a reference URL for the metadata record of the inventory maintained by the Source",
+          "datatype": "uri",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:AOSourceInvURL"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.ArtworkOrObject.stylePeriod",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Style Period",
+          "definition": "Enter the style, historical or artistic period, movement, group, or school whose characteristics are represented in the artwork or object",
+          "datatype": "string",
+          "cardinality": "many",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:AOStylePeriod"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "It is advised to take the terms from a Controlled Vocabulary.",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.ArtworkOrObject.title",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Title",
+          "definition": "Enter the verbal and human readable name of the artwork or object in this image",
+          "datatype": "lang-alt",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:AOTitle"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iptc.photo.struct.CopyrightOwner",
+      "name": "CopyrightOwner",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      },
+      "fields": [
+        {
+          "id": "iptc.photo.struct.CopyrightOwner.copyrightOwnerId",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "PLUS",
+          "standard_property_name": "Copyright Owner ID",
+          "definition": "",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+              "property": "plus:CopyrightOwnerID"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.CopyrightOwner.copyrightOwnerName",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "PLUS",
+          "standard_property_name": "Copyright Owner Name",
+          "definition": "",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+              "property": "plus:CopyrightOwnerName"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iptc.photo.struct.CreatorContactInfo",
+      "name": "CreatorContactInfo",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      },
+      "fields": [
+        {
+          "id": "iptc.photo.struct.CreatorContactInfo.address",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Core 1.5",
+          "standard_property_name": "Address",
+          "definition": "Enter Address for the person that created this image",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/",
+              "property": "Iptc4xmpCore:CiAdrExtadr"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.CreatorContactInfo.city",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Core 1.5",
+          "standard_property_name": "City",
+          "definition": "Enter the City for the address of the person that created this image",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/",
+              "property": "Iptc4xmpCore:CiAdrCity"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.CreatorContactInfo.country",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Core 1.5",
+          "standard_property_name": "Country",
+          "definition": "Enter the Country name for the address of the person that created this image",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/",
+              "property": "Iptc4xmpCore:CiAdrCtry"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.CreatorContactInfo.emailwork",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Core 1.5",
+          "standard_property_name": "Email address(es)",
+          "definition": "Enter the work Email address(es) for the person that created this image, such as name@domain.com",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/",
+              "property": "Iptc4xmpCore:CiEmailWork"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "Multiple email addresses can be given. May have to be separated by a comma in the user interface.",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.CreatorContactInfo.phonework",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Core 1.5",
+          "standard_property_name": "Phone number(s)",
+          "definition": "Enter the work Phone number(s) for the person that created this image, using the international format, such as +1 (123) 456789",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/",
+              "property": "Iptc4xmpCore:CiTelWork"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "Multiple numbers can be given. May have to be separated by a comma in the user interface.",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.CreatorContactInfo.postalCode",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Core 1.5",
+          "standard_property_name": "Postal Code",
+          "definition": "Enter the Postal Code for the address of the person that created this image",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/",
+              "property": "Iptc4xmpCore:CiAdrPcode"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.CreatorContactInfo.region",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Core 1.5",
+          "standard_property_name": "State/Province",
+          "definition": "Enter the State for the address of the person that created this image",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/",
+              "property": "Iptc4xmpCore:CiAdrRegion"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.CreatorContactInfo.weburlwork",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Core 1.5",
+          "standard_property_name": "Web URL(s)",
+          "definition": "Enter the work Web URL(s) for the person that created this image, such as http://www.domain.com/",
+          "datatype": "uri",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/",
+              "property": "Iptc4xmpCore:CiUrlWork"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "Multiple URL can be given. May have to be separated by a comma in the user interface.",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iptc.photo.struct.CvTerm",
+      "name": "CvTerm",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      },
+      "fields": [
+        {
+          "id": "iptc.photo.struct.CvTerm.cvId",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "CV-Term CV ID",
+          "definition": "Enter the globally unique identifier of the Controlled Vocabulary which the term is from",
+          "datatype": "uri",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:CvId"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.CvTerm.cvTermId",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "CV-Term ID",
+          "definition": "Enter the globally unique identifier of the term from a Controlled Vocabulary",
+          "datatype": "uri",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:CvTermId"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.CvTerm.cvTermName",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "CV-Term name",
+          "definition": "Enter the name of the term from a Controlled Vocabulary as free-text",
+          "datatype": "lang-alt",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:CvTermName"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.CvTerm.cvTermRefinedAbout",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Refined 'about' Relationship of the CV-Term",
+          "definition": "Optionally enter a refinement of the 'about' relationship of the term with the content of the image. This must be a globally unique identifier from a Controlled Vocabulary",
+          "datatype": "uri",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:CvTermRefinedAbout"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "May be used to refine the generic about relationship.",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iptc.photo.struct.EmbdEncRightsExpr",
+      "name": "EmbdEncRightsExpr",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      },
+      "fields": [
+        {
+          "id": "iptc.photo.struct.EmbdEncRightsExpr.encRightsExpr",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Encoded Rights Expression",
+          "definition": "Shows an embedded rights expression using a rights expression language which is encoded as a string",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:EncRightsExpr"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.EmbdEncRightsExpr.rightsExprEncType",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Encoding type",
+          "definition": "Shows the encoding type of the rights expression by an IANA Media Type",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:RightsExprEncType"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.EmbdEncRightsExpr.rightsExprLangId",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Rights Expression Language ID",
+          "definition": "Shows the identifier of the used Rights Expression Language",
+          "datatype": "uri",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:RightsExprLangId"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iptc.photo.struct.Entity",
+      "name": "Entity",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      },
+      "fields": [
+        {
+          "id": "iptc.photo.struct.Entity.identifiers",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Identifier",
+          "definition": "",
+          "datatype": "uri",
+          "cardinality": "many",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://ns.adobe.com/xap/1.0/",
+              "property": "xmp:Identifier"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.Entity.name",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Name",
+          "definition": "",
+          "datatype": "lang-alt",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:Name"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iptc.photo.struct.EntityWRole",
+      "name": "EntityWRole",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      },
+      "fields": [
+        {
+          "id": "iptc.photo.struct.EntityWRole.identifiers",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Identifier",
+          "definition": "Enter globally unique identifier(s) of the entity or concept",
+          "datatype": "uri",
+          "cardinality": "many",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://ns.adobe.com/xap/1.0/",
+              "property": "xmp:Identifier"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "This should be an identifier as it is used with semantic web technology.",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.EntityWRole.name",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Name",
+          "definition": "Enter the name of the entity or concept",
+          "datatype": "lang-alt",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:Name"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.EntityWRole.role",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Role",
+          "definition": "Enter an identifier for the role the entity has regarding the {...software maker: apply name of metadata property here...} property.",
+          "datatype": "string",
+          "cardinality": "many",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:Role"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iptc.photo.struct.ImageCreator",
+      "name": "ImageCreator",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      },
+      "fields": [
+        {
+          "id": "iptc.photo.struct.ImageCreator.imageCreatorId",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "PLUS",
+          "standard_property_name": "Image Creator ID",
+          "definition": "",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+              "property": "plus:ImageCreatorID"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.ImageCreator.imageCreatorName",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "PLUS",
+          "standard_property_name": "Image Creator Name",
+          "definition": "",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+              "property": "plus:ImageCreatorName"
+            },
+            "iptc_iim": null,
+            "exif": {
+              "tag": "IFD0:Artist"
+            }
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iptc.photo.struct.ImageRegion",
+      "name": "ImageRegion",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      },
+      "fields": [
+        {
+          "id": "iptc.photo.struct.ImageRegion.$anypmdproperty",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Other Metadata Property",
+          "definition": "",
+          "datatype": "any",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": null,
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "Metadata properties related to the region are typically ones used also for an image as a whole.",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.ImageRegion.name",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Region Name",
+          "definition": "",
+          "datatype": "lang-alt",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:Name"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.ImageRegion.rCtype",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Region Content Type",
+          "definition": "",
+          "datatype": "struct",
+          "cardinality": "many",
+          "struct_type": "Entity",
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:rCtype"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.ImageRegion.rId",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Region Identifier",
+          "definition": "",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:rId"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.ImageRegion.rRole",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Region Role",
+          "definition": "",
+          "datatype": "struct",
+          "cardinality": "many",
+          "struct_type": "Entity",
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:rRole"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.ImageRegion.regionBoundary",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Region Boundary",
+          "definition": "",
+          "datatype": "struct",
+          "cardinality": "one",
+          "struct_type": "RegionBoundary",
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:RegionBoundary"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "As option only a single point may be defined to express special characteristics of this point, or a line may be defined to express a divide inside the image.",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iptc.photo.struct.ImageSupplier",
+      "name": "ImageSupplier",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      },
+      "fields": [
+        {
+          "id": "iptc.photo.struct.ImageSupplier.imageSupplierId",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "PLUS",
+          "standard_property_name": "Image Supplier ID",
+          "definition": "",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+              "property": "plus:ImageSupplierID"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.ImageSupplier.imageSupplierName",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "PLUS",
+          "standard_property_name": "Image Supplier Name",
+          "definition": "",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+              "property": "plus:ImageSupplierName"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iptc.photo.struct.Licensor",
+      "name": "Licensor",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      },
+      "fields": [
+        {
+          "id": "iptc.photo.struct.Licensor.licensorAddress",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "PLUS",
+          "standard_property_name": "Licensor Address",
+          "definition": "",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+              "property": "plus:LicensorStreetAddress"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.Licensor.licensorAddressDetail",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "PLUS",
+          "standard_property_name": "Licensor Adress Detail",
+          "definition": "",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+              "property": "plus:LicensorExtendedAddress"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.Licensor.licensorCity",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "PLUS",
+          "standard_property_name": "Licensor City",
+          "definition": "",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+              "property": "plus:LicensorCity"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.Licensor.licensorCountryName",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "PLUS",
+          "standard_property_name": "Licensor Country",
+          "definition": "",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+              "property": "plus:LicensorCountry"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.Licensor.licensorEmail",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "PLUS",
+          "standard_property_name": "Licensor Email",
+          "definition": "",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+              "property": "plus:LicensorEmail"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.Licensor.licensorId",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "PLUS",
+          "standard_property_name": "Licensor ID",
+          "definition": "",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+              "property": "plus:LicensorID"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.Licensor.licensorName",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "PLUS",
+          "standard_property_name": "Licensor Name",
+          "definition": "",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+              "property": "plus:LicensorName"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.Licensor.licensorPostalCode",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "PLUS",
+          "standard_property_name": "Licensor Postal Code",
+          "definition": "",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+              "property": "plus:LicensorPostalCode"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.Licensor.licensorStateProvince",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "PLUS",
+          "standard_property_name": "Licensor State or Province",
+          "definition": "",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+              "property": "plus:LicensorRegion"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.Licensor.licensorTelephone1",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "PLUS",
+          "standard_property_name": "Licensor Telephone 1",
+          "definition": "",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+              "property": "plus:LicensorTelephone1"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.Licensor.licensorTelephone2",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "PLUS",
+          "standard_property_name": "Licensor Telephone 2",
+          "definition": "",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+              "property": "plus:LicensorTelephone2"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.Licensor.licensorTelephoneType1",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "PLUS",
+          "standard_property_name": "Licensor Telephone Type 1",
+          "definition": "",
+          "datatype": "uri",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+              "property": "plus:LicensorTelephoneType1"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.Licensor.licensorTelephoneType2",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "PLUS",
+          "standard_property_name": "Licensor Telephone Type 2",
+          "definition": "",
+          "datatype": "uri",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+              "property": "plus:LicensorTelephoneType2"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.Licensor.licensorUrl",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "PLUS",
+          "standard_property_name": "Licensor URL",
+          "definition": "",
+          "datatype": "uri",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://ns.useplus.org/ldf/xmp/1.0/",
+              "property": "plus:LicensorURL"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iptc.photo.struct.LinkedEncRightsExpr",
+      "name": "LinkedEncRightsExpr",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      },
+      "fields": [
+        {
+          "id": "iptc.photo.struct.LinkedEncRightsExpr.linkedRightsExpr",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Link to Encoded Rights Expression",
+          "definition": "Enter the link to a web resource representing an encoded rights expression",
+          "datatype": "uri",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:LinkedRightsExpr"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.LinkedEncRightsExpr.rightsExprEncType",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Encoding type",
+          "definition": "Enter the encoding type of the rights expression by using an IANA Media Type",
+          "datatype": "uri",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:RightsExprEncType"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.LinkedEncRightsExpr.rightsExprLangId",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Rights Expression Language ID",
+          "definition": "Enter the identifier of the used Rights Expression Language",
+          "datatype": "uri",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:RightsExprLangId"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iptc.photo.struct.Location",
+      "name": "Location",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      },
+      "fields": [
+        {
+          "id": "iptc.photo.struct.Location.city",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "City",
+          "definition": "Enter the name of the City",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:City"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.Location.countryCode",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Country ISO-Code",
+          "definition": "Enter the 2 or 3 letter ISO 3166 Country Code of the Country",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:CountryCode"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.Location.countryName",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Country Name",
+          "definition": "Enter the name of the Country",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:CountryName"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.Location.gpsAltitude",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "GPS-Altitude",
+          "definition": "",
+          "datatype": "number",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://ns.adobe.com/exif/1.0/",
+              "property": "exif:GPSAltitude"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.Location.gpsAltitudeRef",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "GPS-Altitude Reference",
+          "definition": "",
+          "datatype": "number",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://ns.adobe.com/exif/1.0/",
+              "property": "exif:GPSAltitudeRef"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "The WGS84 reference level is the surface of the mathematical representation of the earth's globe. At a specific location this level may be a few metres above of below the Mean Sea Level of an ocean or a sea.",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.Location.gpsLatitude",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "GPS-Latitude",
+          "definition": "",
+          "datatype": "number",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://ns.adobe.com/exif/1.0/",
+              "property": "exif:GPSLatitude"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.Location.gpsLongitude",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "GPS-Longitude",
+          "definition": "",
+          "datatype": "number",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://ns.adobe.com/exif/1.0/",
+              "property": "exif:GPSLongitude"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.Location.identifiers",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Location Identifier",
+          "definition": "Enter globally unique identifier(s) of the location",
+          "datatype": "uri",
+          "cardinality": "many",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:LocationId"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.Location.name",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Location Name",
+          "definition": "Enter a full name of the location",
+          "datatype": "lang-alt",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:LocationName"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.Location.provinceState",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Province or State",
+          "definition": "Enter the name of the Province or State",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:ProvinceState"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.Location.sublocation",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Sublocation",
+          "definition": "Enter the name of the Sublocation",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:Sublocation"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.Location.worldRegion",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "World Region",
+          "definition": "Enter the name of the World Region",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:WorldRegion"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iptc.photo.struct.PersonWDetails",
+      "name": "PersonWDetails",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      },
+      "fields": [
+        {
+          "id": "iptc.photo.struct.PersonWDetails.characteristics",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Characteristics",
+          "definition": "Enter a property or trait of the person by selecting a term from a Controlled Vocabulary",
+          "datatype": "struct",
+          "cardinality": "many",
+          "struct_type": "CvTerm",
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:PersonCharacteristic"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.PersonWDetails.description",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Description",
+          "definition": "Describes the person, any actions taken, emotional expressions shown, etc. as free-text",
+          "datatype": "lang-alt",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:PersonDescription"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "For example, you may include actions taken, emotional expressions shown and more.",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.PersonWDetails.identifiers",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Identifier",
+          "definition": "Enter globally unique identifier(s) for the person, such as those from WikiData or Freebase",
+          "datatype": "uri",
+          "cardinality": "many",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:PersonId"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "This should be an identifier as it is used with semantic web technology.",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.PersonWDetails.name",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Name",
+          "definition": "Enter the name of the person",
+          "datatype": "lang-alt",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:PersonName"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iptc.photo.struct.ProductWGtin",
+      "name": "ProductWGtin",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      },
+      "fields": [
+        {
+          "id": "iptc.photo.struct.ProductWGtin.description",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Description",
+          "definition": "Enter a description of the product as free-text",
+          "datatype": "lang-alt",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:ProductDescription"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.ProductWGtin.gtin",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "GTIN",
+          "definition": "Enter the 14 digit Global Trade Item Number (GTIN) of the product as defined by GS1",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:ProductGTIN"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.ProductWGtin.identifiers",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Identifier",
+          "definition": "Enter globally unique identifier(s) for the product, such as those from WikiData",
+          "datatype": "uri",
+          "cardinality": "many",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:ProductId"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "This should be an identifier as it is used with semantic web technology.",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.ProductWGtin.name",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Name",
+          "definition": "Enter the name of the product",
+          "datatype": "lang-alt",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:ProductName"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iptc.photo.struct.RegionBoundary",
+      "name": "RegionBoundary",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      },
+      "fields": [
+        {
+          "id": "iptc.photo.struct.RegionBoundary.rbH",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Rectangle Height",
+          "definition": "",
+          "datatype": "number",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:rbH"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "Used only by the shape _rectangle_.See also the User Notes of the link:#region-boundary-structure[Region Boundary structure]",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.RegionBoundary.rbRx",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Circle Radius",
+          "definition": "",
+          "datatype": "number",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:rbRx"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "Used only by the shape _circle_. See also the User Notes of the link:#region-boundary-structure[Region Boundary structure]",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.RegionBoundary.rbShape",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Boundary Shape",
+          "definition": "",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:rbShape"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "The applicable shapes are:\n\n* _rectangle_ = a rectangle as shape of the boundary, the shape of a square is included \n* _circle_ = a circle as the shape of the boundary \n* _polygon_ = any shape with edges, except a rectangle, including a single point (using 1 vertex) and a line (using 2 vertices). The edges between a vertex and the next one in the sequence set the shape, the last edge is the one from the last vertex in the sequence to the first vertex in the sequence.",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.RegionBoundary.rbUnit",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Boundary Measuring Unit",
+          "definition": "",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:rbUnit"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "The applicable units are: \n\n* _pixel_ = A pixel of a digital image setting an absolute value \n* _relative_ = Relative part of the size of an image along the x- or the y-axis. The range of the value is from 0 to 1 representing the proportion of the full size of an image along the x-axis or the y-axis.",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.RegionBoundary.rbVertices",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Polygon Vertices",
+          "definition": "",
+          "datatype": "struct",
+          "cardinality": "many",
+          "struct_type": "RegionBoundaryPoint",
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:rbVertices"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "Used only by the shape _polygon_. See also the User Notes of the link:#region-boundary-structure[Region Boundary structure]",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.RegionBoundary.rbW",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Rectangle Width",
+          "definition": "",
+          "datatype": "number",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:rbW"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "Used only by the shape _rectangle_.See also the User Notes of the link:#region-boundary-structure[Region Boundary structure]",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.RegionBoundary.rbX",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "X-Axis Coordinate",
+          "definition": "",
+          "datatype": "number",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:rbX"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "Used only by the shapes _rectangle_ and _circle_. See also the User Notes of the link:#region-boundary-structure[Region Boundary structure]",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.RegionBoundary.rbY",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Y-Axis Coordinate",
+          "definition": "",
+          "datatype": "number",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:rbY"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "Used only by the shapes _rectangle_ and _circle_. See also the User Notes of the link:#region-boundary-structure[Region Boundary structure]",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iptc.photo.struct.RegionBoundaryPoint",
+      "name": "RegionBoundaryPoint",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      },
+      "fields": [
+        {
+          "id": "iptc.photo.struct.RegionBoundaryPoint.rbX",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "X-Axis Coordinate",
+          "definition": "",
+          "datatype": "number",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:rbX"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.RegionBoundaryPoint.rbY",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Y-Axis Coordinate",
+          "definition": "",
+          "datatype": "number",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:rbY"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iptc.photo.struct.RegistryEntry",
+      "name": "RegistryEntry",
+      "standard": "IPTC Photo Metadata",
+      "standard_version": "2025.1",
+      "source": {
+        "document": "IPTC Photo Metadata Technical Reference",
+        "version": "2025.1",
+        "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+        "retrieval_date": "2026-09-28"
+      },
+      "fields": [
+        {
+          "id": "iptc.photo.struct.RegistryEntry.assetIdentifier",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Item Id",
+          "definition": "Enter the unique identifier created by a registry and applied by the creator of the digital image. This value shall not be changed after being applied.",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:RegItemId"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "This identifier may be globally unique by itself, but it must be unique for the issuing registry at least.",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.RegistryEntry.registryIdentifier",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Organisation Id",
+          "definition": "Enter the identifier for the registry which issued the corresponding Registry Image ID",
+          "datatype": "string",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:RegOrgId"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        },
+        {
+          "id": "iptc.photo.struct.RegistryEntry.role",
+          "standard": "IPTC Photo Metadata",
+          "standard_version": "2025.1",
+          "schema": "Extension 1.9",
+          "standard_property_name": "Role",
+          "definition": "Enter an identifier of the role of this registry entry in the context of other entries.",
+          "datatype": "uri",
+          "cardinality": "one",
+          "struct_type": null,
+          "representations": {
+            "xmp": {
+              "namespace": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "property": "Iptc4xmpExt:RegEntryRole"
+            },
+            "iptc_iim": null,
+            "exif": null
+          },
+          "mapping_notes": "",
+          "source": {
+            "document": "IPTC Photo Metadata Technical Reference",
+            "version": "2025.1",
+            "url": "https://iptc.org/std/photometadata/specification/iptc-pmd-techreference_2025.1.json",
+            "retrieval_date": "2026-09-28"
+          }
+        }
+      ]
+    }
+  ]
+}

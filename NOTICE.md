@@ -23,3 +23,10 @@ Exiv2 is not bundled in this repository.
 ExifTool is invoked **out-of-process only** (decision **S1a**) and is **never
 bundled** with libumm (decision **S1c**). libumm locates an installed ExifTool
 and Perl interpreter; it does not redistribute ExifTool.
+
+### IPTC Photo Metadata Technical Reference
+
+`registry/sources/` vendors the IPTC Photo Metadata Technical Reference JSON so
+the registry importer can run offline. IPTC remains the copyright holder and
+the source of truth for those property semantics (concept.md §5; decision
+**M5**). libumm does not redefine the standard.
