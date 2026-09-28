@@ -219,4 +219,8 @@ std::optional<std::string> Metadata::raw(const RawKey& key) const {
   return std::nullopt;
 }
 
+void Metadata::assignRaw(std::vector<RawEntry> entries) {
+  raw_ = std::move(entries);
+}
+
 }  // namespace umm

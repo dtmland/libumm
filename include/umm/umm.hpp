@@ -1,12 +1,6 @@
-// ============================================================================
-// DESIGN DRAFT — NOT BUILT, NOT TESTED.
-// Normative statement of API shape per docs/analysis decision M7.
-// Promoted to a real header by docs/implementation/12-reconciliation-engine.md
-// (read) and 13/14 (write, storage policy).
-//
-// Umbrella header: the application-facing entry points of concept.md §32
-// ("Write metadata once. Use it everywhere.").
-// ============================================================================
+// Application-facing entry points (concept.md §32).
+// umm::read is implemented in session 12 against docs/reconciliation-policy.md.
+// umm::write / storage policy are declared here and implemented in sessions 13/14.
 #pragma once
 
 #include <filesystem>
