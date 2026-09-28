@@ -35,6 +35,14 @@ TEST_WRITE = REPO_ROOT / "tests" / "backend" / "test_write.cpp"
 SIDECAR_CPP = REPO_ROOT / "src" / "core" / "sidecar.cpp"
 TEST_STORAGE_POLICY = REPO_ROOT / "tests" / "unit" / "test_storage_policy.cpp"
 TEST_SIDECAR = REPO_ROOT / "tests" / "backend" / "test_sidecar.cpp"
+TEST_CAPABILITIES = REPO_ROOT / "tests" / "unit" / "test_capabilities.cpp"
+TEST_CAPABILITIES_PROBE = (
+    REPO_ROOT / "tests" / "backend" / "test_capabilities_probe.cpp"
+)
+CAPABILITIES_GENERATOR = (
+    REPO_ROOT / "tools" / "registry" / "generate_supported_types.py"
+)
+CAPABILITIES_DIR = REPO_ROOT / "registry" / "capabilities"
 PUBLIC_INCLUDE = REPO_ROOT / "include"
 
 
@@ -66,6 +74,13 @@ class TestLayout(unittest.TestCase):
             SIDECAR_CPP,
             TEST_STORAGE_POLICY,
             TEST_SIDECAR,
+            TEST_CAPABILITIES,
+            TEST_CAPABILITIES_PROBE,
+            CAPABILITIES_GENERATOR,
+            CAPABILITIES_DIR / "schema.md",
+            CAPABILITIES_DIR / "exiv2.json",
+            CAPABILITIES_DIR / "exiftool.json",
+            CAPABILITIES_DIR / "policy.json",
         ):
             self.assertTrue(path.is_file(), f"missing required file: {path}")
 

@@ -456,13 +456,31 @@ std::string ChildProcess::write_all(std::string_view bytes) {
 namespace {
 
 #if defined(_WIN32)
+bool is_pipe_exhausted(DWORD err) {
+  return err == ERROR_BROKEN_PIPE || err == ERROR_HANDLE_EOF ||
+         err == ERROR_NO_DATA;
+}
+
+// PeekNamedPipe can return ERROR_BROKEN_PIPE as soon as the child closes
+// stdout, including while WaitForSingleObject still reports the process as
+// running. Treat that as EOF and try ReadFile once for leftover bytes so a
+// short-lived command (exiftool -ver) is not reported as empty/timeout.
 bool read_available(HANDLE handle, std::string& acc) {
   if (!handle) {
     return false;
   }
   DWORD avail = 0;
   if (!PeekNamedPipe(handle, nullptr, 0, nullptr, &avail, nullptr)) {
-    return false;
+    const DWORD peek_err = GetLastError();
+    if (!is_pipe_exhausted(peek_err)) {
+      return false;
+    }
+    char buf[4096];
+    DWORD n = 0;
+    if (ReadFile(handle, buf, sizeof(buf), &n, nullptr) && n > 0) {
+      acc.append(buf, n);
+    }
+    return true;
   }
   if (avail == 0) {
     return true;
@@ -470,7 +488,7 @@ bool read_available(HANDLE handle, std::string& acc) {
   std::string chunk(avail, '\0');
   DWORD n = 0;
   if (!ReadFile(handle, chunk.data(), avail, &n, nullptr)) {
-    return false;
+    return is_pipe_exhausted(GetLastError());
   }
   acc.append(chunk.data(), n);
   return true;
@@ -614,22 +632,31 @@ ChildProcess::Read ChildProcess::read_all(std::chrono::milliseconds timeout,
   const auto deadline = Clock::now() + timeout;
 #if defined(_WIN32)
   close_handle(impl_->stdin_w);
+  int idle_after_exit = 0;
   while (Clock::now() < deadline) {
-    if (!read_available(impl_->stdout_r, impl_->stdout_acc) ||
-        !read_available(impl_->stderr_r, impl_->stderr_acc)) {
-      break;
-    }
-    if (!running()) {
-      read_available(impl_->stdout_r, impl_->stdout_acc);
-      read_available(impl_->stderr_r, impl_->stderr_acc);
-      out = impl_->stdout_acc;
-      err = impl_->stderr_acc;
-      impl_->stdout_acc.clear();
-      return Read::ok;
+    const bool stdout_ok =
+        read_available(impl_->stdout_r, impl_->stdout_acc);
+    const bool stderr_ok =
+        read_available(impl_->stderr_r, impl_->stderr_acc);
+    const bool alive = running();
+    if (!alive) {
+      // Process exit and pipe EOF can be observed in either order. Keep
+      // draining briefly so the last write is not lost.
+      if (!impl_->stdout_acc.empty() || ++idle_after_exit >= 8) {
+        break;
+      }
+    } else {
+      idle_after_exit = 0;
+      if (!stdout_ok || !stderr_ok) {
+        Sleep(5);
+        continue;
+      }
     }
     Sleep(5);
   }
-  if (!running()) {
+  read_available(impl_->stdout_r, impl_->stdout_acc);
+  read_available(impl_->stderr_r, impl_->stderr_acc);
+  if (!running() || idle_after_exit != 0) {
     out = impl_->stdout_acc;
     err = impl_->stderr_acc;
     impl_->stdout_acc.clear();

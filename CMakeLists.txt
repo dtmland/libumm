@@ -31,6 +31,7 @@ add_library(umm
   src/metadata.cpp
   src/read.cpp
   src/write.cpp
+  src/capabilities.cpp
   src/core/reconcile.cpp
   src/core/write_sync.cpp
   src/core/atomic_write.cpp
@@ -138,6 +139,10 @@ if(UMM_BUILD_TESTS)
   target_link_libraries(test_storage_policy PRIVATE umm::umm)
   add_test(NAME test_storage_policy COMMAND test_storage_policy)
 
+  add_executable(test_capabilities tests/unit/test_capabilities.cpp)
+  target_link_libraries(test_capabilities PRIVATE umm::umm)
+  add_test(NAME test_capabilities COMMAND test_capabilities)
+
   add_executable(test_fixtures_path tests/unit/test_fixtures_path.cpp)
   umm_apply_fixture_dir(test_fixtures_path)
   add_test(NAME test_fixtures_path COMMAND test_fixtures_path)
@@ -214,6 +219,14 @@ if(UMM_BUILD_TESTS)
   )
   add_test(NAME test_exiftool_keys COMMAND test_exiftool_keys)
 
+  add_executable(test_child_process tests/backend/test_child_process.cpp)
+  target_link_libraries(test_child_process PRIVATE umm::umm)
+  target_include_directories(test_child_process
+    PRIVATE
+      "${CMAKE_CURRENT_SOURCE_DIR}/src/backends"
+  )
+  add_test(NAME test_child_process COMMAND test_child_process)
+
   add_executable(test_exiftool_unavailable tests/backend/test_exiftool_unavailable.cpp)
   target_link_libraries(test_exiftool_unavailable PRIVATE umm::umm)
   add_test(NAME test_exiftool_unavailable COMMAND test_exiftool_unavailable)
@@ -257,6 +270,27 @@ if(UMM_BUILD_TESTS)
     endif()
     add_test(NAME test_read COMMAND test_read)
     umm_apply_fixture_dir_to_test(test_read)
+
+    add_executable(test_capabilities_probe tests/backend/test_capabilities_probe.cpp)
+    target_link_libraries(test_capabilities_probe PRIVATE umm::umm)
+    target_include_directories(test_capabilities_probe
+      PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/backend"
+    )
+    umm_apply_fixture_dir(test_capabilities_probe)
+    if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)
+      file(TO_CMAKE_PATH "${UMM_EXIFTOOL_SCRIPT}" UMM_TEST_CAP_EXIFTOOL_SCRIPT)
+      file(TO_CMAKE_PATH "${UMM_PERL_EXECUTABLE}" UMM_TEST_CAP_EXIFTOOL_PERL)
+      target_compile_definitions(test_capabilities_probe
+        PRIVATE
+          "UMM_TEST_EXIFTOOL_SCRIPT=R\"(${UMM_TEST_CAP_EXIFTOOL_SCRIPT})\""
+          "UMM_TEST_EXIFTOOL_PERL=R\"(${UMM_TEST_CAP_EXIFTOOL_PERL})\""
+          "UMM_TEST_EXIFTOOL_VERSION=\"${UMM_EXIFTOOL_VERSION}\""
+      )
+    endif()
+    add_test(NAME test_capabilities_probe COMMAND test_capabilities_probe)
+    umm_apply_fixture_dir_to_test(test_capabilities_probe)
 
     add_executable(test_sidecar tests/backend/test_sidecar.cpp)
     target_link_libraries(test_sidecar PRIVATE umm::umm)

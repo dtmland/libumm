@@ -1,11 +1,7 @@
 # Backend file-type coverage: Exiv2 and ExifTool
 
-> **Status (decision M2):** this is currently a **hand-maintained snapshot** of the upstream
-> tables. Per [docs/analysis/2026-09-27-plan-review-and-decisions.md](docs/analysis/2026-09-27-plan-review-and-decisions.md),
-> this document will become **generated output** of machine-readable capability data under
-> `registry/capabilities/`, with Tier A CI probing the pinned backend versions against that data
-> so drift fails a test ([implementation session 15](docs/implementation/15-capabilities-engine.md)).
-> Until then, treat the sources listed below as the drift check.
+> **GENERATED** from `registry/capabilities/` by `tools/registry/generate_supported_types.py`.
+> Do not edit by hand. Decision **M2**: capability data is machine-readable; this document is generated output. Tier A CI probes pinned backends against the data so drift fails a test.
 
 This is a snapshot of **file-type** (container) support in the two backends named in [concept.md](concept.md). It is **not** a list of IPTC/EXIF/XMP *properties*.
 
@@ -95,7 +91,7 @@ Exiv2 documents limited **read** of QuickTime, Matroska, and RIFF-based files, f
 | MKV | Read (rudimentary) | Matroska |
 | AVI | Read (rudimentary) | RIFF |
 | WAV | Read (rudimentary) | RIFF |
-| ASF | Read (rudimentary) | |
+| ASF | Read (rudimentary) | ASF |
 
 There is **no Exiv2 write path** for these, including **no location write**. Rudimentary read is not a documented GPS / IPTC / XMP location API.
 
@@ -117,10 +113,10 @@ ExifTool covers the Exiv2 still-image/RAW types above (except **TGA**, which it 
 | AVIF, HEIC, HEIF, JXL | **Read** (BMFF build) | **r/w** | Write requires ExifTool | Exiv2 **read** location; **write via ExifTool** |
 | CR3 | **Read** (BMFF build) | **r/w** | Matches the concept-doc CR3 example | Exiv2 **read** location; **write via ExifTool** |
 | MRW, RAF, RW2, SR2 | **Read** | **r/w** | Write requires ExifTool | Exiv2 **read** location; **write via ExifTool** |
-| GIF | Identify only | **r/w** | | Exiv2: **none**. ExifTool: **r/w** |
+| GIF | Identify only | **r/w** |  | Exiv2: **none**. ExifTool: **r/w** |
 | BMP | Identify only | **r** | Still no ExifTool write | Exiv2: **none**. ExifTool: **read only** |
 | TGA | Identify only | *not listed* | Exiv2-only recognition | Exiv2: **none**. ExifTool: not listed |
-| MOV / MP4 | Rudimentary read | **r/w** | | Exiv2: **no documented location write**. ExifTool: **r/w** (`GPSCoordinates` / XMP) |
+| MOV / MP4 | Rudimentary read | **r/w** |  | Exiv2: **no documented location write**. ExifTool: **r/w** (`GPSCoordinates` / XMP) |
 | MKV, AVI, WAV, ASF | Rudimentary read | **r** | Still no write in either backend | **Read-only** at best; **no location write** in either backend |
 
 ExifTool **create** (`c`) among types Exiv2 also has: **EXV**, **XMP**. (ExifTool also creates **EXIF**, **ICC**, **MIE**, **DR4**, **VRD** files; those are listed in section 4.)
@@ -233,13 +229,13 @@ Related TIFF-family still image: **HDP r/w**, **WDP r/w**. **THM r/w** is JPEG t
 
 | Type | ExifTool | Type | ExifTool | Type | ExifTool |
 |---|---|---|---|---|---|
-| 3FR | r | ARQ | r/w | CR3 siblings: CRM | r/w |
+| 3FR | r | ARQ | r/w | CRM | r/w |
 | CS1 | r/w | DCR | r | ERF | r/w |
 | FFF | r/w | GPR | r/w | IIQ | r/w |
 | INSP | r/w | K25 | r | KDC | r |
 | MEF | r/w | MOS | r/w | NRW | r/w |
 | ORI | r/w | RAW | r/w | RWL | r/w |
-| SRF | r | X3F | r/w | | |
+| SRF | r | X3F | r/w |  |  |
 
 ### Video and timed media (beyond the Exiv2 rudimentary set)
 
@@ -247,13 +243,14 @@ Related TIFF-family still image: **HDP r/w**, **WDP r/w**. **THM r/w** is JPEG t
 |---|---|---|---|---|---|
 | 3G2 | r/w | 3GP | r/w | DIVX | r |
 | DV | r | DVB | r/w | DVR-MS | r |
-| F4A/V | r/w | FLA | r | FLV | r |
-| GLV | r/w | INSV | r | LRV | r/w |
-| M2TS | r | M4A/V | r/w | MKS | r |
-| MPG | r | MQV | r/w | MXF | r |
-| OGV | r | R3D | r | RM | r |
-| SEQ | r | SWF | r | WEBM | r |
-| WMV | r | WTV | r | | |
+| F4A | r/w | F4V | r/w | FLA | r |
+| FLV | r | GLV | r/w | INSV | r |
+| LRV | r/w | M2TS | r | M4A | r/w |
+| M4V | r/w | MKS | r | MPG | r |
+| MQV | r/w | MXF | r | OGV | r |
+| R3D | r | RM | r | SEQ | r |
+| SWF | r | WEBM | r | WMV | r |
+| WTV | r |  |  |  |  |
 
 **M4A/V**, **F4A/V**, **3GP**, **3G2**, **LRV**, **MQV**, **GLV**, **DVB** are writable QuickTime-family relatives of MOV/MP4. **MKV / WEBM / MKA / MKS** remain **read-only** in ExifTool.
 
@@ -266,7 +263,7 @@ Related TIFF-family still image: **HDP r/w**, **WDP r/w**. **THM r/w** is JPEG t
 | FLAC | r | LA | r | MKA | r |
 | MP3 | r | MPC | r | OGG | r |
 | OFR | r | OPUS | r | RA | r |
-| WAV | r | WMA | r | WV | r |
+| WMA | r | WV | r |  |  |
 
 Almost all audio is **read-only**. **AAX** is the writable exception in this list (QuickTime-family). WAV is read-only in both backends.
 
@@ -293,7 +290,7 @@ Writable documents among these: **PDF**, **AI**, **IND**. Office Open XML (DOCX/
 | AAE | r | C2PA | r | DR4 | r/w/c |
 | EXIF | r/w/c | ICC | r/w/c | JSON | r |
 | MIE | r/w/c | MODD | r | NKSC | r/w |
-| ONP | r | VRD | r/w/c | XMP | r/w/c |
+| ONP | r | VRD | r/w/c |  |  |
 
 ### Fonts, executables, archives, scientific, and other
 
@@ -318,7 +315,9 @@ Writable documents among these: **PDF**, **AI**, **IND**. Office Open XML (DOCX/
 | TORRENT | r | TTC | r | TTF | r |
 | TXT | r | URL | r | VCF | r |
 | VNT | r | WOFF | r | WOFF2 | r |
-| ZIP | r | | | | |
+| ZIP | r |  |  |  |  |
+
+This group is transcribed at file-level r/w only (`coverage: partial`); per-category probes join in Stage 6.
 
 ---
 
