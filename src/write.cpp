@@ -64,6 +64,78 @@ WriteReport make_report(const RawChanges& changes, StorageDecision decision) {
   return report;
 }
 
+bool format_allowed(const std::vector<std::string>& allowed,
+                    std::string_view family) {
+  if (allowed.empty()) {
+    return true;
+  }
+  const std::string format = family_format(family);
+  for (const std::string& name : allowed) {
+    if (name == format) {
+      return true;
+    }
+  }
+  return false;
+}
+
+RawChanges filter_changes(RawChanges changes,
+                          const std::vector<std::string>& allowed) {
+  if (allowed.empty()) {
+    return changes;
+  }
+  RawChanges filtered;
+  for (RawEntry& entry : changes.upserts) {
+    if (format_allowed(allowed, entry.key.family)) {
+      filtered.upserts.push_back(std::move(entry));
+    }
+  }
+  for (RawKey& key : changes.removals) {
+    if (format_allowed(allowed, key.family)) {
+      filtered.removals.push_back(std::move(key));
+    }
+  }
+  return filtered;
+}
+
+Result<void> write_working_copy(Backend& backend,
+                                const std::filesystem::path& working,
+                                const RawChanges& changes, bool new_sidecar);
+
+RawChanges xmp_changes(const RawChanges& changes) {
+  RawChanges xmp;
+  for (const RawEntry& entry : changes.upserts) {
+    if (entry.key.family == "Xmp" || entry.key.key.rfind("Xmp.", 0) == 0) {
+      xmp.upserts.push_back(entry);
+    }
+  }
+  for (const RawKey& key : changes.removals) {
+    if (key.family == "Xmp" || key.key.rfind("Xmp.", 0) == 0) {
+      xmp.removals.push_back(key);
+    }
+  }
+  return xmp;
+}
+
+Result<void> commit_sidecar(Backend& backend, const std::filesystem::path& dest,
+                            const RawChanges& changes) {
+  std::error_code ec;
+  const bool exists = std::filesystem::is_regular_file(dest, ec);
+  return internal::mutate_file_atomically(
+      dest,
+      [&](const std::filesystem::path& working_copy) {
+        return write_working_copy(backend, working_copy, changes, !exists);
+      },
+      true);
+}
+
+Result<void> commit_embedded(Backend& backend, const std::filesystem::path& dest,
+                             const RawChanges& changes) {
+  return internal::mutate_file_atomically(
+      dest, [&](const std::filesystem::path& working_copy) {
+        return backend.writeRaw(working_copy, changes);
+      });
+}
+
 Result<void> write_working_copy(Backend& backend,
                                 const std::filesystem::path& working,
                                 const RawChanges& changes, bool new_sidecar) {
@@ -113,56 +185,44 @@ Result<WriteReport> write(const std::filesystem::path& media,
   StorageDecision decided = decision.value();
   decided.backend = backend->id();
 
+  RawChanges changes =
+      filter_changes(internal::write_sync(metadata), decided.formats);
+  const bool mixed = decided.method == StorageDecision::Method::mixed;
   const bool sidecar_write =
       decided.method == StorageDecision::Method::sidecar;
-  RawChanges changes = internal::write_sync(metadata);
-  if (!decided.formats.empty()) {
-    RawChanges filtered;
-    for (RawEntry& entry : changes.upserts) {
-      const std::string format = family_format(entry.key.family);
-      for (const std::string& allowed : decided.formats) {
-        if (allowed == format) {
-          filtered.upserts.push_back(std::move(entry));
-          break;
-        }
-      }
-    }
-    for (RawKey& key : changes.removals) {
-      const std::string format = family_format(key.family);
-      for (const std::string& allowed : decided.formats) {
-        if (allowed == format) {
-          filtered.removals.push_back(std::move(key));
-          break;
-        }
-      }
-    }
-    changes = std::move(filtered);
-  }
+  RawChanges sidecar = mixed ? xmp_changes(changes) : RawChanges{};
   WriteReport report = make_report(changes, decided);
   if (options.dry_run) {
     return report;
   }
 
+  if (mixed) {
+    Result<void> embedded = commit_embedded(*backend, media, changes);
+    if (!embedded.ok()) {
+      return embedded.error();
+    }
+    Result<void> side = commit_sidecar(*backend, sidecarPath(media), sidecar);
+    if (!side.ok()) {
+      Error error = side.error();
+      if (error.detail.empty()) {
+        error.detail = error.message;
+      }
+      error.message = "embedded write succeeded; sidecar write failed";
+      return error;
+    }
+    return report;
+  }
+
   if (sidecar_write) {
-    const std::filesystem::path dest = sidecarPath(media);
-    std::error_code ec;
-    const bool exists = std::filesystem::is_regular_file(dest, ec);
-    Result<void> written = internal::mutate_file_atomically(
-        dest,
-        [&](const std::filesystem::path& working_copy) {
-          return write_working_copy(*backend, working_copy, changes, !exists);
-        },
-        true);
+    Result<void> written =
+        commit_sidecar(*backend, sidecarPath(media), changes);
     if (!written.ok()) {
       return written.error();
     }
     return report;
   }
 
-  Result<void> written = internal::mutate_file_atomically(
-      media, [&](const std::filesystem::path& working_copy) {
-        return backend->writeRaw(working_copy, changes);
-      });
+  Result<void> written = commit_embedded(*backend, media, changes);
   if (!written.ok()) {
     return written.error();
   }

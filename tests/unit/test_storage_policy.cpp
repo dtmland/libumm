@@ -65,9 +65,9 @@ int main() {
   umm::WriteOptions required;
   required.policy = umm::StoragePolicy::sidecar_required;
   const auto req = umm::evaluateStorage(jpeg, required);
-  if (!req.ok() || req.value().method != umm::StorageDecision::Method::sidecar ||
-      !formats_are(req.value(), {"XMP"})) {
-    return fail("JPEG sidecar_required");
+  if (!req.ok() || req.value().method != umm::StorageDecision::Method::mixed ||
+      !formats_are(req.value(), {"XMP", "EXIF", "IPTC-IIM"})) {
+    return fail("JPEG sidecar_required mixed");
   }
 
   const auto xmp_pref = umm::evaluateStorage(sidecar, preferred);
@@ -80,6 +80,11 @@ int main() {
       xmp_embedded.error().code != umm::ErrorCode::unsupported_capability) {
     return fail("XMP embedded_only");
   }
+  const auto xmp_req = umm::evaluateStorage(sidecar, required);
+  if (!xmp_req.ok() ||
+      xmp_req.value().method != umm::StorageDecision::Method::sidecar) {
+    return fail("XMP sidecar_required");
+  }
 
   const auto tiff =
       umm::evaluateStorage(std::filesystem::path("a.tiff"), preferred);
@@ -87,6 +92,13 @@ int main() {
       tiff.value().method != umm::StorageDecision::Method::embedded ||
       !formats_are(tiff.value(), {"XMP", "EXIF", "IPTC-IIM"})) {
     return fail("TIFF embedded-capable");
+  }
+  const auto tiff_req =
+      umm::evaluateStorage(std::filesystem::path("a.tiff"), required);
+  if (!tiff_req.ok() ||
+      tiff_req.value().method != umm::StorageDecision::Method::mixed ||
+      !formats_are(tiff_req.value(), {"XMP", "EXIF", "IPTC-IIM"})) {
+    return fail("TIFF sidecar_required mixed");
   }
 
   const auto png =
@@ -120,11 +132,25 @@ int main() {
       !formats_are(dng.value(), {"XMP", "EXIF", "IPTC-IIM"})) {
     return fail("DNG embedded-capable");
   }
+  const auto dng_req =
+      umm::evaluateStorage(std::filesystem::path("a.dng"), required);
+  if (!dng_req.ok() ||
+      dng_req.value().method != umm::StorageDecision::Method::mixed ||
+      !formats_are(dng_req.value(), {"XMP", "EXIF", "IPTC-IIM"})) {
+    return fail("DNG sidecar_required mixed");
+  }
 
   const auto arw = umm::evaluateStorage(std::filesystem::path("a.arw"), preferred);
   if (!arw.ok() || arw.value().method != umm::StorageDecision::Method::sidecar ||
       !formats_are(arw.value(), {"XMP"})) {
     return fail("ARW sidecar_recommended");
+  }
+  const auto arw_req =
+      umm::evaluateStorage(std::filesystem::path("a.arw"), required);
+  if (!arw_req.ok() ||
+      arw_req.value().method != umm::StorageDecision::Method::sidecar ||
+      !formats_are(arw_req.value(), {"XMP"})) {
+    return fail("ARW sidecar_required stays sidecar");
   }
 
   const auto raf = umm::evaluateStorage(std::filesystem::path("a.raf"), preferred);
@@ -191,6 +217,15 @@ int main() {
       mp4_sc.value().method != umm::StorageDecision::Method::sidecar ||
       !formats_are(mp4_sc.value(), {"XMP"})) {
     return fail("MP4 sidecar_only");
+  }
+  umm::WriteOptions mp4_required = mp4_et;
+  mp4_required.policy = umm::StoragePolicy::sidecar_required;
+  const auto mp4_req =
+      umm::evaluateStorage(std::filesystem::path("a.mp4"), mp4_required);
+  if (!mp4_req.ok() ||
+      mp4_req.value().method != umm::StorageDecision::Method::mixed ||
+      !formats_are(mp4_req.value(), {"XMP", "QuickTime"})) {
+    return fail("MP4 sidecar_required mixed");
   }
 
   const auto bmp = umm::evaluateStorage(std::filesystem::path("a.bmp"), preferred);

@@ -32,7 +32,7 @@ Use it as a quick reference before starting work so you can confirm which phase 
 | 21 | [21-video-read-mp4-mov.md](implementation/21-video-read-mp4-mov.md) | Complete | ffmpeg pin + video fixtures; QuickTime key map; `iptc.video.*` read (ExifTool-primary); R3 keeps if-dispatch. |
 | 22 | [22-video-write-and-location.md](implementation/22-video-write-and-location.md) | Complete | ExifTool-only MP4/MOV write incl. `GPSCoordinates`; M3 `mdat` payload comparison. |
 | 23 | [23-conflict-api-detect-merge.md](implementation/23-conflict-api-detect-merge.md) | Complete | Public `detectConflict()` / `merge()` over the existing provenance model; losing sources retained. |
-| 24 | [24-synchronize-and-mixed-storage.md](implementation/24-synchronize-and-mixed-storage.md) | Not started | `synchronize()`; `Method::mixed`; `SidecarRequired` completion (session 14 deferral). |
+| 24 | [24-synchronize-and-mixed-storage.md](implementation/24-synchronize-and-mixed-storage.md) | Complete | `synchronize()`; `Method::mixed` for `sidecar_required`; missing-sidecar reads; session 14 mixed-sync deferral closed. |
 | 25 | [25-gps-track-import.md](implementation/25-gps-track-import.md) | Not started | GPX/NMEA/KML track import; text fixtures. |
 | 26 | [26-track-correlation-and-location-write.md](implementation/26-track-correlation-and-location-write.md) | Not started | `match(media, track)`; interpolation; location write via the normal path. |
 | 27 | [27-tier-b-corpus-infrastructure.md](implementation/27-tier-b-corpus-infrastructure.md) | Not started | Checksummed download corpus; closes makernote + proprietary-RAW deferrals. |

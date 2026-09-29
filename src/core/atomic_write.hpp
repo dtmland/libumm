@@ -17,6 +17,10 @@ enum class AtomicWriteFault {
 
 void set_atomic_write_fault_for_test(AtomicWriteFault fault);
 
+// Succeed this many mutate_file_atomically calls before honoring the
+// injected fault (session 24 second-carrier failure).
+void set_atomic_write_fault_skip_for_test(int succeed_before_fault);
+
 // Copy `destination` to a unique temp file in the same directory, run
 // `mutate` on that copy, then atomically replace the original
 // (POSIX rename / ReplaceFileW). On any failure the original is left

@@ -22,6 +22,7 @@ namespace {
 std::atomic<std::uint64_t> g_temp_counter{0};
 std::atomic<int> g_fault{
     static_cast<int>(AtomicWriteFault::none)};
+std::atomic<int> g_fault_skip{0};
 
 Error io_error(ErrorCode code, std::string message, std::string detail) {
   return Error{code, std::move(message), "", std::move(detail)};
@@ -128,6 +129,11 @@ Result<void> replace_file(const std::filesystem::path& destination,
 
 void set_atomic_write_fault_for_test(AtomicWriteFault fault) {
   g_fault.store(static_cast<int>(fault));
+  g_fault_skip.store(0);
+}
+
+void set_atomic_write_fault_skip_for_test(int succeed_before_fault) {
+  g_fault_skip.store(succeed_before_fault);
 }
 
 Result<void> mutate_file_atomically(
@@ -166,8 +172,19 @@ Result<void> mutate_file_atomically(
     }
   }
 
-  if (static_cast<AtomicWriteFault>(g_fault.load()) ==
-      AtomicWriteFault::before_write) {
+  const auto fault =
+      static_cast<AtomicWriteFault>(g_fault.load());
+  bool inject = false;
+  if (fault != AtomicWriteFault::none) {
+    int skip = g_fault_skip.load();
+    if (skip > 0) {
+      g_fault_skip.store(skip - 1);
+    } else {
+      inject = true;
+    }
+  }
+
+  if (inject && fault == AtomicWriteFault::before_write) {
     return with_temp_cleanup(
         io_error(ErrorCode::io_write_failed, "injected write failure",
                  "before_write"),
@@ -179,8 +196,7 @@ Result<void> mutate_file_atomically(
     return with_temp_cleanup(mutated.error(), temp);
   }
 
-  if (static_cast<AtomicWriteFault>(g_fault.load()) ==
-      AtomicWriteFault::before_rename) {
+  if (inject && fault == AtomicWriteFault::before_rename) {
     return with_temp_cleanup(
         io_error(ErrorCode::io_write_failed, "injected write failure",
                  "before_rename"),

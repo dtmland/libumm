@@ -31,6 +31,7 @@ add_library(umm
   src/metadata.cpp
   src/read.cpp
   src/conflict.cpp
+  src/sync.cpp
   src/write.cpp
   src/capabilities.cpp
   src/core/reconcile.cpp
@@ -320,6 +321,26 @@ if(UMM_BUILD_TESTS)
     endif()
     add_test(NAME test_sidecar COMMAND test_sidecar)
     umm_apply_fixture_dir_to_test(test_sidecar)
+
+    add_executable(test_sync tests/backend/test_sync.cpp)
+    target_link_libraries(test_sync PRIVATE umm::umm)
+    target_include_directories(test_sync
+      PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/backend"
+    )
+    umm_apply_fixture_dir(test_sync)
+    if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)
+      file(TO_CMAKE_PATH "${UMM_EXIFTOOL_SCRIPT}" UMM_TEST_SYNC_EXIFTOOL_SCRIPT)
+      file(TO_CMAKE_PATH "${UMM_PERL_EXECUTABLE}" UMM_TEST_SYNC_EXIFTOOL_PERL)
+      target_compile_definitions(test_sync
+        PRIVATE
+          "UMM_TEST_EXIFTOOL_SCRIPT=R\"(${UMM_TEST_SYNC_EXIFTOOL_SCRIPT})\""
+          "UMM_TEST_EXIFTOOL_PERL=R\"(${UMM_TEST_SYNC_EXIFTOOL_PERL})\""
+      )
+    endif()
+    add_test(NAME test_sync COMMAND test_sync)
+    umm_apply_fixture_dir_to_test(test_sync)
 
     add_executable(test_conflict_api tests/backend/test_conflict.cpp)
     target_link_libraries(test_conflict_api PRIVATE umm::umm)
