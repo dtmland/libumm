@@ -97,6 +97,10 @@ RawChanges filter_changes(RawChanges changes,
   return filtered;
 }
 
+Result<void> write_working_copy(Backend& backend,
+                                const std::filesystem::path& working,
+                                const RawChanges& changes, bool new_sidecar);
+
 RawChanges xmp_changes(const RawChanges& changes) {
   RawChanges xmp;
   for (const RawEntry& entry : changes.upserts) {

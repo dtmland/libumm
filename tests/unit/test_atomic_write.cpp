@@ -68,12 +68,12 @@ int main() {
   umm::internal::set_atomic_write_fault_for_test(
       umm::internal::AtomicWriteFault::before_rename);
   umm::internal::set_atomic_write_fault_skip_for_test(1);
-  const auto skipped = umm::internal::mutate_file_atomically(
+  const auto first_ok = umm::internal::mutate_file_atomically(
       file, [](const std::filesystem::path& working) {
         write_all(working, "first-ok");
         return umm::Result<void>{};
       });
-  if (!skipped.ok() || read_all(file) != "first-ok") {
+  if (!first_ok.ok() || read_all(file) != "first-ok") {
     umm::internal::set_atomic_write_fault_for_test(
         umm::internal::AtomicWriteFault::none);
     return fail("fault skip should allow the first mutate");
