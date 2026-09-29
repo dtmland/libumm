@@ -276,11 +276,7 @@ inline std::vector<std::string> source_families(
     const umm::PropertyValue& property) {
   std::vector<std::string> families;
   for (const umm::SourceRef& source : property.sources) {
-    std::string family = family_of_key(source.raw_key);
-    if (family.empty()) {
-      family = family_of_key(source.raw_key.empty() ? std::string_view{}
-                                                    : source.raw_key);
-    }
+    const std::string family = family_of_key(source.raw_key);
     if (family.empty()) {
       continue;
     }
@@ -528,8 +524,7 @@ inline std::string compare_property(const Ledger& ledger,
                                     std::string_view read_backend,
                                     std::string_view property_id,
                                     const umm::Value& expected,
-                                    const std::optional<umm::PropertyValue>& actual,
-                                    const umm::BackendCapability* reader) {
+                                    const std::optional<umm::PropertyValue>& actual) {
   if (!actual) {
     if (ledger_allows(ledger, file_type, property_id, write_backend,
                       read_backend, "representation")) {
@@ -552,7 +547,6 @@ inline std::string compare_property(const Ledger& ledger,
     }
     return "provenance " + std::string(property_id);
   }
-  (void)reader;
   return {};
 }
 
@@ -561,8 +555,7 @@ inline std::string compare_written(const Ledger& ledger,
                                    std::string_view write_backend,
                                    std::string_view read_backend,
                                    const umm::Metadata& expected,
-                                   const umm::Metadata& actual,
-                                   const umm::BackendCapability* reader) {
+                                   const umm::Metadata& actual) {
   for (const std::string& id : expected.propertyIds()) {
     const auto want = expected.get(id);
     if (!want) {
@@ -570,7 +563,7 @@ inline std::string compare_written(const Ledger& ledger,
     }
     const std::string issue =
         compare_property(ledger, file_type, write_backend, read_backend, id,
-                         want->value, actual.get(id), reader);
+                         want->value, actual.get(id));
     if (!issue.empty()) {
       return issue;
     }

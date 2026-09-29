@@ -32,7 +32,7 @@ key/array ordering. `.gitattributes` pins `tests/verification/**/*.json` to LF.
 | `id` | string | Stable identifier (`[a-z0-9-]+`) |
 | `file_types` | array of string | Capability type names this entry applies to; empty means any suite type |
 | `category` | string | Optional category (`exif`, `iptc_iim`, `xmp`, `gps_exif`, `named_place`, `xmp_location`, `container_gps`) |
-| `property_id` | string | Optional canonical property id; empty means any property in the case |
+| `property_id` | string | Canonical property id that may suppress a mismatch when `kind` is `representation`; empty is documentation-only and never suppresses |
 | `write_backend` | string | `exiv2`, `exiftool`, or empty (any) |
 | `read_backend` | string | `exiv2`, `exiftool`, or empty (any) |
 | `kind` | string | `representation`, `capability`, or `one-directional` |

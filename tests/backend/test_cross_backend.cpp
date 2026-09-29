@@ -170,7 +170,7 @@ int run_case(const Ledger& ledger, const Case& test, const std::string& writer,
   }
 
   const std::string mismatch = xbv::compare_written(
-      ledger, test.file_type, writer, reader, payload, first.value(), read_row);
+      ledger, test.file_type, writer, reader, payload, first.value());
   if (!mismatch.empty()) {
     std::fprintf(stderr, "%s %s->%s: %s\n", test.id, writer.c_str(),
                  reader.c_str(), mismatch.c_str());
@@ -204,8 +204,7 @@ int run_case(const Ledger& ledger, const Case& test, const std::string& writer,
     return 1;
   }
   const std::string drift = xbv::compare_written(
-      ledger, test.file_type, reader, writer, first.value(), second.value(),
-      write_row);
+      ledger, test.file_type, reader, writer, first.value(), second.value());
   if (!drift.empty()) {
     std::fprintf(stderr, "%s stability %s->%s->%s: %s\n", test.id,
                  writer.c_str(), reader.c_str(), writer.c_str(), drift.c_str());

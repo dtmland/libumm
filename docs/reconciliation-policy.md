@@ -3,7 +3,8 @@
 Status: **normative** for JPEG embedded read (session 12), write-synchronization
 (session 13), XMP sidecar pairing (session 14), MP4/MOV video read
 (session 21), ExifTool-only MP4/MOV write (session 22), the conflict
-resolution API (session 23), and `synchronize()` / mixed storage (session 24).
+resolution API (session 23), `synchronize()` / mixed storage (session 24),
+and the session 28 cross-backend comparison suite.
 
 This is the written, testable policy required by decision **S4a**. Classification
 and provenance shapes are those in `include/umm/provenance.hpp` (concept.md §15,
