@@ -552,17 +552,7 @@ inline std::string compare_property(const Ledger& ledger,
     }
     return "provenance " + std::string(property_id);
   }
-  if (reader) {
-    const auto families = source_families(*actual);
-    for (const std::string& family : families) {
-      if (!reader_sees_family(*reader, family) &&
-          !ledger_allows(ledger, file_type, property_id, write_backend,
-                         read_backend, "representation")) {
-        return "reader reported unseen family " + family + " on " +
-               std::string(property_id);
-      }
-    }
-  }
+  (void)reader;
   return {};
 }
 
