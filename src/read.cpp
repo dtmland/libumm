@@ -1,5 +1,6 @@
 #include "umm/umm.hpp"
 
+#include "core/read_internal.hpp"
 #include "core/reconcile.hpp"
 #include "core/sidecar.hpp"
 
@@ -44,7 +45,10 @@ Result<Metadata> finish_read(Result<Metadata> metadata, const ReadOptions& optio
 
 }  // namespace
 
-Result<Metadata> read(const std::filesystem::path& media, ReadOptions options) {
+namespace internal {
+
+Result<LoadedRead> load_read(const std::filesystem::path& media,
+                             const ReadOptions& options) {
   Backend* backend = select_backend(options);
   if (!backend) {
     if (!options.backend.empty()) {
@@ -64,38 +68,50 @@ Result<Metadata> read(const std::filesystem::path& media, ReadOptions options) {
   if (!raw.ok()) {
     return raw.error();
   }
-  RawDocument document = std::move(raw).value();
 
-  if (internal::is_xmp_sidecar_path(media)) {
-    keep_xmp_entries(document);
-    RawDocument embedded;
-    return finish_read(
-        internal::reconcile(embedded, backend->id(), &document, "XMP"), options,
-        backend->id());
+  LoadedRead loaded;
+  loaded.backend_id = backend->id();
+  loaded.embedded = std::move(raw).value();
+
+  if (is_xmp_sidecar_path(media)) {
+    keep_xmp_entries(loaded.embedded);
+    loaded.sidecar_document = std::move(loaded.embedded);
+    loaded.embedded = {};
+    loaded.has_sidecar = true;
+    loaded.file_type = "XMP";
+    return loaded;
   }
 
-  RawDocument sidecar_document;
-  const RawDocument* sidecar = nullptr;
   if (options.merge_sidecar) {
     if (const auto path = findSidecar(media)) {
       Result<RawDocument> sidecar_raw = backend->readRaw(*path);
       if (!sidecar_raw.ok()) {
         return sidecar_raw.error();
       }
-      sidecar_document = std::move(sidecar_raw).value();
-      keep_xmp_entries(sidecar_document);
-      sidecar = &sidecar_document;
+      loaded.sidecar_document = std::move(sidecar_raw).value();
+      keep_xmp_entries(loaded.sidecar_document);
+      loaded.has_sidecar = true;
     }
   }
 
-  std::string file_type;
   if (const auto caps = capabilities(media); caps.ok()) {
-    file_type = caps.value().file_type;
+    loaded.file_type = caps.value().file_type;
   }
+  return loaded;
+}
 
+}  // namespace internal
+
+Result<Metadata> read(const std::filesystem::path& media, ReadOptions options) {
+  Result<internal::LoadedRead> loaded = internal::load_read(media, options);
+  if (!loaded.ok()) {
+    return loaded.error();
+  }
+  internal::LoadedRead asset = std::move(loaded).value();
   return finish_read(
-      internal::reconcile(document, backend->id(), sidecar, file_type), options,
-      backend->id());
+      internal::reconcile(asset.embedded, asset.backend_id, asset.sidecar(),
+                          asset.file_type),
+      options, asset.backend_id);
 }
 
 }  // namespace umm

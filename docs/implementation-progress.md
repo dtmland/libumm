@@ -31,7 +31,7 @@ Use it as a quick reference before starting work so you can confirm which phase 
 | 20 | [20-vmh-registry-import.md](implementation/20-vmh-registry-import.md) | Complete | Vendored VMH 1.7; `registry/iptc-video/` importer + codegen; photo/video domains stay distinct. |
 | 21 | [21-video-read-mp4-mov.md](implementation/21-video-read-mp4-mov.md) | Complete | ffmpeg pin + video fixtures; QuickTime key map; `iptc.video.*` read (ExifTool-primary); R3 keeps if-dispatch. |
 | 22 | [22-video-write-and-location.md](implementation/22-video-write-and-location.md) | Complete | ExifTool-only MP4/MOV write incl. `GPSCoordinates`; M3 `mdat` payload comparison. |
-| 23 | [23-conflict-api-detect-merge.md](implementation/23-conflict-api-detect-merge.md) | Not started | Public `detectConflict()` / `merge()` over the existing provenance model. |
+| 23 | [23-conflict-api-detect-merge.md](implementation/23-conflict-api-detect-merge.md) | Complete | Public `detectConflict()` / `merge()` over the existing provenance model; losing sources retained. |
 | 24 | [24-synchronize-and-mixed-storage.md](implementation/24-synchronize-and-mixed-storage.md) | Not started | `synchronize()`; `Method::mixed`; `SidecarRequired` completion (session 14 deferral). |
 | 25 | [25-gps-track-import.md](implementation/25-gps-track-import.md) | Not started | GPX/NMEA/KML track import; text fixtures. |
 | 26 | [26-track-correlation-and-location-write.md](implementation/26-track-correlation-and-location-write.md) | Not started | `match(media, track)`; interpolation; location write via the normal path. |
