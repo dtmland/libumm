@@ -169,6 +169,36 @@ if(NOT EXISTS "${UMM_CONSUMER_FIXTURE}")
   message(FATAL_ERROR "consumer fixture missing: ${UMM_CONSUMER_FIXTURE}")
 endif()
 
+if(UMM_EXIV2_SHARED AND NOT UMM_EXIV2_SYSTEM)
+  file(GLOB_RECURSE _umm_shared_exiv2
+    "${UMM_INSTALL_PREFIX}/*/libexiv2.so*"
+    "${UMM_INSTALL_PREFIX}/*/libexiv2.*.dylib"
+    "${UMM_INSTALL_PREFIX}/*/libexiv2.dylib"
+    "${UMM_INSTALL_PREFIX}/*/exiv2.dll"
+    "${UMM_INSTALL_PREFIX}/*/libexiv2.dll"
+  )
+  if(NOT _umm_shared_exiv2)
+    message(FATAL_ERROR
+      "FetchContent-shared Exiv2 runtime library not found under ${UMM_INSTALL_PREFIX}")
+  endif()
+  foreach(_umm_so IN LISTS _umm_shared_exiv2)
+    get_filename_component(_umm_so_dir "${_umm_so}" DIRECTORY)
+    list(APPEND _umm_exiv2_runtime_dirs "${_umm_so_dir}")
+  endforeach()
+  if(_umm_exiv2_runtime_dirs)
+    list(REMOVE_DUPLICATES _umm_exiv2_runtime_dirs)
+    if(WIN32)
+      set(ENV{PATH} "${_umm_exiv2_runtime_dirs};$ENV{PATH}")
+    elseif(APPLE)
+      string(JOIN ":" _umm_dyld "${_umm_exiv2_runtime_dirs}")
+      set(ENV{DYLD_LIBRARY_PATH} "${_umm_dyld}:$ENV{DYLD_LIBRARY_PATH}")
+    else()
+      string(JOIN ":" _umm_ld "${_umm_exiv2_runtime_dirs}")
+      set(ENV{LD_LIBRARY_PATH} "${_umm_ld}:$ENV{LD_LIBRARY_PATH}")
+    endif()
+  endif()
+endif()
+
 umm_run(
   COMMAND "${_umm_consumer}" "${UMM_CONSUMER_FIXTURE}"
   RESULT_VARIABLE _rc

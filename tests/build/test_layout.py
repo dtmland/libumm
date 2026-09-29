@@ -151,6 +151,10 @@ class TestLayout(unittest.TestCase):
         self.assertIn("CMAKE_INSTALL_LIBDIR}/umm", install)
         self.assertIn("$<BUILD_INTERFACE:exiv2lib>", exiv2)
         self.assertNotIn("find_package(exiv2", config_in)
+        self.assertIn("find_dependency(exiv2 CONFIG)", config_in)
+        self.assertIn("_umm_need_exiv2", config_in)
+        self.assertIn("UMM_PRIVATE_EXIV2_KIND", config_in)
+        self.assertIn("SHARED IMPORTED", config_in)
         self.assertIn("does not locate Exiv2 as a CMake package", install)
         self.assertIn("find_package(umm 0.1 CONFIG REQUIRED)", consumer)
         self.assertIn("umm::umm", consumer)
@@ -161,6 +165,27 @@ class TestLayout(unittest.TestCase):
         self.assertIn('OR _umm_item STREQUAL "iconv"', install)
         self.assertIn("APPLE AND UMM_INSTALL_BUNDLE_EXIV2", install)
         self.assertIn("$<BUILD_INTERFACE:${_umm_iface_item}>", install)
+        self.assertIn("UMM_EXIV2_SHARED", install)
+        self.assertIn("UMM_INSTALL_SHARED_EXIV2", install)
+        self.assertIn("UMM_INSTALL_FIND_EXIV2", install)
+
+    def test_exiv2_shared_option_prefers_system_then_fetchcontent(self) -> None:
+        # Session 32 / P2: shared Exiv2 is packaging/substitutability, not a
+        # GPL escape. Default OFF must keep FetchContent static.
+        exiv2 = LIBUMM_EXIV2_CMAKE.read_text(encoding="utf-8")
+        readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("option(UMM_EXIV2_SHARED", exiv2)
+        self.assertIn("GPL still governs combined-work distribution", exiv2)
+        self.assertIn("find_package(exiv2 CONFIG QUIET)", exiv2)
+        self.assertIn("UMM_EXIV2_MIN_VERSION", exiv2)
+        self.assertIn("if(UMM_EXIV2_SHARED)", exiv2)
+        self.assertIn("set(BUILD_SHARED_LIBS ON)", exiv2)
+        self.assertIn("set(BUILD_SHARED_LIBS OFF)", exiv2)
+        self.assertIn("CMAKE_SKIP_INSTALL_RULES", exiv2)
+        self.assertIn("$<BUILD_INTERFACE:exiv2lib>", exiv2)
+        self.assertIn("UMM_EXIV2_SHARED", readme)
+        self.assertIn("GPL", readme)
+        self.assertIn("pinned", readme.lower())
 
     def test_exiv2_fetched_deps_skip_install_rules(self) -> None:
         # zlib 1.3.x install(TARGETS) has no EXPORT. Putting zlibstatic in
