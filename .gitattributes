@@ -1,3 +1,6 @@
+# POSIX helper must stay LF so Windows checkouts remain runnable via sh.
+tools/get-exiftool/install.sh text eol=lf
+
 # Importer output is UTF-8 with LF newlines and compared byte-for-byte.
 registry/**/*.json text eol=lf
 tests/corpus/**/*.json text eol=lf

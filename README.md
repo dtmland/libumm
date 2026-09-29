@@ -25,6 +25,17 @@ by `umm::Registry::standards()`, not by library semver. See
 
 `cmake --install` writes headers, the static library, and a CMake package (`ummConfig.cmake`) so a downstream project can `find_package(umm CONFIG)` and link `umm::umm`. The static default (decision M4c) installs private Exiv2 (and FetchContent Expat/zlib) archives as IMPORTED link dependencies of that export; consumers do not need an Exiv2 CMake package. FetchContent Exiv2/Expat/zlib headers and CMake files are not installed. Binary prefixes also install `LICENSE`, `NOTICE.md`, `THIRD-PARTY-NOTICES.md`, `licenses/`, and `tools/build/corresponding-source.json` under `share/doc/libumm/` (decision P1).
 
+## Getting ExifTool
+
+libumm locates ExifTool at runtime and never bundles it (decision S1c). Release users who want the ExifTool backend should run the host-native helper, which reads the pin in `tools/build/backends.env`, downloads that archive from upstream, verifies SHA-256 (fail-closed), and extracts it to a per-user prefix:
+
+- Linux and macOS: `sh tools/get-exiftool/install.sh`
+- Windows (PowerShell 5.1+): `powershell -ExecutionPolicy Bypass -File tools/get-exiftool/install.ps1`
+
+The scripts write nothing outside the install prefix and cache directory. They do not modify PATH, shell profiles, or system directories. After a successful install they print the `UMM_EXIFTOOL` environment line for the extracted `exiftool` script, and the equivalent explicit-config setting (`ExifToolConfig.exiftool_script`). Discovery order is explicit config, then `UMM_EXIFTOOL`, then PATH. On Windows, Perl is a separate prerequisite; if `perl` is missing, `install.ps1` prints the pinned Strawberry Perl version instead of pretending success.
+
+Use `--check` / `-Check` to verify an existing prefix against the pin. Override the prefix with `--prefix` / `-Prefix`.
+
 ## Build options
 
 - `UMM_EXIV2_SHARED` (default **OFF**): link the Exiv2 backend against a shared

@@ -103,8 +103,10 @@ Behavior must be equivalent; flags may follow each platform's convention (`--pre
    CLI doctor).
 
 Unix tools: `curl` (or fail with a clear "install curl" message), `tar`, and `sha256sum` or
-`shasum -a 256`. Windows tools: `curl.exe` / `Invoke-WebRequest`, `tar`, `Get-FileHash`. Do not
-fall back to Python if a native tool is missing.
+`shasum -a 256`. Windows tools: `curl.exe` / `Invoke-WebRequest`, `tar`, and .NET SHA256
+(`[System.Security.Cryptography.SHA256]`). Do not use `Get-FileHash`: it is missing on some
+Windows PowerShell 5.1 hosts, including GitHub Actions `windows-2025`. Do not fall back to
+Python if a native tool is missing.
 
 The scripts write nothing outside the prefix and cache dir. They never modify PATH, shell
 profiles, or system directories.

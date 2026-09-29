@@ -109,6 +109,8 @@ class Backend {
 // Discovery order: non-empty paths here -> UMM_EXIFTOOL env var -> PATH.
 // An explicit path that does not exist is absent (no env/PATH fallback).
 // Perl: non-empty perl_interpreter here, else PATH (`perl` / `perl.exe`).
+// End-user acquisition is tools/get-exiftool/ (session 33); those scripts
+// write only to the install prefix and cache dir (never PATH/profiles).
 struct ExifToolConfig {
   std::filesystem::path exiftool_script;  // empty = discover
   std::filesystem::path perl_interpreter; // empty = discover

@@ -26,8 +26,10 @@ them in release archives.
      not shell out to `pins.sh`;
   2. downloads the pinned archive from upstream into a cache dir, using native tools (`curl` /
      `sha256sum` or `shasum -a 256` / `tar` on Unix; `curl.exe` or `Invoke-WebRequest` /
-     `Get-FileHash` / `tar` on Windows). Missing tools fail with an install hint — no Python
-     fallback;
+     .NET SHA256 / `tar` on Windows). Missing tools fail with an install hint — no Python
+     fallback. Windows hashing uses `[System.Security.Cryptography.SHA256]` rather than
+     `Get-FileHash`, which is missing on some PowerShell 5.1 hosts (including GitHub Actions
+     `windows-2025`);
   3. verifies SHA-256 **fail-closed** (mismatch = delete + non-zero exit);
   4. extracts to a per-user prefix (`--prefix` / `-Prefix` override; defaults:
      `$XDG_DATA_HOME/umm/exiftool-<ver>` / `%LOCALAPPDATA%\umm\exiftool-<ver>` /
