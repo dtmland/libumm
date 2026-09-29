@@ -114,6 +114,20 @@ class TestWorkflow(unittest.TestCase):
         self.assertIn("-DUMM_REQUIRE_EXIV2=ON", text)
         self.assertIn("backends-acquired.txt", text)
         self.assertIn("hendrikmuhs/ccache-action", text)
+        self.assertIn("tier_b", text)
+        self.assertIn("UMM_TIER_B=ON", text)
+        self.assertIn(".cache/corpus", text)
+        self.assertIn("tests/corpus/manifest.json", text)
+        self.assertRegex(text, r"hashFiles\('tests/corpus/manifest\.json'\)")
+        self.assertIn("tier-b", text)
+        self.assertIn(
+            "cmake --preset default -DUMM_REQUIRE_EXIV2=ON -DUMM_REQUIRE_EXIFTOOL=ON ${{ inputs.failing_selftest && '-DUMM_ENABLE_FAILING_SELFTEST=ON' || '' }}",
+            text,
+        )
+        self.assertNotIn(
+            "-DUMM_TIER_B=ON ${{ inputs.failing_selftest",
+            text,
+        )
 
 
 if __name__ == "__main__":

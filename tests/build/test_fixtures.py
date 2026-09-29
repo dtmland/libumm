@@ -459,8 +459,19 @@ class TestFixtureCorpus(unittest.TestCase):
             )
         open_items = parse_open_items(text)
         self.assertTrue(
-            any("RAF/RW2/SR2" in item for item in open_items),
-            "MANIFEST must defer proprietary RAW to Tier B",
+            any(
+                "RAF/RW2/SR2" in item and "tests/corpus/manifest.json" in item
+                for item in open_items
+            ),
+            "MANIFEST must point proprietary RAW at the Tier B corpus",
+        )
+        self.assertTrue(
+            any(
+                "`jpeg/makernote.jpg`" in item
+                and "tests/corpus/manifest.json" in item
+                for item in open_items
+            ),
+            "MANIFEST must point jpeg/makernote.jpg at the Tier B corpus",
         )
 
     def test_video_matrix_is_present(self) -> None:

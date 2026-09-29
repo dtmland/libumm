@@ -11,6 +11,7 @@ option(UMM_BUILD_TESTS "Build unit tests" ON)
 option(UMM_ENABLE_FAILING_SELFTEST "Build and register the deliberately failing self-test" OFF)
 option(UMM_REQUIRE_EXIV2 "Require Exiv2 at configure time" OFF)
 option(UMM_REQUIRE_EXIFTOOL "Require ExifTool at configure time" OFF)
+option(UMM_TIER_B "Fetch and test the checksummed Tier B corpus" OFF)
 
 if(NOT CMAKE_CXX_COMPILER_LAUNCHER)
   find_program(UMM_CCACHE ccache)
@@ -74,6 +75,7 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/LibummExiv2.cmake")
 
 if(UMM_BUILD_TESTS)
   enable_testing()
+  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/LibummCorpus.cmake")
 
   set(UMM_FIXTURES_DIR "${PROJECT_SOURCE_DIR}/tests/fixtures")
   file(TO_CMAKE_PATH "${UMM_FIXTURES_DIR}" UMM_FIXTURES_DIR_CMAKE)
@@ -257,6 +259,7 @@ if(UMM_BUILD_TESTS)
         "${CMAKE_CURRENT_SOURCE_DIR}/tests/backend"
     )
     umm_apply_fixture_dir(test_write)
+    umm_apply_corpus_dir(test_write)
     if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)
       file(TO_CMAKE_PATH "${UMM_EXIFTOOL_SCRIPT}" UMM_TEST_WRITE_EXIFTOOL_SCRIPT)
       file(TO_CMAKE_PATH "${UMM_PERL_EXECUTABLE}" UMM_TEST_WRITE_EXIFTOOL_PERL)
@@ -268,6 +271,7 @@ if(UMM_BUILD_TESTS)
     endif()
     add_test(NAME test_write COMMAND test_write)
     umm_apply_fixture_dir_to_test(test_write)
+    umm_apply_corpus_dir_to_test(test_write)
 
     add_executable(test_read tests/backend/test_read.cpp)
     target_link_libraries(test_read PRIVATE umm::umm)
@@ -386,6 +390,46 @@ if(UMM_BUILD_TESTS)
     endif()
     add_test(NAME test_track_match COMMAND test_track_match)
     umm_apply_fixture_dir_to_test(test_track_match)
+
+    if(UMM_CORPUS_READY)
+      add_executable(test_tier_b tests/backend/test_tier_b.cpp)
+      target_link_libraries(test_tier_b PRIVATE umm::umm)
+      target_include_directories(test_tier_b
+        PRIVATE
+          "${CMAKE_CURRENT_SOURCE_DIR}/tests/backend"
+      )
+      umm_apply_fixture_dir(test_tier_b)
+      umm_apply_corpus_dir(test_tier_b)
+      if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)
+        file(TO_CMAKE_PATH "${UMM_EXIFTOOL_SCRIPT}" UMM_TEST_TIER_B_EXIFTOOL_SCRIPT)
+        file(TO_CMAKE_PATH "${UMM_PERL_EXECUTABLE}" UMM_TEST_TIER_B_EXIFTOOL_PERL)
+        target_compile_definitions(test_tier_b
+          PRIVATE
+            "UMM_TEST_EXIFTOOL_SCRIPT=R\"(${UMM_TEST_TIER_B_EXIFTOOL_SCRIPT})\""
+            "UMM_TEST_EXIFTOOL_PERL=R\"(${UMM_TEST_TIER_B_EXIFTOOL_PERL})\""
+        )
+      endif()
+      add_test(NAME test_tier_b COMMAND test_tier_b)
+      umm_apply_fixture_dir_to_test(test_tier_b)
+      umm_apply_corpus_dir_to_test(test_tier_b)
+      add_test(
+        NAME tier_b_fetch
+        COMMAND "${Python3_EXECUTABLE}" "${UMM_CORPUS_FETCHER}"
+                --manifest "${UMM_CORPUS_MANIFEST}"
+                --dest "${UMM_CORPUS_DIR}"
+                --offline
+                --require
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+      )
+    endif()
+  endif()
+
+  if(NOT UMM_TIER_B)
+    add_test(
+      NAME tier_b_skipped
+      COMMAND "${CMAKE_COMMAND}" -E echo
+              "SKIP: Tier B corpus not requested (UMM_TIER_B=OFF)"
+    )
   endif()
 
   if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)

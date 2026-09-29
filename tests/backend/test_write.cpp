@@ -422,16 +422,51 @@ int test_unknown(const std::string& backend) {
     }
   }
   const auto makernote = raw_jpeg("makernote.jpg");
-  if (std::filesystem::exists(makernote)) {
+  const bool have_makernote = std::filesystem::exists(makernote);
+#ifdef UMM_TIER_B
+  if (!have_makernote) {
+    return fail("Tier B makernote.jpg missing");
+  }
+#endif
+  if (have_makernote) {
     const auto mn = copy_fixture(makernote, backend + "-makernote.jpg");
-    const auto mn_before = read_bytes(mn);
+    const auto mn_before = raw->readRaw(mn);
+    if (!mn_before.ok()) {
+      return fail("makernote read before write");
+    }
+    std::vector<umm::RawEntry> maker_entries;
+    for (const auto& entry : mn_before.value().entries) {
+      if (entry.key.key.find("MakerNote") != std::string::npos ||
+          entry.key.key.find("Canon") != std::string::npos) {
+        maker_entries.push_back(entry);
+      }
+    }
+    if (maker_entries.empty()) {
+      return fail("makernote sample has no MakerNote tags");
+    }
     umm::Metadata extra;
-    (void)extra.setHeadline("unrelated-mn");
+    if (!extra.setHeadline("unrelated-mn").ok()) {
+      return fail("makernote setHeadline");
+    }
     const auto mn_written = umm::write(mn, extra, opts(backend));
     if (!mn_written.ok()) {
+      std::fprintf(stderr, "makernote write failed: %s (%s)\n",
+                   mn_written.error().message.c_str(),
+                   mn_written.error().detail.c_str());
       return fail("makernote write failed");
     }
-    (void)mn_before;
+    const auto mn_after = raw->readRaw(mn);
+    if (!mn_after.ok()) {
+      return fail("makernote read after write");
+    }
+    for (const auto& entry : maker_entries) {
+      const auto later = raw_value_of(mn_after.value(), entry.key.key);
+      if (!later || *later != entry.value) {
+        std::fprintf(stderr, "MakerNote key altered: %s\n",
+                     entry.key.key.c_str());
+        return fail("makernote tags were altered");
+      }
+    }
   }
   return 0;
 }

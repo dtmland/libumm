@@ -17,11 +17,11 @@ Use it as a quick reference before starting work so you can confirm which phase 
 | 06 | [06-registry-importer.md](implementation/06-registry-importer.md) | Complete | IPTC TR 2025.1 vendored; importer + Core 1.5/Extension 1.9 registry JSON. |
 | 07 | [07-registry-codegen.md](implementation/07-registry-codegen.md) | Complete | Generated `umm::Registry` tables from IPTC JSON + partial EXIF overlay. |
 | 08 | [08-core-semantic-model.md](implementation/08-core-semantic-model.md) | Complete | `Result`/`Value`/`Metadata`; rating is `iptc.photo.imageRating`; GPS is `exif.gps.position`. |
-| 09 | [09-fixture-corpus.md](implementation/09-fixture-corpus.md) | Complete | Tier A JPEG+XMP corpus, generator, MANIFEST, CMake fixture path. `makernote.jpg` deferred (M6). |
+| 09 | [09-fixture-corpus.md](implementation/09-fixture-corpus.md) | Complete | Tier A JPEG+XMP corpus, generator, MANIFEST, CMake fixture path. `makernote.jpg` closed in session 27 (Tier B). |
 | 10 | [10-exiv2-backend-read.md](implementation/10-exiv2-backend-read.md) | Complete | Backend contract + Exiv2 `readRaw()` for JPEG fixtures. |
 | 11 | [11-exiftool-adapter-read.md](implementation/11-exiftool-adapter-read.md) | Complete | ExifTool `-stay_open` JSON `readRaw()`, Group1:Tag translation, process reuse/timeout/unavailable tests. |
 | 12 | [12-reconciliation-engine.md](implementation/12-reconciliation-engine.md) | Complete | Policy + `umm::read` maps raw JPEG entries to canonical Metadata with provenance. |
-| 13 | [13-write-path-and-safety.md](implementation/13-write-path-and-safety.md) | Complete | JPEG `umm::write` through both backends; write-sync; temp+atomic rename (M3). `makernote.jpg` still deferred (M6). |
+| 13 | [13-write-path-and-safety.md](implementation/13-write-path-and-safety.md) | Complete | JPEG `umm::write` through both backends; write-sync; temp+atomic rename (M3). MakerNote preservation is the session 27 Tier B sample. |
 | 14 | [14-xmp-sidecar-and-policy.md](implementation/14-xmp-sidecar-and-policy.md) | Complete | JPEG+XMP sidecar pairing, read merge/conflict, sidecar-only write, StoragePolicy. Mixed sync deferred (Stage 8). |
 | 15 | [15-capabilities-engine.md](implementation/15-capabilities-engine.md) | Complete | `umm::capabilities()` from `registry/capabilities/`; generated `supported-types.md`; JPEG/XMP probe drift tests. |
 | 16 | [16-format-dispatch-generalization.md](implementation/16-format-dispatch-generalization.md) | Complete | Capability-driven write dispatch replaces the JPEG gate; property-ID dedup; hardening (review R1/R3/R8). |
@@ -35,7 +35,7 @@ Use it as a quick reference before starting work so you can confirm which phase 
 | 24 | [24-synchronize-and-mixed-storage.md](implementation/24-synchronize-and-mixed-storage.md) | Complete | `synchronize()`; `Method::mixed` for `sidecar_required`; missing-sidecar reads; session 14 mixed-sync deferral closed. |
 | 25 | [25-gps-track-import.md](implementation/25-gps-track-import.md) | Complete | `importTrack`; GPX/NMEA/KML; in-repo XML scanner (no new dep); text fixtures. |
 | 26 | [26-track-correlation-and-location-write.md](implementation/26-track-correlation-and-location-write.md) | Complete | `matchTrack`; interpolation; naive timestamps require an explicit offset; location write via `umm::write`. |
-| 27 | [27-tier-b-corpus-infrastructure.md](implementation/27-tier-b-corpus-infrastructure.md) | Not started | Checksummed download corpus; closes makernote + proprietary-RAW deferrals. |
+| 27 | [27-tier-b-corpus-infrastructure.md](implementation/27-tier-b-corpus-infrastructure.md) | Complete | Checksummed download corpus; closes makernote + proprietary-RAW deferrals. |
 | 28 | [28-cross-backend-verification.md](implementation/28-cross-backend-verification.md) | Not started | Write-with-one/read-with-other comparison suite; divergence ledger. |
 
 ## How to use this document

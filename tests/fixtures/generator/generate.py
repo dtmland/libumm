@@ -1268,12 +1268,12 @@ def generate(
         output_dir,
         entries,
         open_items=[
-            "`jpeg/makernote.jpg` deferred to Stage 4: ExifTool cannot create a "
-            "vendor MakerNote structure from scratch without a camera-authored "
-            "template (decision M6 forbids committing a third-party camera file).",
-            "Proprietary RAW (RAF/RW2/SR2-class) deferred to Tier B (session 27): "
-            "not synthesizable small (decision M6); session 19 covers DNG plus "
-            "the read-only-RAW sidecar-write pattern only.",
+            "`jpeg/makernote.jpg` is not synthesizable (decision M6). Closed by "
+            "Tier B sample `jpeg-makernote` in `tests/corpus/manifest.json` "
+            "(session 27); never committed.",
+            "Proprietary RAW (RAF/RW2/SR2-class) is not synthesizable small "
+            "(decision M6). Closed by Tier B sample `raw-panasonic-rw2` in "
+            "`tests/corpus/manifest.json` (session 27); never committed.",
         ],
     )
 

@@ -15,6 +15,10 @@ LIBUMM_PINS_CMAKE = REPO_ROOT / "cmake" / "LibummPins.cmake"
 LIBUMM_EXIFTOOL_CMAKE = REPO_ROOT / "cmake" / "LibummExifTool.cmake"
 LIBUMM_EXIV2_CMAKE = REPO_ROOT / "cmake" / "LibummExiv2.cmake"
 LIBUMM_REGISTRY_CMAKE = REPO_ROOT / "cmake" / "LibummRegistry.cmake"
+LIBUMM_CORPUS_CMAKE = REPO_ROOT / "cmake" / "LibummCorpus.cmake"
+CORPUS_FETCHER = REPO_ROOT / "tools" / "corpus" / "fetch.py"
+CORPUS_MANIFEST = REPO_ROOT / "tests" / "corpus" / "manifest.json"
+CORPUS_SCHEMA = REPO_ROOT / "tests" / "corpus" / "schema.md"
 EXIFTOOL_SMOKE = REPO_ROOT / "tests" / "backend" / "test_exiftool_smoke.cmake"
 EXIV2_SMOKE = REPO_ROOT / "tests" / "backend" / "test_exiv2_smoke.cpp"
 EXIV2_READ = REPO_ROOT / "tests" / "backend" / "test_exiv2_read.cpp"
@@ -56,6 +60,10 @@ class TestLayout(unittest.TestCase):
             LIBUMM_EXIFTOOL_CMAKE,
             LIBUMM_EXIV2_CMAKE,
             LIBUMM_REGISTRY_CMAKE,
+            LIBUMM_CORPUS_CMAKE,
+            CORPUS_FETCHER,
+            CORPUS_MANIFEST,
+            CORPUS_SCHEMA,
             EXIFTOOL_SMOKE,
             EXIV2_SMOKE,
             EXIV2_READ,
