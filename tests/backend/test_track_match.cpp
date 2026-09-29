@@ -56,16 +56,17 @@ umm::DateTime utc_hms(int hour, int minute, int second) {
 
 int write_gps(const std::filesystem::path& file, const umm::TrackMatch& match,
               const umm::WriteOptions& wopts, const umm::ReadOptions& ropts) {
-  auto metadata = umm::read(file, ropts);
-  if (!metadata.ok()) {
+  auto loaded = umm::read(file, ropts);
+  if (!loaded.ok()) {
     std::fprintf(stderr, "read before gps write: %s\n",
-                 metadata.error().message.c_str());
+                 loaded.error().message.c_str());
     return 1;
   }
-  if (!metadata.value().setGps(match.position).ok()) {
+  umm::Metadata metadata = loaded.value();
+  if (!metadata.setGps(match.position).ok()) {
     return fail("setGps");
   }
-  const auto written = umm::write(file, metadata.value(), wopts);
+  const auto written = umm::write(file, metadata, wopts);
   if (!written.ok()) {
     std::fprintf(stderr, "gps write failed: %s (%s)\n",
                  written.error().message.c_str(), written.error().detail.c_str());

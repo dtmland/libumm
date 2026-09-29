@@ -7,7 +7,6 @@
 #include <fstream>
 #include <string>
 #include <string_view>
-#include <variant>
 
 #ifndef UMM_FIXTURES_DIR
 #error "UMM_FIXTURES_DIR must be defined by the build"
@@ -338,8 +337,8 @@ int main() {
     return fail("out-of-window refusal");
   }
 
-  const auto missing = umm::matchTrack(umm::Metadata{}, straight);
-  if (missing.ok() || missing.error().code != umm::ErrorCode::invalid_value) {
+  const auto no_date = umm::matchTrack(umm::Metadata{}, straight);
+  if (no_date.ok() || no_date.error().code != umm::ErrorCode::invalid_value) {
     return fail("missing capture timestamp");
   }
 
