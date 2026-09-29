@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="libumm" xmlns="http://www.topografix.com/GPX/1/1">
+  <trk>
+    <trkseg>
+      <trkpt lat="not-a-number" lon="-122.4194">
+        <time>2020-01-02T03:04:05Z</time>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>

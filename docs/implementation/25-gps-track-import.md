@@ -55,3 +55,9 @@ demand).
 ## References
 
 concept.md §16, §29; docs/test-media-plan.md §4 (track fixtures row); decision M1.
+
+## Implementation notes
+
+- **XML dependency:** GPX and KML are XML, but libumm core has no XML library. Exiv2's Expat is an acquisition-internal detail (optional, private, not linked into `umm` when Exiv2 is off) and is not a public core dependency. The in-repo fixtures are tiny, well-formed, and need only `trkpt` / `ele` / `time` (GPX) and `Track` / `when` / `coord` (KML gx:Track). Session 25 therefore uses a focused in-repo scanner rather than vendoring Expat or another XML parser. NMEA is not XML.
+- **Points imported:** GPX `trkpt` only (not `wpt`/`rtept`). NMEA `RMC` (date+position) plus `GGA` (altitude merged onto the same UTC timestamp) and `ZDA` (date). KML `gx:Track` parallel `when`/`coord` arrays (`coord` is lon lat [alt]).
+- **Time:** all stored DateTime values are UTC with `utc_offset_minutes == 0`. GPX/KML ISO-8601 offsets are converted; a missing zone designator is UTC (these formats), not naive local time. NMEA times of day combine with the latest RMC/ZDA date. Points are stable-sorted by UTC instant; duplicate timestamps keep file order. HDOP is not mapped to `accuracy_meters`.

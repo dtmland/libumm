@@ -91,6 +91,16 @@ VIDEO_FILES = (
     "video/conflicting.mp4",
 )
 
+# docs/implementation/25-gps-track-import.md — hand-authored text tracks.
+TRACK_FILES = (
+    "tracks/straight.gpx",
+    "tracks/nmea.nmea",
+    "tracks/gaps.gpx",
+    "tracks/straight.kml",
+    "tracks/malformed.gpx",
+    "tracks/malformed.nmea",
+)
+
 ENTRY_RE = re.compile(
     r"^### `([^`]+)`\n"
     r"\n"
@@ -374,6 +384,27 @@ class TestFixtureCorpus(unittest.TestCase):
             ),
             ".gitattributes must pin XMP sidecars to LF",
         )
+        self.assertTrue(
+            any(
+                "tests/fixtures/**/*.gpx" in line and "eol=lf" in line
+                for line in lines
+            ),
+            ".gitattributes must pin GPX tracks to LF",
+        )
+        self.assertTrue(
+            any(
+                "tests/fixtures/**/*.nmea" in line and "eol=lf" in line
+                for line in lines
+            ),
+            ".gitattributes must pin NMEA tracks to LF",
+        )
+        self.assertTrue(
+            any(
+                "tests/fixtures/**/*.kml" in line and "eol=lf" in line
+                for line in lines
+            ),
+            ".gitattributes must pin KML tracks to LF",
+        )
 
     def test_section_22_is_present_or_open(self) -> None:
         text = MANIFEST.read_text(encoding="utf-8")
@@ -460,6 +491,29 @@ class TestFixtureCorpus(unittest.TestCase):
                 data.startswith(b"RIFF") and data[8:12] == b"WEBP",
                 f"{relpath} is not WebP magic",
             )
+
+    def test_track_matrix_is_present(self) -> None:
+        text = MANIFEST.read_text(encoding="utf-8")
+        entries = parse_manifest(text)
+        for relpath in TRACK_FILES:
+            path = FIXTURES / relpath
+            self.assertIn(relpath, entries, f"{relpath} missing from MANIFEST.md")
+            self.assertTrue(path.is_file(), f"missing fixture {relpath}")
+            self.assertNotIn(b"\r\n", path.read_bytes(), f"{relpath} must be LF")
+            self.assertIn("hand-authored", entries[relpath]["command"])
+
+    def test_generator_copies_hand_authored_tracks(self) -> None:
+        gen = load_generator()
+        gen.copy_hand_authored_tracks(FIXTURES)
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            gen.copy_hand_authored_tracks(out)
+            for relpath in TRACK_FILES:
+                dest = out / relpath
+                self.assertTrue(dest.is_file(), relpath)
+                self.assertEqual(
+                    (FIXTURES / relpath).read_bytes(), dest.read_bytes(), relpath
+                )
 
     def test_manifest_matches_files_on_disk(self) -> None:
         text = MANIFEST.read_text(encoding="utf-8")
@@ -696,7 +750,9 @@ class TestFixtureExifTool(unittest.TestCase):
                 committed = FIXTURES / relpath
                 generated = out / relpath
                 self.assertTrue(generated.is_file(), relpath)
-                if relpath == "corrupt/truncated.jpg":
+                if relpath == "corrupt/truncated.jpg" or relpath.startswith(
+                    "tracks/"
+                ):
                     self.assertEqual(committed.read_bytes(), generated.read_bytes())
                     continue
                 left = comparable_metadata(
