@@ -22,7 +22,12 @@ Apache-2.0. Shared linkage remains a supported configuration (decision
 `docs/analysis/2026-09-29-stage-10-review-release-and-licensing.md` (decision
 **P1**) for the full release-compliance requirements.
 
-Exiv2 is not bundled in this repository.
+Release-grade third-party notices, verbatim license texts, and the
+corresponding-source pin manifest are `THIRD-PARTY-NOTICES.md`, `licenses/`,
+and `tools/build/corresponding-source.json`. An installed prefix places those
+artifacts under `share/doc/libumm/` (plus `LICENSE` and this `NOTICE.md`).
+
+Exiv2 is not bundled in this source repository.
 
 ### ExifTool
 

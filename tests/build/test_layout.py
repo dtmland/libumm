@@ -17,6 +17,15 @@ LIBUMM_EXIV2_CMAKE = REPO_ROOT / "cmake" / "LibummExiv2.cmake"
 LIBUMM_REGISTRY_CMAKE = REPO_ROOT / "cmake" / "LibummRegistry.cmake"
 LIBUMM_CORPUS_CMAKE = REPO_ROOT / "cmake" / "LibummCorpus.cmake"
 LIBUMM_INSTALL_CMAKE = REPO_ROOT / "cmake" / "LibummInstall.cmake"
+THIRD_PARTY_NOTICES = REPO_ROOT / "THIRD-PARTY-NOTICES.md"
+NOTICE_MD = REPO_ROOT / "NOTICE.md"
+CORRESPONDING_SOURCE = (
+    REPO_ROOT / "tools" / "build" / "corresponding-source.json"
+)
+CORRESPONDING_SOURCE_GENERATOR = (
+    REPO_ROOT / "tools" / "build" / "generate_corresponding_source.py"
+)
+LICENSES_DIR = REPO_ROOT / "licenses"
 ABI_POLICY = REPO_ROOT / "docs" / "abi-policy.md"
 VERSION_HPP = REPO_ROOT / "include" / "umm" / "version.hpp"
 UMM_CONFIG_IN = REPO_ROOT / "cmake" / "ummConfig.cmake.in"
@@ -73,6 +82,14 @@ class TestLayout(unittest.TestCase):
             LIBUMM_REGISTRY_CMAKE,
             LIBUMM_CORPUS_CMAKE,
             LIBUMM_INSTALL_CMAKE,
+            THIRD_PARTY_NOTICES,
+            NOTICE_MD,
+            CORRESPONDING_SOURCE,
+            CORRESPONDING_SOURCE_GENERATOR,
+            LICENSES_DIR / "GPL-2.0.txt",
+            LICENSES_DIR / "GPL-3.0.txt",
+            LICENSES_DIR / "Expat.txt",
+            LICENSES_DIR / "Zlib.txt",
             ABI_POLICY,
             VERSION_HPP,
             UMM_CONFIG_IN,
