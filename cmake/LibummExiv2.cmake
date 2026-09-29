@@ -6,6 +6,8 @@ include_guard(GLOBAL)
 include("${CMAKE_CURRENT_LIST_DIR}/LibummPins.cmake")
 
 set(UMM_EXIV2_ACQUIRED FALSE)
+set(UMM_BUNDLED_EXPAT FALSE)
+set(UMM_BUNDLED_ZLIB FALSE)
 
 if(NOT UMM_REQUIRE_EXIV2)
   message(STATUS "Exiv2 not acquired (UMM_REQUIRE_EXIV2=OFF)")
@@ -97,6 +99,7 @@ if(NOT EXPAT_FOUND)
   set(EXPAT_INCLUDE_DIRS "${_umm_expat_include_dir}")
   set(EXPAT_FOUND TRUE)
   unset(_umm_expat_include_dir)
+  set(UMM_BUNDLED_EXPAT TRUE)
   message(STATUS "Expat not found on system; fetched for Exiv2 XMP")
 endif()
 
@@ -137,6 +140,7 @@ if(NOT ZLIB_FOUND)
   set(ZLIB_FOUND TRUE)
   unset(_umm_zlib_include_dir)
   unset(_umm_zlib_binary_dir)
+  set(UMM_BUNDLED_ZLIB TRUE)
   message(STATUS "Zlib not found on system; fetched for Exiv2 PNG")
 endif()
 
@@ -152,6 +156,24 @@ FetchContent_MakeAvailable(umm_exiv2)
 
 set(CMAKE_SKIP_INSTALL_RULES "${_umm_saved_skip_install_rules}")
 set(BUILD_SHARED_LIBS "${_umm_saved_build_shared_libs}")
+
+# CMAKE_SKIP_INSTALL_RULES stops FetchContent subdirs from writing
+# cmake_install.cmake, but the parent install script still includes those
+# paths. Stub the missing files so cmake --install of libumm succeeds
+# without installing Exiv2/Expat/zlib packages or headers.
+function(umm_stub_skipped_install_script binary_dir)
+  if(binary_dir AND NOT EXISTS "${binary_dir}/cmake_install.cmake")
+    file(WRITE "${binary_dir}/cmake_install.cmake"
+      "# Skipped: FetchContent dependency install rules (CMAKE_SKIP_INSTALL_RULES).\n")
+  endif()
+endfunction()
+umm_stub_skipped_install_script("${umm_exiv2_BINARY_DIR}")
+if(UMM_BUNDLED_EXPAT)
+  umm_stub_skipped_install_script("${umm_expat_BINARY_DIR}")
+endif()
+if(UMM_BUNDLED_ZLIB)
+  umm_stub_skipped_install_script("${umm_zlib_BINARY_DIR}")
+endif()
 
 if(NOT TARGET exiv2lib)
   message(FATAL_ERROR "UMM_REQUIRE_EXIV2=ON but target exiv2lib was not created")
@@ -169,7 +191,9 @@ target_include_directories(umm
     "${CMAKE_BINARY_DIR}"
 )
 target_compile_definitions(umm PRIVATE UMM_HAS_EXIV2=1)
-target_link_libraries(umm PRIVATE exiv2lib)
+# BUILD_INTERFACE: in-tree tests still link exiv2lib. The exported umm::umm
+# target must not require the FetchContent target (session 29 install/export).
+target_link_libraries(umm PRIVATE $<BUILD_INTERFACE:exiv2lib>)
 
 set(UMM_EXIV2_ACQUIRED TRUE)
 

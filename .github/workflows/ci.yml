@@ -130,6 +130,9 @@ jobs:
           cmake -E make_directory build/default/test-results
           ctest --preset default --output-junit build/default/test-results/junit.xml
 
+      - name: Install and consumer smoke
+        run: ctest --preset default -R consumer_install --output-on-failure
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4

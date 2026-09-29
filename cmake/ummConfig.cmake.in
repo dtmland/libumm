@@ -1,0 +1,194 @@
+@PACKAGE_INIT@
+
+# Config file for the umm package (session 29).
+#
+# Static-default consumption (decision M4c): umm::umm is a static library. Private
+# Exiv2 (and FetchContent'd Expat/zlib) archives are installed under
+# ${CMAKE_INSTALL_LIBDIR}/umm/ and reconstructed here as IMPORTED STATIC
+# targets. Consumers link umm::umm; Exiv2 is not located as a CMake package.
+# System zlib/expat/iconv/threads, when used at build time, are located with
+# find_dependency. FetchContent install rules remain skipped
+# (CMAKE_SKIP_INSTALL_RULES); this file must not require Exiv2 CMake packages
+# or headers in the prefix.
+#
+# write_basic_package_version_file uses SameMajorVersion. Pre-1.0 that treats
+# any 0.x as compatible; session 30 documents the API-stability caveat.
+
+include(CMakeFindDependencyMacro)
+
+set(_umm_need_zlib "@UMM_INSTALL_FIND_ZLIB@")
+set(_umm_need_expat "@UMM_INSTALL_FIND_EXPAT@")
+set(_umm_need_iconv "@UMM_INSTALL_FIND_ICONV@")
+set(_umm_need_threads "@UMM_INSTALL_FIND_THREADS@")
+set(_umm_is_static "@UMM_INSTALL_IS_STATIC@")
+set(_umm_private_libdir_rel "@UMM_INSTALL_PRIVATE_LIBDIR@")
+set(_umm_system_libs "@UMM_INSTALL_SYSTEM_LIBS@")
+
+# Collection may have recorded Iconv::Iconv as a system lib when the
+# imported target did not exist at configure time.
+if(_umm_system_libs MATCHES "Iconv::Iconv" OR _umm_system_libs MATCHES "(^|;)iconv(;|$)")
+  set(_umm_need_iconv TRUE)
+endif()
+
+if(_umm_need_zlib)
+  find_dependency(ZLIB)
+endif()
+if(_umm_need_expat)
+  find_dependency(EXPAT)
+endif()
+if(_umm_need_iconv)
+  find_dependency(Iconv)
+endif()
+if(_umm_need_threads)
+  find_dependency(Threads)
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/ummTargets.cmake")
+
+# FindIconv may leave Iconv_FOUND without Iconv::Iconv (Apple libc iconv),
+# or create a directory-scoped imported target that GLOBAL umm::umm cannot
+# see at generate time. Materialize a GLOBAL Iconv::Iconv when named.
+set(_umm_needs_iconv_target "${_umm_need_iconv}")
+if(TARGET umm::umm)
+  get_target_property(_umm_iface umm::umm INTERFACE_LINK_LIBRARIES)
+  if(_umm_iface AND _umm_iface MATCHES "Iconv::Iconv")
+    set(_umm_needs_iconv_target TRUE)
+  endif()
+endif()
+if(_umm_needs_iconv_target)
+  if(NOT TARGET Iconv::Iconv)
+    find_package(Iconv QUIET)
+  endif()
+  if(NOT TARGET Iconv::Iconv)
+    add_library(Iconv::Iconv INTERFACE IMPORTED GLOBAL)
+    if(Iconv_LIBRARIES)
+      set_property(TARGET Iconv::Iconv PROPERTY
+        INTERFACE_LINK_LIBRARIES "${Iconv_LIBRARIES}")
+    endif()
+    if(Iconv_INCLUDE_DIRS)
+      set_property(TARGET Iconv::Iconv PROPERTY
+        INTERFACE_INCLUDE_DIRECTORIES "${Iconv_INCLUDE_DIRS}")
+    endif()
+  else()
+    get_property(_umm_iconv_imported TARGET Iconv::Iconv PROPERTY IMPORTED)
+    if(_umm_iconv_imported)
+      set_property(TARGET Iconv::Iconv PROPERTY IMPORTED_GLOBAL TRUE)
+    endif()
+  endif()
+endif()
+unset(_umm_needs_iconv_target)
+unset(_umm_iface)
+unset(_umm_iconv_imported)
+
+if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/ummPrivateDeps.cmake")
+  include("${CMAKE_CURRENT_LIST_DIR}/ummPrivateDeps.cmake")
+endif()
+
+if(_umm_is_static AND TARGET umm::umm AND NOT umm_PRIVATE_DEPS_APPLIED)
+  if(IS_ABSOLUTE "${_umm_private_libdir_rel}")
+    set(_umm_priv_dir "${_umm_private_libdir_rel}")
+  else()
+    set(_umm_priv_dir "${PACKAGE_PREFIX_DIR}/${_umm_private_libdir_rel}")
+  endif()
+
+  set(_umm_priv_link)
+
+  if(UMM_PRIVATE_EXIV2_FILE)
+    if(NOT TARGET umm::private_exiv2)
+      add_library(umm::private_exiv2 STATIC IMPORTED)
+      set(_umm_exiv2_loc "${_umm_priv_dir}/${UMM_PRIVATE_EXIV2_FILE}")
+      set_target_properties(umm::private_exiv2 PROPERTIES
+        IMPORTED_LOCATION "${_umm_exiv2_loc}"
+        IMPORTED_LOCATION_RELEASE "${_umm_exiv2_loc}"
+        IMPORTED_LOCATION_RELWITHDEBINFO "${_umm_exiv2_loc}"
+        IMPORTED_LOCATION_MINSIZEREL "${_umm_exiv2_loc}"
+        IMPORTED_LOCATION_DEBUG "${_umm_exiv2_loc}"
+      )
+    endif()
+    list(APPEND _umm_priv_link umm::private_exiv2)
+  endif()
+
+  if(UMM_PRIVATE_EXPAT_FILE)
+    if(NOT TARGET umm::private_expat)
+      add_library(umm::private_expat STATIC IMPORTED)
+      set(_umm_expat_loc "${_umm_priv_dir}/${UMM_PRIVATE_EXPAT_FILE}")
+      set_target_properties(umm::private_expat PROPERTIES
+        IMPORTED_LOCATION "${_umm_expat_loc}"
+        IMPORTED_LOCATION_RELEASE "${_umm_expat_loc}"
+        IMPORTED_LOCATION_RELWITHDEBINFO "${_umm_expat_loc}"
+        IMPORTED_LOCATION_MINSIZEREL "${_umm_expat_loc}"
+        IMPORTED_LOCATION_DEBUG "${_umm_expat_loc}"
+      )
+    endif()
+    list(APPEND _umm_priv_link umm::private_expat)
+  elseif(_umm_need_expat)
+    list(APPEND _umm_priv_link EXPAT::EXPAT)
+  endif()
+
+  if(UMM_PRIVATE_ZLIB_FILE)
+    if(NOT TARGET umm::private_zlib)
+      add_library(umm::private_zlib STATIC IMPORTED)
+      set(_umm_zlib_loc "${_umm_priv_dir}/${UMM_PRIVATE_ZLIB_FILE}")
+      set_target_properties(umm::private_zlib PROPERTIES
+        IMPORTED_LOCATION "${_umm_zlib_loc}"
+        IMPORTED_LOCATION_RELEASE "${_umm_zlib_loc}"
+        IMPORTED_LOCATION_RELWITHDEBINFO "${_umm_zlib_loc}"
+        IMPORTED_LOCATION_MINSIZEREL "${_umm_zlib_loc}"
+        IMPORTED_LOCATION_DEBUG "${_umm_zlib_loc}"
+      )
+    endif()
+    list(APPEND _umm_priv_link umm::private_zlib)
+  elseif(_umm_need_zlib)
+    list(APPEND _umm_priv_link ZLIB::ZLIB)
+  endif()
+
+  if(_umm_need_iconv)
+    list(APPEND _umm_priv_link Iconv::Iconv)
+  endif()
+  if(_umm_need_threads)
+    list(APPEND _umm_priv_link Threads::Threads)
+  endif()
+
+  foreach(_umm_sys IN LISTS _umm_system_libs)
+    if(NOT _umm_sys)
+      continue()
+    endif()
+    if(_umm_sys MATCHES "Iconv::Iconv" OR _umm_sys STREQUAL "iconv")
+      continue()
+    endif()
+    if(_umm_sys MATCHES "::")
+      continue()
+    endif()
+    list(APPEND _umm_priv_link "${_umm_sys}")
+  endforeach()
+
+  if(_umm_priv_link MATCHES "Iconv::Iconv" AND NOT TARGET Iconv::Iconv)
+    add_library(Iconv::Iconv INTERFACE IMPORTED GLOBAL)
+  elseif(_umm_priv_link MATCHES "Iconv::Iconv" AND TARGET Iconv::Iconv)
+    get_property(_umm_iconv_imported TARGET Iconv::Iconv PROPERTY IMPORTED)
+    if(_umm_iconv_imported)
+      set_property(TARGET Iconv::Iconv PROPERTY IMPORTED_GLOBAL TRUE)
+    endif()
+  endif()
+
+  if(_umm_priv_link)
+    target_link_libraries(umm::umm INTERFACE ${_umm_priv_link})
+  endif()
+
+  set(umm_PRIVATE_DEPS_APPLIED TRUE)
+  unset(_umm_priv_link)
+  unset(_umm_priv_dir)
+  unset(_umm_exiv2_loc)
+  unset(_umm_expat_loc)
+  unset(_umm_zlib_loc)
+endif()
+
+unset(_umm_need_zlib)
+unset(_umm_need_expat)
+unset(_umm_need_iconv)
+unset(_umm_need_threads)
+unset(_umm_is_static)
+unset(_umm_private_libdir_rel)
+unset(_umm_system_libs)
+
+check_required_components(umm)
