@@ -45,6 +45,14 @@ int main() {
     return fail("empty metadata is not empty");
   }
 
+  const umm::UnmappedEntry entry{{"Exif", "Exif.Nikon3.LensType"}, "String", "42"};
+  md.assignUnmapped({entry});
+  if (md.unmapped() != std::vector<umm::UnmappedEntry>{entry} ||
+      md.unmapped(entry.key) != entry.value ||
+      md.unmapped(umm::UnmappedKey{"Xmp", entry.key.key})) {
+    return fail("unmapped metadata access");
+  }
+
   if (!require_ok(md.setCreator({"Alice", "Bob"}), "setCreator")) {
     return 1;
   }
