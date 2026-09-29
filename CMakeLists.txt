@@ -2,6 +2,40 @@ cmake_minimum_required(VERSION 3.24)
 
 project(libumm VERSION 0.1.0 LANGUAGES CXX)
 
+# Session 30: header macros are normative; CMake PROJECT_VERSION must match.
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/include/umm/version.hpp" _umm_version_hpp)
+if(NOT _umm_version_hpp MATCHES "#define[ \t]+UMM_VERSION_MAJOR[ \t]+([0-9]+)")
+  message(FATAL_ERROR "include/umm/version.hpp must define UMM_VERSION_MAJOR")
+endif()
+set(_umm_hdr_major "${CMAKE_MATCH_1}")
+if(NOT _umm_version_hpp MATCHES "#define[ \t]+UMM_VERSION_MINOR[ \t]+([0-9]+)")
+  message(FATAL_ERROR "include/umm/version.hpp must define UMM_VERSION_MINOR")
+endif()
+set(_umm_hdr_minor "${CMAKE_MATCH_1}")
+if(NOT _umm_version_hpp MATCHES "#define[ \t]+UMM_VERSION_PATCH[ \t]+([0-9]+)")
+  message(FATAL_ERROR "include/umm/version.hpp must define UMM_VERSION_PATCH")
+endif()
+set(_umm_hdr_patch "${CMAKE_MATCH_1}")
+set(_umm_hdr_version "${_umm_hdr_major}.${_umm_hdr_minor}.${_umm_hdr_patch}")
+if(NOT _umm_hdr_version STREQUAL PROJECT_VERSION)
+  message(FATAL_ERROR
+    "include/umm/version.hpp version ${_umm_hdr_version} does not match PROJECT_VERSION ${PROJECT_VERSION}")
+endif()
+unset(_umm_version_hpp)
+unset(_umm_hdr_major)
+unset(_umm_hdr_minor)
+unset(_umm_hdr_patch)
+unset(_umm_hdr_version)
+
+# SOVERSION and find_package compatibility follow docs/abi-policy.md (P4).
+if(PROJECT_VERSION_MAJOR EQUAL 0)
+  set(UMM_SOVERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
+  set(UMM_PACKAGE_COMPATIBILITY SameMinorVersion)
+else()
+  set(UMM_SOVERSION "${PROJECT_VERSION_MAJOR}")
+  set(UMM_PACKAGE_COMPATIBILITY SameMajorVersion)
+endif()
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -58,17 +92,12 @@ target_include_directories(umm
     "${CMAKE_CURRENT_SOURCE_DIR}/src/backends"
 )
 
-target_compile_definitions(umm
-  PRIVATE
-    "UMM_VERSION=\"${PROJECT_VERSION}\""
-)
-
 set_target_properties(umm PROPERTIES
   CXX_STANDARD 20
   CXX_STANDARD_REQUIRED ON
   CXX_EXTENSIONS OFF
   VERSION ${PROJECT_VERSION}
-  SOVERSION 0
+  SOVERSION ${UMM_SOVERSION}
 )
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/LibummExiv2.cmake")
@@ -97,6 +126,9 @@ if(UMM_BUILD_TESTS)
   target_compile_definitions(test_version
     PRIVATE
       "UMM_PROJECT_VERSION=\"${PROJECT_VERSION}\""
+      "UMM_CMAKE_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}"
+      "UMM_CMAKE_VERSION_MINOR=${PROJECT_VERSION_MINOR}"
+      "UMM_CMAKE_VERSION_PATCH=${PROJECT_VERSION_PATCH}"
   )
   add_test(NAME test_version COMMAND test_version)
 

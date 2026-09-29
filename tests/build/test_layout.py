@@ -17,6 +17,8 @@ LIBUMM_EXIV2_CMAKE = REPO_ROOT / "cmake" / "LibummExiv2.cmake"
 LIBUMM_REGISTRY_CMAKE = REPO_ROOT / "cmake" / "LibummRegistry.cmake"
 LIBUMM_CORPUS_CMAKE = REPO_ROOT / "cmake" / "LibummCorpus.cmake"
 LIBUMM_INSTALL_CMAKE = REPO_ROOT / "cmake" / "LibummInstall.cmake"
+ABI_POLICY = REPO_ROOT / "docs" / "abi-policy.md"
+VERSION_HPP = REPO_ROOT / "include" / "umm" / "version.hpp"
 UMM_CONFIG_IN = REPO_ROOT / "cmake" / "ummConfig.cmake.in"
 CONSUMER_CMAKE = REPO_ROOT / "tests" / "consumer" / "CMakeLists.txt"
 CONSUMER_MAIN = REPO_ROOT / "tests" / "consumer" / "main.cpp"
@@ -71,6 +73,8 @@ class TestLayout(unittest.TestCase):
             LIBUMM_REGISTRY_CMAKE,
             LIBUMM_CORPUS_CMAKE,
             LIBUMM_INSTALL_CMAKE,
+            ABI_POLICY,
+            VERSION_HPP,
             UMM_CONFIG_IN,
             CONSUMER_CMAKE,
             CONSUMER_MAIN,
@@ -126,7 +130,7 @@ class TestLayout(unittest.TestCase):
         exiv2 = LIBUMM_EXIV2_CMAKE.read_text(encoding="utf-8")
         consumer = CONSUMER_CMAKE.read_text(encoding="utf-8")
         self.assertIn("IMPORTED STATIC", install)
-        self.assertIn("SameMajorVersion", install)
+        self.assertIn("COMPATIBILITY ${UMM_PACKAGE_COMPATIBILITY}", install)
         self.assertIn("CMAKE_INSTALL_LIBDIR}/umm", install)
         self.assertIn("$<BUILD_INTERFACE:exiv2lib>", exiv2)
         self.assertNotIn("find_package(exiv2", config_in)

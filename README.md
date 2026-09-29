@@ -11,6 +11,15 @@ libumm does not define a new metadata standard. It provides a unified programmin
 - **Implementation plan (session-sized):** [docs/implementation/00-overview.md](docs/implementation/00-overview.md)
 - Test media strategy: [docs/test-media-plan.md](docs/test-media-plan.md)
 - Public API headers: [include/umm/](include/umm/) — `version.hpp` and `registry.hpp` are implemented; remaining headers are design drafts (decision M7) until their implementation sessions.
+- Versioning and ABI: [docs/abi-policy.md](docs/abi-policy.md) — source API follows semver; C++ ABI stability is not promised.
+
+## Versioning
+
+`UMM_VERSION_MAJOR` / `MINOR` / `PATCH` and `UMM_VERSION_STRING` in
+`include/umm/version.hpp` are the compile-time library version. They agree with
+CMake `PROJECT_VERSION` and `umm::version()`. Standards versions are reported
+by `umm::Registry::standards()`, not by library semver. See
+[docs/abi-policy.md](docs/abi-policy.md).
 
 ## Install
 
