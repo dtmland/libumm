@@ -11,7 +11,7 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CAP_DIR = REPO_ROOT / "registry" / "capabilities"
-DEFAULT_MARKDOWN = REPO_ROOT / "supported-types.md"
+DEFAULT_MARKDOWN = REPO_ROOT / "docs" / "supported-types.md"
 DEFAULT_HPP = REPO_ROOT / "src" / "generated" / "capabilities_data.hpp"
 
 ACCESS_RANK = {"none": 0, "read": 1, "read_write": 2, "create": 3}
@@ -384,13 +384,13 @@ def markdown_for(
     add("")
     add(
         "This is a snapshot of **file-type** (container) support in the two backends "
-        "named in [concept.md](concept.md). It is **not** a list of IPTC/EXIF/XMP "
+        "named in [concept.md](analysis/concept.md). It is **not** a list of IPTC/EXIF/XMP "
         "*properties*."
     )
     add("")
     add(
         "**Location is called out separately.** `getLocation()` / `setLocation()` in "
-        "[concept.md](concept.md) is not a file-type flag. Coordinates and named place "
+        "[concept.md](analysis/concept.md) is not a file-type flag. Coordinates and named place "
         "live in different encodings, and Exiv2 vs ExifTool do not offer the same "
         "location **read** or **write** path for the same type. See "
         "[§3 Location metadata](#3-location-metadata-gps-and-named-place)."
@@ -460,7 +460,7 @@ def markdown_for(
     add(
         "So: treat Exiv2 as the **narrow native C++ image/RAW backend**, and ExifTool as "
         "the **broad compatibility backend**. Prefer ExifTool when write access, format "
-        "coverage, or **location write** matters (the [concept.md](concept.md) CR3 example; "
+        "coverage, or **location write** matters (the [concept.md](analysis/concept.md) CR3 example; "
         "PNG EXIF GPS; video GPS)."
     )
     add("")
@@ -839,7 +839,7 @@ def markdown_for(
         "is ExifTool **read-only**. TGA has **no** location in Exiv2 and is not listed in ExifTool."
     )
     add(
-        "7. Phase 1 in [concept.md](concept.md) (JPEG, TIFF, PNG, WebP, common RAW, XMP "
+        "7. Phase 1 in [concept.md](analysis/concept.md) (JPEG, TIFF, PNG, WebP, common RAW, XMP "
         "sidecars) is inside Exiv2’s strong **location** set, except **PNG EXIF GPS** if that "
         "encoding is required (use ExifTool)."
     )

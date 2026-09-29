@@ -3,9 +3,9 @@
 > **GENERATED** from `registry/capabilities/` by `tools/registry/generate_supported_types.py`.
 > Do not edit by hand. Decision **M2**: capability data is machine-readable; this document is generated output. Tier A CI probes pinned backends against the data so drift fails a test.
 
-This is a snapshot of **file-type** (container) support in the two backends named in [concept.md](concept.md). It is **not** a list of IPTC/EXIF/XMP *properties*.
+This is a snapshot of **file-type** (container) support in the two backends named in [concept.md](analysis/concept.md). It is **not** a list of IPTC/EXIF/XMP *properties*.
 
-**Location is called out separately.** `getLocation()` / `setLocation()` in [concept.md](concept.md) is not a file-type flag. Coordinates and named place live in different encodings, and Exiv2 vs ExifTool do not offer the same location **read** or **write** path for the same type. See [§3 Location metadata](#3-location-metadata-gps-and-named-place).
+**Location is called out separately.** `getLocation()` / `setLocation()` in [concept.md](analysis/concept.md) is not a file-type flag. Coordinates and named place live in different encodings, and Exiv2 vs ExifTool do not offer the same location **read** or **write** path for the same type. See [§3 Location metadata](#3-location-metadata-gps-and-named-place).
 
 Sources (check these for drift):
 
@@ -30,7 +30,7 @@ Capability discovery in libumm must be **per backend, per file type, and per met
 | Video/audio/documents | Exiv2 has only **rudimentary read** of a few video/RIFF types. ExifTool covers video, audio, documents, fonts, archives, and more. |
 | Same file type ⇒ same **location** metadata | **No.** Location is several encodings (EXIF GPS, IPTC/XMP named place, XMP GPS, QuickTime `GPSCoordinates`, GeoTIFF). Exiv2 has **no** location on identify-only types (BMP/GIF/TGA), **no EXIF GPS on PNG**, **no IPTC named place on WebP**, and **no video location write**. ExifTool lists **GPS** as r/w/c and writes location on many types Exiv2 can only read (CR3, HEIC, AVIF, JXL, RAF, MOV/MP4, …). |
 
-So: treat Exiv2 as the **narrow native C++ image/RAW backend**, and ExifTool as the **broad compatibility backend**. Prefer ExifTool when write access, format coverage, or **location write** matters (the [concept.md](concept.md) CR3 example; PNG EXIF GPS; video GPS).
+So: treat Exiv2 as the **narrow native C++ image/RAW backend**, and ExifTool as the **broad compatibility backend**. Prefer ExifTool when write access, format coverage, or **location write** matters (the [concept.md](analysis/concept.md) CR3 example; PNG EXIF GPS; video GPS).
 
 Legend used below:
 
@@ -343,6 +343,6 @@ QuickTime **file** metadata can be written for MOV/MP4-family files even though 
 4. **PNG Exif / EXIF GPS** is not interchangeable (ExifTool yes; Exiv2 table **no**). Exiv2 can still write PNG **named place and XMP GPS**. **WebP** has no IPTC named-place category in Exiv2 (use Exif/XMP). **CRW/DCP** in Exiv2 are **GPS only**.
 5. **Video location write** is ExifTool + QuickTime-family only (`GPSCoordinates` / XMP). MKV/WebM/AVI/WAV/ASF stay **read-only** — **no location write** in either backend.
 6. **Audio, office documents, PDF, fonts, archives** are ExifTool-only (PDF is writable, including XMP location). GIF location write is ExifTool-only. BMP location is ExifTool **read-only**. TGA has **no** location in Exiv2 and is not listed in ExifTool.
-7. Phase 1 in [concept.md](concept.md) (JPEG, TIFF, PNG, WebP, common RAW, XMP sidecars) is inside Exiv2’s strong **location** set, except **PNG EXIF GPS** if that encoding is required (use ExifTool).
+7. Phase 1 in [concept.md](analysis/concept.md) (JPEG, TIFF, PNG, WebP, common RAW, XMP sidecars) is inside Exiv2’s strong **location** set, except **PNG EXIF GPS** if that encoding is required (use ExifTool).
 8. Phase 3 video (MP4, MOV, M4V, MKV, WebM, MXF) is **ExifTool-primary** for location; Exiv2 at most supplements read. Phase 5 GPS tracks write through this same location table — they do not create a new file-type capability.
 9. `capabilities(media)` must report **GPS** and **named place** separately per backend. “Type supported” is not “location writable”.
