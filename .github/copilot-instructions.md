@@ -10,16 +10,16 @@
 ## Repository conventions
 
 - Decision records live under `docs/analysis/` and are the authoritative source for design decisions (for example, decision IDs like `S1a`, `M4a`).
-- Implementation work follows the session docs in `docs/implementation/`; do not skip prerequisites or assume the plan is informal.
+- The initial implementation plan is complete; its consolidated record is `docs/developer/implementation-history.md`. New work follows the decision records, not an informal path.
 - The public API shape in `include/umm/` is normative for design-draft headers. Update the relevant header(s) before implementation when the task changes the public contract.
 - libumm does not define new metadata standards; it integrates established standards and implementations. Prefer compatibility with IPTC, XMP, EXIF, and media-container metadata conventions over inventing one-off representations.
-- Keep metadata semantics, reconciliation policy, and backend behavior aligned with the project decisions in `docs/analysis/` and the implementation docs.
+- Keep metadata semantics, reconciliation policy, and backend behavior aligned with the project decisions in `docs/analysis/` and `docs/reconciliation-policy.md`.
+- Docs are organized by audience: `docs/user/`, `docs/sysadmin/`, `docs/developer/`; `docs/README.md` is the index.
 
 ## Implementation workflow
 
 - Before changing behavior, read the exact files that define it; do not rely solely on names, grep hits, or assumptions from adjacent code.
-- Before starting or continuing implementation, check the current progress tracker and the numbered session docs in `docs/implementation/` to confirm the active phase, prerequisites, and current status of the work.
-- Use `docs/implementation/00-overview.md` as the canonical phase map and the repo progress tracker at `docs/implementation-progress.md` as the quick status reference; do not skip ahead in the numbered sequence without checking the relevant prerequisites and session docs.
+- Before starting implementation work, check `docs/developer/implementation-history.md` for the standing constraints and what already exists, and the dated records in `docs/analysis/` for the governing decisions.
 - When a change affects the public API, semantics, or backend behavior, update the relevant design/implementation documents and the corresponding header(s) in `include/umm/` as needed.
 - Keep patches focused and testable. Prefer incremental, reviewable changes over broad rewrites.
 - Validate the affected behavior using the smallest relevant existing tests or checks, and avoid adding new test tooling unless it is clearly necessary.

@@ -24,7 +24,7 @@ GENERATE_NOTES = REPO_ROOT / "tools" / "build" / "generate_release_notes.py"
 CHECKLIST = REPO_ROOT / "docs" / "release-checklist.md"
 MANIFEST = REPO_ROOT / "tools" / "build" / "corresponding-source.json"
 TRACK_MATCH = REPO_ROOT / "tests" / "backend" / "test_track_match.cpp"
-PROGRESS = REPO_ROOT / "docs" / "implementation-progress.md"
+HISTORY = REPO_ROOT / "docs" / "developer" / "implementation-history.md"
 
 
 def release_text() -> str:
@@ -143,9 +143,10 @@ class TestReleaseWorkflow(unittest.TestCase):
         self.assertIn("setGps", text)
         self.assertIn("umm::write", text)
 
-    def test_progress_row_mentions_session_34(self) -> None:
-        text = PROGRESS.read_text(encoding="utf-8")
-        self.assertIn("34-release-pipeline.md", text)
+    def test_history_records_release_pipeline(self) -> None:
+        text = HISTORY.read_text(encoding="utf-8")
+        self.assertIn("release pipeline", text.lower())
+        self.assertIn("SHA256SUMS", text)
 
 
 class TestReleaseTools(unittest.TestCase):
