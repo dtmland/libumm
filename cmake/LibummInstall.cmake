@@ -278,10 +278,15 @@ configure_package_config_file(
   INSTALL_DESTINATION "${UMM_INSTALL_EXPORT_DIR}"
 )
 
+# Session 30 / docs/abi-policy.md: SameMinorVersion pre-1.0, SameMajorVersion from 1.0.
+if(NOT UMM_PACKAGE_COMPATIBILITY)
+  message(FATAL_ERROR "UMM_PACKAGE_COMPATIBILITY must be set (docs/abi-policy.md)")
+endif()
+
 write_basic_package_version_file(
   "${CMAKE_CURRENT_BINARY_DIR}/ummConfigVersion.cmake"
   VERSION ${PROJECT_VERSION}
-  COMPATIBILITY SameMajorVersion
+  COMPATIBILITY ${UMM_PACKAGE_COMPATIBILITY}
 )
 
 install(EXPORT ummTargets

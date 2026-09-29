@@ -4,6 +4,10 @@
 #include <string>
 #include <string_view>
 
+#if !defined(UMM_VERSION_MAJOR) || !defined(UMM_VERSION_STRING)
+#error "installed umm/version.hpp must provide UMM_VERSION_* macros"
+#endif
+
 int main(int argc, char** argv) {
   if (argc != 2) {
     std::fprintf(stderr, "usage: umm_consumer FILE\n");
