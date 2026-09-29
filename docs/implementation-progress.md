@@ -36,7 +36,7 @@ Use it as a quick reference before starting work so you can confirm which phase 
 | 25 | [25-gps-track-import.md](implementation/25-gps-track-import.md) | Complete | `importTrack`; GPX/NMEA/KML; in-repo XML scanner (no new dep); text fixtures. |
 | 26 | [26-track-correlation-and-location-write.md](implementation/26-track-correlation-and-location-write.md) | Complete | `matchTrack`; interpolation; naive timestamps require an explicit offset; location write via `umm::write`. |
 | 27 | [27-tier-b-corpus-infrastructure.md](implementation/27-tier-b-corpus-infrastructure.md) | Complete | Checksummed download corpus; closes makernote + proprietary-RAW deferrals. |
-| 28 | [28-cross-backend-verification.md](implementation/28-cross-backend-verification.md) | Not started | Write-with-one/read-with-other comparison suite; divergence ledger. |
+| 28 | [28-cross-backend-verification.md](implementation/28-cross-backend-verification.md) | Complete | Write-with-one/read-with-other comparison suite; divergence ledger; Stage 10 exit. |
 
 ## How to use this document
 

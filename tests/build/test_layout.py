@@ -19,6 +19,10 @@ LIBUMM_CORPUS_CMAKE = REPO_ROOT / "cmake" / "LibummCorpus.cmake"
 CORPUS_FETCHER = REPO_ROOT / "tools" / "corpus" / "fetch.py"
 CORPUS_MANIFEST = REPO_ROOT / "tests" / "corpus" / "manifest.json"
 CORPUS_SCHEMA = REPO_ROOT / "tests" / "corpus" / "schema.md"
+VERIFICATION_LEDGER = REPO_ROOT / "tests" / "verification" / "ledger.json"
+VERIFICATION_SCHEMA = REPO_ROOT / "tests" / "verification" / "schema.md"
+TEST_CROSS_BACKEND = REPO_ROOT / "tests" / "backend" / "test_cross_backend.cpp"
+CROSS_BACKEND_HPP = REPO_ROOT / "tests" / "backend" / "cross_backend.hpp"
 EXIFTOOL_SMOKE = REPO_ROOT / "tests" / "backend" / "test_exiftool_smoke.cmake"
 EXIV2_SMOKE = REPO_ROOT / "tests" / "backend" / "test_exiv2_smoke.cpp"
 EXIV2_READ = REPO_ROOT / "tests" / "backend" / "test_exiv2_read.cpp"
@@ -64,6 +68,10 @@ class TestLayout(unittest.TestCase):
             CORPUS_FETCHER,
             CORPUS_MANIFEST,
             CORPUS_SCHEMA,
+            VERIFICATION_LEDGER,
+            VERIFICATION_SCHEMA,
+            TEST_CROSS_BACKEND,
+            CROSS_BACKEND_HPP,
             EXIFTOOL_SMOKE,
             EXIV2_SMOKE,
             EXIV2_READ,

@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": "png-exif-exiv2-blind",
+      "file_types": [
+        "PNG"
+      ],
+      "category": "exif",
+      "property_id": "",
+      "write_backend": "exiftool",
+      "read_backend": "exiv2",
+      "kind": "capability",
+      "reason": "Exiv2 PNG has no EXIF category; ExifTool PNG EXIF (including GPS IFD) is not a both-access pair. Comparator uses XMP/IPTC intersection."
+    },
+    {
+      "id": "webp-iptc-unsupported",
+      "file_types": [
+        "WEBP"
+      ],
+      "category": "iptc_iim",
+      "property_id": "",
+      "write_backend": "",
+      "read_backend": "",
+      "kind": "capability",
+      "reason": "Neither backend lists IPTC-IIM on WebP. Creator/description write-sync drops IIM when StorageDecision omits IPTC-IIM."
+    },
+    {
+      "id": "video-exiftool-primary",
+      "file_types": [
+        "MP4",
+        "MOV"
+      ],
+      "category": "",
+      "property_id": "",
+      "write_backend": "exiftool",
+      "read_backend": "exiv2",
+      "kind": "one-directional",
+      "reason": "Exiv2 MOV/MP4 rows are all-none. Session 28 video is write-ExifTool, read both only where capable; Exiv2 is not a metadata writer or category reader."
+    },
+    {
+      "id": "companion-tag-sets",
+      "file_types": [],
+      "category": "",
+      "property_id": "",
+      "write_backend": "",
+      "read_backend": "",
+      "kind": "representation",
+      "reason": "Source key sets may omit empty companion tags (no SubSecTimeOriginal / OffsetTimeOriginal). Cross-backend identity compares values, families the reader can see, and classification — not exact SourceRef key sets or SourceRef.backend."
+    }
+  ]
+}
