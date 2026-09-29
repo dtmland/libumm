@@ -136,6 +136,9 @@ class TestLayout(unittest.TestCase):
         self.assertIn("CMAKE_SKIP_INSTALL_RULES", exiv2)
         self.assertIn("find_dependency(Iconv)", config_in)
         self.assertIn("NOT TARGET Iconv::Iconv", config_in)
+        self.assertIn("IMPORTED_GLOBAL", config_in)
+        self.assertIn('OR _umm_item STREQUAL "iconv"', install)
+        self.assertIn("APPLE AND UMM_INSTALL_BUNDLE_EXIV2", install)
         self.assertIn("$<BUILD_INTERFACE:${_umm_iface_item}>", install)
 
     def test_exiv2_fetched_deps_skip_install_rules(self) -> None:

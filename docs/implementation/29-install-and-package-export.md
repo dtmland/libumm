@@ -25,7 +25,10 @@ Stage 10 complete. No public-header changes expected (install only ships what ex
 - The existing `CMAKE_SKIP_INSTALL_RULES` shielding for FetchContent'd deps stays intact —
   installing libumm must not install Exiv2/Expat/zlib headers or CMake files into the prefix.
   Stub the skipped subdirectory `cmake_install.cmake` files so the parent install script can
-  include them without installing those packages.
+  include them without installing those packages. Exiv2's Iconv usage must not leak a bare
+  `Iconv::Iconv` name into `UMM_INSTALL_SYSTEM_LIBS`; Apple always `find_dependency(Iconv)`
+  for bundled Exiv2 and `ummConfig.cmake` materializes a GLOBAL `Iconv::Iconv` if FindIconv
+  omits it.
 - Consumer smoke test: a tiny out-of-tree CMake project (under `tests/consumer/`) that
   `find_package(umm CONFIG REQUIRED)` against a scratch install prefix, compiles a call to
   `umm::version()` and one `umm::read` of a Tier A fixture, run as a CTest step (configure +
