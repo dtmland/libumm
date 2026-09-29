@@ -293,7 +293,7 @@ std::optional<std::string> exiftool_tag_for_raw_key(std::string_view raw_key) {
   }
   if (const auto name = after_prefix("QuickTime.")) {
     if (*name == "Artist") {
-      return "ItemList:Artist";
+      return std::string("ItemList") + ":" + *name;
     }
     if (*name == "CreationDate" || *name == "GPSCoordinates" ||
         *name == "Title" || *name == "Description" || *name == "Author" ||
