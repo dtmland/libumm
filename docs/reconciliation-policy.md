@@ -2,7 +2,8 @@
 
 Status: **normative** for JPEG embedded read (session 12), write-synchronization
 (session 13), XMP sidecar pairing (session 14), MP4/MOV video read
-(session 21), and ExifTool-only MP4/MOV write (session 22).
+(session 21), ExifTool-only MP4/MOV write (session 22), and the conflict
+resolution API (session 23).
 
 This is the written, testable policy required by decision **S4a**. Classification
 and provenance shapes are those in `include/umm/provenance.hpp` (concept.md §15,
@@ -334,6 +335,49 @@ through the same temp + atomic rename path (M3). The JPEG file is not
 modified. Mixed embedded+sidecar synchronization is Stage 8.
 `sidecar_required` has the same Phase 1 write effect as `sidecar_only`; the
 sidecar is required to be written.
+
+## Conflict resolution API
+
+`detectConflict(path, options)` runs the same read pipeline as `umm::read`
+(backends, sidecar pairing, grouping, classification). It does **not** add a
+second reconciliation engine. The report contains:
+
+- `metadata` — the same canonical `Metadata` `read()` would return (when the
+  call succeeds).
+- `entries` — one `ConflictEntry` per canonical property whose groups
+  **disagreed**. That is both `Resolution::conflict` (unranked same-tier, e.g.
+  embedded XMP vs sidecar XMP) and `Resolution::reconciled` (policy already
+  picked a winner, e.g. XMP vs IIM vs EXIF on `full-conflicting`, or XMP vs
+  QuickTime on `video/conflicting.mp4`). `single` and `equivalent` are omitted.
+
+Each entry lists every group's parsed `Value` with its `SourceRef`s (`raw_key`,
+`backend`, `container`) and grouping `family`, plus the policy's
+`preferred_source` (the winning group's primary raw key). Same-family embedded
+disagreement, embedded-vs-sidecar disagreement, and video container-vs-XMP
+disagreement share this one enumeration path.
+
+`ReadOptions::conflicts_as_errors` has the same meaning as for `read`: if any
+property is `conflict`, the call fails with `ErrorCode::conflict_unresolved`.
+`reconciled` disagreements are not errors; they still appear in `entries` when
+the call succeeds.
+
+`merge(metadata, entry, source, container = {})` resolves one disagreed
+property by choosing a candidate already listed in `entry`. `source` matches a
+`SourceRef::raw_key` on that entry. When the same raw key exists in more than
+one candidate (embedded XMP vs sidecar XMP), `container` must be `"embedded"`
+or `"sidecar"`. The property's `value` becomes that candidate's value;
+`resolution` becomes `reconciled`; `preferred_source` is `source`. **Every**
+source already recorded on the property remains listed — losing candidates are
+never dropped. This does not write files (session 24).
+
+`merge(metadata, property_id, value)` is a user-supplied override. `resolution`
+becomes `reconciled`; `preferred_source` is **empty** (empty means user-supplied,
+not a raw key); existing sources are retained. This is the documented equivalent
+of a preferred-source choice when the application supplies a new value.
+
+`Metadata::set(property_id, Value)` still replaces provenance with
+`Resolution::single` and empty sources. Applications that need to keep
+candidates must use `merge`.
 
 ## Cross-backend identity
 

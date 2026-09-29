@@ -30,6 +30,7 @@ add_library(umm
   src/value.cpp
   src/metadata.cpp
   src/read.cpp
+  src/conflict.cpp
   src/write.cpp
   src/capabilities.cpp
   src/core/reconcile.cpp
@@ -118,6 +119,14 @@ if(UMM_BUILD_TESTS)
       "${CMAKE_CURRENT_SOURCE_DIR}/src"
   )
   add_test(NAME test_reconcile COMMAND test_reconcile)
+
+  add_executable(test_conflict tests/unit/test_conflict.cpp)
+  target_link_libraries(test_conflict PRIVATE umm::umm)
+  target_include_directories(test_conflict
+    PRIVATE
+      "${CMAKE_CURRENT_SOURCE_DIR}/src"
+  )
+  add_test(NAME test_conflict COMMAND test_conflict)
 
   add_executable(test_atomic_write tests/unit/test_atomic_write.cpp)
   target_link_libraries(test_atomic_write PRIVATE umm::umm)
@@ -311,6 +320,25 @@ if(UMM_BUILD_TESTS)
     endif()
     add_test(NAME test_sidecar COMMAND test_sidecar)
     umm_apply_fixture_dir_to_test(test_sidecar)
+
+    add_executable(test_conflict_api tests/backend/test_conflict.cpp)
+    target_link_libraries(test_conflict_api PRIVATE umm::umm)
+    target_include_directories(test_conflict_api
+      PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/backend"
+    )
+    umm_apply_fixture_dir(test_conflict_api)
+    if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)
+      file(TO_CMAKE_PATH "${UMM_EXIFTOOL_SCRIPT}" UMM_TEST_CONFLICT_EXIFTOOL_SCRIPT)
+      file(TO_CMAKE_PATH "${UMM_PERL_EXECUTABLE}" UMM_TEST_CONFLICT_EXIFTOOL_PERL)
+      target_compile_definitions(test_conflict_api
+        PRIVATE
+          "UMM_TEST_EXIFTOOL_SCRIPT=R\"(${UMM_TEST_CONFLICT_EXIFTOOL_SCRIPT})\""
+          "UMM_TEST_EXIFTOOL_PERL=R\"(${UMM_TEST_CONFLICT_EXIFTOOL_PERL})\""
+      )
+    endif()
+    add_test(NAME test_conflict_api COMMAND test_conflict_api)
+    umm_apply_fixture_dir_to_test(test_conflict_api)
   endif()
 
   if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)

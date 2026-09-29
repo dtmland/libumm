@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "umm/backend.hpp"
@@ -50,6 +51,12 @@ struct WriteReport {
   std::vector<RawKey> written;  // every raw representation updated (write-sync)
 };
 
+// detectConflict() result: full read plus every disagreed property (session 23).
+struct ConflictReport {
+  Metadata metadata;
+  std::vector<ConflictEntry> entries;
+};
+
 // --- Asset pairing (concept.md §28) -----------------------------------------
 // A media file and an XMP sidecar with the same stem in the same directory
 // are one asset. The sidecar extension is ".xmp".
@@ -72,6 +79,28 @@ std::optional<std::filesystem::path> findSidecar(
 // Embedded metadata, plus sidecar XMP when merge_sidecar and a pair exists.
 // A standalone .xmp file is readable as sidecar-only.
 Result<Metadata> read(const std::filesystem::path& media, ReadOptions options = {});
+
+// Enumerate disagreed properties without inspecting every field of a read.
+// Same pipeline as read(); no second reconciliation engine. Entries cover
+// Resolution::conflict and Resolution::reconciled (policy-resolved
+// disagreement). conflicts_as_errors fails only on unresolved `conflict`.
+Result<ConflictReport> detectConflict(const std::filesystem::path& media,
+                                      ReadOptions options = {});
+
+// Resolve a disagreed property by choosing a candidate listed in `entry`
+// (match SourceRef::raw_key). When the same raw_key appears in more than one
+// candidate (embedded vs sidecar XMP), pass `container` ("embedded" or
+// "sidecar"). Resulting Metadata is `reconciled` with preferred_source set;
+// every existing source is retained.
+Result<Metadata> merge(Metadata metadata, const ConflictEntry& entry,
+                       std::string_view source,
+                       std::string_view container = {});
+
+// User-supplied override. Resolution becomes `reconciled`; preferred_source
+// is empty (not a raw key); sources are retained. Unlike set(), provenance
+// is not discarded.
+Result<Metadata> merge(Metadata metadata, std::string_view property_id,
+                       Value value);
 
 // Write canonical metadata through the mapping engine to synchronized
 // representations, with temp-file + atomic-rename safety (decision M3).

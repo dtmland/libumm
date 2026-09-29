@@ -38,4 +38,24 @@ struct PropertyValue {
   bool operator==(const PropertyValue&) const = default;
 };
 
+// One group's parsed value for a disagreed property (session 23).
+struct ConflictCandidate {
+  Value value;
+  std::vector<SourceRef> sources;  // family lives on raw_key; container is embedded|sidecar
+  std::string family;              // grouping family ("xmp", "iim", "exif", "quicktime", ...)
+
+  bool operator==(const ConflictCandidate&) const = default;
+};
+
+// Per-property disagreement: `conflict` (unranked same-tier) or `reconciled`
+// (policy already picked preferred_source). Equivalent/single properties omitted.
+struct ConflictEntry {
+  std::string property_id;
+  std::vector<ConflictCandidate> candidates;
+  std::string preferred_source;  // policy winner's primary raw_key
+  Resolution resolution{Resolution::conflict};
+
+  bool operator==(const ConflictEntry&) const = default;
+};
+
 }  // namespace umm

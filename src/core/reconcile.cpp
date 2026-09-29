@@ -954,8 +954,27 @@ Value merge_values(std::string_view property_id, Value a, const Value& b) {
   return a;
 }
 
+ConflictEntry disagreement_entry(std::string_view property_id,
+                                 const std::vector<Group>& groups,
+                                 std::size_t winner, Resolution resolution) {
+  ConflictEntry entry;
+  entry.property_id = std::string(property_id);
+  entry.preferred_source = groups[winner].primary_key;
+  entry.resolution = resolution;
+  entry.candidates.reserve(groups.size());
+  for (const Group& group : groups) {
+    ConflictCandidate candidate;
+    candidate.value = group.value;
+    candidate.sources = group.sources;
+    candidate.family = group.family;
+    entry.candidates.push_back(std::move(candidate));
+  }
+  return entry;
+}
+
 void classify(Metadata& metadata, std::string_view property_id,
-              std::vector<Group> groups) {
+              std::vector<Group> groups,
+              std::vector<ConflictEntry>* disagreements) {
   if (groups.empty()) {
     return;
   }
@@ -1009,6 +1028,10 @@ void classify(Metadata& metadata, std::string_view property_id,
   property.preferred_source = groups[winner].primary_key;
   property.resolution =
       same_family_conflict ? Resolution::conflict : Resolution::reconciled;
+  if (disagreements) {
+    disagreements->push_back(disagreement_entry(
+        property_id, groups, winner, property.resolution));
+  }
   (void)metadata.set(property_id, std::move(property));
 }
 
@@ -1652,7 +1675,8 @@ void add_document_groups(std::vector<Group>& groups, const RawDocument& document
 
 void reconcile_property(Metadata& metadata, const RawDocument& embedded,
                         const RawDocument* sidecar, std::string_view backend,
-                        std::string_view property_id, bool video) {
+                        std::string_view property_id, bool video,
+                        std::vector<ConflictEntry>* disagreements) {
   std::vector<Group> groups;
   add_document_groups(groups, embedded, backend, property_id, "embedded",
                       video);
@@ -1660,7 +1684,7 @@ void reconcile_property(Metadata& metadata, const RawDocument& embedded,
     add_document_groups(groups, *sidecar, backend, property_id, "sidecar",
                         video);
   }
-  classify(metadata, property_id, std::move(groups));
+  classify(metadata, property_id, std::move(groups), disagreements);
 }
 
 }  // namespace
@@ -1668,7 +1692,8 @@ void reconcile_property(Metadata& metadata, const RawDocument& embedded,
 Result<Metadata> reconcile(const RawDocument& document,
                            std::string_view backend_id,
                            const RawDocument* sidecar,
-                           std::string_view file_type) {
+                           std::string_view file_type,
+                           std::vector<ConflictEntry>* disagreements) {
   Metadata metadata;
   std::vector<RawEntry> raw = document.entries;
   if (sidecar) {
@@ -1678,33 +1703,41 @@ Result<Metadata> reconcile(const RawDocument& document,
   const bool video = is_video_file_type(file_type);
   if (video) {
     reconcile_property(metadata, document, sidecar, backend_id, kVideoTitle,
-                       true);
+                       true, disagreements);
     reconcile_property(metadata, document, sidecar, backend_id,
-                       kVideoDescription, true);
+                       kVideoDescription, true, disagreements);
     reconcile_property(metadata, document, sidecar, backend_id, kVideoCreator,
-                       true);
+                       true, disagreements);
     reconcile_property(metadata, document, sidecar, backend_id,
-                       kVideoDateCreated, true);
+                       kVideoDateCreated, true, disagreements);
     reconcile_property(metadata, document, sidecar, backend_id,
-                       kVideoCopyright, true);
+                       kVideoCopyright, true, disagreements);
     reconcile_property(metadata, document, sidecar, backend_id, kVideoKeywords,
-                       true);
-    reconcile_property(metadata, document, sidecar, backend_id, kGps, true);
+                       true, disagreements);
+    reconcile_property(metadata, document, sidecar, backend_id, kGps, true,
+                       disagreements);
     return metadata;
   }
-  reconcile_property(metadata, document, sidecar, backend_id, kCreator, false);
+  reconcile_property(metadata, document, sidecar, backend_id, kCreator, false,
+                     disagreements);
   reconcile_property(metadata, document, sidecar, backend_id, kDescription,
-                     false);
-  reconcile_property(metadata, document, sidecar, backend_id, kHeadline, false);
+                     false, disagreements);
+  reconcile_property(metadata, document, sidecar, backend_id, kHeadline, false,
+                     disagreements);
   reconcile_property(metadata, document, sidecar, backend_id, kDateCreated,
-                     false);
+                     false, disagreements);
   reconcile_property(metadata, document, sidecar, backend_id, kCopyright,
-                     false);
-  reconcile_property(metadata, document, sidecar, backend_id, kCredit, false);
-  reconcile_property(metadata, document, sidecar, backend_id, kKeywords, false);
-  reconcile_property(metadata, document, sidecar, backend_id, kRating, false);
-  reconcile_property(metadata, document, sidecar, backend_id, kLocation, false);
-  reconcile_property(metadata, document, sidecar, backend_id, kGps, false);
+                     false, disagreements);
+  reconcile_property(metadata, document, sidecar, backend_id, kCredit, false,
+                     disagreements);
+  reconcile_property(metadata, document, sidecar, backend_id, kKeywords, false,
+                     disagreements);
+  reconcile_property(metadata, document, sidecar, backend_id, kRating, false,
+                     disagreements);
+  reconcile_property(metadata, document, sidecar, backend_id, kLocation, false,
+                     disagreements);
+  reconcile_property(metadata, document, sidecar, backend_id, kGps, false,
+                     disagreements);
   return metadata;
 }
 
