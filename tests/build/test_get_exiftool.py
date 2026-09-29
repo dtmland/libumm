@@ -130,6 +130,15 @@ class TestGetExiftool(unittest.TestCase):
             self.assertNotIn("python", text, f"{path.name} must not fall back to Python")
             self.assertNotIn("pins.sh", text, f"{path.name} must parse backends.env itself")
 
+    def test_windows_script_hashes_without_get_filehash(self) -> None:
+        text = INSTALL_PS1.read_text(encoding="utf-8")
+        self.assertNotIn(
+            "Get-FileHash",
+            text,
+            "install.ps1 must not depend on Get-FileHash (missing on some hosts)",
+        )
+        self.assertIn("System.Security.Cryptography.SHA256", text)
+
     def test_scripts_do_not_duplicate_pin_literals(self) -> None:
         pins = parse_backends_env(BACKENDS_ENV)
         forbidden = (
