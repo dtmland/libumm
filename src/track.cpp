@@ -56,7 +56,7 @@ std::string_view local_name(std::string_view qname) {
 }
 
 bool ieq_local(std::string_view qname, std::string_view expected) {
-  return ascii_lower(local_name(qname)) == ascii_lower(expected);
+  return ascii_lower(local_name(qname)) == ascii_lower(local_name(expected));
 }
 
 std::optional<double> parse_double(std::string_view text) {
@@ -697,12 +697,12 @@ std::string nmea_formatter(std::string_view body) {
   return ascii_lower(addr.substr(addr.size() - 3));
 }
 
-std::optional<double> nmea_degmin(std::string_view field, bool longitude) {
+std::optional<double> nmea_degmin(std::string_view field, bool /*longitude*/) {
   field = trim(field);
   const auto dot = field.find('.');
   const std::size_t int_len = dot == std::string_view::npos ? field.size() : dot;
   const std::size_t min_digits = 2;
-  if (int_len < min_digits + (longitude ? 1 : 1)) {
+  if (int_len <= min_digits) {
     return std::nullopt;
   }
   const std::size_t deg_len = int_len - min_digits;
@@ -768,7 +768,6 @@ Result<Track> parse_nmea(std::string_view text) {
   Track track;
   track.format = TrackFormat::nmea;
   std::optional<DateTime> date;
-  int attempts = 0;
 
   std::size_t line_start = 0;
   while (line_start <= text.size()) {
@@ -798,24 +797,19 @@ Result<Track> parse_nmea(std::string_view text) {
     const std::string formatter = nmea_formatter(body);
     const auto fields = split_csv(body);
     if (formatter == "zda" && fields.size() >= 5) {
-      auto time = nmea_time_of_day(fields[1]);
       const auto day = parse_int(fields[2]);
       const auto month = parse_int(fields[3]);
       const auto year = parse_int(fields[4]);
-      if (time && day && month && year) {
+      if (day && month && year) {
         DateTime d;
         d.year = *year;
         d.month = *month;
         d.day = *day;
         date = d;
-        if (apply_date(*time, d)) {
-          // Date-only update; no position in ZDA.
-        }
       }
       continue;
     }
     if (formatter == "rmc" && fields.size() >= 10) {
-      ++attempts;
       if (ascii_lower(trim(fields[2])) != "a") {
         continue;
       }
@@ -848,7 +842,6 @@ Result<Track> parse_nmea(std::string_view text) {
       continue;
     }
     if (formatter == "gga" && fields.size() >= 10) {
-      ++attempts;
       auto time = nmea_time_of_day(fields[1]);
       const auto lat = nmea_degmin(fields[2], false);
       const auto lon = nmea_degmin(fields[4], true);
@@ -891,7 +884,6 @@ Result<Track> parse_nmea(std::string_view text) {
   if (track.points.empty()) {
     return io_error(ErrorCode::format_corrupt, "no usable NMEA positions", "");
   }
-  (void)attempts;
   finish_track(track);
   return track;
 }
