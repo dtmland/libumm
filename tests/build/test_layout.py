@@ -16,6 +16,11 @@ LIBUMM_EXIFTOOL_CMAKE = REPO_ROOT / "cmake" / "LibummExifTool.cmake"
 LIBUMM_EXIV2_CMAKE = REPO_ROOT / "cmake" / "LibummExiv2.cmake"
 LIBUMM_REGISTRY_CMAKE = REPO_ROOT / "cmake" / "LibummRegistry.cmake"
 LIBUMM_CORPUS_CMAKE = REPO_ROOT / "cmake" / "LibummCorpus.cmake"
+LIBUMM_INSTALL_CMAKE = REPO_ROOT / "cmake" / "LibummInstall.cmake"
+UMM_CONFIG_IN = REPO_ROOT / "cmake" / "ummConfig.cmake.in"
+CONSUMER_CMAKE = REPO_ROOT / "tests" / "consumer" / "CMakeLists.txt"
+CONSUMER_MAIN = REPO_ROOT / "tests" / "consumer" / "main.cpp"
+CONSUMER_INSTALL_TEST = REPO_ROOT / "tests" / "build" / "test_consumer_install.cmake"
 CORPUS_FETCHER = REPO_ROOT / "tools" / "corpus" / "fetch.py"
 CORPUS_MANIFEST = REPO_ROOT / "tests" / "corpus" / "manifest.json"
 CORPUS_SCHEMA = REPO_ROOT / "tests" / "corpus" / "schema.md"
@@ -65,6 +70,11 @@ class TestLayout(unittest.TestCase):
             LIBUMM_EXIV2_CMAKE,
             LIBUMM_REGISTRY_CMAKE,
             LIBUMM_CORPUS_CMAKE,
+            LIBUMM_INSTALL_CMAKE,
+            UMM_CONFIG_IN,
+            CONSUMER_CMAKE,
+            CONSUMER_MAIN,
+            CONSUMER_INSTALL_TEST,
             CORPUS_FETCHER,
             CORPUS_MANIFEST,
             CORPUS_SCHEMA,
@@ -107,6 +117,23 @@ class TestLayout(unittest.TestCase):
         # Exiv2 0.28 xmpsdk compiles ExpatAdapter.cpp with EXPAT_INCLUDE_DIRS.
         self.assertRegex(text, r'set\(EXPAT_INCLUDE_DIRS ')
         self.assertRegex(text, r'set\(EXPAT_INCLUDE_DIR ')
+
+    def test_install_export_uses_imported_private_archives(self) -> None:
+        # Session 29: static install ships Exiv2 archives as IMPORTED deps of
+        # umm::umm. FetchContent targets stay out of the export set.
+        install = LIBUMM_INSTALL_CMAKE.read_text(encoding="utf-8")
+        config_in = UMM_CONFIG_IN.read_text(encoding="utf-8")
+        exiv2 = LIBUMM_EXIV2_CMAKE.read_text(encoding="utf-8")
+        consumer = CONSUMER_CMAKE.read_text(encoding="utf-8")
+        self.assertIn("IMPORTED STATIC", install)
+        self.assertIn("SameMajorVersion", install)
+        self.assertIn("CMAKE_INSTALL_LIBDIR}/umm", install)
+        self.assertIn("$<BUILD_INTERFACE:exiv2lib>", exiv2)
+        self.assertNotIn("find_package(exiv2", config_in)
+        self.assertIn("does not locate Exiv2 as a CMake package", install)
+        self.assertIn("find_package(umm 0.1 CONFIG REQUIRED)", consumer)
+        self.assertIn("umm::umm", consumer)
+        self.assertIn("CMAKE_SKIP_INSTALL_RULES", exiv2)
 
     def test_exiv2_fetched_deps_skip_install_rules(self) -> None:
         # zlib 1.3.x install(TARGETS) has no EXPORT. Putting zlibstatic in

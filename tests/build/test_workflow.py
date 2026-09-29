@@ -128,6 +128,8 @@ class TestWorkflow(unittest.TestCase):
             "-DUMM_TIER_B=ON ${{ inputs.failing_selftest",
             text,
         )
+        self.assertIn("Install and consumer smoke", text)
+        self.assertIn("consumer_install", text)
 
 
 if __name__ == "__main__":

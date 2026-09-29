@@ -6,6 +6,8 @@ include_guard(GLOBAL)
 include("${CMAKE_CURRENT_LIST_DIR}/LibummPins.cmake")
 
 set(UMM_EXIV2_ACQUIRED FALSE)
+set(UMM_BUNDLED_EXPAT FALSE)
+set(UMM_BUNDLED_ZLIB FALSE)
 
 if(NOT UMM_REQUIRE_EXIV2)
   message(STATUS "Exiv2 not acquired (UMM_REQUIRE_EXIV2=OFF)")
@@ -97,6 +99,7 @@ if(NOT EXPAT_FOUND)
   set(EXPAT_INCLUDE_DIRS "${_umm_expat_include_dir}")
   set(EXPAT_FOUND TRUE)
   unset(_umm_expat_include_dir)
+  set(UMM_BUNDLED_EXPAT TRUE)
   message(STATUS "Expat not found on system; fetched for Exiv2 XMP")
 endif()
 
@@ -137,6 +140,7 @@ if(NOT ZLIB_FOUND)
   set(ZLIB_FOUND TRUE)
   unset(_umm_zlib_include_dir)
   unset(_umm_zlib_binary_dir)
+  set(UMM_BUNDLED_ZLIB TRUE)
   message(STATUS "Zlib not found on system; fetched for Exiv2 PNG")
 endif()
 
@@ -169,7 +173,9 @@ target_include_directories(umm
     "${CMAKE_BINARY_DIR}"
 )
 target_compile_definitions(umm PRIVATE UMM_HAS_EXIV2=1)
-target_link_libraries(umm PRIVATE exiv2lib)
+# BUILD_INTERFACE: in-tree tests still link exiv2lib. The exported umm::umm
+# target must not require the FetchContent target (session 29 install/export).
+target_link_libraries(umm PRIVATE $<BUILD_INTERFACE:exiv2lib>)
 
 set(UMM_EXIV2_ACQUIRED TRUE)
 

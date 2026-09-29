@@ -37,7 +37,7 @@ Use it as a quick reference before starting work so you can confirm which phase 
 | 26 | [26-track-correlation-and-location-write.md](implementation/26-track-correlation-and-location-write.md) | Complete | `matchTrack`; interpolation; naive timestamps require an explicit offset; location write via `umm::write`. |
 | 27 | [27-tier-b-corpus-infrastructure.md](implementation/27-tier-b-corpus-infrastructure.md) | Complete | Checksummed download corpus; closes makernote + proprietary-RAW deferrals. |
 | 28 | [28-cross-backend-verification.md](implementation/28-cross-backend-verification.md) | Complete | Write-with-one/read-with-other comparison suite; divergence ledger; Stage 10 exit. Round-trip/Tier-B depth (cut line) closes in session 35. |
-| 29 | [29-install-and-package-export.md](implementation/29-install-and-package-export.md) | Planned | Install rules, `umm::umm` export, `find_package(umm)` + consumer smoke test. |
+| 29 | [29-install-and-package-export.md](implementation/29-install-and-package-export.md) | Complete | Install rules, `umm::umm` export, static private Exiv2 archives as IMPORTED deps, `find_package(umm)` + consumer smoke test. |
 | 30 | [30-versioning-and-abi-policy.md](implementation/30-versioning-and-abi-policy.md) | Planned | Version macros; `docs/abi-policy.md` (decision P4); version-agreement contract tests. |
 | 31 | [31-third-party-notices-and-license-compliance.md](implementation/31-third-party-notices-and-license-compliance.md) | Planned | THIRD-PARTY-NOTICES, license texts, corresponding-source manifest (decision P1). |
 | 32 | [32-exiv2-shared-linkage-option.md](implementation/32-exiv2-shared-linkage-option.md) | Planned | `UMM_EXIV2_SHARED` (decision P2); system-Exiv2 support; Linux CI leg. |

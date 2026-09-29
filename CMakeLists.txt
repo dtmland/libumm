@@ -453,6 +453,23 @@ if(UMM_BUILD_TESTS)
     endif()
   endif()
 
+  if(UMM_EXIV2_ACQUIRED)
+    add_test(
+      NAME consumer_install
+      COMMAND "${CMAKE_COMMAND}"
+        "-DUMM_BUILD_DIR=${CMAKE_BINARY_DIR}"
+        "-DUMM_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/consumer-prefix"
+        "-DUMM_CONSUMER_SOURCE_DIR=${PROJECT_SOURCE_DIR}/tests/consumer"
+        "-DUMM_CONSUMER_BINARY_DIR=${CMAKE_BINARY_DIR}/consumer-smoke"
+        "-DUMM_CONSUMER_FIXTURE=${UMM_FIXTURES_DIR_CMAKE}/jpeg/full-agreeing.jpg"
+        "-DUMM_GENERATOR=${CMAKE_GENERATOR}"
+        "-DUMM_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
+        "-DUMM_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+        "-DUMM_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}"
+        -P "${PROJECT_SOURCE_DIR}/tests/build/test_consumer_install.cmake"
+    )
+  endif()
+
   if(NOT UMM_TIER_B)
     add_test(
       NAME tier_b_skipped
@@ -483,3 +500,5 @@ if(UMM_BUILD_TESTS)
     umm_apply_fixture_dir_to_test(test_exiftool_read)
   endif()
 endif()
+
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/LibummInstall.cmake")
