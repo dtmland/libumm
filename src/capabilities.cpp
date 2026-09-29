@@ -124,15 +124,87 @@ bool looks_like_iso_bmff(const std::vector<unsigned char>& bytes) {
          bytes[6] == 'y' && bytes[7] == 'p';
 }
 
+bool looks_like_jxl(const std::vector<unsigned char>& bytes) {
+  if (bytes.size() >= 2 && bytes[0] == 0xFF && bytes[1] == 0x0A) {
+    return true;
+  }
+  static constexpr unsigned char kContainer[] = {
+      0x00, 0x00, 0x00, 0x0C, 'J', 'X', 'L', ' ', 0x0D, 0x0A, 0x87, 0x0A};
+  if (bytes.size() < sizeof(kContainer)) {
+    return false;
+  }
+  for (std::size_t i = 0; i < sizeof(kContainer); ++i) {
+    if (bytes[i] != kContainer[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool brand_eq(const std::vector<unsigned char>& bytes, std::size_t off,
+              const char* four) {
+  return bytes.size() >= off + 4 && bytes[off] == static_cast<unsigned char>(four[0]) &&
+         bytes[off + 1] == static_cast<unsigned char>(four[1]) &&
+         bytes[off + 2] == static_cast<unsigned char>(four[2]) &&
+         bytes[off + 3] == static_cast<unsigned char>(four[3]);
+}
+
+bool ftyp_has_brand(const std::vector<unsigned char>& bytes, const char* four) {
+  if (!looks_like_iso_bmff(bytes)) {
+    return false;
+  }
+  std::size_t box = 0;
+  if (bytes.size() >= 4) {
+    box = (static_cast<std::size_t>(bytes[0]) << 24) |
+          (static_cast<std::size_t>(bytes[1]) << 16) |
+          (static_cast<std::size_t>(bytes[2]) << 8) |
+          static_cast<std::size_t>(bytes[3]);
+  }
+  if (box < 16 || box > bytes.size()) {
+    box = bytes.size();
+  }
+  if (brand_eq(bytes, 8, four)) {
+    return true;
+  }
+  for (std::size_t i = 16; i + 4 <= box; i += 4) {
+    if (brand_eq(bytes, i, four)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 std::string iso_bmff_type(const std::vector<unsigned char>& bytes,
                           const std::filesystem::path& media) {
-  if (bytes.size() >= 12 && bytes[8] == 'q' && bytes[9] == 't' &&
-      bytes[10] == ' ' && bytes[11] == ' ') {
+  const std::string from_ext = type_from_extension(media);
+  if (ftyp_has_brand(bytes, "qt  ")) {
     return "MOV";
   }
-  const std::string from_ext = type_from_extension(media);
-  if (from_ext == "MOV") {
-    return "MOV";
+  if (ftyp_has_brand(bytes, "heic") || ftyp_has_brand(bytes, "heix") ||
+      ftyp_has_brand(bytes, "hevc") || ftyp_has_brand(bytes, "hevx")) {
+    return "HEIC";
+  }
+  if (ftyp_has_brand(bytes, "avif") || ftyp_has_brand(bytes, "avis") ||
+      ftyp_has_brand(bytes, "avio")) {
+    return "AVIF";
+  }
+  if (ftyp_has_brand(bytes, "crx ")) {
+    return "CR3";
+  }
+  if (ftyp_has_brand(bytes, "jxl ")) {
+    return "JXL";
+  }
+  if (ftyp_has_brand(bytes, "mif1") || ftyp_has_brand(bytes, "msf1") ||
+      ftyp_has_brand(bytes, "heif") || ftyp_has_brand(bytes, "heis")) {
+    if (from_ext == "HEIC" || from_ext == "HEIF" || from_ext == "AVIF") {
+      return from_ext;
+    }
+    return "HEIF";
+  }
+  if (from_ext == "MOV" || from_ext == "HEIC" || from_ext == "HEIF" ||
+      from_ext == "AVIF" || from_ext == "CR3" || from_ext == "JXL" ||
+      from_ext == "MP4") {
+    return from_ext;
   }
   return "MP4";
 }
@@ -178,6 +250,11 @@ std::string sniff_type(const std::filesystem::path& media) {
     }
     if (looks_like_webp(bytes)) {
       return "WEBP";
+    }
+    // Naked JPEG XL (FF 0A) and the 12-byte ISOBMFF JXL signature box come
+    // before ftyp classification (session 35).
+    if (looks_like_jxl(bytes)) {
+      return "JXL";
     }
     if (looks_like_iso_bmff(bytes)) {
       return iso_bmff_type(bytes, media);

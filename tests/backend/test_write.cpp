@@ -330,6 +330,13 @@ umm::WriteOptions opts(const std::string& backend) {
   return options;
 }
 
+umm::WriteOptions opts_embedded(const std::string& backend) {
+  umm::WriteOptions options;
+  options.backend = backend;
+  options.policy = umm::StoragePolicy::embedded_only;
+  return options;
+}
+
 umm::ReadOptions ropts(const std::string& backend) {
   umm::ReadOptions options;
   options.backend = backend;
@@ -762,6 +769,87 @@ bool lang_is(const umm::Metadata& metadata, std::string_view id,
   return text.find(std::string(expected)) != std::string::npos;
 }
 
+int test_avif_exiv2_embedded_rejected() {
+  umm::Backend* backend = umm::BackendManager::instance().get("exiv2");
+  if (!backend || !backend->availability().available) {
+    return 0;
+  }
+  const auto file =
+      copy_fixture(raw_stem("avif", "minimal", ".avif"), "exiv2-avif.avif");
+  umm::Metadata metadata;
+  if (!metadata.setHeadline("nope").ok()) {
+    return fail("exiv2 avif setHeadline");
+  }
+  const auto written = umm::write(file, metadata, opts_embedded("exiv2"));
+  if (written.ok() ||
+      written.error().code != umm::ErrorCode::unsupported_capability) {
+    return fail("exiv2 AVIF embedded_only must be unsupported_capability");
+  }
+  return 0;
+}
+
+int test_avif_exiftool_embedded() {
+  umm::Backend* backend = umm::BackendManager::instance().get("exiftool");
+  if (!backend || !backend->availability().available) {
+    return 0;
+  }
+  const auto file = copy_fixture(raw_stem("avif", "minimal", ".avif"),
+                                 "exiftool-avif-embedded.avif");
+  const auto before_payload = image_payload(file);
+  if (before_payload.empty()) {
+    return fail("avif mdat payload missing");
+  }
+  umm::Metadata metadata;
+  if (!metadata.setHeadline("AVIF headline").ok()) {
+    return fail("avif setHeadline");
+  }
+  umm::GpsCoordinate gps;
+  gps.latitude = 37.7749;
+  gps.longitude = -122.4194;
+  if (!metadata.setGps(gps).ok()) {
+    return fail("avif setGps");
+  }
+  const auto written = umm::write(file, metadata, opts_embedded("exiftool"));
+  if (!written.ok()) {
+    std::fprintf(stderr, "avif embedded write failed: %s (%s)\n",
+                 written.error().message.c_str(),
+                 written.error().detail.c_str());
+    return 1;
+  }
+  if (written.value().decision.method != umm::StorageDecision::Method::embedded ||
+      written.value().decision.backend != "exiftool") {
+    return fail("avif embedded_only decision");
+  }
+  if (image_payload(file) != before_payload) {
+    return fail("avif mdat payload changed after metadata write");
+  }
+  bool saw_xmp = false;
+  bool saw_exif = false;
+  for (const umm::RawKey& key : written.value().written) {
+    if (key.family == "Xmp") {
+      saw_xmp = true;
+    }
+    if (key.family == "Exif") {
+      saw_exif = true;
+    }
+  }
+  if (!saw_xmp || !saw_exif) {
+    return fail("avif embedded write dropped XMP or EXIF");
+  }
+  const auto round = umm::read(file, ropts("exiftool"));
+  if (!round.ok() || !round.value().headline() || !round.value().gps()) {
+    return fail("avif embedded write was not readable via ExifTool");
+  }
+  umm::Backend* exiv2 = umm::BackendManager::instance().get("exiv2");
+  if (exiv2 && exiv2->availability().available) {
+    const auto via_exiv2 = umm::read(file, ropts("exiv2"));
+    if (!via_exiv2.ok() || !via_exiv2.value().headline()) {
+      return fail("avif ExifTool write was not readable via Exiv2");
+    }
+  }
+  return 0;
+}
+
 int test_video_exiv2_rejected() {
   umm::Backend* backend = umm::BackendManager::instance().get("exiv2");
   if (!backend || !backend->availability().available) {
@@ -999,6 +1087,9 @@ int check_backend(const std::string& backend,
   if (const int rc = test_payload(backend, "raw", ".dng"); rc != 0) {
     return rc;
   }
+  if (const int rc = test_payload(backend, "avif", ".avif"); rc != 0) {
+    return rc;
+  }
   if (const int rc = test_unknown(backend); rc != 0) {
     return rc;
   }
@@ -1017,6 +1108,9 @@ int check_backend(const std::string& backend,
   if (const int rc = test_atomicity(backend, "raw", ".dng"); rc != 0) {
     return rc;
   }
+  if (const int rc = test_atomicity(backend, "avif", ".avif"); rc != 0) {
+    return rc;
+  }
   if (const int rc = test_encoding(backend, readers, "jpeg", ".jpg"); rc != 0) {
     return rc;
   }
@@ -1031,6 +1125,10 @@ int check_backend(const std::string& backend,
     return rc;
   }
   if (const int rc = test_encoding(backend, readers, "raw", ".dng"); rc != 0) {
+    return rc;
+  }
+  if (const int rc = test_encoding(backend, readers, "avif", ".avif");
+      rc != 0) {
     return rc;
   }
   if (const int rc = test_roundtrip(backend, readers, "jpeg", ".jpg");
@@ -1049,6 +1147,10 @@ int check_backend(const std::string& backend,
     return rc;
   }
   if (const int rc = test_roundtrip(backend, readers, "raw", ".dng"); rc != 0) {
+    return rc;
+  }
+  if (const int rc = test_roundtrip(backend, readers, "avif", ".avif");
+      rc != 0) {
     return rc;
   }
   if (const int rc = test_png_gps_write(backend); rc != 0) {
@@ -1080,6 +1182,12 @@ int main() {
       std::fprintf(stderr, "backend %s write tests failed\n", id.c_str());
       return rc;
     }
+  }
+  if (const int rc = test_avif_exiv2_embedded_rejected(); rc != 0) {
+    return rc;
+  }
+  if (const int rc = test_avif_exiftool_embedded(); rc != 0) {
+    return rc;
   }
   if (const int rc = test_video_exiv2_rejected(); rc != 0) {
     return rc;

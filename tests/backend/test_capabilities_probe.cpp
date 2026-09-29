@@ -377,6 +377,50 @@ int probe_backend(const std::string& backend_id) {
       return fail("probe MP4 write vs container_gps read-back");
     }
   }
+
+  const auto heic_caps = umm::capabilitiesForType("HEIC");
+  if (!heic_caps.ok()) {
+    return fail("probe HEIC caps");
+  }
+  const umm::BackendCapability* heic_row =
+      find_backend(heic_caps.value(), backend_id);
+  if (!heic_row) {
+    return fail("HEIC capability row missing");
+  }
+  if (backend_id == "exiftool") {
+    if (heic_row->categories.exif != umm::Access::read_write ||
+        heic_row->categories.xmp != umm::Access::read_write) {
+      return fail("HEIC ExifTool capability data mismatch");
+    }
+  } else if (heic_row->categories.exif != umm::Access::read ||
+             heic_row->categories.xmp != umm::Access::read ||
+             heic_row->notes.find("BMFF") == std::string::npos) {
+    return fail("HEIC Exiv2 BMFF read-only mismatch");
+  }
+  const auto heic_ok = backend->typeCapabilities("HEIC");
+  if (!heic_ok.ok()) {
+    return fail("typeCapabilities HEIC");
+  }
+  const auto avif_ok = backend->typeCapabilities("AVIF");
+  if (!avif_ok.ok()) {
+    return fail("typeCapabilities AVIF");
+  }
+  const auto sniffed_avif =
+      umm::capabilities(raw_stem("avif", "full-agreeing", ".avif"));
+  if (!sniffed_avif.ok() || sniffed_avif.value().file_type != "AVIF") {
+    return fail("sniff full-agreeing.avif");
+  }
+  const auto avif_xmp =
+      backend->readRaw(raw_stem("avif", "xmp-only", ".avif"));
+  if (!avif_xmp.ok() || !raw_has_family(avif_xmp.value(), "Xmp")) {
+    return fail("avif xmp-only fixture vs XMP capability");
+  }
+  const auto avif_agree =
+      backend->readRaw(raw_stem("avif", "full-agreeing", ".avif"));
+  if (!avif_agree.ok() || !raw_has_family(avif_agree.value(), "Exif") ||
+      !raw_has_family(avif_agree.value(), "Xmp")) {
+    return fail("avif full-agreeing fixture vs EXIF/XMP capability");
+  }
   return 0;
 }
 

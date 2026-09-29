@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <string_view>
 
 namespace {
 
@@ -312,6 +313,134 @@ int main() {
     const auto sniffed_mov = umm::capabilities(mov_xmp);
     if (!sniffed_mov.ok() || sniffed_mov.value().file_type != "MOV") {
       return fail("MOV qt brand before embedded XMP text");
+    }
+  }
+
+  const auto heic = umm::capabilitiesForType("HEIC");
+  if (!heic.ok() || heic.value().file_type != "HEIC" ||
+      heic.value().preferred_backend != "exiftool" ||
+      !heic.value().sidecar_recommended) {
+    return fail("HEIC policy");
+  }
+  const umm::BackendCapability* heic_exiv2 = find_backend(heic.value(), "exiv2");
+  const umm::BackendCapability* heic_et = find_backend(heic.value(), "exiftool");
+  if (!heic_exiv2 || heic_exiv2->categories.exif != umm::Access::read ||
+      heic_exiv2->categories.xmp != umm::Access::read ||
+      heic_exiv2->notes.find("BMFF") == std::string::npos) {
+    return fail("HEIC Exiv2 BMFF read-only");
+  }
+  if (!heic_et || heic_et->categories.exif != umm::Access::read_write ||
+      heic_et->categories.xmp != umm::Access::read_write ||
+      heic_et->location.gps_exif != umm::Access::read_write) {
+    return fail("HEIC ExifTool write coverage");
+  }
+  const auto heif = umm::capabilitiesForType("HEIF");
+  const auto avif = umm::capabilitiesForType("AVIF");
+  const auto jxl = umm::capabilitiesForType("JXL");
+  if (!heif.ok() || heif.value().preferred_backend != "exiftool" ||
+      !heif.value().sidecar_recommended || !avif.ok() ||
+      avif.value().preferred_backend != "exiftool" ||
+      !avif.value().sidecar_recommended || !jxl.ok() ||
+      jxl.value().preferred_backend != "exiftool" ||
+      !jxl.value().sidecar_recommended) {
+    return fail("HEIF/AVIF/JXL sidecar_recommended ExifTool");
+  }
+  const auto by_heic = umm::capabilities(std::filesystem::path("photo.heic"));
+  const auto by_heif = umm::capabilities(std::filesystem::path("photo.heif"));
+  const auto by_avif = umm::capabilities(std::filesystem::path("photo.avif"));
+  const auto by_cr3 = umm::capabilities(std::filesystem::path("photo.cr3"));
+  const auto by_jxl = umm::capabilities(std::filesystem::path("photo.jxl"));
+  if (!by_heic.ok() || by_heic.value().file_type != "HEIC" || !by_heif.ok() ||
+      by_heif.value().file_type != "HEIF" || !by_avif.ok() ||
+      by_avif.value().file_type != "AVIF" || !by_cr3.ok() ||
+      by_cr3.value().file_type != "CR3" || !by_jxl.ok() ||
+      by_jxl.value().file_type != "JXL") {
+    return fail("path extension BMFF stills");
+  }
+  {
+    const std::filesystem::path dir =
+        std::filesystem::temp_directory_path() / "umm-sniff-bmff-brands";
+    std::filesystem::create_directories(dir);
+    auto write_ftyp = [&](const char* name, const char* brand,
+                          const char* compat = nullptr) {
+      const std::filesystem::path path = dir / name;
+      std::string bytes(256, '\0');
+      bytes.replace(4, 4, "ftyp");
+      bytes.replace(8, 4, brand);
+      if (compat) {
+        bytes.replace(16, 4, compat);
+      }
+      bytes.replace(64, 7, "xpacket");
+      std::ofstream out(path, std::ios::binary | std::ios::trunc);
+      out.write(bytes.data(), static_cast<std::streamsize>(bytes.size()));
+      out.close();
+      return path;
+    };
+    const auto sniffed_heic =
+        umm::capabilities(write_ftyp("packet.heic", "heic"));
+    if (!sniffed_heic.ok() || sniffed_heic.value().file_type != "HEIC") {
+      return fail("HEIC heic brand before embedded XMP text");
+    }
+    const auto sniffed_heix =
+        umm::capabilities(write_ftyp("packet.heix.heic", "heix"));
+    if (!sniffed_heix.ok() || sniffed_heix.value().file_type != "HEIC") {
+      return fail("HEIC heix brand");
+    }
+    const auto sniffed_avif =
+        umm::capabilities(write_ftyp("packet.avif", "avif"));
+    if (!sniffed_avif.ok() || sniffed_avif.value().file_type != "AVIF") {
+      return fail("AVIF avif brand before embedded XMP text");
+    }
+    const auto sniffed_cr3 =
+        umm::capabilities(write_ftyp("packet.cr3", "crx "));
+    if (!sniffed_cr3.ok() || sniffed_cr3.value().file_type != "CR3") {
+      return fail("CR3 crx brand");
+    }
+    const auto sniffed_mif1 =
+        umm::capabilities(write_ftyp("packet.heif", "mif1"));
+    if (!sniffed_mif1.ok() || sniffed_mif1.value().file_type != "HEIF") {
+      return fail("HEIF mif1 brand");
+    }
+    const auto sniffed_mif1_heic =
+        umm::capabilities(write_ftyp("compat.heic", "mif1", "heic"));
+    if (!sniffed_mif1_heic.ok() ||
+        sniffed_mif1_heic.value().file_type != "HEIC") {
+      return fail("mif1 major with heic compatible brand is HEIC");
+    }
+    const auto sniffed_unknown =
+        umm::capabilities(write_ftyp("unknown.heic", "xxxx"));
+    if (!sniffed_unknown.ok() || sniffed_unknown.value().file_type != "HEIC") {
+      return fail("unrecognized BMFF brand falls back to extension");
+    }
+    const std::filesystem::path jxl_naked = dir / "naked.jxl";
+    std::string naked(256, '\0');
+    naked[0] = static_cast<char>(0xFF);
+    naked[1] = 0x0A;
+    naked.replace(64, 7, "xpacket");
+    std::ofstream naked_out(jxl_naked, std::ios::binary | std::ios::trunc);
+    naked_out.write(naked.data(), static_cast<std::streamsize>(naked.size()));
+    naked_out.close();
+    const auto sniffed_jxl = umm::capabilities(jxl_naked);
+    if (!sniffed_jxl.ok() || sniffed_jxl.value().file_type != "JXL") {
+      return fail("JXL naked codestream signature");
+    }
+    const std::filesystem::path jxl_box = dir / "box.jxl";
+    std::string box(256, '\0');
+    static constexpr unsigned char kJxl[] = {
+        0x00, 0x00, 0x00, 0x0C, 'J', 'X', 'L', ' ', 0x0D, 0x0A, 0x87, 0x0A};
+    for (std::size_t i = 0; i < sizeof(kJxl); ++i) {
+      box[i] = static_cast<char>(kJxl[i]);
+    }
+    box.replace(12, 4, std::string("\0\0\0\x14", 4));
+    box.replace(16, 4, "ftyp");
+    box.replace(20, 4, "jxl ");
+    box.replace(64, 7, "xpacket");
+    std::ofstream box_out(jxl_box, std::ios::binary | std::ios::trunc);
+    box_out.write(box.data(), static_cast<std::streamsize>(box.size()));
+    box_out.close();
+    const auto sniffed_jxl_box = umm::capabilities(jxl_box);
+    if (!sniffed_jxl_box.ok() || sniffed_jxl_box.value().file_type != "JXL") {
+      return fail("JXL ISOBMFF signature box");
     }
   }
 

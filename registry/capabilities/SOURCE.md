@@ -30,3 +30,11 @@ notes: BMFF types (AVIF, CR3, HEIF, HEIC) are an Exiv2 build option
 (enable_bmff=1). libumm acquires Exiv2 with EXIV2_ENABLE_BMFF ON
 (cmake/LibummExiv2.cmake). Naked JPEG XL codestreams do not contain
 Exif/IPTC/XMP. Exiv2 video is rudimentary read only.
+
+document: ffmpeg lavfi AVIF still-picture seed (session 35)
+version: ffmpeg 6.1.1 (Ubuntu jammy); libaom-av1 -still-picture 1; 16x16 gray
+url: n/a (synthetic; bytes committed in tests/fixtures/generator/generate.py)
+retrieval_date: 2026-09-29
+notes: ffmpeg has no heif muxer in this pin, so HEIC is not generated. CR3
+and JXL2 samples are ExifTool 13.59 t/images URLs in tests/corpus/manifest.json
+(decision M6).

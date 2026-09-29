@@ -30,6 +30,36 @@
       "file_type": "MOV",
       "license": "Artistic-2.0 OR GPL-1.0-or-later; ExifTool t/images QuickTime.mov referenced in place (fetched, never vendored)",
       "capability": "real-camera QuickTime/MOV container read"
+    },
+    {
+      "id": "heic-quicktime",
+      "path": "heic/quicktime.heic",
+      "url": "https://raw.githubusercontent.com/exiftool/exiftool/13.59/t/images/QuickTime.heic",
+      "sha256": "4e1785e9924600d0274176f52609a2d514481877103b91c714bd2088ea803ae7",
+      "bytes": 623,
+      "file_type": "HEIC",
+      "license": "Artistic-2.0 OR GPL-1.0-or-later; ExifTool t/images QuickTime.heic referenced in place (fetched, never vendored)",
+      "capability": "HEIC BMFF still read (mif1 major + heic compatible brand); closes session 35 HEIC fixture deferral"
+    },
+    {
+      "id": "raw-canon-cr3",
+      "path": "raw/canon.cr3",
+      "url": "https://raw.githubusercontent.com/exiftool/exiftool/13.59/t/images/CanonRaw.cr3",
+      "sha256": "dc02aa55e277935b690879584e97c2d013f54d854afaec6f9d3274c99a918fd6",
+      "bytes": 52502,
+      "file_type": "CR3",
+      "license": "Artistic-2.0 OR GPL-1.0-or-later; ExifTool t/images CanonRaw.cr3 referenced in place (fetched, never vendored)",
+      "capability": "CR3 BMFF RAW read and sidecar_recommended write decision (session 35; JXL/CR3 depth via Tier B)"
+    },
+    {
+      "id": "jxl-codestream",
+      "path": "jxl/codestream.jxl",
+      "url": "https://raw.githubusercontent.com/exiftool/exiftool/13.59/t/images/JXL2.jxl",
+      "sha256": "4bc68f38fa4c08441e77b3f0185737b8f08834274b59cfe6d3230f54edc4a5fb",
+      "bytes": 395,
+      "file_type": "JXL",
+      "license": "Artistic-2.0 OR GPL-1.0-or-later; ExifTool t/images JXL2.jxl referenced in place (fetched, never vendored)",
+      "capability": "JPEG XL sniffing and read against a real codestream (session 35 cut-line JXL depth)"
     }
   ]
 }

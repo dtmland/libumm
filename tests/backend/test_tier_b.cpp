@@ -92,6 +92,57 @@ int main() {
                  mov_read.error().detail.c_str());
     return 1;
   }
+
+  const auto heic = raw_corpus("heic/quicktime.heic");
+  if (const int rc = require_file(heic, "heic/quicktime.heic"); rc != 0) {
+    return rc;
+  }
+  const auto heic_caps = umm::capabilities(heic);
+  if (!heic_caps.ok() || heic_caps.value().file_type != "HEIC") {
+    return fail("QuickTime.heic sample is not HEIC");
+  }
+  const auto heic_read = umm::read(heic, read_opts);
+  if (!heic_read.ok()) {
+    std::fprintf(stderr, "HEIC read failed: %s (%s)\n",
+                 heic_read.error().message.c_str(),
+                 heic_read.error().detail.c_str());
+    return 1;
+  }
+  umm::Backend* exiv2 = umm::BackendManager::instance().get("exiv2");
+  if (exiv2 && exiv2->availability().available) {
+    umm::ReadOptions exiv2_opts;
+    exiv2_opts.backend = "exiv2";
+    const auto heic_exiv2 = umm::read(heic, exiv2_opts);
+    if (!heic_exiv2.ok()) {
+      std::fprintf(stderr, "HEIC Exiv2 read failed: %s (%s)\n",
+                   heic_exiv2.error().message.c_str(),
+                   heic_exiv2.error().detail.c_str());
+      return 1;
+    }
+  }
+
+  const auto cr3 = raw_corpus("raw/canon.cr3");
+  if (const int rc = require_file(cr3, "raw/canon.cr3"); rc != 0) {
+    return rc;
+  }
+  const auto cr3_caps = umm::capabilities(cr3);
+  if (!cr3_caps.ok() || cr3_caps.value().file_type != "CR3") {
+    return fail("CanonRaw.cr3 sample is not CR3");
+  }
+  const auto cr3_storage = umm::evaluateStorage(cr3, preferred);
+  if (!cr3_storage.ok() ||
+      cr3_storage.value().method != umm::StorageDecision::Method::sidecar) {
+    return fail("CR3 preferred is not sidecar_recommended");
+  }
+
+  const auto jxl = raw_corpus("jxl/codestream.jxl");
+  if (const int rc = require_file(jxl, "jxl/codestream.jxl"); rc != 0) {
+    return rc;
+  }
+  const auto jxl_caps = umm::capabilities(jxl);
+  if (!jxl_caps.ok() || jxl_caps.value().file_type != "JXL") {
+    return fail("JXL2.jxl sample is not JXL");
+  }
   return 0;
 #endif
 }

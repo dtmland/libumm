@@ -401,6 +401,71 @@ int check_truncated(const std::string& backend_id) {
   return 0;
 }
 
+int check_avif_backend(const std::string& backend_id) {
+  umm::ReadOptions options;
+  options.backend = backend_id;
+
+  const auto minimal = umm::read(raw_stem("avif", "minimal", ".avif"), options);
+  if (!minimal.ok()) {
+    std::fprintf(stderr, "avif minimal read failed: %s\n",
+                 minimal.error().message.c_str());
+    return 1;
+  }
+  if (!minimal.value().propertyIds().empty()) {
+    return fail_read("avif minimal should have no Phase 1 properties");
+  }
+
+  const auto xmp_only =
+      umm::read(raw_stem("avif", "xmp-only", ".avif"), options);
+  if (!xmp_only.ok() || !xmp_only.value().creator() ||
+      xmp_only.value().creator()->resolution != umm::Resolution::single) {
+    return fail_read("avif xmp-only creator not single");
+  }
+
+  const auto agreeing =
+      umm::read(raw_stem("avif", "full-agreeing", ".avif"), options);
+  if (!agreeing.ok()) {
+    std::fprintf(stderr, "avif full-agreeing read failed: %s\n",
+                 agreeing.error().message.c_str());
+    return 1;
+  }
+  const auto creator = agreeing.value().creator();
+  const auto description = agreeing.value().description();
+  const auto date = agreeing.value().dateCreated();
+  if (!creator || creator->resolution != umm::Resolution::equivalent) {
+    return fail_read("avif full-agreeing creator not equivalent");
+  }
+  const auto* names = as_list(*creator);
+  if (!names || names->empty() || names->front() != "Agreeing Creator") {
+    return fail_read("avif full-agreeing creator value");
+  }
+  if (!description || description->resolution != umm::Resolution::equivalent) {
+    return fail_read("avif full-agreeing description not equivalent");
+  }
+  if (!date || date->resolution != umm::Resolution::equivalent) {
+    return fail_read("avif full-agreeing date not equivalent");
+  }
+  if (creator->sources.size() < 2) {
+    return fail_read("avif full-agreeing dropped EXIF/XMP sources");
+  }
+
+  const auto gps = umm::read(raw_stem("avif", "gps", ".avif"), options);
+  if (!gps.ok()) {
+    std::fprintf(stderr, "avif gps read failed: %s\n",
+                 gps.error().message.c_str());
+    return 1;
+  }
+  const auto gps_value = gps.value().gps();
+  const auto* coord =
+      gps_value ? std::get_if<umm::GpsCoordinate>(&gps_value->value.data)
+                : nullptr;
+  if (!coord || std::fabs(coord->latitude - 37.7749) > 1e-4 ||
+      std::fabs(coord->longitude + 122.4194) > 1e-4) {
+    return fail_read("avif gps coordinate");
+  }
+  return 0;
+}
+
 int check_dng_backend(const std::string& backend_id) {
   umm::ReadOptions options;
   options.backend = backend_id;
@@ -624,6 +689,10 @@ int main() {
       std::fprintf(stderr, "backend %s webp failed\n", id.c_str());
       return rc;
     }
+    if (const int rc = check_avif_backend(id); rc != 0) {
+      std::fprintf(stderr, "backend %s avif failed\n", id.c_str());
+      return rc;
+    }
     if (const int rc = check_dng_backend(id); rc != 0) {
       std::fprintf(stderr, "backend %s dng failed\n", id.c_str());
       return rc;
@@ -657,6 +726,11 @@ int main() {
     }
     if (const int rc =
             compare_agreeing_backends(tested[0], tested[1], "webp", ".webp");
+        rc != 0) {
+      return rc;
+    }
+    if (const int rc =
+            compare_agreeing_backends(tested[0], tested[1], "avif", ".avif");
         rc != 0) {
       return rc;
     }

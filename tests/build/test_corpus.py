@@ -30,7 +30,13 @@ REQUIRED_FIELDS = (
     "license",
     "capability",
 )
-REQUIRED_IDS = ("jpeg-makernote", "raw-panasonic-rw2")
+REQUIRED_IDS = (
+    "jpeg-makernote",
+    "raw-panasonic-rw2",
+    "heic-quicktime",
+    "raw-canon-cr3",
+    "jxl-codestream",
+)
 MEDIA_SUFFIXES = {
     ".jpg",
     ".jpeg",
@@ -46,6 +52,11 @@ MEDIA_SUFFIXES = {
     ".nef",
     ".mp4",
     ".mov",
+    ".heic",
+    ".heif",
+    ".avif",
+    ".cr3",
+    ".jxl",
 }
 
 
@@ -153,6 +164,15 @@ class TestCorpusManifest(unittest.TestCase):
         raw = next(row for row in samples if row["id"] == "raw-panasonic-rw2")
         self.assertEqual(raw["file_type"], "RW2")
         self.assertTrue(raw["path"].endswith(".rw2"))
+        heic = next(row for row in samples if row["id"] == "heic-quicktime")
+        self.assertEqual(heic["file_type"], "HEIC")
+        self.assertTrue(heic["path"].endswith(".heic"))
+        cr3 = next(row for row in samples if row["id"] == "raw-canon-cr3")
+        self.assertEqual(cr3["file_type"], "CR3")
+        self.assertTrue(cr3["path"].endswith(".cr3"))
+        jxl = next(row for row in samples if row["id"] == "jxl-codestream")
+        self.assertEqual(jxl["file_type"], "JXL")
+        self.assertTrue(jxl["path"].endswith(".jxl"))
 
 
 class TestCorpusFetcher(unittest.TestCase):
