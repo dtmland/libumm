@@ -52,7 +52,8 @@ macOS brew-Perl fallback can be deferred if the runner image Perl passes the smo
 
 ## Out of scope
 
-The stay_open adapter (session 11); any metadata operations.
+The stay_open adapter (session 11); any metadata operations; end-user acquisition of ExifTool
+outside CMake (session 33, decisions P3/P9 — native scripts, not this FetchContent path).
 
 ## References
 

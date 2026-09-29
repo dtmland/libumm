@@ -41,7 +41,7 @@ Use it as a quick reference before starting work so you can confirm which phase 
 | 30 | [30-versioning-and-abi-policy.md](implementation/30-versioning-and-abi-policy.md) | Complete | Version macros; `docs/abi-policy.md` (decision P4); header/CMake/`umm::version()` agreement; SOVERSION + ConfigVersion follow the policy. |
 | 31 | [31-third-party-notices-and-license-compliance.md](implementation/31-third-party-notices-and-license-compliance.md) | Complete | THIRD-PARTY-NOTICES, vendored license texts, corresponding-source manifest from pins, install + drift tests (decision P1). |
 | 32 | [32-exiv2-shared-linkage-option.md](implementation/32-exiv2-shared-linkage-option.md) | Complete | `UMM_EXIV2_SHARED` (decision P2); system-Exiv2 floor then FetchContent-shared; Linux CI leg. |
-| 33 | [33-exiftool-user-acquisition-tool.md](implementation/33-exiftool-user-acquisition-tool.md) | Planned | `tools/get-exiftool.py`: pinned, checksum-verified, fail-closed user acquisition (decision P3). |
+| 33 | [33-exiftool-user-acquisition-tool.md](implementation/33-exiftool-user-acquisition-tool.md) | Planned | `tools/get-exiftool/install.sh` + `install.ps1`: pinned, checksum-verified, fail-closed user acquisition (decisions P3, P9). |
 | 34 | [34-release-pipeline.md](implementation/34-release-pipeline.md) | Planned | Tag-triggered release workflow: per-OS artifacts, notices, corresponding source, checksums; closes session 26 video write-back cut line. |
 | 35 | [35-bmff-enablement.md](implementation/35-bmff-enablement.md) | Planned | HEIC/HEIF/AVIF/CR3/JXL support (closes R6 deferral); session 28 cut-line depth. |
 

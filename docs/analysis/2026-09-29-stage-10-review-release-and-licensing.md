@@ -8,7 +8,8 @@ and the decisions that the Stage 11+ session documents
 [35](../implementation/35-bmff-enablement.md)) are written against. It follows the decision
 notation of [2026-09-27-plan-review-and-decisions.md](2026-09-27-plan-review-and-decisions.md)
 and [2026-09-28-stage-5-review-and-later-stage-plan.md](2026-09-28-stage-5-review-and-later-stage-plan.md);
-new findings use the **P** (post-Stage-10) prefix.
+new findings use the **P** (post-Stage-10) prefix. Decision **P9** (native scripts for P3) is in
+[2026-09-29-exiftool-native-acquisition-scripts.md](2026-09-29-exiftool-native-acquisition-scripts.md).
 
 ---
 
@@ -117,12 +118,17 @@ help text never re-introduce the misconception.
 
 **Decision P3 — ExifTool end-user acquisition tool. YES — session 33.**
 Today the pinned ExifTool is fetched only by CMake for CI/tests; an end user of a binary release
-has no tooling. A small cross-platform script (`tools/get-exiftool`) that reads the *same*
-`backends.env` pin, downloads from upstream, verifies the SHA-256, installs to a user-writable
-prefix, and prints the `UMM_EXIFTOOL` / config wiring keeps decision S1c intact: the user
-acquires ExifTool from upstream; libumm never redistributes it. The tool ships inside release
-archives and is the exact component the umm CLI (§7) will reuse. Windows requires Perl for the
-tarball form; the tool must say so and point at the pinned Strawberry Perl as the tested option.
+has no tooling. A small helper (`tools/get-exiftool`) that reads the *same* `backends.env` pin,
+downloads from upstream, verifies the SHA-256, installs to a user-writable prefix, and prints
+the `UMM_EXIFTOOL` / config wiring keeps decision S1c intact: the user acquires ExifTool from
+upstream; libumm never redistributes it. The helper ships inside release archives and is the
+exact component the umm CLI (§7) will reuse. Windows requires Perl for the tarball form; the
+helper must say so and point at the pinned Strawberry Perl as the tested option.
+
+**Implementation vehicle (P9):** session 33 is **not** a Python program. See
+[2026-09-29-exiftool-native-acquisition-scripts.md](2026-09-29-exiftool-native-acquisition-scripts.md)
+— POSIX `sh` + PowerShell under `tools/get-exiftool/`. P3's YES, pin/checksum/S1c requirements,
+and session number stand.
 
 ## 5. ABI and API stability (P4, P5)
 
@@ -224,19 +230,20 @@ future Exiv2-less "core" artifact (P1 option 3), which is a backend switch, not 
 
 Release engineering is Stage 11 (sessions 29–34): install/export (29), version + ABI policy (30),
 third-party notices + corresponding source (31), shared-Exiv2 option (32), ExifTool acquisition
-tool (33), and the release workflow itself (34). The workflow produces, per tag:
+scripts (33, P9), and the release workflow itself (34). The workflow produces, per tag:
 
 - **source archive** (Apache-2.0, always);
 - **per-OS binary archives** of the full build (GPL-3.0-conveyed per P1) containing headers,
   library, CMake package files, `LICENSE`, `NOTICE.md`, `THIRD-PARTY-NOTICES.md`, license texts,
-  and `tools/get-exiftool`;
+  and `tools/get-exiftool/` (native `install.sh` / `install.ps1`, decision P9);
 - **corresponding-source attachments** (pinned exiv2/expat/zlib tarballs) and SHA-256 sums.
 
 **Decision P8 — the umm CLI concept document. YES — created as
 [docs/umm-cli-concept.md](../umm-cli-concept.md)**, written to be lifted out as the seed of a new
 `umm` repository. Design constraints it inherits from this analysis: the CLI consumes libumm from
 source (FetchContent pin or submodule) or via `find_package(umm)` once session 29 lands; it reuses
-the `backends.env` ExifTool pin and `get-exiftool` machinery for its `umm doctor` / setup flow;
+the `backends.env` ExifTool pin and `tools/get-exiftool/` native scripts for its
+`umm doctor` / setup flow;
 and because it links the Exiv2 backend, its binary releases are GPL-governed under exactly the
 P1 analysis (its own code can still be Apache-2.0).
 
@@ -244,7 +251,7 @@ P1 analysis (its own code can still be Apache-2.0).
 
 | Stage | Sessions | Shape |
 |---|---|---|
-| **11 — Release engineering** | [29 install & package export](../implementation/29-install-and-package-export.md) · [30 versioning & ABI policy](../implementation/30-versioning-and-abi-policy.md) · [31 third-party notices & corresponding source](../implementation/31-third-party-notices-and-license-compliance.md) · [32 shared-Exiv2 option](../implementation/32-exiv2-shared-linkage-option.md) · [33 get-exiftool tool](../implementation/33-exiftool-user-acquisition-tool.md) · [34 release workflow](../implementation/34-release-pipeline.md) | 29 → 30 → 31 are ordered; 32 and 33 are independent after 29; 34 assembles everything. Session 34 also closes the session 26 cut-line deferral (video write-back coverage in track correlation) as a pre-release verification item. |
+| **11 — Release engineering** | [29 install & package export](../implementation/29-install-and-package-export.md) · [30 versioning & ABI policy](../implementation/30-versioning-and-abi-policy.md) · [31 third-party notices & corresponding source](../implementation/31-third-party-notices-and-license-compliance.md) · [32 shared-Exiv2 option](../implementation/32-exiv2-shared-linkage-option.md) · [33 get-exiftool native scripts](../implementation/33-exiftool-user-acquisition-tool.md) · [34 release workflow](../implementation/34-release-pipeline.md) | 29 → 30 → 31 are ordered; 32 and 33 are independent after 29; 34 assembles everything. Session 34 also closes the session 26 cut-line deferral (video write-back coverage in track correlation) as a pre-release verification item. Session 33 follows P9 (POSIX `sh` + PowerShell), not a Python helper. |
 | **12 — BMFF enablement** | [35 BMFF (HEIC/AVIF/CR3/JXL)](../implementation/35-bmff-enablement.md) | Closes decision R6's "planned after Stage 10"; extends Tier B corpus; absorbs the session 28 cut-line depth (round-trip stability + Tier B integration in the comparison suite). |
 | **(unscheduled)** | Wide format expansion (§6.3 bucket 4), RAW Tier B corpus growth (buckets 2–3), Exiv2-free "core" artifact (P1 option 3), raw-write API (P6) | Await owner confirmation / concrete consumer need. |
 
@@ -259,7 +266,7 @@ inside Stage 11 so they get worked as implementation continues:
 3. **No license texts / corresponding-source mechanism in any distributable** (session 31).
 4. **Version macros absent from `umm/version.hpp`** — consumers cannot compile-time-gate
    (session 30).
-5. **ExifTool acquisition has no end-user path** (session 33).
+5. **ExifTool acquisition has no end-user path** (session 33; native scripts per P9).
 
 ## 10. Decision index
 
@@ -267,9 +274,10 @@ inside Stage 11 so they get worked as implementation continues:
 |---|---|---|
 | P1 | Binary release licensing model | choice 2 — full artifact conveyed under GPL-3.0 with notices + corresponding source; Apache-2.0 source always; core-only artifact deferred |
 | P2 | `UMM_EXIV2_SHARED` shared-linkage option (not a GPL escape) | YES — session 32 |
-| P3 | Checksum-pinned end-user ExifTool acquisition tool | YES — session 33 |
+| P3 | Checksum-pinned end-user ExifTool acquisition tool | YES — session 33 (vehicle: **P9**) |
 | P4 | ABI approach: declared semver API contract, no C++ ABI promise, no PIMPL retrofit | choice 2 — session 30 |
 | P5 | C ABI / bindings stay deferred (reaffirm M1) | YES |
 | P6 | Public raw-write escape hatch | NO — revisit with a concrete consumer case |
 | P7 | Per-format compile-time selection options | NO — capability data + backend switches suffice |
 | P8 | umm CLI concept document as seed for a new repo | YES — docs/umm-cli-concept.md |
+| P9 | Acquisition vehicle: system-native scripts, not Python | choice 2 — POSIX `sh` + PowerShell; [follow-up analysis](2026-09-29-exiftool-native-acquisition-scripts.md) |
