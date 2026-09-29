@@ -23,4 +23,18 @@ by `umm::Registry::standards()`, not by library semver. See
 
 ## Install
 
-`cmake --install` writes headers, the static library, and a CMake package (`ummConfig.cmake`) so a downstream project can `find_package(umm CONFIG)` and link `umm::umm`. The static default (decision M4c) installs private Exiv2 (and FetchContent Expat/zlib) archives as IMPORTED link dependencies of that export; consumers do not need an Exiv2 CMake package. FetchContent Exiv2/Expat/zlib headers and CMake files are not installed. Shared-library install is session 32. Binary prefixes also install `LICENSE`, `NOTICE.md`, `THIRD-PARTY-NOTICES.md`, `licenses/`, and `tools/build/corresponding-source.json` under `share/doc/libumm/` (decision P1).
+`cmake --install` writes headers, the static library, and a CMake package (`ummConfig.cmake`) so a downstream project can `find_package(umm CONFIG)` and link `umm::umm`. The static default (decision M4c) installs private Exiv2 (and FetchContent Expat/zlib) archives as IMPORTED link dependencies of that export; consumers do not need an Exiv2 CMake package. FetchContent Exiv2/Expat/zlib headers and CMake files are not installed. Binary prefixes also install `LICENSE`, `NOTICE.md`, `THIRD-PARTY-NOTICES.md`, `licenses/`, and `tools/build/corresponding-source.json` under `share/doc/libumm/` (decision P1).
+
+## Build options
+
+- `UMM_EXIV2_SHARED` (default **OFF**): link the Exiv2 backend against a shared
+  `exiv2` library. When ON, CMake prefers `find_package(exiv2 CONFIG)` with a
+  version floor of the **pinned minor** in `tools/build/backends.env` (the
+  major.minor of `UMM_EXIV2_VERSION`); if no suitable system or consumer Exiv2
+  is found, FetchContent builds that pinned source as a shared library. System
+  mode records `exiv2` as a CMake/runtime dependency of the export;
+  FetchContent-shared mode installs the runtime library next to libumm (RPATH /
+  `install_name` / DLL placement). **This option does not change the GPL
+  analysis:** distributing libumm together with the Exiv2 backend remains
+  GPL-governed in either linkage mode (decision **P2**). Static linkage stays
+  the default (decision **M4c**).

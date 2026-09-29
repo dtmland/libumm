@@ -20,8 +20,11 @@ set(_umm_need_zlib "@UMM_INSTALL_FIND_ZLIB@")
 set(_umm_need_expat "@UMM_INSTALL_FIND_EXPAT@")
 set(_umm_need_iconv "@UMM_INSTALL_FIND_ICONV@")
 set(_umm_need_threads "@UMM_INSTALL_FIND_THREADS@")
+set(_umm_need_exiv2 "@UMM_INSTALL_FIND_EXIV2@")
 set(_umm_is_static "@UMM_INSTALL_IS_STATIC@")
 set(_umm_private_libdir_rel "@UMM_INSTALL_PRIVATE_LIBDIR@")
+set(_umm_shared_exiv2_dir_rel "@UMM_INSTALL_SHARED_EXIV2_DIR@")
+set(_umm_shared_exiv2_implib_dir_rel "@UMM_INSTALL_SHARED_EXIV2_IMPLIB_DIR@")
 set(_umm_system_libs "@UMM_INSTALL_SYSTEM_LIBS@")
 
 # Collection may have recorded Iconv::Iconv as a system lib when the
@@ -41,6 +44,9 @@ if(_umm_need_iconv)
 endif()
 if(_umm_need_threads)
   find_dependency(Threads)
+endif()
+if(_umm_need_exiv2)
+  find_dependency(exiv2 CONFIG)
 endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/ummTargets.cmake")
@@ -93,7 +99,44 @@ if(_umm_is_static AND TARGET umm::umm AND NOT umm_PRIVATE_DEPS_APPLIED)
 
   set(_umm_priv_link)
 
-  if(UMM_PRIVATE_EXIV2_FILE)
+  if(UMM_PRIVATE_EXIV2_KIND STREQUAL "shared" AND UMM_PRIVATE_EXIV2_FILE)
+    if(NOT TARGET umm::private_exiv2)
+      add_library(umm::private_exiv2 SHARED IMPORTED)
+      if(_umm_shared_exiv2_dir_rel AND IS_ABSOLUTE "${_umm_shared_exiv2_dir_rel}")
+        set(_umm_exiv2_dir "${_umm_shared_exiv2_dir_rel}")
+      elseif(_umm_shared_exiv2_dir_rel)
+        set(_umm_exiv2_dir "${PACKAGE_PREFIX_DIR}/${_umm_shared_exiv2_dir_rel}")
+      else()
+        set(_umm_exiv2_dir "${PACKAGE_PREFIX_DIR}/${_umm_private_libdir_rel}")
+      endif()
+      set(_umm_exiv2_loc "${_umm_exiv2_dir}/${UMM_PRIVATE_EXIV2_FILE}")
+      set_target_properties(umm::private_exiv2 PROPERTIES
+        IMPORTED_LOCATION "${_umm_exiv2_loc}"
+        IMPORTED_LOCATION_RELEASE "${_umm_exiv2_loc}"
+        IMPORTED_LOCATION_RELWITHDEBINFO "${_umm_exiv2_loc}"
+        IMPORTED_LOCATION_MINSIZEREL "${_umm_exiv2_loc}"
+        IMPORTED_LOCATION_DEBUG "${_umm_exiv2_loc}"
+      )
+      if(UMM_PRIVATE_EXIV2_IMPLIB_FILE)
+        if(_umm_shared_exiv2_implib_dir_rel AND IS_ABSOLUTE "${_umm_shared_exiv2_implib_dir_rel}")
+          set(_umm_exiv2_implib_dir "${_umm_shared_exiv2_implib_dir_rel}")
+        elseif(_umm_shared_exiv2_implib_dir_rel)
+          set(_umm_exiv2_implib_dir "${PACKAGE_PREFIX_DIR}/${_umm_shared_exiv2_implib_dir_rel}")
+        else()
+          set(_umm_exiv2_implib_dir "${PACKAGE_PREFIX_DIR}/${_umm_private_libdir_rel}")
+        endif()
+        set(_umm_exiv2_implib "${_umm_exiv2_implib_dir}/${UMM_PRIVATE_EXIV2_IMPLIB_FILE}")
+        set_target_properties(umm::private_exiv2 PROPERTIES
+          IMPORTED_IMPLIB "${_umm_exiv2_implib}"
+          IMPORTED_IMPLIB_RELEASE "${_umm_exiv2_implib}"
+          IMPORTED_IMPLIB_RELWITHDEBINFO "${_umm_exiv2_implib}"
+          IMPORTED_IMPLIB_MINSIZEREL "${_umm_exiv2_implib}"
+          IMPORTED_IMPLIB_DEBUG "${_umm_exiv2_implib}"
+        )
+      endif()
+    endif()
+    list(APPEND _umm_priv_link umm::private_exiv2)
+  elseif(UMM_PRIVATE_EXIV2_FILE)
     if(NOT TARGET umm::private_exiv2)
       add_library(umm::private_exiv2 STATIC IMPORTED)
       set(_umm_exiv2_loc "${_umm_priv_dir}/${UMM_PRIVATE_EXIV2_FILE}")
@@ -106,6 +149,14 @@ if(_umm_is_static AND TARGET umm::umm AND NOT umm_PRIVATE_DEPS_APPLIED)
       )
     endif()
     list(APPEND _umm_priv_link umm::private_exiv2)
+  elseif(_umm_need_exiv2)
+    if(TARGET Exiv2::exiv2lib)
+      list(APPEND _umm_priv_link Exiv2::exiv2lib)
+    elseif(TARGET Exiv2::exiv2)
+      list(APPEND _umm_priv_link Exiv2::exiv2)
+    elseif(TARGET exiv2lib)
+      list(APPEND _umm_priv_link exiv2lib)
+    endif()
   endif()
 
   if(UMM_PRIVATE_EXPAT_FILE)
@@ -187,8 +238,14 @@ unset(_umm_need_zlib)
 unset(_umm_need_expat)
 unset(_umm_need_iconv)
 unset(_umm_need_threads)
+unset(_umm_need_exiv2)
 unset(_umm_is_static)
 unset(_umm_private_libdir_rel)
+unset(_umm_shared_exiv2_dir_rel)
+unset(_umm_shared_exiv2_implib_dir_rel)
 unset(_umm_system_libs)
+unset(_umm_exiv2_dir)
+unset(_umm_exiv2_implib_dir)
+unset(_umm_exiv2_implib)
 
 check_required_components(umm)

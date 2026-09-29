@@ -10,7 +10,8 @@
 # archives at link time. ummConfig.cmake reconstructs IMPORTED locations under
 # ${CMAKE_INSTALL_LIBDIR}/umm/ and does not locate Exiv2 as a CMake package.
 # System zlib/expat (typical on Linux CI) are find_dependency()'d.
-# Shared-library install verification is session 32's cut line.
+# Session 32: UMM_EXIV2_SHARED system mode records find_dependency(exiv2);
+# FetchContent-shared installs the runtime library (not Exiv2 CMake/headers).
 
 include_guard(GLOBAL)
 
@@ -34,10 +35,14 @@ set(UMM_INSTALL_FIND_ZLIB FALSE)
 set(UMM_INSTALL_FIND_EXPAT FALSE)
 set(UMM_INSTALL_FIND_ICONV FALSE)
 set(UMM_INSTALL_FIND_THREADS FALSE)
+set(UMM_INSTALL_FIND_EXIV2 FALSE)
 set(UMM_INSTALL_SYSTEM_LIBS "")
 set(UMM_INSTALL_BUNDLE_EXIV2 FALSE)
+set(UMM_INSTALL_SHARED_EXIV2 FALSE)
 set(UMM_INSTALL_BUNDLE_ZLIB FALSE)
 set(UMM_INSTALL_BUNDLE_EXPAT FALSE)
+set(UMM_INSTALL_SHARED_EXIV2_DIR "")
+set(UMM_INSTALL_SHARED_EXIV2_IMPLIB_DIR "")
 
 function(umm_real_target name out_var)
   if(NOT TARGET "${name}")
@@ -145,16 +150,28 @@ function(umm_collect_exiv2_link_usage)
   set(UMM_INSTALL_SYSTEM_LIBS "${_umm_system}" PARENT_SCOPE)
 endfunction()
 
-if(UMM_EXIV2_ACQUIRED AND TARGET exiv2lib)
+if(UMM_EXIV2_SYSTEM)
+  set(UMM_INSTALL_FIND_EXIV2 TRUE)
+  set(UMM_INSTALL_BUNDLE_EXIV2 FALSE)
+elseif(UMM_EXIV2_ACQUIRED AND TARGET exiv2lib)
   set(UMM_INSTALL_BUNDLE_EXIV2 TRUE)
-  umm_collect_exiv2_link_usage()
-  if(UMM_BUNDLED_ZLIB)
-    set(UMM_INSTALL_BUNDLE_ZLIB TRUE)
-    set(UMM_INSTALL_FIND_ZLIB FALSE)
-  endif()
-  if(UMM_BUNDLED_EXPAT)
-    set(UMM_INSTALL_BUNDLE_EXPAT TRUE)
-    set(UMM_INSTALL_FIND_EXPAT FALSE)
+  if(UMM_EXIV2_SHARED)
+    set(UMM_INSTALL_SHARED_EXIV2 TRUE)
+    set(UMM_INSTALL_SHARED_EXIV2_DIR "${CMAKE_INSTALL_LIBDIR}")
+    if(WIN32)
+      set(UMM_INSTALL_SHARED_EXIV2_DIR "${CMAKE_INSTALL_BINDIR}")
+      set(UMM_INSTALL_SHARED_EXIV2_IMPLIB_DIR "${CMAKE_INSTALL_LIBDIR}")
+    endif()
+  else()
+    umm_collect_exiv2_link_usage()
+    if(UMM_BUNDLED_ZLIB)
+      set(UMM_INSTALL_BUNDLE_ZLIB TRUE)
+      set(UMM_INSTALL_FIND_ZLIB FALSE)
+    endif()
+    if(UMM_BUNDLED_EXPAT)
+      set(UMM_INSTALL_BUNDLE_EXPAT TRUE)
+      set(UMM_INSTALL_FIND_EXPAT FALSE)
+    endif()
   endif()
 endif()
 
@@ -211,7 +228,13 @@ install(DIRECTORY "${PROJECT_SOURCE_DIR}/licenses/"
   FILES_MATCHING PATTERN "*.txt"
 )
 
-if(UMM_INSTALL_IS_STATIC AND UMM_INSTALL_BUNDLE_EXIV2)
+if(UMM_INSTALL_SHARED_EXIV2 AND TARGET exiv2lib)
+  install(TARGETS exiv2lib
+    LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+    ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  )
+elseif(UMM_INSTALL_IS_STATIC AND UMM_INSTALL_BUNDLE_EXIV2)
   install(FILES "$<TARGET_FILE:exiv2lib>"
     DESTINATION "${UMM_INSTALL_PRIVATE_LIBDIR}"
   )
@@ -241,14 +264,37 @@ endif()
 
 set(_umm_private_deps_content
   "# Generated private archive names for the installed umm package (session 29).\n"
+  "set(UMM_PRIVATE_EXIV2_KIND \"\")\n"
   "set(UMM_PRIVATE_EXIV2_FILE \"\")\n"
+  "set(UMM_PRIVATE_EXIV2_IMPLIB_FILE \"\")\n"
   "set(UMM_PRIVATE_ZLIB_FILE \"\")\n"
   "set(UMM_PRIVATE_EXPAT_FILE \"\")\n"
 )
-if(UMM_INSTALL_IS_STATIC AND UMM_INSTALL_BUNDLE_EXIV2)
+if(UMM_INSTALL_SHARED_EXIV2 AND TARGET exiv2lib)
+  set(_umm_private_deps_content
+    "# Generated shared Exiv2 names for the installed umm package (session 32).\n"
+    "set(UMM_PRIVATE_EXIV2_KIND \"shared\")\n"
+    "set(UMM_PRIVATE_EXIV2_FILE \"$<TARGET_FILE_NAME:exiv2lib>\")\n"
+  )
+  if(WIN32)
+    list(APPEND _umm_private_deps_content
+      "set(UMM_PRIVATE_EXIV2_IMPLIB_FILE \"$<TARGET_LINKER_FILE_NAME:exiv2lib>\")\n"
+    )
+  else()
+    list(APPEND _umm_private_deps_content
+      "set(UMM_PRIVATE_EXIV2_IMPLIB_FILE \"\")\n"
+    )
+  endif()
+  list(APPEND _umm_private_deps_content
+    "set(UMM_PRIVATE_ZLIB_FILE \"\")\n"
+    "set(UMM_PRIVATE_EXPAT_FILE \"\")\n"
+  )
+elseif(UMM_INSTALL_IS_STATIC AND UMM_INSTALL_BUNDLE_EXIV2)
   set(_umm_private_deps_content
     "# Generated private archive names for the installed umm package (session 29).\n"
+    "set(UMM_PRIVATE_EXIV2_KIND \"static\")\n"
     "set(UMM_PRIVATE_EXIV2_FILE \"$<TARGET_FILE_NAME:exiv2lib>\")\n"
+    "set(UMM_PRIVATE_EXIV2_IMPLIB_FILE \"\")\n"
   )
   if(UMM_INSTALL_BUNDLE_ZLIB)
     umm_real_target(ZLIB::ZLIB _umm_zlib_gen)

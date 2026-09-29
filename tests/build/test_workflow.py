@@ -130,6 +130,12 @@ class TestWorkflow(unittest.TestCase):
         )
         self.assertIn("Install and consumer smoke", text)
         self.assertIn("consumer_install", text)
+        self.assertIn("shared-exiv2", text)
+        self.assertIn("-DUMM_EXIV2_SHARED=ON", text)
+        self.assertNotIn(
+            "cmake --preset default -DUMM_REQUIRE_EXIV2=ON -DUMM_REQUIRE_EXIFTOOL=ON -DUMM_EXIV2_SHARED=ON ${{ inputs.failing_selftest",
+            text,
+        )
 
 
 if __name__ == "__main__":

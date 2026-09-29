@@ -242,7 +242,11 @@ if(UMM_BUILD_TESTS)
     target_compile_definitions(test_exiv2_smoke
       PRIVATE
         "UMM_TEST_EXIV2_VERSION=\"${UMM_EXIV2_VERSION}\""
+        "UMM_TEST_EXIV2_MIN_VERSION=\"${UMM_EXIV2_MIN_VERSION}\""
     )
+    if(UMM_EXIV2_SYSTEM)
+      target_compile_definitions(test_exiv2_smoke PRIVATE UMM_TEST_EXIV2_SYSTEM=1)
+    endif()
     add_test(NAME exiv2_smoke COMMAND test_exiv2_smoke)
 
     add_executable(test_exiv2_read tests/backend/test_exiv2_read.cpp)
@@ -498,6 +502,8 @@ if(UMM_BUILD_TESTS)
         "-DUMM_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
         "-DUMM_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
         "-DUMM_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}"
+        "-DUMM_EXIV2_SHARED=${UMM_EXIV2_SHARED}"
+        "-DUMM_EXIV2_SYSTEM=${UMM_EXIV2_SYSTEM}"
         -P "${PROJECT_SOURCE_DIR}/tests/build/test_consumer_install.cmake"
     )
   endif()
