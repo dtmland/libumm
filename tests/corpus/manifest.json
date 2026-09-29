@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "samples": [
+    {
+      "id": "jpeg-makernote",
+      "path": "jpeg/makernote.jpg",
+      "url": "https://raw.githubusercontent.com/exiftool/exiftool/13.59/t/images/Canon.jpg",
+      "sha256": "98c290283dbff10950bd0eac63bf95804fd09661de727df4f2946d203ca9e7a2",
+      "bytes": 2697,
+      "file_type": "JPEG",
+      "license": "Artistic-2.0 OR GPL-1.0-or-later; ExifTool t/images Canon.jpg referenced in place (fetched, never vendored)",
+      "capability": "vendor MakerNote write-preservation after an unrelated metadata write (closes jpeg/makernote.jpg; decision M3)"
+    },
+    {
+      "id": "raw-panasonic-rw2",
+      "path": "raw/panasonic.rw2",
+      "url": "https://raw.githubusercontent.com/exiftool/exiftool/13.59/t/images/Panasonic.rw2",
+      "sha256": "431a1239713ce1bca8f0b422b9a094372246669432060e2a0a21d1fd2f761678",
+      "bytes": 12344,
+      "file_type": "RW2",
+      "license": "Artistic-2.0 OR GPL-1.0-or-later; ExifTool t/images Panasonic.rw2 referenced in place (fetched, never vendored)",
+      "capability": "proprietary RAW read and sidecar_recommended write decision against a real camera file (closes session 19 deferral)"
+    },
+    {
+      "id": "video-quicktime-mov",
+      "path": "video/camera.mov",
+      "url": "https://raw.githubusercontent.com/exiftool/exiftool/13.59/t/images/QuickTime.mov",
+      "sha256": "eea529609b6026e0cd7b3d9188b997889f905cd89a93421ad7a9063c670449ec",
+      "bytes": 3871,
+      "file_type": "MOV",
+      "license": "Artistic-2.0 OR GPL-1.0-or-later; ExifTool t/images QuickTime.mov referenced in place (fetched, never vendored)",
+      "capability": "real-camera QuickTime/MOV container read"
+    }
+  ]
+}

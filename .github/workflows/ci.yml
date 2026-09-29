@@ -11,6 +11,10 @@ on:
         description: Build and run the deliberately failing self-test
         type: boolean
         default: false
+      tier_b:
+        description: Fetch the Tier B corpus and run its tests
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -131,6 +135,72 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ matrix.os }}
+          path: |
+            build/default/test-results/
+            build/default/Testing/
+          if-no-files-found: ignore
+
+  tier-b:
+    name: tier-b (ubuntu-24.04)
+    if: github.event_name == 'workflow_dispatch' && inputs.tier_b == true
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run build-contract tests
+        run: python3 -m unittest discover -s tests/build -v
+
+      - name: Load pins
+        shell: bash
+        run: sh tools/build/pins.sh
+
+      - name: Install Linux packages
+        shell: bash
+        run: |
+          set -eu
+          packages=$(grep -E -v '^[[:space:]]*(#|$)' tools/build/linux-packages.txt)
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends $packages
+
+      - name: Cache backend downloads
+        uses: actions/cache@v4
+        with:
+          path: .cache
+          key: ${{ runner.os }}-${{ env.UMM_EXIV2_VERSION }}-${{ env.UMM_EXIV2_SHA256 }}-${{ env.UMM_EXIFTOOL_VERSION }}-${{ env.UMM_EXIFTOOL_SHA256 }}-${{ env.UMM_STRAWBERRY_PERL_VERSION }}
+
+      - name: Cache Tier B corpus
+        uses: actions/cache@v4
+        with:
+          path: .cache/corpus
+          key: corpus-${{ hashFiles('tests/corpus/manifest.json') }}
+
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ runner.os }}-tier-b-${{ env.UMM_EXIV2_VERSION }}-${{ env.UMM_EXIV2_SHA256 }}
+
+      - name: Configure
+        run: cmake --preset default -DUMM_REQUIRE_EXIV2=ON -DUMM_REQUIRE_EXIFTOOL=ON -DUMM_TIER_B=ON
+
+      - name: Report acquired backends
+        shell: bash
+        run: cat build/default/backends-acquired.txt
+
+      - name: Build
+        run: cmake --build --preset default
+
+      - name: Test
+        run: |
+          cmake -E make_directory build/default/test-results
+          ctest --preset default --output-junit build/default/test-results/junit.xml
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-tier-b-ubuntu-24.04
           path: |
             build/default/test-results/
             build/default/Testing/

@@ -27,8 +27,30 @@ inline std::filesystem::path raw_fixtures_dir() {
       std::u8string(reinterpret_cast<const char8_t*>(raw)));
 }
 
+inline std::filesystem::path raw_corpus_dir() {
+#ifdef UMM_CORPUS_DIR
+  const char* raw = UMM_CORPUS_DIR;
+  return std::filesystem::path(
+      std::u8string(reinterpret_cast<const char8_t*>(raw)));
+#else
+  return {};
+#endif
+}
+
+inline std::filesystem::path raw_corpus(const char* relpath) {
+  return raw_corpus_dir() / relpath;
+}
+
 inline std::filesystem::path raw_jpeg(const char* name) {
-  return raw_fixtures_dir() / "jpeg" / name;
+  const auto primary = raw_fixtures_dir() / "jpeg" / name;
+  if (std::filesystem::exists(primary)) {
+    return primary;
+  }
+  const auto corpus = raw_corpus_dir();
+  if (!corpus.empty()) {
+    return corpus / "jpeg" / name;
+  }
+  return primary;
 }
 
 inline std::filesystem::path raw_tiff(const char* name) {
