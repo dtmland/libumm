@@ -319,6 +319,63 @@ int probe_backend(const std::string& backend_id) {
         !raw_has_family(video_full.value(), "Xmp")) {
       return fail("video full.mp4 fixture vs QuickTime/XMP capability");
     }
+    const auto dir =
+        std::filesystem::temp_directory_path() / "umm-probe-video-write";
+    std::filesystem::create_directories(dir);
+    const auto dest = dir / "probe.mp4";
+    std::filesystem::copy_file(
+        raw_stem("video", "minimal", ".mp4"), dest,
+        std::filesystem::copy_options::overwrite_existing);
+    umm::Metadata metadata;
+    umm::GpsCoordinate gps;
+    gps.latitude = 37.7749;
+    gps.longitude = -122.4194;
+    if (!metadata.setGps(gps).ok()) {
+      return fail("probe MP4 setGps");
+    }
+    umm::WriteOptions options;
+    options.backend = "exiftool";
+    umm::WriteOptions dry = options;
+    dry.dry_run = true;
+    const auto preview = umm::write(dest, metadata, dry);
+    if (!preview.ok()) {
+      return fail("probe MP4 dry-run write");
+    }
+    bool saw_xmp = false;
+    bool saw_qt = false;
+    for (const std::string& format : preview.value().decision.formats) {
+      if (format == "XMP") {
+        saw_xmp = true;
+      }
+      if (format == "QuickTime") {
+        saw_qt = true;
+      }
+    }
+    if (!saw_xmp || !saw_qt) {
+      return fail("probe MP4 dry-run formats vs xmp/container_gps");
+    }
+    const auto written = umm::write(dest, metadata, options);
+    if (!written.ok()) {
+      std::fprintf(stderr, "probe MP4 write failed: %s (%s)\n",
+                   written.error().message.c_str(),
+                   written.error().detail.c_str());
+      return 1;
+    }
+    bool saw_gps = false;
+    for (const umm::RawKey& key : written.value().written) {
+      if (key.key == "QuickTime.GPSCoordinates") {
+        saw_gps = true;
+      }
+    }
+    if (!saw_gps) {
+      return fail("probe MP4 write missing GPSCoordinates");
+    }
+    umm::ReadOptions read_options;
+    read_options.backend = "exiftool";
+    const auto round = umm::read(dest, read_options);
+    if (!round.ok() || !round.value().gps()) {
+      return fail("probe MP4 write vs container_gps read-back");
+    }
   }
   return 0;
 }

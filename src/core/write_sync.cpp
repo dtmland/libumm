@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstdint>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -71,6 +72,20 @@ std::string format_real(double value) {
   std::ostringstream out;
   out << value;
   return out.str();
+}
+
+std::string format_gps_number(double value) {
+  std::ostringstream out;
+  out << std::fixed << std::setprecision(7) << value;
+  std::string text = out.str();
+  while (text.size() > 1 && text.find('.') != std::string::npos &&
+         text.back() == '0') {
+    text.pop_back();
+  }
+  if (!text.empty() && text.back() == '.') {
+    text.pop_back();
+  }
+  return text;
 }
 
 std::string format_xmp_datetime(const DateTime& dt) {
@@ -294,22 +309,116 @@ void sync_gps(RawChanges& changes, const Value& value) {
   const char lat_ref = gps->latitude < 0 ? 'S' : 'N';
   const char lon_ref = gps->longitude < 0 ? 'W' : 'E';
   add(changes, "Exif", "Exif.GPSInfo.GPSLatitude",
-      format_real(std::fabs(gps->latitude)), "decimal");
+      format_gps_number(std::fabs(gps->latitude)), "decimal");
   add(changes, "Exif", "Exif.GPSInfo.GPSLatitudeRef", std::string(1, lat_ref));
   add(changes, "Exif", "Exif.GPSInfo.GPSLongitude",
-      format_real(std::fabs(gps->longitude)), "decimal");
+      format_gps_number(std::fabs(gps->longitude)), "decimal");
   add(changes, "Exif", "Exif.GPSInfo.GPSLongitudeRef", std::string(1, lon_ref));
   add(changes, "Xmp", "Xmp.exif.GPSLatitude",
-      format_real(std::fabs(gps->latitude)) + lat_ref);
+      format_gps_number(std::fabs(gps->latitude)) + lat_ref);
   add(changes, "Xmp", "Xmp.exif.GPSLongitude",
-      format_real(std::fabs(gps->longitude)) + lon_ref);
+      format_gps_number(std::fabs(gps->longitude)) + lon_ref);
+  std::string qt = format_gps_number(gps->latitude) + ", " +
+                   format_gps_number(gps->longitude);
   if (gps->altitude_meters) {
     const double alt = *gps->altitude_meters;
-    add(changes, "Exif", "Exif.GPSInfo.GPSAltitude", format_real(std::fabs(alt)),
-        "decimal");
+    add(changes, "Exif", "Exif.GPSInfo.GPSAltitude",
+        format_gps_number(std::fabs(alt)), "decimal");
     add(changes, "Exif", "Exif.GPSInfo.GPSAltitudeRef", alt < 0 ? "1" : "0");
-    add(changes, "Xmp", "Xmp.exif.GPSAltitude", format_real(alt));
+    add(changes, "Xmp", "Xmp.exif.GPSAltitude", format_gps_number(alt));
+    qt += ", " + format_gps_number(alt);
   }
+  add(changes, "QuickTime", "QuickTime.GPSCoordinates", std::move(qt));
+}
+
+std::string structure_lang_or_text(const Structure& fields,
+                                   std::string_view name) {
+  const auto it = fields.find(std::string(name));
+  if (it == fields.end()) {
+    return {};
+  }
+  if (const auto* text = std::get_if<std::string>(&it->second.data)) {
+    return *text;
+  }
+  if (const auto* alt = std::get_if<LangAlt>(&it->second.data)) {
+    return lang_plain(*alt);
+  }
+  return {};
+}
+
+void sync_video_lang(RawChanges& changes, const Value& value,
+                     std::string_view xmp, std::string_view qt) {
+  const auto* alt = std::get_if<LangAlt>(&value.data);
+  if (!alt) {
+    return;
+  }
+  const std::string plain = lang_plain(*alt);
+  const auto xd = alt->find("x-default");
+  const std::string xmp_text =
+      xd != alt->end() ? xd->second
+                       : (alt->size() == 1 ? alt->begin()->second : plain);
+  add(changes, "Xmp", std::string(xmp), xmp_text, "LangAlt");
+  add(changes, "QuickTime", std::string(qt), plain);
+}
+
+void sync_video_creator(RawChanges& changes, const Value& value) {
+  const auto* list = std::get_if<std::vector<Structure>>(&value.data);
+  if (!list || list->empty()) {
+    return;
+  }
+  std::vector<std::string> names;
+  for (const Structure& entity : *list) {
+    const std::string name = structure_lang_or_text(entity, "name");
+    if (!name.empty()) {
+      names.push_back(name);
+    }
+  }
+  if (names.empty()) {
+    return;
+  }
+  for (const std::string& name : names) {
+    add(changes, "Xmp", "Xmp.dc.creator", name, "XmpSeq");
+  }
+  add(changes, "QuickTime", "QuickTime.Artist", join_names(names, "; "));
+}
+
+void sync_video_keywords(RawChanges& changes, const Value& value) {
+  const auto* alt = std::get_if<LangAlt>(&value.data);
+  if (!alt) {
+    return;
+  }
+  const std::string plain = lang_plain(*alt);
+  if (plain.empty()) {
+    return;
+  }
+  add(changes, "QuickTime", "QuickTime.Keywords", plain);
+  std::string_view rest = plain;
+  while (!rest.empty()) {
+    const auto comma = rest.find(',');
+    std::string_view item =
+        comma == std::string_view::npos ? rest : rest.substr(0, comma);
+    while (!item.empty() && (item.front() == ' ' || item.front() == '\t')) {
+      item.remove_prefix(1);
+    }
+    while (!item.empty() && (item.back() == ' ' || item.back() == '\t')) {
+      item.remove_suffix(1);
+    }
+    add(changes, "Xmp", "Xmp.dc.subject", std::string(item), "XmpBag");
+    if (comma == std::string_view::npos) {
+      break;
+    }
+    rest.remove_prefix(comma + 1);
+  }
+}
+
+void sync_video_date(RawChanges& changes, const Value& value) {
+  const auto* dt = std::get_if<DateTime>(&value.data);
+  if (!dt) {
+    return;
+  }
+  const std::string iso = format_xmp_datetime(*dt);
+  add(changes, "Xmp", "Xmp.photoshop.DateCreated", iso);
+  add(changes, "QuickTime", "QuickTime.CreationDate", iso);
 }
 
 void sync_location(RawChanges& changes, const Value& value) {
@@ -387,6 +496,21 @@ RawChanges write_sync(const Metadata& metadata) {
       sync_gps(changes, property->value);
     } else if (id == kLocation) {
       sync_location(changes, property->value);
+    } else if (id == kVideoTitle) {
+      sync_video_lang(changes, property->value, "Xmp.dc.title",
+                      "QuickTime.Title");
+    } else if (id == kVideoDescription) {
+      sync_video_lang(changes, property->value, "Xmp.dc.description",
+                      "QuickTime.Description");
+    } else if (id == kVideoCreator) {
+      sync_video_creator(changes, property->value);
+    } else if (id == kVideoCopyright) {
+      sync_video_lang(changes, property->value, "Xmp.dc.rights",
+                      "QuickTime.Copyright");
+    } else if (id == kVideoKeywords) {
+      sync_video_keywords(changes, property->value);
+    } else if (id == kVideoDateCreated) {
+      sync_video_date(changes, property->value);
     }
   }
   if (writes_iptc_application(changes)) {

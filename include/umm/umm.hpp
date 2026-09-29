@@ -29,7 +29,7 @@ enum class StoragePolicy {
 
 struct StorageDecision {
   enum class Method { embedded, sidecar, mixed } method{Method::embedded};
-  std::vector<std::string> formats;  // e.g. {"XMP", "EXIF", "IPTC-IIM"}
+  std::vector<std::string> formats;  // e.g. {"XMP", "EXIF", "IPTC-IIM", "QuickTime"}
   std::string backend;               // backend that performed/will perform the write
 };
 
@@ -75,7 +75,8 @@ Result<Metadata> read(const std::filesystem::path& media, ReadOptions options = 
 
 // Write canonical metadata through the mapping engine to synchronized
 // representations, with temp-file + atomic-rename safety (decision M3).
-// preferred/embedded_only: writable embedded categories from capabilities().
+// preferred/embedded_only: writable embedded categories and container GPS
+// from capabilities() (QuickTime GPSCoordinates when container_gps is writable).
 // sidecar_only/sidecar_required: XMP sidecar (media bytes unchanged).
 // Types with sidecar_recommended prefer sidecar writes. Mixed sync is Stage 8.
 Result<WriteReport> write(const std::filesystem::path& media,
@@ -86,8 +87,9 @@ Result<WriteReport> write(const std::filesystem::path& media,
                           const Metadata& metadata, StoragePolicy policy);
 
 // preferred: sidecar when the path is an XMP sidecar or sidecar_recommended,
-// else embedded formats from capabilities(); embedded_only requires writable
-// embedded categories; sidecar_only/sidecar_required → Sidecar(XMP).
+// else embedded formats from capabilities() (XMP/EXIF/IPTC-IIM plus QuickTime
+// when container_gps is writable); embedded_only requires a writable embedded
+// category or container GPS; sidecar_only/sidecar_required → Sidecar(XMP).
 // Mixed sync is Stage 8.
 Result<StorageDecision> evaluateStorage(const std::filesystem::path& media,
                                         WriteOptions options = {});

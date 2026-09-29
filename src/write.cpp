@@ -38,6 +38,9 @@ std::string family_format(std::string_view family) {
   if (family == "Xmp") {
     return "XMP";
   }
+  if (family == "QuickTime") {
+    return "QuickTime";
+  }
   return std::string(family);
 }
 

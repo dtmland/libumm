@@ -511,6 +511,38 @@ bool parse_qt_gps(std::string_view text, GpsCoordinate& gps) {
   if (s.empty()) {
     return false;
   }
+  std::vector<std::string> comma_parts;
+  std::string part;
+  auto flush_part = [&] {
+    const std::string item = trimmed(part);
+    if (!item.empty()) {
+      comma_parts.push_back(item);
+    }
+    part.clear();
+  };
+  for (char c : s) {
+    if (c == ',') {
+      flush_part();
+    } else {
+      part.push_back(c);
+    }
+  }
+  flush_part();
+  if (comma_parts.size() >= 2) {
+    if (parse_coord(comma_parts[0], false, gps.latitude) &&
+        parse_coord(comma_parts[1], true, gps.longitude)) {
+      if (comma_parts.size() >= 3) {
+        std::string alt = comma_parts[2];
+        const auto space = alt.find_first_of(" \t");
+        if (space != std::string::npos) {
+          alt.resize(space);
+        }
+        parse_altitude(alt, comma_parts.size() >= 4 ? comma_parts[3] : "",
+                       gps.altitude_meters);
+      }
+      return true;
+    }
+  }
   for (char& c : s) {
     if (c == ',') {
       c = ' ';

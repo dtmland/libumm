@@ -451,6 +451,23 @@ int main() {
       return fail("video gps did not prefer QuickTime");
     }
   }
+  {
+    const auto result = umm::internal::reconcile(
+        doc({entry("QuickTime", "QuickTime.GPSCoordinates",
+                   "37 deg 46' 29.64\" N, 122 deg 25' 9.84\" W, 10 m Above Sea "
+                   "Level")}),
+        "test", nullptr, "MP4");
+    if (!result.ok()) {
+      return fail("video gps DMS reconcile failed");
+    }
+    const auto gps = result.value().gps();
+    const auto* coord =
+        gps ? std::get_if<umm::GpsCoordinate>(&gps->value.data) : nullptr;
+    if (!coord || std::fabs(coord->latitude - 37.7749) > 1e-4 ||
+        std::fabs(coord->longitude + 122.4194) > 1e-4) {
+      return fail("video gps DMS parse");
+    }
+  }
 
   return 0;
 }

@@ -1,8 +1,8 @@
 # Reconciliation policy (Phase 1)
 
 Status: **normative** for JPEG embedded read (session 12), write-synchronization
-(session 13), XMP sidecar pairing (session 14), and MP4/MOV video read
-(session 21).
+(session 13), XMP sidecar pairing (session 14), MP4/MOV video read
+(session 21), and ExifTool-only MP4/MOV write (session 22).
 
 This is the written, testable policy required by decision **S4a**. Classification
 and provenance shapes are those in `include/umm/provenance.hpp` (concept.md §15,
@@ -260,6 +260,13 @@ offset; missing vs present offset stays equivalent (`opt_equal`).
 `iptc.video.creator` is a structure list (`name` only for Phase 1 string sources).
 `iptc.video.keywords` joins bag values into `x-default` (VMH types the property as lang-alt).
 
+**Write-sync (session 22):** each property expands to its XMP encoding plus the
+QuickTime key above (`QuickTime.Artist` for creator names; `CreationDate` not
+movie-header `CreateDate`). `umm::write` then keeps the families named by
+`StorageDecision::formats`. MP4/MOV ExifTool rows expose XMP plus
+`container_gps` (QuickTime); requesting `backend: "exiv2"` is
+`unsupported_capability`. Sidecar-only writes keep XMP only, as for stills.
+
 ### `exif.gps.position` on video
 
 | Family | Raw keys |
@@ -269,6 +276,10 @@ offset; missing vs present offset stays equivalent (`opt_equal`).
 
 Disagreement: `reconciled`, **container GPS > XMP**. Equivalence uses the same
 degree/altitude tolerances as stills.
+
+**Write-sync:** `QuickTime.GPSCoordinates` as `lat, lon[, alt]` plus XMP-exif
+lat/lon (and altitude when set). EXIF GPS IFD is also produced by the shared
+GPS writer and is dropped when the storage decision does not list EXIF (MP4/MOV).
 
 ### R3 (per-property dispatch)
 

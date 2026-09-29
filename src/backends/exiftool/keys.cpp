@@ -292,7 +292,12 @@ std::optional<std::string> exiftool_tag_for_raw_key(std::string_view raw_key) {
     return "IPTC:" + iptc_exiftool_name(*name);
   }
   if (const auto name = after_prefix("QuickTime.")) {
-    if (*name == "CreationDate" || *name == "GPSCoordinates") {
+    if (*name == "Artist") {
+      return std::string("ItemList") + ":" + *name;
+    }
+    if (*name == "CreationDate" || *name == "GPSCoordinates" ||
+        *name == "Title" || *name == "Description" || *name == "Author" ||
+        *name == "Copyright" || *name == "Keywords") {
       return "Keys:" + *name;
     }
     return "QuickTime:" + *name;
