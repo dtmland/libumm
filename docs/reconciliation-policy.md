@@ -2,8 +2,8 @@
 
 Status: **normative** for JPEG embedded read (session 12), write-synchronization
 (session 13), XMP sidecar pairing (session 14), MP4/MOV video read
-(session 21), ExifTool-only MP4/MOV write (session 22), and the conflict
-resolution API (session 23).
+(session 21), ExifTool-only MP4/MOV write (session 22), the conflict
+resolution API (session 23), and `synchronize()` / mixed storage (session 24).
 
 This is the written, testable policy required by decision **S4a**. Classification
 and provenance shapes are those in `include/umm/provenance.hpp` (concept.md §15,
@@ -301,8 +301,9 @@ case-insensitive filesystems the OS resolves the name. A path that is itself
 exists and feeds it to reconciliation as an additional source. Sidecar files
 are XMP carriers: only `Xmp.*` raw entries are used even if a backend also
 projects EXIF/IIM copies. `false` reads embedded metadata only. A missing
-sidecar is not an error. A sidecar that exists but cannot be parsed fails the
-read.
+sidecar is not an error unless `ReadOptions::sidecar_required` is true, in
+which case the read fails with `ErrorCode::io_not_found`. A sidecar that
+exists but cannot be parsed fails the read.
 
 `SourceRef::container` is `"embedded"` or `"sidecar"`. No source is dropped.
 
@@ -329,12 +330,34 @@ pairing: sidecar XMP is still same-tier as any embedded XMP; writes under
 
 ### Sidecar write
 
-`StoragePolicy::sidecar_only` and `sidecar_required` write **only** the XMP
-representations of write-sync to the paired `.xmp` path (create if missing)
-through the same temp + atomic rename path (M3). The JPEG file is not
-modified. Mixed embedded+sidecar synchronization is Stage 8.
-`sidecar_required` has the same Phase 1 write effect as `sidecar_only`; the
-sidecar is required to be written.
+`StoragePolicy::sidecar_only` writes **only** the XMP representations of
+write-sync to the paired `.xmp` path (create if missing) through the same
+temp + atomic rename path (M3). The media file is not modified.
+
+`StoragePolicy::sidecar_required` always writes the sidecar. If embedded
+writes are also available and the type is not `sidecar_recommended`,
+`evaluateStorage` returns `Method::mixed` and `umm::write` updates embedded
+formats and the XMP sidecar in one call (embedded first, then sidecar). Types
+with `sidecar_recommended` (read-only RAW) stay sidecar-only. A mixed write
+that fails to produce the sidecar is an error even if the embedded file was
+already replaced; there is no multi-file rollback.
+
+### Synchronization
+
+`synchronize(path, options)` reads (or uses `SyncOptions::metadata` from
+`merge`), then writes the canonical state so the selected carriers agree.
+
+| `SyncDirection` | Read | Write |
+| --- | --- | --- |
+| `both` (default) | merged embedded + sidecar | embedded (when writable) and sidecar |
+| `embedded_to_sidecar` | embedded only | sidecar only (media bytes unchanged) |
+| `sidecar_to_embedded` | sidecar only | embedded only |
+
+`both` fails with `conflict_unresolved` when any property is still
+`Resolution::conflict`; call `merge` first. Each carrier write uses
+`mutate_file_atomically`. If the embedded write succeeds and the sidecar
+write fails, the error message reports that partial state and the embedded
+file is left updated.
 
 ## Conflict resolution API
 

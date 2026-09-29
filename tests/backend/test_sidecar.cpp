@@ -192,6 +192,63 @@ int test_sidecar_only_write(const std::string& backend, const char* folder,
   return 0;
 }
 
+int test_sidecar_required_read(const std::string& backend) {
+  umm::ReadOptions required = ropts(backend);
+  required.sidecar_required = true;
+  const auto missing = umm::read(raw_jpeg("minimal.jpg"), required);
+  if (missing.ok() || missing.error().code != umm::ErrorCode::io_not_found) {
+    return fail("sidecar_required missing pair");
+  }
+  const auto paired = umm::read(raw_sidecar("paired.jpg"), required);
+  if (!paired.ok()) {
+    return fail("sidecar_required paired read");
+  }
+  return 0;
+}
+
+int test_sidecar_required_mixed_write(const std::string& backend,
+                                      const char* folder, const char* ext) {
+  const auto media = copy_named(raw_stem(folder, "minimal", ext),
+                                backend + "-mixed" + ext);
+  const auto before = read_bytes(media);
+  umm::Metadata metadata;
+  if (!metadata.setHeadline("mixed-headline").ok()) {
+    return fail("setHeadline mixed");
+  }
+  const auto written = umm::write(
+      media, metadata, wopts(backend, umm::StoragePolicy::sidecar_required));
+  if (!written.ok()) {
+    std::fprintf(stderr, "sidecar_required write failed: %s (%s)\n",
+                 written.error().message.c_str(),
+                 written.error().detail.c_str());
+    return 1;
+  }
+  if (written.value().decision.method != umm::StorageDecision::Method::mixed) {
+    return fail("sidecar_required mixed decision");
+  }
+  if (read_bytes(media) == before) {
+    return fail("sidecar_required mixed left media unchanged");
+  }
+  const auto sidecar = umm::sidecarPath(media);
+  if (!std::filesystem::is_regular_file(sidecar)) {
+    return fail("sidecar_required mixed missing sidecar");
+  }
+  const auto merged = umm::read(media, ropts(backend));
+  if (!merged.ok()) {
+    return fail("sidecar_required mixed read");
+  }
+  const auto headline = merged.value().headline();
+  const auto* text =
+      headline ? std::get_if<std::string>(&headline->value.data) : nullptr;
+  if (!text || *text != "mixed-headline") {
+    return fail("sidecar_required mixed headline");
+  }
+  if (headline->resolution == umm::Resolution::conflict) {
+    return fail("sidecar_required mixed still conflicted");
+  }
+  return 0;
+}
+
 int test_unicode_pair(const std::string& backend) {
   static constexpr char8_t kName[] = {
       0xC3, 0xBC, 'b', 0xC3, 0xBC, 'n', 'g', '-', 's', 'c', '.', 'j', 'p',
@@ -235,6 +292,13 @@ int check_backend(const std::string& backend) {
     return rc;
   }
   if (const int rc = test_orphan_read(backend); rc != 0) {
+    return rc;
+  }
+  if (const int rc = test_sidecar_required_read(backend); rc != 0) {
+    return rc;
+  }
+  if (const int rc = test_sidecar_required_mixed_write(backend, "jpeg", ".jpg");
+      rc != 0) {
     return rc;
   }
   if (const int rc = test_sidecar_only_write(backend, "jpeg", ".jpg");

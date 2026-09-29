@@ -64,6 +64,31 @@ int main() {
     return fail("injected failure mutated the original");
   }
 
+  write_all(file, "skip-original");
+  umm::internal::set_atomic_write_fault_for_test(
+      umm::internal::AtomicWriteFault::before_rename);
+  umm::internal::set_atomic_write_fault_skip_for_test(1);
+  const auto skipped = umm::internal::mutate_file_atomically(
+      file, [](const std::filesystem::path& working) {
+        write_all(working, "first-ok");
+        return umm::Result<void>{};
+      });
+  if (!skipped.ok() || read_all(file) != "first-ok") {
+    umm::internal::set_atomic_write_fault_for_test(
+        umm::internal::AtomicWriteFault::none);
+    return fail("fault skip should allow the first mutate");
+  }
+  const auto second = umm::internal::mutate_file_atomically(
+      file, [](const std::filesystem::path& working) {
+        write_all(working, "second-should-not-commit");
+        return umm::Result<void>{};
+      });
+  umm::internal::set_atomic_write_fault_for_test(
+      umm::internal::AtomicWriteFault::none);
+  if (second.ok() || read_all(file) != "first-ok") {
+    return fail("second mutate should hit injected fault");
+  }
+
   const auto failed_mutate = umm::internal::mutate_file_atomically(
       file, [](const std::filesystem::path&) {
         return umm::Error{umm::ErrorCode::backend_failed, "mutator failed", "",
@@ -72,7 +97,7 @@ int main() {
   if (failed_mutate.ok()) {
     return fail("failed mutator should fail");
   }
-  if (read_all(file) != "keep-me") {
+  if (read_all(file) != "first-ok") {
     return fail("failed mutator mutated the original");
   }
 

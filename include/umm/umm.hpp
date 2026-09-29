@@ -38,6 +38,10 @@ struct ReadOptions {
   std::string backend;          // empty = first available (manager order)
   bool merge_sidecar{true};     // pair media.xmp per session-14 pairing rules
   bool conflicts_as_errors{false};  // else recorded in Metadata::conflictedPropertyIds()
+  // When true, a non-sidecar path with no paired .xmp fails
+  // (ErrorCode::io_not_found). StoragePolicy::sidecar_required on write is
+  // the matching persistence rule.
+  bool sidecar_required{false};
 };
 
 struct WriteOptions {
@@ -55,6 +59,35 @@ struct WriteReport {
 struct ConflictReport {
   Metadata metadata;
   std::vector<ConflictEntry> entries;
+};
+
+// synchronize() direction (concept.md §12 / §28). Default writes the
+// reconciled canonical state to every selected carrier.
+enum class SyncDirection {
+  both,                 // reconciled state → embedded and sidecar
+  embedded_to_sidecar,  // embedded-only read → sidecar write (media unchanged)
+  sidecar_to_embedded,  // sidecar-only read → embedded write
+};
+
+struct SyncOptions {
+  std::string backend;  // empty = first available (manager order)
+  SyncDirection direction{SyncDirection::both};
+  // When set, this canonical state is written (session 23 merge output).
+  // When unset, synchronize() reads first according to `direction`.
+  std::optional<Metadata> metadata;
+  bool dry_run{false};
+};
+
+// One carrier actually targeted by synchronize() (or mixed umm::write).
+struct SyncCarrierReport {
+  std::string container;  // "embedded" | "sidecar"
+  std::vector<RawKey> written;
+};
+
+struct SyncReport {
+  StorageDecision decision;
+  std::vector<SyncCarrierReport> carriers;
+  Metadata metadata;  // canonical state that was (or would be) written
 };
 
 // --- Asset pairing (concept.md §28) -----------------------------------------
@@ -77,7 +110,8 @@ std::optional<std::filesystem::path> findSidecar(
 
 // Read + reconcile (docs/reconciliation-policy.md) into canonical Metadata.
 // Embedded metadata, plus sidecar XMP when merge_sidecar and a pair exists.
-// A standalone .xmp file is readable as sidecar-only.
+// A standalone .xmp file is readable as sidecar-only. sidecar_required fails
+// when a non-sidecar path has no paired .xmp.
 Result<Metadata> read(const std::filesystem::path& media, ReadOptions options = {});
 
 // Enumerate disagreed properties without inspecting every field of a read.
@@ -106,8 +140,12 @@ Result<Metadata> merge(Metadata metadata, std::string_view property_id,
 // representations, with temp-file + atomic-rename safety (decision M3).
 // preferred/embedded_only: writable embedded categories and container GPS
 // from capabilities() (QuickTime GPSCoordinates when container_gps is writable).
-// sidecar_only/sidecar_required: XMP sidecar (media bytes unchanged).
-// Types with sidecar_recommended prefer sidecar writes. Mixed sync is Stage 8.
+// sidecar_only: XMP sidecar (media bytes unchanged).
+// sidecar_required: sidecar must be written; when embedded writes are also
+// available and sidecar is not recommended, Method::mixed writes both.
+// Types with sidecar_recommended prefer sidecar writes. A mixed write that
+// commits embedded and then fails on the sidecar leaves the embedded file
+// updated; there is no multi-file rollback.
 Result<WriteReport> write(const std::filesystem::path& media,
                           const Metadata& metadata,
                           WriteOptions options = {});
@@ -118,9 +156,19 @@ Result<WriteReport> write(const std::filesystem::path& media,
 // preferred: sidecar when the path is an XMP sidecar or sidecar_recommended,
 // else embedded formats from capabilities() (XMP/EXIF/IPTC-IIM plus QuickTime
 // when container_gps is writable); embedded_only requires a writable embedded
-// category or container GPS; sidecar_only/sidecar_required → Sidecar(XMP).
-// Mixed sync is Stage 8.
+// category or container GPS; sidecar_only → Sidecar(XMP);
+// sidecar_required → Sidecar(XMP) when embedded is unavailable or sidecar is
+// recommended, else Mixed (embedded formats + XMP sidecar).
 Result<StorageDecision> evaluateStorage(const std::filesystem::path& media,
                                         WriteOptions options = {});
+
+// Read + reconcile (or use SyncOptions::metadata), then write the canonical
+// state so the selected carriers agree. Both file mutations go through
+// mutate_file_atomically. Unresolved Resolution::conflict on direction
+// `both` fails with conflict_unresolved (merge first). If the first carrier
+// write succeeds and the second fails, the error documents that partial
+// state; the first file is not rolled back.
+Result<SyncReport> synchronize(const std::filesystem::path& media,
+                               SyncOptions options = {});
 
 }  // namespace umm

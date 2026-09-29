@@ -79,6 +79,25 @@ StorageDecision sidecar_decision(std::string backend) {
   return decision;
 }
 
+StorageDecision mixed_decision(std::string backend,
+                               const BackendCapability& row) {
+  StorageDecision decision;
+  decision.method = StorageDecision::Method::mixed;
+  decision.formats = embedded_formats(row.categories, row.location);
+  bool has_xmp = false;
+  for (const std::string& format : decision.formats) {
+    if (format == "XMP") {
+      has_xmp = true;
+      break;
+    }
+  }
+  if (!has_xmp) {
+    decision.formats.insert(decision.formats.begin(), "XMP");
+  }
+  decision.backend = std::move(backend);
+  return decision;
+}
+
 bool can_write_embedded(const BackendCapability* row) {
   if (!row || row->identify_only) {
     return false;
@@ -219,8 +238,12 @@ Result<StorageDecision> evaluateStorage(const std::filesystem::path& media,
       }
       return embedded_decision(backend, *row);
     case StoragePolicy::sidecar_only:
-    case StoragePolicy::sidecar_required:
       return sidecar_decision(backend);
+    case StoragePolicy::sidecar_required:
+      if (sidecar_file || reported.sidecar_recommended || !embed) {
+        return sidecar_decision(backend);
+      }
+      return mixed_decision(backend, *row);
   }
   return Error{ErrorCode::internal, "unknown storage policy", backend, ""};
 }

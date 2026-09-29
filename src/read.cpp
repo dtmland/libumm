@@ -7,6 +7,11 @@
 namespace umm {
 namespace {
 
+std::string path_utf8(const std::filesystem::path& path) {
+  const std::u8string utf8 = path.u8string();
+  return {utf8.begin(), utf8.end()};
+}
+
 Error unavailable(std::string message, std::string backend) {
   return Error{ErrorCode::backend_unavailable, std::move(message),
                std::move(backend), ""};
@@ -82,9 +87,15 @@ Result<LoadedRead> load_read(const std::filesystem::path& media,
     return loaded;
   }
 
+  const auto sidecar_path = findSidecar(media);
+  if (options.sidecar_required && !sidecar_path) {
+    return Error{ErrorCode::io_not_found, "required XMP sidecar is missing",
+                 backend->id(), path_utf8(media)};
+  }
+
   if (options.merge_sidecar) {
-    if (const auto path = findSidecar(media)) {
-      Result<RawDocument> sidecar_raw = backend->readRaw(*path);
+    if (sidecar_path) {
+      Result<RawDocument> sidecar_raw = backend->readRaw(*sidecar_path);
       if (!sidecar_raw.ok()) {
         return sidecar_raw.error();
       }
