@@ -25,7 +25,7 @@ Session 20 merged.
   `src/backends/exiftool/keys.cpp` for the tags the Phase's VMH properties need (creation date,
   title/description-class keys, `GPSCoordinates`, duration-class technical keys), replacing the
   current unmapped `ExifTool.QuickTime.*` fallback for those tags; everything unmapped remains
-  raw-accessible (concept.md §18).
+  accessible via `unmapped()` (concept.md §18).
 - Reconciliation: `iptc.video.*` properties reconciled from QuickTime-container and XMP sources;
   precedence rules added to `docs/reconciliation-policy.md` (video section — XMP vs container
   keys, with QuickTime creation-time timezone caveats documented). **R3 revisit:** keep the
@@ -46,7 +46,7 @@ Session 20 merged.
 - `umm::read` on `video/full.mp4` returns canonical `iptc.video.*` properties with provenance;
   `conflicting.mp4` classifies per the written policy.
 - GPS from `QuickTime:GPSCoordinates` surfaces through the location property path.
-- Unmapped QuickTime tags remain accessible via raw access.
+- Unmapped QuickTime tags remain accessible via unmapped access.
 
 ## Cut line
 

@@ -175,7 +175,7 @@ Exiv2::Image::UniquePtr open_image(const std::filesystem::path& media) {
 #endif
 }
 
-std::string base_raw_key(std::string_view key) {
+std::string base_unmapped_key(std::string_view key) {
   const auto slash = key.find('/');
   if (slash != std::string_view::npos) {
     key = key.substr(0, slash);
@@ -305,7 +305,7 @@ void apply_changes(Exiv2::Image& image, const UnmappedChanges& changes) {
     }
   };
   for (const UnmappedKey& key : changes.removals) {
-    erase_one(base_raw_key(key.key));
+    erase_one(base_unmapped_key(key.key));
   }
 
   std::vector<std::string> order;
@@ -313,7 +313,7 @@ void apply_changes(Exiv2::Image& image, const UnmappedChanges& changes) {
   std::map<std::string, std::string> hints;
   std::map<std::string, std::string> families;
   for (const UnmappedEntry& entry : changes.upserts) {
-    const std::string key = base_raw_key(entry.key.key);
+    const std::string key = base_unmapped_key(entry.key.key);
     if (!values.contains(key)) {
       order.push_back(key);
       families[key] = entry.key.family;

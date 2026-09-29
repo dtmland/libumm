@@ -258,7 +258,7 @@ std::string xmp_exiftool_ns(std::string_view ns) {
   return std::string(ns);
 }
 
-std::optional<std::string> exiftool_tag_for_raw_key(std::string_view raw_key) {
+std::optional<std::string> exiftool_tag_for_unmapped_key(std::string_view raw_key) {
   const std::string key = strip_index_and_field(raw_key);
   auto after_prefix = [&](std::string_view prefix) -> std::optional<std::string> {
     if (key.rfind(prefix, 0) != 0) {

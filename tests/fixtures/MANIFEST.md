@@ -76,7 +76,7 @@ Each committed media file is generator-produced (decision **M6**); track files a
 
 - **SHA-256:** `f5810e00cbf9801f12da5882d85c350e954b2533f618918a586f1b607da11aef`
 - **Size:** 3126 bytes
-- **Purpose:** Unregistered/vendor XMP namespace + unknown EXIF tags — raw access + preservation
+- **Purpose:** Unregistered/vendor XMP namespace + unknown EXIF tags — unmapped access + preservation
 - **Command:** `exiftool -overwrite_original -all= jpeg/unknown-tags.jpg && exiftool -overwrite_original -XMP-libummtest:UnknownWidget=vendor-widget -EXIF:LibummUnknownExif=vendor-exif jpeg/unknown-tags.jpg`
 
 ### `sidecar/paired.jpg`

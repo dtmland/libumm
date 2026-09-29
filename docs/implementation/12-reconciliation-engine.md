@@ -24,7 +24,7 @@ Sessions 07, 08, 10, 11 merged.
   - Sources of the rules: IPTC Photo Metadata mapping guidance, **MWG guidance as frozen input**
     with ExifTool's MWG module as the compatibility reference (decision S4b) — each rule cites
     its origin.
-- `src/core/reconcile.cpp` (+ internal header): consumes `RawDocument`(s), uses the generated
+- `src/core/reconcile.cpp` (+ internal header): consumes `UnmappedDocument`(s), uses the generated
   registry representations to group raw entries per property, normalizes values into
   `umm::Value`, applies policy, emits `Metadata` with full provenance (concept.md §15, §17).
 - Public entry point (promote relevant part of `include/umm/umm.hpp` draft):
@@ -36,7 +36,7 @@ Sessions 07, 08, 10, 11 merged.
     listed; preferred matches policy.
   - Single-block fixtures → `single`.
   - `unicode.jpg` → normalization does not mangle UTF-8.
-  - Cross-backend: same canonical result from Exiv2 and ExifTool raw documents (tolerances
+  - Cross-backend: same canonical result from Exiv2 and ExifTool unmapped documents (tolerances
     documented where the backends genuinely differ).
 
 ## Steps

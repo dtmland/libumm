@@ -16,17 +16,17 @@ Sessions 05, 08, 09 merged.
 
 - Promote `include/umm/backend.hpp` (design draft → real): the adapter contract per analysis S1a/b:
   - `BackendId`, `availability()` (present/absent + reason — backends optional at runtime,
-    decision S1b), `readRaw(path) -> Result<RawDocument>`,
-    `writeRaw(path, RawChanges) -> Result<void>` (declared; implemented session 13),
+    decision S1b), `readUnmapped(path) -> Result<UnmappedDocument>`,
+    `writeUnmapped(path, UnmappedChanges) -> Result<void>` (declared; implemented session 13),
     `typeCapabilities(MediaType)` (declared; implemented session 15).
-  - `RawDocument`: ordered list of `RawEntry { family (Exif/Iptc/Xmp), key, value bytes/text,
+  - `UnmappedDocument`: ordered list of `UnmappedEntry { family (Exif/Iptc/Xmp), key, value bytes/text,
     type hint }` — the family/key naming follows Exiv2 key syntax (`Exif.Image.Artist`,
-    `Iptc.Application2.City`, `Xmp.dc.creator`) as the neutral raw vocabulary; the ExifTool
+    `Iptc.Application2.City`, `Xmp.dc.creator`) as the neutral unmapped vocabulary; the ExifTool
     adapter maps into it (documented in the header).
   - Error mapping rules, timeout semantics (relevant to session 11), thread-safety statement
     (each backend instance single-threaded; manager may pool).
-- `src/backends/exiv2/` — Exiv2 backend implementing `availability()` + `readRaw()` for JPEG:
-  iterate exifData/iptcData/xmpData into `RawEntry`s; Exiv2 exceptions caught at the boundary and
+- `src/backends/exiv2/` — Exiv2 backend implementing `availability()` + `readUnmapped()` for JPEG:
+  iterate exifData/iptcData/xmpData into `UnmappedEntry`s; Exiv2 exceptions caught at the boundary and
   mapped to `umm::Error` (M1: exceptions never escape).
 - `BackendManager` minimal: register/enumerate backends, fetch by id.
 - Tests (`tests/backend/test_exiv2_read.cpp`) against fixtures: exif-only yields only Exif keys;
@@ -34,13 +34,13 @@ Sessions 05, 08, 09 merged.
   `gps.jpg`); unicode fixture values match UTF-8 expectations; the non-ASCII filename fixture
   opens on Windows; truncated fixture returns `format` error, not a crash.
 - Windows Unicode paths: Exiv2 0.28 `FileIo::open` uses `fopen` (ANSI code page), and there is
-  no `wstring` `ImageFactory::open`. `readRaw` loads the file through `std::filesystem::path` /
+  no `wstring` `ImageFactory::open`. `readUnmapped` loads the file through `std::filesystem::path` /
   `ifstream` into `MemIo`. Unix still passes a UTF-8 path to `ImageFactory::open`.
 
 ## Steps
 
 1. Finalize backend.hpp draft (header first).
-2. Implement Exiv2 readRaw + availability; map exceptions.
+2. Implement Exiv2 readUnmapped + availability; map exceptions.
 3. Tests against the fixture corpus; presets loop; push; three-OS green.
 
 ## Acceptance criteria

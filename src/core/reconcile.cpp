@@ -1696,11 +1696,11 @@ Result<Metadata> reconcile(const UnmappedDocument& document,
                            std::string_view file_type,
                            std::vector<ConflictEntry>* disagreements) {
   Metadata metadata;
-  std::vector<UnmappedEntry> raw = document.entries;
+  std::vector<UnmappedEntry> entries = document.entries;
   if (sidecar) {
-    raw.insert(raw.end(), sidecar->entries.begin(), sidecar->entries.end());
+    entries.insert(entries.end(), sidecar->entries.begin(), sidecar->entries.end());
   }
-  metadata.assignUnmapped(std::move(raw));
+  metadata.assignUnmapped(std::move(entries));
   const bool video = is_video_file_type(file_type);
   if (video) {
     reconcile_property(metadata, document, sidecar, backend_id, kVideoTitle,

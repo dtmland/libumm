@@ -486,13 +486,13 @@ Result<void> ExifToolBackend::writeUnmapped(const std::filesystem::path& media,
       command += '\n';
     };
     for (const UnmappedKey& key : changes.removals) {
-      const auto tag = exiftool_tag_for_raw_key(key.key);
+      const auto tag = exiftool_tag_for_unmapped_key(key.key);
       if (tag) {
         line("-" + *tag + "=");
       }
     }
     for (const UnmappedEntry& entry : changes.upserts) {
-      const auto tag = exiftool_tag_for_raw_key(entry.key.key);
+      const auto tag = exiftool_tag_for_unmapped_key(entry.key.key);
       if (!tag) {
         continue;
       }

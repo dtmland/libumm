@@ -30,7 +30,7 @@ and environment setup.
 | `umm get FILE PROPERTY…` | `umm::read` | Print one or more property values (`umm get photo.jpg iptc.photo.creator`), exit non-zero if absent. |
 | `umm set FILE PROP=VALUE…` | `umm::write` | Write canonical properties through the policy engine; `--policy embedded|sidecar|sidecar-required|preferred`, `--dry-run` prints the `WriteReport`. |
 | `umm rm FILE PROP…` | `umm::write` | Clear properties across all synchronized representations. |
-| `umm raw FILE` | `Metadata::raw()` | Dump every raw entry (family, key, value) — the concept.md §18 escape hatch, read-only. |
+| `umm unmapped FILE` | `Metadata::unmapped()` | Dump every unmapped entry (family, key, value) — the concept.md §18 escape hatch, read-only. |
 | `umm conflicts FILE` | `umm::detectConflict` | List disagreeing properties with each candidate source; `--fail-on-conflict` for scripting. |
 | `umm merge FILE PROP --use RAWKEY|--value V` | `umm::merge` + `umm::write` | Resolve a conflict by choosing a candidate or supplying an override, then persist. |
 | `umm sync FILE` | `umm::synchronize` | Make embedded and sidecar carriers agree; `--direction both|embedded-to-sidecar|sidecar-to-embedded`, `--dry-run`. |
@@ -142,7 +142,7 @@ Python helper.
 ## 6. Non-goals (v1)
 
 - No metadata semantics outside libumm's registry; no ad-hoc tag names on the command line
-  (raw *display* is supported via `umm raw`; raw *write* follows libumm decision P6 — absent).
+  (unmapped *display* is supported via `umm unmapped`; unmapped *write* follows libumm decision P6 — absent).
 - No thumbnailing, transcoding, or image processing.
 - No long-running daemon; the `-stay_open` ExifTool process is managed inside libumm per
   invocation batch.

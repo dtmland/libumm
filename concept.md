@@ -729,7 +729,7 @@ This would make the library much more useful for archival/DAM applications.
 
 ---
 
-# 18. Raw Metadata Must Always Remain Accessible
+# 18. Unmapped Metadata Must Always Remain Accessible
 
 The semantic API should never prevent access to unusual metadata.
 
@@ -741,11 +741,11 @@ is the friendly abstraction.
 
 But applications should also be able to say:
 
-    raw.get("Exif.Nikon3.LensType")
+    metadata.unmapped(UnmappedKey{"Exif", "Exif.Nikon3.LensType"})
 
 or:
 
-    raw.xmp("some.vendor.namespace", "SomeProperty")
+    metadata.unmapped(UnmappedKey{"Xmp", "Xmp.some.vendor.namespace.SomeProperty"})
 
 This is critical because cameras continually introduce manufacturer-specific metadata.
 

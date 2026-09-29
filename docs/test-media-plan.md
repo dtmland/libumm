@@ -69,7 +69,7 @@ Each ≤ ~25 KB; whole Phase-1 corpus target **< 1 MB**:
 | `jpeg/gps.jpg` | EXIF GPS IFD + XMP GPS + IPTC named place |
 | `jpeg/unicode.jpg` | Non-ASCII values (UTF-8 XMP, IPTC charset marker) in creator/description |
 | `jpeg/makernote.jpg` | A vendor MakerNote blob — write-preservation test input |
-| `jpeg/unknown-tags.jpg` | Unregistered/vendor XMP namespace + unknown EXIF tags — raw access + preservation |
+| `jpeg/unknown-tags.jpg` | Unregistered/vendor XMP namespace + unknown EXIF tags — unmapped access + preservation |
 | `sidecar/paired.jpg` + `sidecar/paired.xmp` | Embedded + sidecar as one asset; sidecar/embedded conflict variant |
 | `sidecar/orphan.xmp` | Sidecar with no media file |
 | `naming/übüng ünïcode.jpg` | Non-ASCII *filename* (Windows path encoding) |
@@ -108,7 +108,7 @@ same pattern; the per-type location capabilities in
 | `capabilities()` | one fixture per (type × metadata category) claim in the capability data |
 | reconciliation | `full-agreeing`, `full-conflicting`, sidecar conflict pair |
 | provenance | `full-*` fixtures (multi-source values) |
-| raw access | `unknown-tags`, `makernote` |
+| unmapped access | `unknown-tags`, `makernote` |
 | location | `gps` per type; later QuickTime `GPSCoordinates` fixture |
 | sidecar policy | `sidecar/*` |
 | GPS track engine (later) | tiny hand-written GPX/NMEA/KML files (text, trivially small, authored in-repo) |

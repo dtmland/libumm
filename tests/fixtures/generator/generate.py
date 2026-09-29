@@ -67,7 +67,7 @@ PURPOSES = {
     ),
     "jpeg/makernote.jpg": "A vendor MakerNote blob — write-preservation test input",
     "jpeg/unknown-tags.jpg": (
-        "Unregistered/vendor XMP namespace + unknown EXIF tags — raw access + preservation"
+        "Unregistered/vendor XMP namespace + unknown EXIF tags — unmapped access + preservation"
     ),
     "sidecar/paired.jpg": (
         "Embedded + sidecar as one asset; sidecar/embedded conflict variant (embedded side)"
