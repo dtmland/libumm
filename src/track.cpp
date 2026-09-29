@@ -5,7 +5,9 @@
 #include <charconv>
 #include <chrono>
 #include <fstream>
+#include <locale>
 #include <optional>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -64,11 +66,16 @@ std::optional<double> parse_double(std::string_view text) {
   if (text.empty()) {
     return std::nullopt;
   }
+  // Apple libc++ does not implement floating-point std::from_chars.
+  std::istringstream in{std::string(text)};
+  in.imbue(std::locale::classic());
   double value = 0;
-  const char* first = text.data();
-  const char* last = first + text.size();
-  const auto parsed = std::from_chars(first, last, value);
-  if (parsed.ec != std::errc{} || parsed.ptr != last) {
+  in >> value;
+  if (!in) {
+    return std::nullopt;
+  }
+  in >> std::ws;
+  if (!in.eof()) {
     return std::nullopt;
   }
   return value;

@@ -126,9 +126,32 @@ PURPOSES = {
     "tracks/malformed.nmea": "NMEA with bad checksums and no usable positions",
 }
 
+TRACK_FILES = (
+    "tracks/straight.gpx",
+    "tracks/nmea.nmea",
+    "tracks/gaps.gpx",
+    "tracks/straight.kml",
+    "tracks/malformed.gpx",
+    "tracks/malformed.nmea",
+)
+
 
 class GeneratorError(RuntimeError):
     """Fixture generation failed closed."""
+
+
+def copy_hand_authored_tracks(
+    output_dir: Path, source_dir: Path = DEFAULT_OUTPUT_DIR
+) -> None:
+    """Copy session 25 text tracks into output_dir for off-tree regen."""
+    for relpath in TRACK_FILES:
+        src = source_dir / relpath
+        dest = output_dir / relpath
+        if not src.is_file():
+            raise GeneratorError(f"missing hand-authored track fixture {relpath}")
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        if src.resolve() != dest.resolve():
+            shutil.copyfile(src, dest)
 
 
 def sha256_file(path: Path) -> str:
@@ -1237,17 +1260,8 @@ def generate(
         ),
     )
 
-    for relpath in (
-        "tracks/straight.gpx",
-        "tracks/nmea.nmea",
-        "tracks/gaps.gpx",
-        "tracks/straight.kml",
-        "tracks/malformed.gpx",
-        "tracks/malformed.nmea",
-    ):
-        path = output_dir / relpath
-        if not path.is_file():
-            raise GeneratorError(f"missing hand-authored track fixture {relpath}")
+    copy_hand_authored_tracks(output_dir)
+    for relpath in TRACK_FILES:
         add(relpath, ["hand-authored (session 25; test-media-plan §4)"])
 
     write_manifest(

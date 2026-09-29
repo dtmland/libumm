@@ -502,6 +502,19 @@ class TestFixtureCorpus(unittest.TestCase):
             self.assertNotIn(b"\r\n", path.read_bytes(), f"{relpath} must be LF")
             self.assertIn("hand-authored", entries[relpath]["command"])
 
+    def test_generator_copies_hand_authored_tracks(self) -> None:
+        gen = load_generator()
+        gen.copy_hand_authored_tracks(FIXTURES)
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            gen.copy_hand_authored_tracks(out)
+            for relpath in TRACK_FILES:
+                dest = out / relpath
+                self.assertTrue(dest.is_file(), relpath)
+                self.assertEqual(
+                    (FIXTURES / relpath).read_bytes(), dest.read_bytes(), relpath
+                )
+
     def test_manifest_matches_files_on_disk(self) -> None:
         text = MANIFEST.read_text(encoding="utf-8")
         entries = parse_manifest(text)
@@ -737,7 +750,9 @@ class TestFixtureExifTool(unittest.TestCase):
                 committed = FIXTURES / relpath
                 generated = out / relpath
                 self.assertTrue(generated.is_file(), relpath)
-                if relpath == "corrupt/truncated.jpg":
+                if relpath == "corrupt/truncated.jpg" or relpath.startswith(
+                    "tracks/"
+                ):
                     self.assertEqual(committed.read_bytes(), generated.read_bytes())
                     continue
                 left = comparable_metadata(
