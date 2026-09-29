@@ -2,60 +2,90 @@
 
 Universal Media Metadata Library
 
-libumm does not define a new metadata standard. It provides a unified programming interface over established standards including IPTC Photo Metadata, IPTC Video Metadata Hub, XMP, EXIF, and media-container metadata, using proven implementation engines such as Exiv2 and ExifTool.
+libumm gives applications a single, standards-based C++20 API for reading, writing,
+reconciling, and synchronizing metadata across photos and video. It does **not** define a
+new metadata standard: canonical properties come from IPTC Photo Metadata, IPTC Video
+Metadata Hub, XMP, and EXIF, and the heavy lifting is done by proven engines — **Exiv2**
+(in-process) and **ExifTool** (out-of-process, located at runtime, never bundled).
 
-- Design plan: [concept.md](concept.md)
-- Exiv2 and ExifTool file-type coverage (read vs write), including **location** (GPS and named place): [supported-types.md](supported-types.md)
-- Multi-platform build and test plan (Linux, Windows, macOS): [build-plan.md](build-plan.md)
-- Plan review and decisions (historical analysis): [docs/analysis/2026-09-27-plan-review-and-decisions.md](docs/analysis/2026-09-27-plan-review-and-decisions.md)
-- **Implementation plan (session-sized):** [docs/implementation/00-overview.md](docs/implementation/00-overview.md)
-- Test media strategy: [docs/test-media-plan.md](docs/test-media-plan.md)
-- Public API headers: [include/umm/](include/umm/) — `version.hpp` and `registry.hpp` are implemented; remaining headers are design drafts (decision M7) until their implementation sessions.
-- Versioning and ABI: [docs/abi-policy.md](docs/abi-policy.md) — source API follows semver; C++ ABI stability is not promised.
+Highlights:
 
-## Releases
+- One canonical value per property, reconciled across XMP / IPTC IIM / EXIF / QuickTime with
+  provenance and explicit conflict handling
+- Exception-free `umm::Result<T>` API; atomic, write-synchronized file updates
+- XMP sidecar pairing, conflict merge, and embedded↔sidecar synchronization
+- Capability discovery per backend / file type / metadata category
+- GPS track import (GPX/NMEA/KML) and time-correlated location writes
+- JPEG, TIFF, PNG, WebP, DNG and other RAW, MP4/MOV, HEIC/AVIF/JXL — see
+  [docs/supported-types.md](docs/supported-types.md) for the exact read/write matrix
 
-Tag `vX.Y.Z` (matching `include/umm/version.hpp`) to run
-`.github/workflows/release.yml`. That workflow builds the static default
-configuration on Linux, Windows, and macOS, packages install prefixes with
-notices, `tools/get-exiftool/`, and corresponding source, and opens a **draft**
-GitHub release. `workflow_dispatch` is a dry-run (artifacts only). Follow
-[docs/release-checklist.md](docs/release-checklist.md) before publishing;
-decision **S1d** (Apache-2.0 for libumm source) is still provisional.
+## Getting started
 
-## Versioning
+Build and install (CMake ≥ 3.24, C++20 compiler):
 
-`UMM_VERSION_MAJOR` / `MINOR` / `PATCH` and `UMM_VERSION_STRING` in
-`include/umm/version.hpp` are the compile-time library version. They agree with
-CMake `PROJECT_VERSION` and `umm::version()`. Standards versions are reported
-by `umm::Registry::standards()`, not by library semver. See
-[docs/abi-policy.md](docs/abi-policy.md).
+```sh
+cmake --preset default
+cmake --build --preset default
+cmake --install build/default
+```
 
-## Install
+Use from your project:
 
-`cmake --install` writes headers, the static library, and a CMake package (`ummConfig.cmake`) so a downstream project can `find_package(umm CONFIG)` and link `umm::umm`. The static default (decision M4c) installs private Exiv2 (and FetchContent Expat/zlib) archives as IMPORTED link dependencies of that export; consumers do not need an Exiv2 CMake package. FetchContent Exiv2/Expat/zlib headers and CMake files are not installed. Binary prefixes also install `LICENSE`, `NOTICE.md`, `THIRD-PARTY-NOTICES.md`, `licenses/`, and `tools/build/corresponding-source.json` under `share/doc/libumm/` (decision P1).
+```cmake
+find_package(umm CONFIG REQUIRED)
+target_link_libraries(app PRIVATE umm::umm)
+```
 
-## Getting ExifTool
+```cpp
+#include <umm/umm.hpp>
 
-libumm locates ExifTool at runtime and never bundles it (decision S1c). Release users who want the ExifTool backend should run the host-native helper, which reads the pin in `tools/build/backends.env`, downloads that archive from upstream, verifies SHA-256 (fail-closed), and extracts it to a per-user prefix:
+auto meta = umm::read("photo.jpg");
+if (meta) {
+  meta->setKeywords({"family", "vacation"});
+  umm::write("photo.jpg", *meta);
+}
+```
 
-- Linux and macOS: `sh tools/get-exiftool/install.sh`
-- Windows (PowerShell 5.1+): `powershell -ExecutionPolicy Bypass -File tools/get-exiftool/install.ps1`
+Optionally install the pinned ExifTool backend (broadens format and write coverage; Exiv2 is
+built in). The helper verifies the pinned SHA-256, writes nothing outside its install prefix and cache
+directory, and prints the `UMM_EXIFTOOL` line to wire discovery:
 
-The scripts write nothing outside the install prefix and cache directory. They do not modify PATH, shell profiles, or system directories. After a successful install they print the `UMM_EXIFTOOL` environment line for the extracted `exiftool` script, and the equivalent explicit-config setting (`ExifToolConfig.exiftool_script`). Discovery order is explicit config, then `UMM_EXIFTOOL`, then PATH. On Windows, Perl is a separate prerequisite; if `perl` is missing, `install.ps1` prints the pinned Strawberry Perl version instead of pretending success.
+- Linux/macOS: `sh tools/get-exiftool/install.sh`
+- Windows: `powershell -ExecutionPolicy Bypass -File tools/get-exiftool/install.ps1`
 
-Use `--check` / `-Check` to verify an existing prefix against the pin. Override the prefix with `--prefix` / `-Prefix`.
+Build options such as `UMM_EXIV2_SHARED` (shared Exiv2 linkage; GPL analysis unchanged) are
+documented in [docs/sysadmin/install.md](docs/sysadmin/install.md).
 
-## Build options
+Next steps: the [user guide](docs/user/guide.md) covers the canonical properties and the
+unmapped-metadata escape hatch; [install and deployment](docs/sysadmin/install.md) covers
+build options, ExifTool discovery, and redistribution licensing.
 
-- `UMM_EXIV2_SHARED` (default **OFF**): link the Exiv2 backend against a shared
-  `exiv2` library. When ON, CMake prefers `find_package(exiv2 CONFIG)` with a
-  version floor of the **pinned minor** in `tools/build/backends.env` (the
-  major.minor of `UMM_EXIV2_VERSION`); if no suitable system or consumer Exiv2
-  is found, FetchContent builds that pinned source as a shared library. System
-  mode records `exiv2` as a CMake/runtime dependency of the export;
-  FetchContent-shared mode installs the runtime library next to libumm (RPATH /
-  `install_name` / DLL placement). **This option does not change the GPL
-  analysis:** distributing libumm together with the Exiv2 backend remains
-  GPL-governed in either linkage mode (decision **P2**). Static linkage stays
-  the default (decision **M4c**).
+## Documentation
+
+Organized by audience in [docs/](docs/README.md):
+
+- **Users:** [user guide](docs/user/guide.md), [file-type coverage](docs/supported-types.md)
+- **Sysadmins:** [install and deployment](docs/sysadmin/install.md),
+  [release checklist](docs/release-checklist.md)
+- **Developers:** [implementation history](docs/developer/implementation-history.md),
+  [reconciliation policy](docs/reconciliation-policy.md),
+  [versioning and ABI policy](docs/abi-policy.md),
+  [decision records](docs/analysis/)
+- **Future work:** [umm CLI concept](docs/umm-cli-concept.md)
+
+## Versioning and releases
+
+`include/umm/version.hpp` defines the compile-time library version, in agreement with CMake
+`PROJECT_VERSION` and `umm::version()`; source API follows semver, C++ ABI stability is not
+promised ([docs/abi-policy.md](docs/abi-policy.md)). Standards versions are reported by
+`umm::Registry::standards()`, not by library semver.
+
+Tagging `vX.Y.Z` runs the release workflow: three-OS static builds, notices and
+corresponding source, and a **draft** GitHub release. See
+[docs/release-checklist.md](docs/release-checklist.md).
+
+## License
+
+libumm source is Apache-2.0 (provisional). Binary distributions containing the statically
+linked Exiv2 backend are conveyed under GPL-3.0; see [NOTICE.md](NOTICE.md) and
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). ExifTool is never redistributed.

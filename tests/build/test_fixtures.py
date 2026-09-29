@@ -51,7 +51,7 @@ SECTION_22 = (
     "corrupt/truncated.jpg",
 )
 
-# docs/implementation/17-tiff-support.md — JPEG matrix pattern for TIFF.
+# Session 17 (docs/developer/implementation-history.md) — JPEG matrix pattern for TIFF.
 TIFF_FILES = (
     "tiff/minimal.tif",
     "tiff/exif-only.tif",
@@ -63,7 +63,7 @@ TIFF_FILES = (
     "tiff/unicode.tif",
 )
 
-# docs/implementation/18-png-webp-support.md
+# Session 18 (docs/developer/implementation-history.md)
 PNG_FILES = (
     "png/minimal.png",
     "png/xmp-only.png",
@@ -76,7 +76,7 @@ WEBP_FILES = (
     "webp/full-agreeing.webp",
 )
 
-# docs/implementation/35-bmff-enablement.md
+# Session 35 (docs/developer/implementation-history.md)
 AVIF_FILES = (
     "avif/minimal.avif",
     "avif/xmp-only.avif",
@@ -84,13 +84,13 @@ AVIF_FILES = (
     "avif/gps.avif",
 )
 
-# docs/implementation/19-raw-read-and-sidecar-write.md
+# Session 19 (docs/developer/implementation-history.md)
 DNG_FILES = (
     "raw/minimal.dng",
     "raw/full-agreeing.dng",
 )
 
-# docs/implementation/21-video-read-mp4-mov.md
+# Session 21 (docs/developer/implementation-history.md)
 VIDEO_FILES = (
     "video/minimal.mp4",
     "video/minimal.mov",
@@ -99,7 +99,7 @@ VIDEO_FILES = (
     "video/conflicting.mp4",
 )
 
-# docs/implementation/25-gps-track-import.md — hand-authored text tracks.
+# Session 25 (docs/developer/implementation-history.md) — hand-authored text tracks.
 TRACK_FILES = (
     "tracks/straight.gpx",
     "tracks/nmea.nmea",

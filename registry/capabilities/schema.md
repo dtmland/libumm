@@ -1,7 +1,7 @@
 # libumm capability records
 
 Machine-readable backend coverage transcribed from
-[supported-types.md](../../supported-types.md) §1–§4 (concept.md §14;
+[supported-types.md](../../docs/supported-types.md) §1–§4 (concept.md §14;
 decision **M2**). Session 15 generates `supported-types.md` and the C++
 lookup tables from these files.
 
