@@ -34,7 +34,9 @@ libumm is currently design documentation only. Before (and while) the library is
 
 - Implementing the full metadata API (beyond minimal smoke symbols CI needs)
 - GUI, Qt, or display-server testing
-- Release packaging, code signing, notarization, or installers
+- Release packaging, code signing, notarization, or installers — release engineering is now
+  planned as Stage 11 (sessions 29–34; see
+  [docs/analysis/2026-09-29-stage-10-review-release-and-licensing.md](docs/analysis/2026-09-29-stage-10-review-release-and-licensing.md))
 - Package-manager publication (vcpkg, Conan, Homebrew, etc.)
 - Changing any sister application repository; patterns may be adapted here, but this plan is for **libumm only**
 
