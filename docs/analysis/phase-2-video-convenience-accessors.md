@@ -1,177 +1,223 @@
-# Video Convenience Accessors — Phase 2 Proposal
+# Cross-Media Convenience Accessors — Phase 2 Proposal
 
 ## Overview
 
-This document explores adding convenience accessors for video metadata (Phase 2) that mirror the photo accessor set from Phase 1. The proposal is based on the observation that many video properties share compatible data types with their photo counterparts, enabling simple wrapper accessors that transpose simple input types into the structured forms required by IPTC Video Metadata Hub.
+This document proposes expanding Phase 1's photo-only convenience accessors into a **cross-media layer** that works identically across photos, video, and eventually audio. The core principle: **convenience accessors should only exist for semantic properties that are meaningful across all supported media types.**
 
-## Current State (Phase 1)
+This approach:
+1. **Fulfills the intent of IPTC standardization** — the standards themselves define these properties for multiple media domains, proving they represent universal concepts
+2. **Prevents API proliferation** — rather than separate `setPhotoCreator()`, `setVideoCreator()`, `setAudioCreator()`, there is only `setCreator()`
+3. **Future-proofs for audio** — voice recordings, podcasts, and audiobooks share the same descriptive metadata needs as photos and video
+4. **Maintains architectural clarity** — media-specific properties stay behind full property IDs; universal concepts get convenient accessors
 
-Photo properties have typed convenience accessors:
+## Current Fragmentation
 
+**Phase 1 (photo-only accessors):**
 ```cpp
-meta->creator()                    // iptc.photo.creator (string list)
-meta->headline()                   // iptc.photo.headline (string)
-meta->description()                // iptc.photo.description (lang-alt)
-meta->keywords()                   // iptc.photo.keywords (string list)
-meta->dateCreated()                // iptc.photo.dateCreated (date-time)
-meta->copyrightNotice()            // iptc.photo.copyrightNotice (lang-alt)
-meta->creditLine()                 // iptc.photo.creditLine (string)
-meta->rating()                     // iptc.photo.imageRating (real number)
-meta->gps()                        // exif.gps.position (GPS coordinate)
-meta->locationCreated()            // iptc.photo.locationCreated (structures)
+meta->creator()              // iptc.photo.creator
+meta->description()          // iptc.photo.description
+meta->headline()             // iptc.photo.headline
+meta->keywords()             // iptc.photo.keywords
+meta->dateCreated()          // iptc.photo.dateCreated
+meta->copyrightNotice()      // iptc.photo.copyrightNotice
+meta->creditLine()           // iptc.photo.creditLine
+meta->rating()               // iptc.photo.imageRating
+meta->gps()                  // exif.gps.position
+meta->locationCreated()      // iptc.photo.locationCreated
 ```
 
-Video properties require full property IDs:
-
+**Result:** Users must learn separate APIs for video:
 ```cpp
-meta->get("iptc.video.creator")           // struct EntityWRole list
-meta->get("iptc.video.description")       // lang-alt
-meta->get("iptc.video.keywords")          // lang-alt
-meta->get("iptc.video.dateCreated")       // date-time
-meta->get("iptc.video.copyrightNotice")   // lang-alt
-meta->get("iptc.video.creditLine")        // string
-meta->get("iptc.video.rating")            // struct Rating list (INCOMPATIBLE TYPE)
+meta->get("iptc.video.creator")         // Different accessor name!
+meta->get("iptc.video.description")     // Full property ID required
+meta->set("iptc.video.keywords", ...)   // Inconsistent
 ```
 
-## Design Principle: Type Transposition
-
-The key insight is that convenience accessors can accept simplified input types and transpose them into the structured forms required by the video metadata standards, without inventing new semantics.
-
-**This is consistent with libumm's core principle:** the standards themselves define these structures; the accessors simply provide a convenient entrypoint for common cases.
-
-The library already performs similar transposition in write-sync and reconciliation:
-- `reconciliation-policy.md` documents how `Xmp.dc.creator` string names are automatically flattened to `EntityWRole` `name` fields on read
-- The write path already wraps simple text into language-tagged `lang-alt` maps
-
-## Candidates for Video Convenience Accessors
-
-### ✅ Directly Compatible (No Transposition Needed)
-
-These properties have **identical data types** between photo and video:
-
-| Property | Photo Type | Video Type | Accessor Proposal |
-|----------|-----------|-----------|-------------------|
-| Copyright Notice | lang-alt | lang-alt | `setVideoCopyrightNotice(LangAlt)` |
-| Description | lang-alt | lang-alt | `setVideoDescription(LangAlt)` |
-| Keywords | string list | lang-alt | `setVideoKeywords(vector<string>)` |
-| Date Created | date-time | date-time | `setVideoDateCreated(DateTime)` |
-| Credit Line | string | string | `setVideoCreditLine(string)` |
-
-**No structural transformation needed.** These accessors are simple pass-throughs to `set(kVideoProperty, ...)`.
-
-### ✅ Type Transposition (Simple → Structured)
-
-These properties require wrapping simple types into structures, following patterns already established in write-sync:
-
-#### Creator: String List → EntityWRole Structures
-
-**Photo:**
+**Proposed solution:** Unified cross-media accessors
 ```cpp
-setCreator({"John Doe", "Jane Smith"})
-// Internally: iptc.photo.creator = ["John Doe", "Jane Smith"]
+// Single accessor works for photo, video, or audio
+meta->creator()              // Reads/writes iptc.photo.creator or iptc.video.creator
+meta->description()          // Works across all media
+meta->keywords()             // Universal concept
+// Media type is determined by file type, not accessor name
 ```
 
-**Video (proposed):**
-```cpp
-setVideoCreator({"John Doe", "Jane Smith"})
-// Internally transposes to:
-// iptc.video.creator = [
-//   {"name": {"x-default": "John Doe"}},
-//   {"name": {"x-default": "Jane Smith"}}
-// ]
-```
+## Design Principle: Universal Descriptive Concepts
 
-**Rationale:** The reconciliation policy (`reconciliation-policy.md` line 257) already documents this exact transposition: `Xmp.dc.creator` names are automatically flattened to EntityWRole `name` fields. A convenience accessor simply reverses the process for writes.
+Convenience accessors exist **only for properties where IPTC defines equivalent semantics across multiple media standards.** This is not a libumm invention—it's recognizing that IPTC itself treats these concepts as universal.
 
-**Implementation sketch:**
+**Why this matters:**
+- IPTC Photo Metadata and IPTC Video Metadata Hub are separate standards with intentionally overlapping vocabularies
+- This overlap itself proves these are universal concepts (creator, description, keywords, dates)
+- The standards already handle media-specific details; libumm just unifies the accessor
+
+## Cross-Media Candidates (Phase 2)
+
+### ✅ Universally Defined (Photo + Video + Future Audio)
+
+These exist in **both** IPTC Photo and IPTC Video Metadata Hub with compatible semantics. Audio equivalent would follow the same pattern.
+
+| Concept | Photo | Video | Audio (Future) | Accessor | Implementation |
+|---------|-------|-------|----------------|----------|-----------------|
+| **Creator** | iptc.photo.creator (string list) | iptc.video.creator (EntityWRole) | iptc.audio.creator (TBD) | `setCreator(vector<string>)` | Transpose to media-specific struct |
+| **Description** | iptc.photo.description (lang-alt) | iptc.video.description (lang-alt) | iptc.audio.description (TBD) | `setDescription(LangAlt)` | Direct pass-through |
+| **Headline** | iptc.photo.headline (string) | iptc.video.headline (lang-alt) | iptc.audio.headline (TBD) | `setHeadline(string)` | Transpose to lang-alt for video/audio |
+| **Keywords** | iptc.photo.keywords (string list) | iptc.video.keywords (lang-alt) | iptc.audio.keywords (TBD) | `setKeywords(vector<string>)` | Transpose to lang-alt as needed |
+| **Date Created** | iptc.photo.dateCreated (date-time) | iptc.video.dateCreated (date-time) | iptc.audio.dateCreated (TBD) | `setDateCreated(DateTime)` | Direct pass-through |
+| **Copyright Notice** | iptc.photo.copyrightNotice (lang-alt) | iptc.video.copyrightNotice (lang-alt) | iptc.audio.copyrightNotice (TBD) | `setCopyrightNotice(LangAlt)` | Direct pass-through |
+| **Credit Line** | iptc.photo.creditLine (string) | iptc.video.creditLine (string) | iptc.audio.creditLine (TBD) | `setCreditLine(string)` | Direct pass-through |
+
+### ❌ Media-Specific (No Universal Accessor)
+
+These do **not** exist in all domains; they remain behind full property IDs:
+
+- `iptc.photo.imageRating` (numeric, photo-only concept)
+- `iptc.video.rating` (structured text rating, different semantic)
+- `exif.gps.position` (location concept exists, but only photo/video have GPS; audio doesn't)
+- `iptc.photo.locationCreated` vs. `iptc.video.locationShot` — different roles, different structures
+- `iptc.video.contributor` — video-specific roles structure with no photo equivalent
+- `iptc.video.dateModified`, `dateReleased` — video-specific date concepts
+- Video technical metadata (bitrate, codec, frame rate, etc.) — not applicable to audio voice recordings in the same way
+
+**Rationale:** These properties either:
+1. Have no equivalent in other media domains (rating systems differ drastically)
+2. Represent media-specific technical requirements (GPS doesn't apply to audio)
+3. Have incompatible structures even if the name is similar (photo location vs. video location)
+
+## Implementation Architecture
+
+### Accessor Behavior
+
+Each cross-media accessor inspects the metadata's underlying media type and delegates to the appropriate canonical property:
+
 ```cpp
-Result<void> setVideoCreator(std::vector<std::string> names) {
-  std::vector<Structure> entities;
-  for (const auto& name : names) {
-    Structure entity;
-    entity.emplace("name", Value{LangAlt{{"x-default", name}}});
-    entities.push_back(entity);
+Result<void> Metadata::setCreator(std::vector<std::string> names) {
+  // Determine media type from context (photo, video, audio, or unknown)
+  auto media_type = detectMediaType();  // Inferred from read() context
+  
+  if (media_type == MediaType::photo) {
+    return set(kCreator, makeValue(names));  // iptc.photo.creator
+  } else if (media_type == MediaType::video) {
+    // Transpose: convert string list to EntityWRole structures
+    std::vector<Structure> entities;
+    for (const auto& name : names) {
+      Structure entity;
+      entity.emplace("name", Value{LangAlt{{"x-default", name}}});
+      entities.push_back(entity);
+    }
+    return set(kVideoCreator, Value{entities});  // iptc.video.creator
+  } else if (media_type == MediaType::audio) {
+    // Audio transposition TBD when audio support added
+    return unsupported_media_type();
   }
-  return set(kVideoCreator, Value{entities});
+  return unknown_media_type();
+}
+
+std::optional<PropertyValue> Metadata::creator() const {
+  auto media_type = detectMediaType();
+  
+  if (media_type == MediaType::photo) {
+    return get(kCreator);
+  } else if (media_type == MediaType::video) {
+    return get(kVideoCreator);
+  }
+  return std::nullopt;
 }
 ```
 
-#### GPS Position: Identical
+### Media Type Detection
 
+The `Metadata` object needs to carry media context. Two approaches:
+
+**Option A (Recommended for Phase 2):** Add optional `MediaContext` to `Metadata`
 ```cpp
-setGps(GpsCoordinate{...})  // Works for both photo (exif.gps.position) and video
+class Metadata {
+  enum class MediaContext { photo, video, audio, unknown };
+  
+  std::optional<MediaContext> media_context_;
+  MediaContext detectMediaType() const;
+  
+  // ... existing accessors ...
+  
+  // New cross-media accessors
+  Result<void> setCreator(std::vector<std::string> names);
+  std::optional<PropertyValue> creator() const;
+  // ... etc
+};
 ```
 
-GPS has no structured wrapper; the type is identical.
+Set during `umm::read()`:
+```cpp
+auto result = read(filepath);
+if (result) {
+  if (isVideoFile(filepath)) {
+    result.value().setMediaContext(Metadata::MediaContext::video);
+  } else if (isAudioFile(filepath)) {
+    result.value().setMediaContext(Metadata::MediaContext::audio);
+  } else {
+    result.value().setMediaContext(Metadata::MediaContext::photo);
+  }
+}
+```
 
-### ❌ Semantically Incompatible
-
-#### Rating: Simple Number vs. Structured Text
-
-**Photo rating:**
-- `iptc.photo.imageRating` = `real` (e.g., `4.5`)
-- A simple numeric score
-
-**Video rating:**
-- `iptc.video.rating` = `struct Rating` list
-- Fields: `ratingValue` (TEXT, **mandatory**, e.g., "PG-13" or "★★★★☆")
-- Fields: `ratingSourceLink` (URI, **mandatory**, where the rating comes from)
-- Fields: `ratingScaleMin/Max` (optional text bounds)
-- Fields: `ratingRegion` (optional location)
-
-**Problem:** Video rating value is text-based (e.g., movie ratings like "R", "NC-17", star symbols), not numeric. Photo rating is numeric. They represent fundamentally different classification schemes per the standards.
-
-**Decision:** Do not provide a convenience accessor for video rating. It would either:
-1. Lose information (converting `4.5` to a text rating loses the numeric meaning)
-2. Require semantic decisions the library shouldn't make (where would `ratingSourceLink` come from?)
-
-Users requiring video ratings should use the full property ID with structured input.
-
-### 🤔 Future Consideration: Headline
-
-**Current state:** Photo has `headline()`, but there's also `iptc.photo.title` (no accessor).
-
-**Video:** Has `iptc.video.title` (lang-alt) and `iptc.video.headline` (lang-alt).
-
-These are semantically distinct per IPTC, so creating a unified "headline" accessor would blur the distinction. Phase 2 could revisit per-standard naming conventions.
-
-## Implementation Checklist
-
-- [ ] Define `setVideoDescription(LangAlt)` — delegates to `set(kVideoDescription, ...)`
-- [ ] Define `setVideoCopyrightNotice(LangAlt)` — delegates to `set(kVideoCopyright, ...)`
-- [ ] Define `setVideoKeywords(vector<string>)` — wraps in `{"x-default": joined_string}`, delegates
-- [ ] Define `setVideoDateCreated(DateTime)` — delegates to `set(kVideoDateCreated, ...)`
-- [ ] Define `setVideoCreditLine(string)` — delegates to `set(kVideoCredit, ...)`
-- [ ] Define `setVideoCreator(vector<string>)` — transposes names to EntityWRole structures
-- [ ] Add read-side accessors: `videoCreator()`, `videoDescription()`, etc. (return `optional<PropertyValue>`)
-- [ ] Add tests (round-trip photo↔video, verify structure shapes)
-- [ ] Document in `docs/user/guide.md` § "The most common properties" expansion
-- [ ] Update `include/umm/metadata.hpp` header comments
+**Option B (Phase 3+):** Use static type system with template specialization (more type-safe but higher complexity)
 
 ## CLI Implications
 
-This enhancement directly enables the CLI convenience accessor feature outlined in `cli-concept-examples-improvement-prompt.md`:
+This enables a truly universal CLI API:
 
 ```bash
-# CLI convenience (proposed Phase 2)
-umm set video.mp4 creator="Jane Doe" description="Documentary about..." dateCreated="2025-01-15T14:30:00Z"
+# Same command works for photo, video, or audio
+umm set photo.jpg creator="Jane Doe" keywords="nature,landscape" dateCreated="2025-01-15"
+umm set video.mp4 creator="Jane Doe" keywords="nature,landscape" dateCreated="2025-01-15"
+umm set audio.mp3 creator="Jane Doe" keywords="nature,landscape" dateCreated="2025-01-15"
 
-# Becomes equivalent to:
-umm set video.mp4 iptc.video.creator --json '[{"name": "Jane Doe"}]' \
-  iptc.video.description --json '{"x-default": "Documentary about..."}' \
-  iptc.video.dateCreated="2025-01-15T14:30:00Z"
+# All use the appropriate underlying property (iptc.photo.*, iptc.video.*, iptc.audio.*)
+# No need to expose property IDs for these universal concepts
 ```
+
+## Phase Timeline
+
+### Phase 1 (Current)
+- ✅ Photo convenience accessors only
+- ✅ Video requires full property IDs
+- Rationale: Proved the architecture, focused scope
+
+### Phase 2 (This Proposal)
+- [ ] Implement cross-media accessors for universal concepts
+- [ ] Add `MediaContext` to `Metadata`
+- [ ] Update CLI to use cross-media accessors
+- [ ] Document in `docs/user/guide.md`
+- [ ] Extend tests to cover photo + video round-trips
+- [ ] Extend implementation to both `get()` and `set()`
+
+### Phase 3+ (Future)
+- Audio support when IPTC Audio Metadata standard is adopted
+- Cross-media accessors automatically extend to audio
+- Existing code requires no changes; new audio files just work
 
 ## Non-Goals
 
-- Do not create convenience accessors for properties without photo equivalents (e.g., `iptc.video.contributor`, `iptc.video.copyrightOwner`—these are video-only and have more complex structures)
-- Do not attempt to bridge semantically incompatible types (e.g., photo numeric rating ↔ video text-based rating)
-- Do not invent new IPTC properties or change existing mappings; only provide convenient wrappers around existing canonical identities
+- Do **not** create accessor that only works for one media type (defeats the purpose)
+- Do **not** blur semantically distinct properties (location, rating, technical metadata)
+- Do **not** create "convenience" at the cost of architectural clarity
+- Do **not** invent media mappings; only implement what IPTC standards already define
+
+## Benefits
+
+1. **User simplicity:** Learn one accessor set, works across all media
+2. **Standards alignment:** Honors IPTC's intent to define universal descriptive metadata
+3. **Future-proof:** Audio support doesn't require API redesign
+4. **Consistency:** No more `creator()` for photos, `get("iptc.video.creator")` for video
+5. **Correctness:** Only properties with true universal semantics get convenient names
+6. **Discoverability:** Media-specific stuff is clearly behind full property IDs
 
 ## References
 
-- `include/umm/metadata.hpp` — Phase 1 photo convenience accessor definitions
-- `docs/reconciliation-policy.md` — Documents creator name→EntityWRole transposition already performed on read
-- `src/core/property_ids.hpp` — Constants for video property IDs
-- `registry/iptc-video/iptc-video.json` — Authoritative video property definitions
-- `cli-concept-examples-improvement-prompt.md` — CLI convenience accessor vision that this enables
+- `include/umm/metadata.hpp` — Phase 1 photo accessors
+- `docs/user/guide.md` — User-facing documentation
+- `docs/reconciliation-policy.md` — How type transposition already works internally
+- `src/core/property_ids.hpp` — Property ID constants
+- `registry/iptc-photo/iptc-photo.json` — IPTC Photo Metadata definitions
+- `registry/iptc-video/iptc-video.json` — IPTC Video Metadata Hub definitions
+- `cli-concept-examples-improvement-prompt.md` — CLI convenience accessor vision
