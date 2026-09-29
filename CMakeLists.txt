@@ -391,6 +391,35 @@ if(UMM_BUILD_TESTS)
     add_test(NAME test_track_match COMMAND test_track_match)
     umm_apply_fixture_dir_to_test(test_track_match)
 
+    set(UMM_VERIFICATION_LEDGER
+        "${PROJECT_SOURCE_DIR}/tests/verification/ledger.json")
+    file(TO_CMAKE_PATH "${UMM_VERIFICATION_LEDGER}" UMM_VERIFICATION_LEDGER_CMAKE)
+    add_executable(test_cross_backend tests/backend/test_cross_backend.cpp)
+    target_link_libraries(test_cross_backend PRIVATE umm::umm)
+    target_include_directories(test_cross_backend
+      PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/backends"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/backend"
+    )
+    umm_apply_fixture_dir(test_cross_backend)
+    umm_apply_corpus_dir(test_cross_backend)
+    target_compile_definitions(test_cross_backend
+      PRIVATE
+        "UMM_VERIFICATION_LEDGER=R\"(${UMM_VERIFICATION_LEDGER_CMAKE})\""
+    )
+    if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)
+      file(TO_CMAKE_PATH "${UMM_EXIFTOOL_SCRIPT}" UMM_TEST_XBV_EXIFTOOL_SCRIPT)
+      file(TO_CMAKE_PATH "${UMM_PERL_EXECUTABLE}" UMM_TEST_XBV_EXIFTOOL_PERL)
+      target_compile_definitions(test_cross_backend
+        PRIVATE
+          "UMM_TEST_EXIFTOOL_SCRIPT=R\"(${UMM_TEST_XBV_EXIFTOOL_SCRIPT})\""
+          "UMM_TEST_EXIFTOOL_PERL=R\"(${UMM_TEST_XBV_EXIFTOOL_PERL})\""
+      )
+    endif()
+    add_test(NAME test_cross_backend COMMAND test_cross_backend)
+    umm_apply_fixture_dir_to_test(test_cross_backend)
+    umm_apply_corpus_dir_to_test(test_cross_backend)
+
     if(UMM_CORPUS_READY)
       add_executable(test_tier_b tests/backend/test_tier_b.cpp)
       target_link_libraries(test_tier_b PRIVATE umm::umm)

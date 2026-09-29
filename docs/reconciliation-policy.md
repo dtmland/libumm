@@ -407,4 +407,12 @@ candidates must use `merge`.
 Exiv2 and ExifTool must produce the same canonical **values** and
 **classifications** for agreeing fixtures. `SourceRef::backend` differs by
 adapter. Source key sets may differ when a backend omits an empty companion tag
-(no `SubSecTimeOriginal` written). Documented GPS tolerance is `1e-5` degrees.
+(no `SubSecTimeOriginal` written). Documented GPS tolerance is `1e-5` degrees;
+altitude within `0.5 m` when both present; missing vs present offset or altitude
+stays equivalent (`opt_equal` / prefix rule).
+
+Session 28 turns this into a maintained suite: write with one backend, read with
+the other, and compare canonical `Metadata` (values, families the reader can see,
+provenance classification). Byte-equality is not the goal. Capability data skips
+pairs where a backend does not claim access. Accepted mismatches are listed in
+`tests/verification/ledger.json` with a reason; unexplained divergence fails CI.
