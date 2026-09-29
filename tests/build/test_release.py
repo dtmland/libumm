@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import subprocess
 import sys
 import tarfile
@@ -101,6 +102,20 @@ class TestReleaseWorkflow(unittest.TestCase):
             "github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')",
             text,
         )
+
+    def test_download_artifact_is_patched(self) -> None:
+        # GHSA-cxww-7g56-2vh6: Zip Slip in @actions/download-artifact
+        # >=4.0.0,<4.1.3. The floating @v4 tag is treated as 4.0.0 by scanners.
+        text = release_text()
+        self.assertNotRegex(text, r"download-artifact@v4(?![\d.])")
+        pins = re.findall(r"download-artifact@v(\d+)\.(\d+)\.(\d+)", text)
+        self.assertTrue(pins, "download-artifact must be pinned to a patch version")
+        for major, minor, patch in pins:
+            self.assertGreaterEqual(
+                (int(major), int(minor), int(patch)),
+                (4, 1, 3),
+                "download-artifact must be >= 4.1.3",
+            )
 
     def test_helper_scripts_and_checklist_exist(self) -> None:
         for path in (
