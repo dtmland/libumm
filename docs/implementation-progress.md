@@ -34,7 +34,7 @@ Use it as a quick reference before starting work so you can confirm which phase 
 | 23 | [23-conflict-api-detect-merge.md](implementation/23-conflict-api-detect-merge.md) | Complete | Public `detectConflict()` / `merge()` over the existing provenance model; losing sources retained. |
 | 24 | [24-synchronize-and-mixed-storage.md](implementation/24-synchronize-and-mixed-storage.md) | Complete | `synchronize()`; `Method::mixed` for `sidecar_required`; missing-sidecar reads; session 14 mixed-sync deferral closed. |
 | 25 | [25-gps-track-import.md](implementation/25-gps-track-import.md) | Complete | `importTrack`; GPX/NMEA/KML; in-repo XML scanner (no new dep); text fixtures. |
-| 26 | [26-track-correlation-and-location-write.md](implementation/26-track-correlation-and-location-write.md) | Not started | `match(media, track)`; interpolation; location write via the normal path. |
+| 26 | [26-track-correlation-and-location-write.md](implementation/26-track-correlation-and-location-write.md) | Complete | `matchTrack`; interpolation; naive timestamps require an explicit offset; location write via `umm::write`. |
 | 27 | [27-tier-b-corpus-infrastructure.md](implementation/27-tier-b-corpus-infrastructure.md) | Not started | Checksummed download corpus; closes makernote + proprietary-RAW deferrals. |
 | 28 | [28-cross-backend-verification.md](implementation/28-cross-backend-verification.md) | Not started | Write-with-one/read-with-other comparison suite; divergence ledger. |
 

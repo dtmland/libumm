@@ -12,7 +12,11 @@
 #include <string_view>
 #include <system_error>
 #include <utility>
+#include <variant>
 #include <vector>
+
+#include "core/property_ids.hpp"
+#include "umm/umm.hpp"
 
 namespace umm {
 namespace {
@@ -988,6 +992,120 @@ std::string_view skip_bom(std::string_view text) {
   return text;
 }
 
+Error match_error(std::string message) {
+  return Error{ErrorCode::invalid_value, std::move(message), "", ""};
+}
+
+// High-level path matching uses the type's preferred backend when it is
+// available (ExifTool for MP4/MOV). umm::read itself still defaults to
+// first-available, which is Exiv2 and cannot read video.
+ReadOptions media_read_options(const std::filesystem::path& media) {
+  ReadOptions options;
+  const Result<Capabilities> caps = capabilities(media);
+  if (!caps.ok() || caps.value().preferred_backend.empty()) {
+    return options;
+  }
+  Backend* backend =
+      BackendManager::instance().get(caps.value().preferred_backend);
+  if (backend && backend->availability().available) {
+    options.backend = backend->id();
+  }
+  return options;
+}
+
+std::optional<DateTime> capture_time(const Metadata& metadata) {
+  if (const auto photo = metadata.get(internal::kDateCreated)) {
+    if (const auto* dt = std::get_if<DateTime>(&photo->value.data)) {
+      return *dt;
+    }
+  }
+  if (const auto video = metadata.get(internal::kVideoDateCreated)) {
+    if (const auto* dt = std::get_if<DateTime>(&video->value.data)) {
+      return *dt;
+    }
+  }
+  return std::nullopt;
+}
+
+double lerp(double a, double b, double fraction) {
+  return a + (b - a) * fraction;
+}
+
+std::optional<double> lerp_opt(const std::optional<double>& a,
+                               const std::optional<double>& b, double fraction) {
+  if (a && b) {
+    return lerp(*a, *b, fraction);
+  }
+  return std::nullopt;
+}
+
+chrono::nanoseconds abs_ns(chrono::nanoseconds value) {
+  return value < chrono::nanoseconds{0} ? -value : value;
+}
+
+bool exceeds_gap(chrono::nanoseconds span, const MatchOptions& options) {
+  if (!options.max_time_gap_seconds) {
+    return false;
+  }
+  if (*options.max_time_gap_seconds < 0) {
+    return true;
+  }
+  return span > chrono::seconds{*options.max_time_gap_seconds};
+}
+
+GpsCoordinate position_from(const TrackPoint& point, Instant search) {
+  GpsCoordinate gps;
+  gps.latitude = point.latitude;
+  gps.longitude = point.longitude;
+  gps.altitude_meters = point.altitude_meters;
+  gps.gps_time = from_utc_instant(search);
+  return gps;
+}
+
+TrackMatch exact_match(const TrackPoint& point, Instant search) {
+  TrackMatch match;
+  match.position = position_from(point, search);
+  match.kind = TrackMatchKind::exact;
+  match.time_delta_ns = 0;
+  match.before = point;
+  return match;
+}
+
+TrackMatch nearest_match(const TrackPoint& point, Instant search, Instant sample) {
+  TrackMatch match;
+  match.position = position_from(point, search);
+  match.kind = TrackMatchKind::nearest;
+  match.time_delta_ns = (search - sample).count();
+  match.before = point;
+  return match;
+}
+
+TrackMatch interpolated_match(const TrackPoint& left, Instant left_time,
+                              const TrackPoint& right, Instant right_time,
+                              Instant search) {
+  const auto span = right_time - left_time;
+  const double fraction =
+      span.count() == 0
+          ? 0.0
+          : static_cast<double>((search - left_time).count()) /
+                static_cast<double>(span.count());
+  TrackMatch match;
+  match.position.latitude = lerp(left.latitude, right.latitude, fraction);
+  match.position.longitude = lerp(left.longitude, right.longitude, fraction);
+  match.position.altitude_meters =
+      lerp_opt(left.altitude_meters, right.altitude_meters, fraction);
+  match.position.gps_time = from_utc_instant(search);
+  match.kind = TrackMatchKind::interpolated;
+  const auto to_left = abs_ns(search - left_time);
+  const auto to_right = abs_ns(search - right_time);
+  match.time_delta_ns = (to_left <= to_right ? (search - left_time)
+                                             : (search - right_time))
+                            .count();
+  match.before = left;
+  match.after = right;
+  return match;
+}
+
 }  // namespace
 
 Result<Track> importTrack(const std::filesystem::path& path) {
@@ -1029,6 +1147,92 @@ Result<Track> importTrack(const std::filesystem::path& path) {
     return parse_kml(payload);
   }
   return parse_nmea(payload);
+}
+
+Result<TrackMatch> matchTrack(const Metadata& metadata, const Track& track,
+                              MatchOptions options) {
+  const std::optional<DateTime> captured = capture_time(metadata);
+  if (!captured) {
+    return match_error("media has no capture timestamp");
+  }
+  DateTime capture = *captured;
+  if (!capture.utc_offset_minutes) {
+    if (!options.naive_utc_offset_minutes) {
+      return match_error(
+          "naive capture timestamp requires "
+          "MatchOptions::naive_utc_offset_minutes");
+    }
+    capture.utc_offset_minutes = *options.naive_utc_offset_minutes;
+  }
+  std::optional<Instant> search = to_utc_instant(capture);
+  if (!search) {
+    return match_error("capture timestamp lacks date and time of day");
+  }
+  if (options.camera_clock_offset_seconds) {
+    *search += chrono::seconds{*options.camera_clock_offset_seconds};
+  }
+
+  struct Sample {
+    Instant time;
+    std::size_t index;
+  };
+  std::vector<Sample> samples;
+  samples.reserve(track.points.size());
+  for (std::size_t i = 0; i < track.points.size(); ++i) {
+    if (const std::optional<Instant> time = to_utc_instant(track.points[i].time)) {
+      samples.push_back(Sample{*time, i});
+    }
+  }
+  if (samples.empty()) {
+    return match_error("track has no timed points");
+  }
+  if (*search < samples.front().time || *search > samples.back().time) {
+    return match_error("capture time is outside the track window");
+  }
+
+  for (const Sample& sample : samples) {
+    if (sample.time == *search) {
+      if (exceeds_gap(chrono::nanoseconds{0}, options)) {
+        return match_error("match exceeds max_time_gap_seconds");
+      }
+      return exact_match(track.points[sample.index], *search);
+    }
+  }
+
+  std::size_t right = 0;
+  while (right < samples.size() && samples[right].time < *search) {
+    ++right;
+  }
+  if (right == 0 || right >= samples.size()) {
+    return match_error("capture time is outside the track window");
+  }
+  const Sample& left = samples[right - 1];
+  const Sample& high = samples[right];
+
+  if (options.interpolate) {
+    if (exceeds_gap(high.time - left.time, options)) {
+      return match_error("bracketing gap exceeds max_time_gap_seconds");
+    }
+    return interpolated_match(track.points[left.index], left.time,
+                              track.points[high.index], high.time, *search);
+  }
+
+  const auto to_left = abs_ns(*search - left.time);
+  const auto to_right = abs_ns(*search - high.time);
+  const Sample& nearest = to_left <= to_right ? left : high;
+  if (exceeds_gap(abs_ns(*search - nearest.time), options)) {
+    return match_error("nearest sample exceeds max_time_gap_seconds");
+  }
+  return nearest_match(track.points[nearest.index], *search, nearest.time);
+}
+
+Result<TrackMatch> matchTrack(const std::filesystem::path& media,
+                              const Track& track, MatchOptions options) {
+  const Result<Metadata> metadata = read(media, media_read_options(media));
+  if (!metadata) {
+    return metadata.error();
+  }
+  return matchTrack(metadata.value(), track, std::move(options));
 }
 
 }  // namespace umm

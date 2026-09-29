@@ -1,6 +1,7 @@
 #include "umm/track.hpp"
 
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
@@ -44,6 +45,43 @@ bool is_utc(const umm::DateTime& dt) {
 bool time_hms(const umm::DateTime& dt, int hour, int minute, int second) {
   return is_utc(dt) && *dt.hour == hour && *dt.minute == minute &&
          *dt.second == second;
+}
+
+umm::DateTime utc_hms(int hour, int minute, int second) {
+  umm::DateTime dt;
+  dt.year = 2020;
+  dt.month = 1;
+  dt.day = 2;
+  dt.hour = hour;
+  dt.minute = minute;
+  dt.second = second;
+  dt.utc_offset_minutes = 0;
+  return dt;
+}
+
+umm::DateTime naive_hms(int hour, int minute, int second) {
+  umm::DateTime dt = utc_hms(hour, minute, second);
+  dt.utc_offset_minutes.reset();
+  return dt;
+}
+
+umm::Metadata with_photo_date(umm::DateTime dt) {
+  umm::Metadata md;
+  if (!md.setDateCreated(dt).ok()) {
+    std::fprintf(stderr, "setDateCreated failed\n");
+  }
+  return md;
+}
+
+bool gps_near(const umm::GpsCoordinate& gps, double lat, double lon,
+              std::optional<double> alt = std::nullopt) {
+  if (!near(gps.latitude, lat) || !near(gps.longitude, lon)) {
+    return false;
+  }
+  if (alt) {
+    return gps.altitude_meters && near(*gps.altitude_meters, *alt);
+  }
+  return true;
 }
 
 }  // namespace
@@ -202,6 +240,158 @@ int main() {
   const auto empty = umm::importTrack(empty_gpx);
   if (!empty.ok() || !empty.value().points.empty() || empty.value().start_time) {
     return fail("empty GPX");
+  }
+
+  const umm::Track straight = gpx.value();
+  umm::MatchOptions as_utc;
+  as_utc.naive_utc_offset_minutes = 0;
+
+  const auto exact =
+      umm::matchTrack(with_photo_date(utc_hms(3, 4, 5)), straight);
+  if (!exact.ok() || exact.value().kind != umm::TrackMatchKind::exact ||
+      exact.value().time_delta_ns != 0 || exact.value().after ||
+      !gps_near(exact.value().position, 37.7749, -122.4194, 10) ||
+      !exact.value().position.gps_time ||
+      !time_hms(*exact.value().position.gps_time, 3, 4, 5)) {
+    return fail("exact-point match");
+  }
+
+  const auto last =
+      umm::matchTrack(with_photo_date(utc_hms(3, 6, 5)), straight);
+  if (!last.ok() || last.value().kind != umm::TrackMatchKind::exact ||
+      !gps_near(last.value().position, 37.7769, -122.4174, 14)) {
+    return fail("exact last point");
+  }
+
+  const auto interpolated =
+      umm::matchTrack(with_photo_date(utc_hms(3, 4, 35)), straight);
+  if (!interpolated.ok() ||
+      interpolated.value().kind != umm::TrackMatchKind::interpolated ||
+      !interpolated.value().after ||
+      !gps_near(interpolated.value().position, 37.7754, -122.4189, 11) ||
+      interpolated.value().time_delta_ns != 30'000'000'000) {
+    std::fprintf(stderr, "interp ok=%d kind=%d lat=%.8f lon=%.8f alt=%s dt=%lld\n",
+                 interpolated.ok() ? 1 : 0,
+                 interpolated.ok() ? static_cast<int>(interpolated.value().kind)
+                                   : -1,
+                 interpolated.ok() ? interpolated.value().position.latitude : 0,
+                 interpolated.ok() ? interpolated.value().position.longitude : 0,
+                 interpolated.ok() && interpolated.value().position.altitude_meters
+                     ? std::to_string(*interpolated.value().position.altitude_meters)
+                           .c_str()
+                     : "(none)",
+                 interpolated.ok()
+                     ? static_cast<long long>(interpolated.value().time_delta_ns)
+                     : 0);
+    return fail("interpolated match");
+  }
+
+  umm::MatchOptions nearest_opts;
+  nearest_opts.interpolate = false;
+  const auto nearest =
+      umm::matchTrack(with_photo_date(utc_hms(3, 4, 35)), straight, nearest_opts);
+  if (!nearest.ok() || nearest.value().kind != umm::TrackMatchKind::nearest ||
+      nearest.value().after ||
+      !gps_near(nearest.value().position, 37.7749, -122.4194, 10) ||
+      nearest.value().time_delta_ns != 30'000'000'000) {
+    return fail("nearest-point match");
+  }
+
+  umm::MatchOptions offset_opts;
+  offset_opts.camera_clock_offset_seconds = -60;
+  const auto offset_match =
+      umm::matchTrack(with_photo_date(utc_hms(3, 5, 5)), straight, offset_opts);
+  if (!offset_match.ok() || offset_match.value().kind != umm::TrackMatchKind::exact ||
+      !gps_near(offset_match.value().position, 37.7749, -122.4194, 10)) {
+    return fail("camera clock offset");
+  }
+
+  const auto naive_refused =
+      umm::matchTrack(with_photo_date(naive_hms(3, 4, 5)), straight);
+  if (naive_refused.ok() ||
+      naive_refused.error().code != umm::ErrorCode::invalid_value) {
+    return fail("naive timestamp refused");
+  }
+  const auto naive_ok =
+      umm::matchTrack(with_photo_date(naive_hms(3, 4, 5)), straight, as_utc);
+  if (!naive_ok.ok() || naive_ok.value().kind != umm::TrackMatchKind::exact) {
+    return fail("naive timestamp with explicit UTC offset");
+  }
+
+  umm::MatchOptions naive_plus_hour;
+  naive_plus_hour.naive_utc_offset_minutes = 60;
+  const auto naive_local =
+      umm::matchTrack(with_photo_date(naive_hms(4, 4, 5)), straight,
+                      naive_plus_hour);
+  if (!naive_local.ok() || naive_local.value().kind != umm::TrackMatchKind::exact ||
+      !gps_near(naive_local.value().position, 37.7749, -122.4194, 10)) {
+    return fail("naive timestamp with +01:00");
+  }
+
+  const auto before =
+      umm::matchTrack(with_photo_date(utc_hms(3, 4, 4)), straight);
+  const auto after =
+      umm::matchTrack(with_photo_date(utc_hms(3, 6, 6)), straight);
+  if (before.ok() || before.error().code != umm::ErrorCode::invalid_value ||
+      after.ok() || after.error().code != umm::ErrorCode::invalid_value) {
+    return fail("out-of-window refusal");
+  }
+
+  const auto no_date = umm::matchTrack(umm::Metadata{}, straight);
+  if (no_date.ok() || no_date.error().code != umm::ErrorCode::invalid_value) {
+    return fail("missing capture timestamp");
+  }
+
+  umm::DateTime date_only;
+  date_only.year = 2020;
+  date_only.month = 1;
+  date_only.day = 2;
+  date_only.utc_offset_minutes = 0;
+  const auto partial =
+      umm::matchTrack(with_photo_date(date_only), straight);
+  if (partial.ok() || partial.error().code != umm::ErrorCode::invalid_value) {
+    return fail("date-only capture");
+  }
+
+  const auto empty_match = umm::matchTrack(with_photo_date(utc_hms(3, 4, 5)),
+                                           empty.value());
+  if (empty_match.ok() ||
+      empty_match.error().code != umm::ErrorCode::invalid_value) {
+    return fail("empty track");
+  }
+
+  const umm::Track gappy = gaps.value();
+  umm::MatchOptions tight_gap;
+  tight_gap.max_time_gap_seconds = 600;
+  const auto gap_refused =
+      umm::matchTrack(with_photo_date(utc_hms(3, 35, 5)), gappy, tight_gap);
+  if (gap_refused.ok() ||
+      gap_refused.error().code != umm::ErrorCode::invalid_value) {
+    return fail("gap exceeds max_time_gap");
+  }
+  const auto gap_ok =
+      umm::matchTrack(with_photo_date(utc_hms(3, 35, 5)), gappy);
+  if (!gap_ok.ok() || gap_ok.value().kind != umm::TrackMatchKind::interpolated) {
+    return fail("gap interpolates without max_time_gap");
+  }
+
+  const auto dup_exact =
+      umm::matchTrack(with_photo_date(utc_hms(3, 5, 5)), gappy);
+  if (!dup_exact.ok() || dup_exact.value().kind != umm::TrackMatchKind::exact ||
+      !gps_near(dup_exact.value().position, 37.7759, -122.4184)) {
+    return fail("duplicate timestamp uses first sample");
+  }
+
+  umm::Metadata video;
+  umm::Value video_date;
+  video_date.data = utc_hms(3, 4, 5);
+  if (!video.set("iptc.video.dateCreated", video_date).ok()) {
+    return fail("set video dateCreated");
+  }
+  const auto video_match = umm::matchTrack(video, straight);
+  if (!video_match.ok() || video_match.value().kind != umm::TrackMatchKind::exact ||
+      !gps_near(video_match.value().position, 37.7749, -122.4194, 10)) {
+    return fail("video dateCreated match");
   }
 
   return 0;

@@ -172,6 +172,7 @@ Result<StorageDecision> evaluateStorage(const std::filesystem::path& media,
 Result<SyncReport> synchronize(const std::filesystem::path& media,
                                SyncOptions options = {});
 
-// GPS track import is declared in umm/track.hpp (session 25).
+// GPS track import and matchTrack() are declared in umm/track.hpp
+// (sessions 25–26). Matched positions write through umm::write.
 
 }  // namespace umm

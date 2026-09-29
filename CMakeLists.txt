@@ -367,6 +367,25 @@ if(UMM_BUILD_TESTS)
     endif()
     add_test(NAME test_conflict_api COMMAND test_conflict_api)
     umm_apply_fixture_dir_to_test(test_conflict_api)
+
+    add_executable(test_track_match tests/backend/test_track_match.cpp)
+    target_link_libraries(test_track_match PRIVATE umm::umm)
+    target_include_directories(test_track_match
+      PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/backend"
+    )
+    umm_apply_fixture_dir(test_track_match)
+    if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)
+      file(TO_CMAKE_PATH "${UMM_EXIFTOOL_SCRIPT}" UMM_TEST_TRACK_EXIFTOOL_SCRIPT)
+      file(TO_CMAKE_PATH "${UMM_PERL_EXECUTABLE}" UMM_TEST_TRACK_EXIFTOOL_PERL)
+      target_compile_definitions(test_track_match
+        PRIVATE
+          "UMM_TEST_EXIFTOOL_SCRIPT=R\"(${UMM_TEST_TRACK_EXIFTOOL_SCRIPT})\""
+          "UMM_TEST_EXIFTOOL_PERL=R\"(${UMM_TEST_TRACK_EXIFTOOL_PERL})\""
+      )
+    endif()
+    add_test(NAME test_track_match COMMAND test_track_match)
+    umm_apply_fixture_dir_to_test(test_track_match)
   endif()
 
   if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)
