@@ -43,6 +43,9 @@ Session 21 merged.
   registry-mapped video properties, including GPS.
 - Media payload bytes are unchanged by metadata-only writes (byte-comparison of track data or
   full-file minus metadata atoms — document the comparison method chosen).
+  Comparison method: concatenate ISO BMFF / QuickTime `mdat` box payloads (including 64-bit
+  `size==1` boxes), walking nested `moov`/`trak`/`mdia`/`minf`/`stbl` so an inner `mdat` still
+  counts. Keys/moov metadata may move; sample bytes must not.
 - Stage 7 exit: `capabilities()` answers for MOV/MP4 are probe-verified against real writes.
 
 ## Cut line

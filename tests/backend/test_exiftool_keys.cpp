@@ -77,12 +77,18 @@ int main() {
       umm::internal::exiftool_tag_for_raw_key("Xmp.dc.creator[1]");
   const auto title =
       umm::internal::exiftool_tag_for_raw_key("QuickTime.Title");
+  const auto qt_artist =
+      umm::internal::exiftool_tag_for_raw_key("QuickTime.Artist");
   const auto created =
       umm::internal::exiftool_tag_for_raw_key("QuickTime.CreationDate");
+  const auto gps =
+      umm::internal::exiftool_tag_for_raw_key("QuickTime.GPSCoordinates");
   if (!artist || *artist != "IFD0:Artist" || !byline ||
       *byline != "IPTC:By-line" || !creator || *creator != "XMP-dc:Creator" ||
-      !title || *title != "QuickTime:Title" || !created ||
-      *created != "Keys:CreationDate") {
+      !title || *title != "Keys:Title" || !qt_artist ||
+      *qt_artist != "ItemList:Artist" || !created ||
+      *created != "Keys:CreationDate" || !gps ||
+      *gps != "Keys:GPSCoordinates") {
     std::fprintf(stderr, "reverse key mapping failed\n");
     return 1;
   }

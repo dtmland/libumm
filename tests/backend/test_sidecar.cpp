@@ -245,6 +245,10 @@ int check_backend(const std::string& backend) {
       rc != 0) {
     return rc;
   }
+  if (const int rc = test_sidecar_only_write(backend, "video", ".mp4");
+      rc != 0) {
+    return rc;
+  }
   if (const int rc = test_unicode_pair(backend); rc != 0) {
     return rc;
   }

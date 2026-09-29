@@ -93,6 +93,74 @@ int main() {
     return fail("IIM charset marker");
   }
 
+  umm::Metadata video;
+  umm::LangAlt title;
+  title.emplace("x-default", "Video Title");
+  if (!video.set("iptc.video.title", umm::Value{title}).ok()) {
+    return fail("set video title");
+  }
+  umm::LangAlt vdescription;
+  vdescription.emplace("x-default", "Video description");
+  if (!video.set("iptc.video.description", umm::Value{vdescription}).ok()) {
+    return fail("set video description");
+  }
+  umm::LangAlt vcopyright;
+  vcopyright.emplace("x-default", "Video copyright");
+  if (!video.set("iptc.video.copyrightNotice", umm::Value{vcopyright}).ok()) {
+    return fail("set video copyright");
+  }
+  umm::LangAlt vkeywords;
+  vkeywords.emplace("x-default", "alpha, beta");
+  if (!video.set("iptc.video.keywords", umm::Value{vkeywords}).ok()) {
+    return fail("set video keywords");
+  }
+  umm::Structure entity;
+  entity.emplace("name", umm::Value{umm::LangAlt{{"x-default", "Video Creator"}}});
+  if (!video.set("iptc.video.creator",
+                 umm::Value{std::vector<umm::Structure>{entity}})
+           .ok()) {
+    return fail("set video creator");
+  }
+  umm::DateTime when_v;
+  when_v.year = 2020;
+  when_v.month = 1;
+  when_v.day = 2;
+  when_v.hour = 3;
+  when_v.minute = 4;
+  when_v.second = 5;
+  if (!video.set("iptc.video.dateCreated", umm::Value{when_v}).ok()) {
+    return fail("set video date");
+  }
+  umm::GpsCoordinate gps;
+  gps.latitude = 37.7749;
+  gps.longitude = -122.4194;
+  gps.altitude_meters = 10;
+  if (!video.setGps(gps).ok()) {
+    return fail("set video gps");
+  }
+  const umm::RawChanges vchanges = umm::internal::write_sync(video);
+  if (!has_value(vchanges, "Xmp.dc.title", "Video Title") ||
+      !has_value(vchanges, "QuickTime.Title", "Video Title") ||
+      !has_value(vchanges, "Xmp.dc.description", "Video description") ||
+      !has_value(vchanges, "QuickTime.Description", "Video description") ||
+      !has_value(vchanges, "Xmp.dc.creator", "Video Creator") ||
+      !has_value(vchanges, "QuickTime.Artist", "Video Creator") ||
+      !has_value(vchanges, "Xmp.dc.rights", "Video copyright") ||
+      !has_value(vchanges, "QuickTime.Copyright", "Video copyright") ||
+      !has_value(vchanges, "Xmp.dc.subject", "alpha") ||
+      !has_value(vchanges, "Xmp.dc.subject", "beta") ||
+      !has_value(vchanges, "QuickTime.Keywords", "alpha, beta") ||
+      !has_value(vchanges, "Xmp.photoshop.DateCreated",
+                 "2020-01-02T03:04:05") ||
+      !has_value(vchanges, "QuickTime.CreationDate", "2020-01-02T03:04:05") ||
+      !has_value(vchanges, "QuickTime.GPSCoordinates", "37.7749") ||
+      !has_value(vchanges, "Xmp.exif.GPSLatitude", "37.7749")) {
+    return fail("video write-sync");
+  }
+  if (count_key(vchanges, "QuickTime.GPSCoordinates") != 1) {
+    return fail("video GPSCoordinates count");
+  }
+
   const umm::RawChanges xmp = umm::internal::write_sync_xmp(metadata);
   if (!has_value(xmp, "Xmp.dc.creator", "Alice") ||
       !has_value(xmp, "Xmp.photoshop.DateCreated", "2020-01-02T03:04:05")) {

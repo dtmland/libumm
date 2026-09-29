@@ -34,7 +34,8 @@ bool access_writable(Access access) {
   return access == Access::read_write || access == Access::create;
 }
 
-std::vector<std::string> embedded_formats(const CategoryAccess& categories) {
+std::vector<std::string> embedded_formats(const CategoryAccess& categories,
+                                          const LocationAccess& location) {
   std::vector<std::string> formats;
   if (access_writable(categories.xmp)) {
     formats.emplace_back("XMP");
@@ -44,6 +45,9 @@ std::vector<std::string> embedded_formats(const CategoryAccess& categories) {
   }
   if (access_writable(categories.iptc_iim)) {
     formats.emplace_back("IPTC-IIM");
+  }
+  if (access_writable(location.container_gps)) {
+    formats.emplace_back("QuickTime");
   }
   return formats;
 }
@@ -59,10 +63,10 @@ const BackendCapability* backend_row(const Capabilities& caps,
 }
 
 StorageDecision embedded_decision(std::string backend,
-                                  CategoryAccess categories) {
+                                  const BackendCapability& row) {
   StorageDecision decision;
   decision.method = StorageDecision::Method::embedded;
-  decision.formats = embedded_formats(categories);
+  decision.formats = embedded_formats(row.categories, row.location);
   decision.backend = std::move(backend);
   return decision;
 }
@@ -79,7 +83,7 @@ bool can_write_embedded(const BackendCapability* row) {
   if (!row || row->identify_only) {
     return false;
   }
-  return !embedded_formats(row->categories).empty();
+  return !embedded_formats(row->categories, row->location).empty();
 }
 
 Error unsupported_write(std::string message, std::string backend) {
@@ -191,7 +195,6 @@ Result<StorageDecision> evaluateStorage(const std::filesystem::path& media,
   const Capabilities& reported = caps.value();
   const std::string backend = selected_backend(options, reported);
   const BackendCapability* row = backend_row(reported, backend);
-  const CategoryAccess categories = row ? row->categories : CategoryAccess{};
   const bool sidecar_file = internal::is_xmp_sidecar_path(media);
   const bool embed = can_write_embedded(row);
 
@@ -204,7 +207,7 @@ Result<StorageDecision> evaluateStorage(const std::filesystem::path& media,
         return unsupported_write(
             "no writable metadata categories for this type", backend);
       }
-      return embedded_decision(backend, categories);
+      return embedded_decision(backend, *row);
     case StoragePolicy::embedded_only:
       if (sidecar_file) {
         return unsupported_write(
@@ -214,7 +217,7 @@ Result<StorageDecision> evaluateStorage(const std::filesystem::path& media,
         return unsupported_write(
             "embedded writes are not available for this type", backend);
       }
-      return embedded_decision(backend, categories);
+      return embedded_decision(backend, *row);
     case StoragePolicy::sidecar_only:
     case StoragePolicy::sidecar_required:
       return sidecar_decision(backend);

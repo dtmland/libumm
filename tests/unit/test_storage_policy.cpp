@@ -148,6 +148,51 @@ int main() {
     return fail("RW2/SR2 preferred sidecar_recommended");
   }
 
+  umm::WriteOptions mp4_et;
+  mp4_et.policy = umm::StoragePolicy::preferred;
+  mp4_et.backend = "exiftool";
+  const auto mp4 =
+      umm::evaluateStorage(std::filesystem::path("a.mp4"), mp4_et);
+  if (!mp4.ok() || mp4.value().method != umm::StorageDecision::Method::embedded ||
+      mp4.value().backend != "exiftool" ||
+      !formats_are(mp4.value(), {"XMP", "QuickTime"})) {
+    return fail("MP4 ExifTool preferred XMP+QuickTime");
+  }
+  const auto mov =
+      umm::evaluateStorage(std::filesystem::path("a.mov"), mp4_et);
+  if (!mov.ok() || mov.value().method != umm::StorageDecision::Method::embedded ||
+      mov.value().backend != "exiftool" ||
+      !formats_are(mov.value(), {"XMP", "QuickTime"})) {
+    return fail("MOV ExifTool preferred XMP+QuickTime");
+  }
+  const umm::Backend* exiftool = umm::BackendManager::instance().get("exiftool");
+  if (exiftool && exiftool->availability().available) {
+    const auto mp4_pref =
+        umm::evaluateStorage(std::filesystem::path("a.mp4"), preferred);
+    if (!mp4_pref.ok() || mp4_pref.value().backend != "exiftool" ||
+        !formats_are(mp4_pref.value(), {"XMP", "QuickTime"})) {
+      return fail("MP4 default preferred selects ExifTool");
+    }
+  }
+  umm::WriteOptions mp4_exiv2;
+  mp4_exiv2.policy = umm::StoragePolicy::preferred;
+  mp4_exiv2.backend = "exiv2";
+  const auto mp4_exiv2_decision =
+      umm::evaluateStorage(std::filesystem::path("a.mp4"), mp4_exiv2);
+  if (mp4_exiv2_decision.ok() ||
+      mp4_exiv2_decision.error().code != umm::ErrorCode::unsupported_capability) {
+    return fail("MP4 Exiv2 preferred unsupported_capability");
+  }
+  umm::WriteOptions mp4_sidecar;
+  mp4_sidecar.policy = umm::StoragePolicy::sidecar_only;
+  const auto mp4_sc =
+      umm::evaluateStorage(std::filesystem::path("a.mp4"), mp4_sidecar);
+  if (!mp4_sc.ok() ||
+      mp4_sc.value().method != umm::StorageDecision::Method::sidecar ||
+      !formats_are(mp4_sc.value(), {"XMP"})) {
+    return fail("MP4 sidecar_only");
+  }
+
   const auto bmp = umm::evaluateStorage(std::filesystem::path("a.bmp"), preferred);
   if (bmp.ok() || bmp.error().code != umm::ErrorCode::unsupported_capability) {
     return fail("BMP no write capability");
