@@ -146,6 +146,10 @@ class TestLayout(unittest.TestCase):
             "install(TARGETS zlibstatic EXPORT exiv2Targets)", text
         )
         self.assertIn("Zlib not found on system; fetched for Exiv2 PNG", text)
+        # Parent cmake_install.cmake still includes FetchContent subdir
+        # install scripts that skip never wrote; stub them.
+        self.assertIn("umm_stub_skipped_install_script", text)
+        self.assertIn("cmake_install.cmake", text)
 
     def test_exiv2_zlib_shim_includes_generated_zconf(self) -> None:
         # zlib CMake generates zconf.h in BINARY_DIR. Exiv2 0.28 compiles

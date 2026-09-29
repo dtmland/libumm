@@ -157,6 +157,24 @@ FetchContent_MakeAvailable(umm_exiv2)
 set(CMAKE_SKIP_INSTALL_RULES "${_umm_saved_skip_install_rules}")
 set(BUILD_SHARED_LIBS "${_umm_saved_build_shared_libs}")
 
+# CMAKE_SKIP_INSTALL_RULES stops FetchContent subdirs from writing
+# cmake_install.cmake, but the parent install script still includes those
+# paths. Stub the missing files so cmake --install of libumm succeeds
+# without installing Exiv2/Expat/zlib packages or headers.
+function(umm_stub_skipped_install_script binary_dir)
+  if(binary_dir AND NOT EXISTS "${binary_dir}/cmake_install.cmake")
+    file(WRITE "${binary_dir}/cmake_install.cmake"
+      "# Skipped: FetchContent dependency install rules (CMAKE_SKIP_INSTALL_RULES).\n")
+  endif()
+endfunction()
+umm_stub_skipped_install_script("${umm_exiv2_BINARY_DIR}")
+if(UMM_BUNDLED_EXPAT)
+  umm_stub_skipped_install_script("${umm_expat_BINARY_DIR}")
+endif()
+if(UMM_BUNDLED_ZLIB)
+  umm_stub_skipped_install_script("${umm_zlib_BINARY_DIR}")
+endif()
+
 if(NOT TARGET exiv2lib)
   message(FATAL_ERROR "UMM_REQUIRE_EXIV2=ON but target exiv2lib was not created")
 endif()

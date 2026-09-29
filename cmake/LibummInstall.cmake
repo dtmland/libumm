@@ -3,7 +3,9 @@
 # Chosen static-transitive mechanism: install private dependency *archives* as
 # IMPORTED STATIC targets of the export (not object-library merge).
 # FetchContent Exiv2/Expat/zlib keep CMAKE_SKIP_INSTALL_RULES so their headers
-# and CMake packages never enter the prefix. The static libumm archive does
+# and CMake packages never enter the prefix. LibummExiv2 stubs the missing
+# subdirectory cmake_install.cmake files so parent `cmake --install` still
+# succeeds. The static libumm archive does
 # not contain Exiv2 objects; consumers of umm::umm therefore need those
 # archives at link time. ummConfig.cmake reconstructs IMPORTED locations under
 # ${CMAKE_INSTALL_LIBDIR}/umm/ and does not locate Exiv2 as a CMake package.
