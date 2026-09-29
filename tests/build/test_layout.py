@@ -19,6 +19,15 @@ LIBUMM_EXIV2_CMAKE = REPO_ROOT / "cmake" / "LibummExiv2.cmake"
 LIBUMM_REGISTRY_CMAKE = REPO_ROOT / "cmake" / "LibummRegistry.cmake"
 LIBUMM_CORPUS_CMAKE = REPO_ROOT / "cmake" / "LibummCorpus.cmake"
 LIBUMM_INSTALL_CMAKE = REPO_ROOT / "cmake" / "LibummInstall.cmake"
+RELEASE_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "release.yml"
+PACKAGE_RELEASE = REPO_ROOT / "tools" / "build" / "package_release.py"
+FETCH_CORRESPONDING_SOURCE = (
+    REPO_ROOT / "tools" / "build" / "fetch_corresponding_source.py"
+)
+GENERATE_RELEASE_NOTES = REPO_ROOT / "tools" / "build" / "generate_release_notes.py"
+RELEASE_CHECKLIST = REPO_ROOT / "docs" / "release-checklist.md"
+TEST_RELEASE = REPO_ROOT / "tests" / "build" / "test_release.py"
+TEST_TRACK_MATCH = REPO_ROOT / "tests" / "backend" / "test_track_match.cpp"
 THIRD_PARTY_NOTICES = REPO_ROOT / "THIRD-PARTY-NOTICES.md"
 NOTICE_MD = REPO_ROOT / "NOTICE.md"
 CORRESPONDING_SOURCE = (
@@ -86,6 +95,13 @@ class TestLayout(unittest.TestCase):
             LIBUMM_REGISTRY_CMAKE,
             LIBUMM_CORPUS_CMAKE,
             LIBUMM_INSTALL_CMAKE,
+            RELEASE_WORKFLOW,
+            PACKAGE_RELEASE,
+            FETCH_CORRESPONDING_SOURCE,
+            GENERATE_RELEASE_NOTES,
+            RELEASE_CHECKLIST,
+            TEST_RELEASE,
+            TEST_TRACK_MATCH,
             THIRD_PARTY_NOTICES,
             NOTICE_MD,
             CORRESPONDING_SOURCE,

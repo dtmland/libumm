@@ -13,6 +13,16 @@ libumm does not define a new metadata standard. It provides a unified programmin
 - Public API headers: [include/umm/](include/umm/) — `version.hpp` and `registry.hpp` are implemented; remaining headers are design drafts (decision M7) until their implementation sessions.
 - Versioning and ABI: [docs/abi-policy.md](docs/abi-policy.md) — source API follows semver; C++ ABI stability is not promised.
 
+## Releases
+
+Tag `vX.Y.Z` (matching `include/umm/version.hpp`) to run
+`.github/workflows/release.yml`. That workflow builds the static default
+configuration on Linux, Windows, and macOS, packages install prefixes with
+notices, `tools/get-exiftool/`, and corresponding source, and opens a **draft**
+GitHub release. `workflow_dispatch` is a dry-run (artifacts only). Follow
+[docs/release-checklist.md](docs/release-checklist.md) before publishing;
+decision **S1d** (Apache-2.0 for libumm source) is still provisional.
+
 ## Versioning
 
 `UMM_VERSION_MAJOR` / `MINOR` / `PATCH` and `UMM_VERSION_STRING` in

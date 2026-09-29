@@ -150,14 +150,14 @@ int test_jpeg(const std::string& backend) {
   return write_gps(interp_file, interpolated.value(), wopts, ropts);
 }
 
-int test_mp4() {
+int test_video(const char* ext) {
   umm::Backend* backend = umm::BackendManager::instance().get("exiftool");
   if (!backend || !backend->availability().available) {
     return 0;
   }
   const auto track = umm::importTrack(raw_fixtures_dir() / "tracks" / "straight.gpx");
   if (!track.ok()) {
-    return fail("import straight.gpx for mp4");
+    return fail("import straight.gpx for video");
   }
 
   umm::WriteOptions wopts;
@@ -165,8 +165,8 @@ int test_mp4() {
   umm::ReadOptions ropts;
   ropts.backend = "exiftool";
 
-  const auto file =
-      copy_named(raw_stem("video", "minimal", ".mp4"), "track-exact.mp4");
+  const std::string dest = std::string("track-exact") + ext;
+  const auto file = copy_named(raw_stem("video", "minimal", ext), dest);
   umm::Metadata dated;
   umm::Value when;
   when.data = utc_hms(3, 4, 5);
@@ -175,24 +175,25 @@ int test_mp4() {
   }
   const auto dated_write = umm::write(file, dated, wopts);
   if (!dated_write.ok()) {
-    std::fprintf(stderr, "mp4 date write failed: %s (%s)\n",
+    std::fprintf(stderr, "video %s date write failed: %s (%s)\n", ext,
                  dated_write.error().message.c_str(),
                  dated_write.error().detail.c_str());
     return 1;
   }
   umm::MatchOptions naive_utc;
   naive_utc.naive_utc_offset_minutes = 0;
-  // Path overload must pick ExifTool for MP4 (preferred_backend); default
+  // Path overload must pick ExifTool for MP4/MOV (preferred_backend); default
   // umm::read uses first-available Exiv2, which cannot read video.
+  // Session 34: MOV write-back closes the session 26 cut line.
   const auto matched = umm::matchTrack(file, track.value(), naive_utc);
   if (!matched.ok() || matched.value().kind != umm::TrackMatchKind::exact ||
       !near(matched.value().position.latitude, 37.7749) ||
       !near(matched.value().position.longitude, -122.4194)) {
     if (!matched.ok()) {
-      std::fprintf(stderr, "mp4 match failed: %s\n",
+      std::fprintf(stderr, "video %s match failed: %s\n", ext,
                    matched.error().message.c_str());
     }
-    return fail("mp4 exact match");
+    return fail("video exact match");
   }
   return write_gps(file, matched.value(), wopts, ropts);
 }
@@ -218,5 +219,8 @@ int main() {
       return rc;
     }
   }
-  return test_mp4();
+  if (const int rc = test_video(".mp4"); rc != 0) {
+    return rc;
+  }
+  return test_video(".mov");
 }
