@@ -44,10 +44,10 @@ std::string family_format(std::string_view family) {
   return std::string(family);
 }
 
-WriteReport make_report(const RawChanges& changes, StorageDecision decision) {
+WriteReport make_report(const UnmappedChanges& changes, StorageDecision decision) {
   WriteReport report;
   report.decision = std::move(decision);
-  for (const RawEntry& entry : changes.upserts) {
+  for (const UnmappedEntry& entry : changes.upserts) {
     report.written.push_back(entry.key);
     const std::string format = family_format(entry.key.family);
     bool seen = false;
@@ -78,18 +78,18 @@ bool format_allowed(const std::vector<std::string>& allowed,
   return false;
 }
 
-RawChanges filter_changes(RawChanges changes,
+UnmappedChanges filter_changes(UnmappedChanges changes,
                           const std::vector<std::string>& allowed) {
   if (allowed.empty()) {
     return changes;
   }
-  RawChanges filtered;
-  for (RawEntry& entry : changes.upserts) {
+  UnmappedChanges filtered;
+  for (UnmappedEntry& entry : changes.upserts) {
     if (format_allowed(allowed, entry.key.family)) {
       filtered.upserts.push_back(std::move(entry));
     }
   }
-  for (RawKey& key : changes.removals) {
+  for (UnmappedKey& key : changes.removals) {
     if (format_allowed(allowed, key.family)) {
       filtered.removals.push_back(std::move(key));
     }
@@ -99,16 +99,16 @@ RawChanges filter_changes(RawChanges changes,
 
 Result<void> write_working_copy(Backend& backend,
                                 const std::filesystem::path& working,
-                                const RawChanges& changes, bool new_sidecar);
+                                const UnmappedChanges& changes, bool new_sidecar);
 
-RawChanges xmp_changes(const RawChanges& changes) {
-  RawChanges xmp;
-  for (const RawEntry& entry : changes.upserts) {
+UnmappedChanges xmp_changes(const UnmappedChanges& changes) {
+  UnmappedChanges xmp;
+  for (const UnmappedEntry& entry : changes.upserts) {
     if (entry.key.family == "Xmp" || entry.key.key.rfind("Xmp.", 0) == 0) {
       xmp.upserts.push_back(entry);
     }
   }
-  for (const RawKey& key : changes.removals) {
+  for (const UnmappedKey& key : changes.removals) {
     if (key.family == "Xmp" || key.key.rfind("Xmp.", 0) == 0) {
       xmp.removals.push_back(key);
     }
@@ -117,7 +117,7 @@ RawChanges xmp_changes(const RawChanges& changes) {
 }
 
 Result<void> commit_sidecar(Backend& backend, const std::filesystem::path& dest,
-                            const RawChanges& changes) {
+                            const UnmappedChanges& changes) {
   std::error_code ec;
   const bool exists = std::filesystem::is_regular_file(dest, ec);
   return internal::mutate_file_atomically(
@@ -129,16 +129,16 @@ Result<void> commit_sidecar(Backend& backend, const std::filesystem::path& dest,
 }
 
 Result<void> commit_embedded(Backend& backend, const std::filesystem::path& dest,
-                             const RawChanges& changes) {
+                             const UnmappedChanges& changes) {
   return internal::mutate_file_atomically(
       dest, [&](const std::filesystem::path& working_copy) {
-        return backend.writeRaw(working_copy, changes);
+        return backend.writeUnmapped(working_copy, changes);
       });
 }
 
 Result<void> write_working_copy(Backend& backend,
                                 const std::filesystem::path& working,
-                                const RawChanges& changes, bool new_sidecar) {
+                                const UnmappedChanges& changes, bool new_sidecar) {
   if (new_sidecar) {
     std::error_code ec;
     const auto size = std::filesystem::file_size(working, ec);
@@ -149,7 +149,7 @@ Result<void> write_working_copy(Backend& backend,
       }
     }
   }
-  return backend.writeRaw(working, changes);
+  return backend.writeUnmapped(working, changes);
 }
 
 }  // namespace
@@ -185,12 +185,12 @@ Result<WriteReport> write(const std::filesystem::path& media,
   StorageDecision decided = decision.value();
   decided.backend = backend->id();
 
-  RawChanges changes =
+  UnmappedChanges changes =
       filter_changes(internal::write_sync(metadata), decided.formats);
   const bool mixed = decided.method == StorageDecision::Method::mixed;
   const bool sidecar_write =
       decided.method == StorageDecision::Method::sidecar;
-  RawChanges sidecar = mixed ? xmp_changes(changes) : RawChanges{};
+  UnmappedChanges sidecar = mixed ? xmp_changes(changes) : UnmappedChanges{};
   WriteReport report = make_report(changes, decided);
   if (options.dry_run) {
     return report;

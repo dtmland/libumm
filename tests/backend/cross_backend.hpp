@@ -1,7 +1,7 @@
 #pragma once
 
 #include "exiftool/json.hpp"
-#include "read_raw_checks.hpp"
+#include "read_unmapped_checks.hpp"
 #include "umm/umm.hpp"
 
 #include <cmath>
@@ -575,7 +575,7 @@ inline bool families_cover(const umm::WriteReport& report,
                            const umm::Metadata& actual,
                            const umm::BackendCapability& reader) {
   std::vector<std::string> expected;
-  for (const umm::RawKey& key : report.written) {
+  for (const umm::UnmappedKey& key : report.written) {
     const std::string family = family_of_key(key.key);
     if (family.empty() || !reader_sees_family(reader, family)) {
       continue;

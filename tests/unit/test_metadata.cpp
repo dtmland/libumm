@@ -40,8 +40,8 @@ bool require_error(const umm::Result<void>& result, umm::ErrorCode code,
 int main() {
   umm::Metadata md;
 
-  if (md.creator() || !md.propertyIds().empty() || !md.raw().empty() ||
-      md.raw(umm::RawKey{"Exif", "Exif.Image.Artist"})) {
+  if (md.creator() || !md.propertyIds().empty() || !md.unmapped().empty() ||
+      md.unmapped(umm::UnmappedKey{"Exif", "Exif.Image.Artist"})) {
     return fail("empty metadata is not empty");
   }
 

@@ -16,21 +16,21 @@
 
 namespace umm {
 
-// Raw escape hatch (concept.md §18): standardized metadata gets standardized
+// Unmapped metadata escape hatch (concept.md §18): standardized metadata gets standardized
 // semantics; everything else remains accessible without a fake definition.
-struct RawKey {
+struct UnmappedKey {
   std::string family;  // "Exif" | "Iptc" | "Xmp" | "QuickTime"
   std::string key;     // e.g. "Exif.Nikon3.LensType", "Xmp.vendor.SomeProperty"
 
-  bool operator==(const RawKey&) const = default;
+  bool operator==(const UnmappedKey&) const = default;
 };
 
-struct RawEntry {
-  RawKey key;
+struct UnmappedEntry {
+  UnmappedKey key;
   std::string type_hint;  // backend type name, informational
   std::string value;      // textual form; binary blobs base64 (documented per family)
 
-  bool operator==(const RawEntry&) const = default;
+  bool operator==(const UnmappedEntry&) const = default;
 };
 
 class Metadata {
@@ -71,15 +71,15 @@ class Metadata {
   // Properties whose resolution == Resolution::conflict (never hidden).
   std::vector<std::string> conflictedPropertyIds() const;
 
-  // --- Raw access (read-side; raw write goes through backend options) --------
-  const std::vector<RawEntry>& raw() const;
-  std::optional<std::string> raw(const RawKey& key) const;
-  // Filled by umm::read from the backend RawDocument. Not a write API.
-  void assignRaw(std::vector<RawEntry> entries);
+  // --- Unmapped access (read-side; writes go through backend options) --------
+  const std::vector<UnmappedEntry>& unmapped() const;
+  std::optional<std::string> unmapped(const UnmappedKey& key) const;
+  // Filled by umm::read from the backend UnmappedDocument. Not a write API.
+  void assignUnmapped(std::vector<UnmappedEntry> entries);
 
  private:
   std::map<std::string, PropertyValue> properties_;
-  std::vector<RawEntry> raw_;
+  std::vector<UnmappedEntry> unmapped_;
 };
 
 }  // namespace umm

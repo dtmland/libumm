@@ -15,16 +15,16 @@ int fail(const char* message) {
   return 1;
 }
 
-umm::RawEntry entry(std::string family, std::string key, std::string value) {
-  umm::RawEntry out;
+umm::UnmappedEntry entry(std::string family, std::string key, std::string value) {
+  umm::UnmappedEntry out;
   out.key.family = std::move(family);
   out.key.key = std::move(key);
   out.value = std::move(value);
   return out;
 }
 
-umm::RawDocument doc(std::initializer_list<umm::RawEntry> entries) {
-  umm::RawDocument document;
+umm::UnmappedDocument doc(std::initializer_list<umm::UnmappedEntry> entries) {
+  umm::UnmappedDocument document;
   document.entries = entries;
   return document;
 }

@@ -11,17 +11,17 @@ namespace umm::internal {
 
 struct LoadedRead {
   std::string backend_id;
-  RawDocument embedded;
-  RawDocument sidecar_document;
+  UnmappedDocument embedded;
+  UnmappedDocument sidecar_document;
   bool has_sidecar{false};
   std::string file_type;
 
-  const RawDocument* sidecar() const {
+  const UnmappedDocument* sidecar() const {
     return has_sidecar ? &sidecar_document : nullptr;
   }
 };
 
-// Shared backend selection + raw read used by umm::read and detectConflict.
+// Shared backend selection + unmapped read used by umm::read and detectConflict.
 Result<LoadedRead> load_read(const std::filesystem::path& media,
                              const ReadOptions& options);
 

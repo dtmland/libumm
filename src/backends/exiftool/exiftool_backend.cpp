@@ -118,9 +118,9 @@ Error map_exiftool_error_text(std::string text) {
                     std::move(text));
 }
 
-void append_entry(RawDocument& document, RawKey key, const JsonValue& value) {
-  auto push = [&](RawKey entry_key, const JsonValue& item) {
-    RawEntry entry;
+void append_entry(UnmappedDocument& document, UnmappedKey key, const JsonValue& value) {
+  auto push = [&](UnmappedKey entry_key, const JsonValue& item) {
+    UnmappedEntry entry;
     entry.key = std::move(entry_key);
     switch (item.kind) {
       case JsonValue::Kind::number:
@@ -145,7 +145,7 @@ void append_entry(RawDocument& document, RawKey key, const JsonValue& value) {
 
   if (value.kind == JsonValue::Kind::array && value.array.size() > 1) {
     for (std::size_t i = 0; i < value.array.size(); ++i) {
-      RawKey indexed = key;
+      UnmappedKey indexed = key;
       indexed.key += '[';
       indexed.key += std::to_string(i + 1);
       indexed.key += ']';
@@ -373,7 +373,7 @@ Result<std::string> ExifToolBackend::execute(const std::string& command) {
   return out;
 }
 
-Result<RawDocument> ExifToolBackend::readRaw(
+Result<UnmappedDocument> ExifToolBackend::readUnmapped(
     const std::filesystem::path& media) {
   try {
     resolve();
@@ -439,7 +439,7 @@ Result<RawDocument> ExifToolBackend::readRaw(
       }
     }
 
-    RawDocument document;
+    UnmappedDocument document;
     for (const auto& field : object->object) {
       const auto mapped = map_exiftool_tag(field.first);
       if (!mapped) {
@@ -457,8 +457,8 @@ Result<RawDocument> ExifToolBackend::readRaw(
   }
 }
 
-Result<void> ExifToolBackend::writeRaw(const std::filesystem::path& media,
-                                       const RawChanges& changes) {
+Result<void> ExifToolBackend::writeUnmapped(const std::filesystem::path& media,
+                                       const UnmappedChanges& changes) {
   try {
     resolve();
     if (!absence_reason_.empty()) {
@@ -485,13 +485,13 @@ Result<void> ExifToolBackend::writeRaw(const std::filesystem::path& media,
       command.append(text.begin(), text.end());
       command += '\n';
     };
-    for (const RawKey& key : changes.removals) {
+    for (const UnmappedKey& key : changes.removals) {
       const auto tag = exiftool_tag_for_raw_key(key.key);
       if (tag) {
         line("-" + *tag + "=");
       }
     }
-    for (const RawEntry& entry : changes.upserts) {
+    for (const UnmappedEntry& entry : changes.upserts) {
       const auto tag = exiftool_tag_for_raw_key(entry.key.key);
       if (!tag) {
         continue;

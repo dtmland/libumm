@@ -53,7 +53,7 @@ struct WriteOptions {
 
 struct WriteReport {
   StorageDecision decision;
-  std::vector<RawKey> written;  // every raw representation updated (write-sync)
+  std::vector<UnmappedKey> written;  // every unmapped representation updated (write-sync)
 };
 
 // detectConflict() result: full read plus every disagreed property (session 23).
@@ -82,7 +82,7 @@ struct SyncOptions {
 // One carrier actually targeted by synchronize() (or mixed umm::write).
 struct SyncCarrierReport {
   std::string container;  // "embedded" | "sidecar"
-  std::vector<RawKey> written;
+  std::vector<UnmappedKey> written;
 };
 
 struct SyncReport {
