@@ -152,6 +152,26 @@ else()
   set(UMM_INSTALL_IS_STATIC TRUE)
 endif()
 
+if(TARGET Iconv::Iconv)
+  set(UMM_INSTALL_FIND_ICONV TRUE)
+endif()
+
+# Static umm privately links FetchContent exiv2lib. CMake still exports
+# exiv2lib's imported usage requirements (Iconv::Iconv on Apple) into
+# ummTargets.cmake. Keep those names BUILD_INTERFACE-only; ummConfig.cmake
+# reattaches reconstructed private archives and find_dependency() results.
+get_target_property(_umm_iface_link umm INTERFACE_LINK_LIBRARIES)
+if(_umm_iface_link AND NOT _umm_iface_link STREQUAL "NOTFOUND")
+  set(_umm_install_iface)
+  foreach(_umm_iface_item IN LISTS _umm_iface_link)
+    list(APPEND _umm_install_iface "$<BUILD_INTERFACE:${_umm_iface_item}>")
+  endforeach()
+  set_property(TARGET umm PROPERTY INTERFACE_LINK_LIBRARIES "${_umm_install_iface}")
+  unset(_umm_install_iface)
+  unset(_umm_iface_item)
+endif()
+unset(_umm_iface_link)
+
 install(TARGETS umm
   EXPORT ummTargets
   ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"

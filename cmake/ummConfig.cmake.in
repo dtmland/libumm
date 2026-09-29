@@ -32,26 +32,40 @@ if(_umm_need_expat)
 endif()
 if(_umm_need_iconv)
   find_dependency(Iconv)
-  # FindIconv may report Iconv_FOUND without creating Iconv::Iconv when
-  # iconv is libc-built-in (typical on Apple). The static umm export still
-  # names that target, so provide a compatible imported interface.
-  if(NOT TARGET Iconv::Iconv)
-    add_library(Iconv::Iconv INTERFACE IMPORTED)
-    if(Iconv_LIBRARIES)
-      set_property(TARGET Iconv::Iconv PROPERTY
-        INTERFACE_LINK_LIBRARIES "${Iconv_LIBRARIES}")
-    endif()
-    if(Iconv_INCLUDE_DIRS)
-      set_property(TARGET Iconv::Iconv PROPERTY
-        INTERFACE_INCLUDE_DIRECTORIES "${Iconv_INCLUDE_DIRS}")
-    endif()
-  endif()
 endif()
 if(_umm_need_threads)
   find_dependency(Threads)
 endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/ummTargets.cmake")
+
+# FindIconv may leave Iconv_FOUND without Iconv::Iconv (Apple libc iconv).
+# ummTargets or the private-dep reattachment below may still name it.
+if(NOT TARGET Iconv::Iconv)
+  set(_umm_needs_iconv_target "${_umm_need_iconv}")
+  if(TARGET umm::umm)
+    get_target_property(_umm_iface umm::umm INTERFACE_LINK_LIBRARIES)
+    if(_umm_iface AND _umm_iface MATCHES "Iconv::Iconv")
+      set(_umm_needs_iconv_target TRUE)
+    endif()
+  endif()
+  if(_umm_needs_iconv_target)
+    find_package(Iconv QUIET)
+    if(NOT TARGET Iconv::Iconv)
+      add_library(Iconv::Iconv INTERFACE IMPORTED GLOBAL)
+      if(Iconv_LIBRARIES)
+        set_property(TARGET Iconv::Iconv PROPERTY
+          INTERFACE_LINK_LIBRARIES "${Iconv_LIBRARIES}")
+      endif()
+      if(Iconv_INCLUDE_DIRS)
+        set_property(TARGET Iconv::Iconv PROPERTY
+          INTERFACE_INCLUDE_DIRECTORIES "${Iconv_INCLUDE_DIRS}")
+      endif()
+    endif()
+  endif()
+  unset(_umm_needs_iconv_target)
+  unset(_umm_iface)
+endif()
 
 if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/ummPrivateDeps.cmake")
   include("${CMAKE_CURRENT_LIST_DIR}/ummPrivateDeps.cmake")
