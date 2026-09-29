@@ -37,4 +37,5 @@ url: n/a (synthetic; bytes committed in tests/fixtures/generator/generate.py)
 retrieval_date: 2026-09-29
 notes: ffmpeg has no heif muxer in this pin, so HEIC is not generated. CR3
 and JXL2 samples are ExifTool 13.59 t/images URLs in tests/corpus/manifest.json
-(decision M6).
+(decision M6). ExifTool 13.59 writes EXIF and XMP in HEIC/AVIF/CR3 but leaves
+IPTC-IIM tags unchanged, so those ExifTool capability rows list iptc as none.

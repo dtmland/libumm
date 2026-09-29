@@ -202,7 +202,7 @@ int main() {
   if (!heic_emb.ok() ||
       heic_emb.value().method != umm::StorageDecision::Method::embedded ||
       heic_emb.value().backend != "exiftool" ||
-      !formats_are(heic_emb.value(), {"XMP", "EXIF", "IPTC-IIM"})) {
+      !formats_are(heic_emb.value(), {"XMP", "EXIF"})) {
     return fail("HEIC ExifTool embedded_only");
   }
   umm::WriteOptions heic_exiv2;
@@ -218,7 +218,7 @@ int main() {
       umm::evaluateStorage(std::filesystem::path("a.avif"), heic_et);
   if (!avif_emb.ok() ||
       avif_emb.value().method != umm::StorageDecision::Method::embedded ||
-      !formats_are(avif_emb.value(), {"XMP", "EXIF", "IPTC-IIM"})) {
+      !formats_are(avif_emb.value(), {"XMP", "EXIF"})) {
     return fail("AVIF ExifTool embedded_only");
   }
 
