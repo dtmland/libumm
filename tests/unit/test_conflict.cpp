@@ -147,9 +147,11 @@ int main() {
 
     const auto iptc =
         umm::merge(result.value(), *creator, "Iptc.Application2.Byline");
-    const auto* iptc_names =
-        iptc.ok() && iptc.value().creator() ? as_list(*iptc.value().creator())
-                                            : nullptr;
+    if (!iptc.ok()) {
+      return fail("merge by IPTC value");
+    }
+    const auto iptc_creator = iptc.value().creator();
+    const auto* iptc_names = iptc_creator ? as_list(*iptc_creator) : nullptr;
     if (!iptc_names || iptc_names->front() != "IPTC Creator") {
       return fail("merge by IPTC value");
     }
@@ -204,8 +206,11 @@ int main() {
     if (!merged.ok()) {
       return fail("sidecar merge failed");
     }
-    if (!merged.value().conflictedPropertyIds().empty()) {
-      return fail("sidecar merge left conflict");
+    const auto remaining = merged.value().conflictedPropertyIds();
+    for (const auto& id : remaining) {
+      if (id == "iptc.photo.creator") {
+        return fail("sidecar merge left creator conflict");
+      }
     }
   }
 

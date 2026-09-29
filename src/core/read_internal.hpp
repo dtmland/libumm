@@ -13,8 +13,12 @@ struct LoadedRead {
   std::string backend_id;
   RawDocument embedded;
   RawDocument sidecar_document;
-  const RawDocument* sidecar = nullptr;
+  bool has_sidecar{false};
   std::string file_type;
+
+  const RawDocument* sidecar() const {
+    return has_sidecar ? &sidecar_document : nullptr;
+  }
 };
 
 // Shared backend selection + raw read used by umm::read and detectConflict.

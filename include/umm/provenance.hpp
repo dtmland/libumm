@@ -43,6 +43,7 @@ struct ConflictCandidate {
   Value value;
   std::vector<SourceRef> sources;  // family lives on raw_key; container is embedded|sidecar
   std::string family;              // grouping family ("xmp", "iim", "exif", "quicktime", ...)
+  std::string primary_key;         // group's primary raw_key (policy preferred_source)
 
   bool operator==(const ConflictCandidate&) const = default;
 };

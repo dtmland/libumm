@@ -8,6 +8,9 @@ namespace {
 
 bool candidate_has_source(const ConflictCandidate& candidate,
                           std::string_view source, std::string_view container) {
+  if (candidate.primary_key == source && container.empty()) {
+    return true;
+  }
   for (const SourceRef& ref : candidate.sources) {
     if (ref.raw_key == source &&
         (container.empty() || ref.container == container)) {
@@ -49,7 +52,7 @@ Result<ConflictReport> detectConflict(const std::filesystem::path& media,
   internal::LoadedRead asset = std::move(loaded).value();
   ConflictReport report;
   Result<Metadata> metadata = internal::reconcile(
-      asset.embedded, asset.backend_id, asset.sidecar, asset.file_type,
+      asset.embedded, asset.backend_id, asset.sidecar(), asset.file_type,
       &report.entries);
   if (!metadata.ok()) {
     return metadata.error();

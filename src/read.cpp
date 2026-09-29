@@ -77,7 +77,7 @@ Result<LoadedRead> load_read(const std::filesystem::path& media,
     keep_xmp_entries(loaded.embedded);
     loaded.sidecar_document = std::move(loaded.embedded);
     loaded.embedded = {};
-    loaded.sidecar = &loaded.sidecar_document;
+    loaded.has_sidecar = true;
     loaded.file_type = "XMP";
     return loaded;
   }
@@ -90,7 +90,7 @@ Result<LoadedRead> load_read(const std::filesystem::path& media,
       }
       loaded.sidecar_document = std::move(sidecar_raw).value();
       keep_xmp_entries(loaded.sidecar_document);
-      loaded.sidecar = &loaded.sidecar_document;
+      loaded.has_sidecar = true;
     }
   }
 
@@ -109,7 +109,7 @@ Result<Metadata> read(const std::filesystem::path& media, ReadOptions options) {
   }
   internal::LoadedRead asset = std::move(loaded).value();
   return finish_read(
-      internal::reconcile(asset.embedded, asset.backend_id, asset.sidecar,
+      internal::reconcile(asset.embedded, asset.backend_id, asset.sidecar(),
                           asset.file_type),
       options, asset.backend_id);
 }

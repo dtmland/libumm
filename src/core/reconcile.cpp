@@ -967,6 +967,7 @@ ConflictEntry disagreement_entry(std::string_view property_id,
     candidate.value = group.value;
     candidate.sources = group.sources;
     candidate.family = group.family;
+    candidate.primary_key = group.primary_key;
     entry.candidates.push_back(std::move(candidate));
   }
   return entry;

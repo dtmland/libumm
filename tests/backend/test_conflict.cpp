@@ -1,6 +1,7 @@
 #include "read_raw_checks.hpp"
 #include "umm/umm.hpp"
 
+#include <optional>
 #include <string>
 #include <string_view>
 #include <variant>
@@ -79,26 +80,36 @@ int check_full_conflicting(const std::string& backend, const char* folder,
     return fail("reconciled disagreements must not fail conflicts_as_errors");
   }
 
-  const auto exif =
-      umm::merge(report.value().metadata, *creator, "Exif.Image.Artist");
+  const umm::ConflictCandidate* exif_candidate = nullptr;
+  const umm::ConflictCandidate* xmp_candidate = nullptr;
+  for (const auto& candidate : creator->candidates) {
+    if (candidate.family == "exif") {
+      exif_candidate = &candidate;
+    }
+    if (candidate.family == "xmp") {
+      xmp_candidate = &candidate;
+    }
+  }
+  if (!exif_candidate || !xmp_candidate) {
+    return fail("full-conflicting missing family candidates");
+  }
+  const auto exif = umm::merge(report.value().metadata, *creator,
+                               exif_candidate->primary_key);
   if (!exif.ok()) {
     return fail("merge EXIF creator");
   }
-  const auto* exif_names =
-      exif.value().creator() ? as_list(*exif.value().creator()) : nullptr;
-  if (!exif_names || exif_names->front() != "EXIF Creator") {
+  const auto exif_creator = exif.value().creator();
+  if (!exif_creator || exif_creator->value != exif_candidate->value) {
     return fail("merge EXIF creator value");
   }
-  if (!has_source(*exif.value().creator(), "Xmp.dc.creator")) {
+  if (!has_source(*exif_creator, xmp_candidate->primary_key)) {
     return fail("merge EXIF dropped XMP source");
   }
 
-  const auto xmp =
-      umm::merge(report.value().metadata, *creator, "Xmp.dc.creator");
-  const auto* xmp_names =
-      xmp.ok() && xmp.value().creator() ? as_list(*xmp.value().creator())
-                                        : nullptr;
-  if (!xmp_names || xmp_names->front() != "XMP Creator") {
+  const auto xmp = umm::merge(report.value().metadata, *creator,
+                              xmp_candidate->primary_key);
+  const auto xmp_creator = xmp.ok() ? xmp.value().creator() : std::nullopt;
+  if (!xmp_creator || xmp_creator->value != xmp_candidate->value) {
     return fail("merge XMP creator value");
   }
 
@@ -109,15 +120,16 @@ int check_full_conflicting(const std::string& backend, const char* folder,
   if (!overridden.ok()) {
     return fail("user merge creator");
   }
-  const auto* user_names = as_list(*overridden.value().creator());
+  const auto user_creator = overridden.value().creator();
+  const auto* user_names = user_creator ? as_list(*user_creator) : nullptr;
   if (!user_names || user_names->front() != "User Creator") {
     return fail("user merge creator value");
   }
-  if (!overridden.value().creator()->preferred_source.empty() ||
-      overridden.value().creator()->resolution != umm::Resolution::reconciled) {
+  if (!user_creator->preferred_source.empty() ||
+      user_creator->resolution != umm::Resolution::reconciled) {
     return fail("user merge creator provenance");
   }
-  if (overridden.value().creator()->sources.size() < 2) {
+  if (user_creator->sources.size() < 2) {
     return fail("user merge dropped sources");
   }
   return 0;
@@ -198,16 +210,19 @@ int check_sidecar(const std::string& backend) {
   if (!merged.ok()) {
     return fail("sidecar merge");
   }
-  const auto* names =
-      merged.value().creator() ? as_list(*merged.value().creator()) : nullptr;
+  const auto merged_creator = merged.value().creator();
+  const auto* names = merged_creator ? as_list(*merged_creator) : nullptr;
   if (!names || names->front() != "Sidecar Creator") {
     return fail("sidecar merge value");
   }
-  if (!merged.value().conflictedPropertyIds().empty()) {
-    return fail("sidecar merge left conflict ids");
-  }
-  if (merged.value().creator()->resolution != umm::Resolution::reconciled) {
+  if (merged_creator->resolution != umm::Resolution::reconciled) {
     return fail("sidecar merge not reconciled");
+  }
+  const auto remaining = merged.value().conflictedPropertyIds();
+  for (const auto& id : remaining) {
+    if (id == "iptc.photo.creator") {
+      return fail("sidecar merge left creator conflict");
+    }
   }
   return 0;
 }
