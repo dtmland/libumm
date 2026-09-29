@@ -5,10 +5,10 @@ Status: **planning only**. This document defines how libumm will be built and te
 Related:
 
 - Design plan: [concept.md](concept.md)
-- Backend file-type coverage: [supported-types.md](supported-types.md)
-- Decisions applied: [docs/analysis/2026-09-27-plan-review-and-decisions.md](docs/analysis/2026-09-27-plan-review-and-decisions.md)
-- Session-sized execution plan (supersedes §14 ordering): [docs/implementation/00-overview.md](docs/implementation/00-overview.md)
-- Test media strategy: [docs/test-media-plan.md](docs/test-media-plan.md)
+- Backend file-type coverage: [supported-types.md](../supported-types.md)
+- Decisions applied: [docs/analysis/2026-09-27-plan-review-and-decisions.md](2026-09-27-plan-review-and-decisions.md)
+- Session-sized execution plan (supersedes §14 ordering): [docs/implementation/00-overview.md](../developer/implementation-history.md)
+- Test media strategy: [docs/test-media-plan.md](../test-media-plan.md)
 
 ## 1. Goal
 
@@ -36,7 +36,7 @@ libumm is currently design documentation only. Before (and while) the library is
 - GUI, Qt, or display-server testing
 - Release packaging, code signing, notarization, or installers — release engineering is now
   planned as Stage 11 (sessions 29–34; see
-  [docs/analysis/2026-09-29-stage-10-review-release-and-licensing.md](docs/analysis/2026-09-29-stage-10-review-release-and-licensing.md))
+  [docs/analysis/2026-09-29-stage-10-review-release-and-licensing.md](2026-09-29-stage-10-review-release-and-licensing.md))
 - Package-manager publication (vcpkg, Conan, Homebrew, etc.)
 - Changing any sister application repository; patterns may be adapted here, but this plan is for **libumm only**
 
@@ -105,7 +105,7 @@ Record formally in `docs/supported-platforms.md` when implementation starts. Wor
 | Linux arm64 | Buildable when dependencies allow; not a hosted CI target initially |
 | Backends in CI | Exiv2 **and** ExifTool required on every matrix job |
 
-Open decisions — **resolved** in the [analysis document](docs/analysis/2026-09-27-plan-review-and-decisions.md):
+Open decisions — **resolved** in the [analysis document](2026-09-27-plan-review-and-decisions.md):
 
 - Exiv2 acquisition: **pinned source via FetchContent on all OSes** (M4a); checksum-pinned
   prebuilt is the sanctioned Windows-only fallback if build time proves painful, taken as a new
@@ -252,7 +252,7 @@ File: `.github/workflows/ci.yml` (to be added later).
   unknown tags and MakerNotes preserved across writes; write-to-temp-then-atomic-rename verified;
   **non-ASCII paths and metadata values** round-trip on all three OSes.
 - **Capabilities alignment:** capability data is machine-readable (decision M2);
-  [supported-types.md](supported-types.md) is generated from it, and CI probes the pinned backends
+  [supported-types.md](../supported-types.md) is generated from it, and CI probes the pinned backends
   against it so drift fails a test.
 - **Failing self-test option:** one deliberately failing CTest gated by CMake option, enabled only from `workflow_dispatch`, proving red CI on each OS.
 
@@ -268,7 +268,7 @@ File: `.github/workflows/ci.yml` (to be added later).
 
 ### Fixture policy
 
-Full strategy: [docs/test-media-plan.md](docs/test-media-plan.md) (decision M6 — hybrid:
+Full strategy: [docs/test-media-plan.md](../test-media-plan.md) (decision M6 — hybrid:
 generated in-repo fixtures; checksummed downloads for Tier B; no third-party media committed).
 
 - Tiny **generated** synthetic samples only in-repo (≤100 KB each; Phase 1 corpus <1 MB), produced by a committed generator using the pinned backends.
@@ -290,7 +290,7 @@ This file (`build-plan.md`) remains the planning source until those docs exist; 
 ## 14. Implementation order (later sessions)
 
 > **Superseded for execution:** the authoritative, session-sized ordering now lives in
-> [docs/implementation/00-overview.md](docs/implementation/00-overview.md) (registry-first per
+> [docs/implementation/00-overview.md](../developer/implementation-history.md) (registry-first per
 > decision S2, fixtures before backend reads). The list below is retained as the original
 > high-level shape.
 

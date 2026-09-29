@@ -77,7 +77,7 @@ Each ≤ ~25 KB; whole Phase-1 corpus target **< 1 MB**:
 
 Each later format increment (TIFF, PNG, WebP, RAW, video) adds its own subdirectory following the
 same pattern; the per-type location capabilities in
-[supported-types.md](../supported-types.md) drive which location fixtures each type gets.
+[supported-types.md](supported-types.md) drive which location fixtures each type gets.
 
 ### 2.3 Repo hygiene rules
 
