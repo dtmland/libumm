@@ -40,10 +40,10 @@
         "container_gps": "none",
         "geotiff": "none"
       },
-      "notes": "Write requires ExifTool",
+      "notes": "Exif/XMP write; no IPTC-IIM (ExifTool 13.59 leaves IPTC tags unchanged)",
       "categories": {
         "exif": "read_write",
-        "iptc": "read_write",
+        "iptc": "none",
         "xmp": "read_write",
         "comments": "none",
         "icc": "none",
@@ -95,10 +95,10 @@
         "container_gps": "none",
         "geotiff": "none"
       },
-      "notes": "Write requires ExifTool",
+      "notes": "Exif/XMP write; no IPTC-IIM (ExifTool 13.59 leaves IPTC tags unchanged)",
       "categories": {
         "exif": "read_write",
-        "iptc": "read_write",
+        "iptc": "none",
         "xmp": "read_write",
         "comments": "none",
         "icc": "none",
@@ -242,10 +242,10 @@
         "container_gps": "none",
         "geotiff": "none"
       },
-      "notes": "Write requires ExifTool",
+      "notes": "Exif/XMP write; no IPTC-IIM (ExifTool 13.59 leaves IPTC tags unchanged)",
       "categories": {
         "exif": "read_write",
-        "iptc": "read_write",
+        "iptc": "none",
         "xmp": "read_write",
         "comments": "none",
         "icc": "none",
@@ -263,10 +263,10 @@
         "container_gps": "none",
         "geotiff": "none"
       },
-      "notes": "Write requires ExifTool",
+      "notes": "Exif/XMP write; no IPTC-IIM (ExifTool 13.59 leaves IPTC tags unchanged)",
       "categories": {
         "exif": "read_write",
-        "iptc": "read_write",
+        "iptc": "none",
         "xmp": "read_write",
         "comments": "none",
         "icc": "none",
@@ -326,10 +326,10 @@
         "container_gps": "none",
         "geotiff": "none"
       },
-      "notes": "Write requires ExifTool",
+      "notes": "Exif/XMP write; no IPTC-IIM (ExifTool 13.59 leaves IPTC tags unchanged)",
       "categories": {
         "exif": "read_write",
-        "iptc": "read_write",
+        "iptc": "none",
         "xmp": "read_write",
         "comments": "none",
         "icc": "none",

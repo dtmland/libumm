@@ -174,6 +174,54 @@ int main() {
     return fail("RW2/SR2 preferred sidecar_recommended");
   }
 
+  const auto heic =
+      umm::evaluateStorage(std::filesystem::path("a.heic"), preferred);
+  if (!heic.ok() ||
+      heic.value().method != umm::StorageDecision::Method::sidecar ||
+      !formats_are(heic.value(), {"XMP"})) {
+    return fail("HEIC preferred honors sidecar_recommended");
+  }
+  const auto avif =
+      umm::evaluateStorage(std::filesystem::path("a.avif"), preferred);
+  const auto jxl =
+      umm::evaluateStorage(std::filesystem::path("a.jxl"), preferred);
+  const auto cr3_pref =
+      umm::evaluateStorage(std::filesystem::path("a.cr3"), preferred);
+  if (!avif.ok() ||
+      avif.value().method != umm::StorageDecision::Method::sidecar ||
+      !jxl.ok() || jxl.value().method != umm::StorageDecision::Method::sidecar ||
+      !cr3_pref.ok() ||
+      cr3_pref.value().method != umm::StorageDecision::Method::sidecar) {
+    return fail("AVIF/JXL/CR3 preferred sidecar_recommended");
+  }
+  umm::WriteOptions heic_et;
+  heic_et.policy = umm::StoragePolicy::embedded_only;
+  heic_et.backend = "exiftool";
+  const auto heic_emb =
+      umm::evaluateStorage(std::filesystem::path("a.heic"), heic_et);
+  if (!heic_emb.ok() ||
+      heic_emb.value().method != umm::StorageDecision::Method::embedded ||
+      heic_emb.value().backend != "exiftool" ||
+      !formats_are(heic_emb.value(), {"XMP", "EXIF"})) {
+    return fail("HEIC ExifTool embedded_only");
+  }
+  umm::WriteOptions heic_exiv2;
+  heic_exiv2.policy = umm::StoragePolicy::embedded_only;
+  heic_exiv2.backend = "exiv2";
+  const auto heic_exiv2_emb =
+      umm::evaluateStorage(std::filesystem::path("a.heic"), heic_exiv2);
+  if (heic_exiv2_emb.ok() ||
+      heic_exiv2_emb.error().code != umm::ErrorCode::unsupported_capability) {
+    return fail("HEIC Exiv2 embedded_only unsupported_capability");
+  }
+  const auto avif_emb =
+      umm::evaluateStorage(std::filesystem::path("a.avif"), heic_et);
+  if (!avif_emb.ok() ||
+      avif_emb.value().method != umm::StorageDecision::Method::embedded ||
+      !formats_are(avif_emb.value(), {"XMP", "EXIF"})) {
+    return fail("AVIF ExifTool embedded_only");
+  }
+
   umm::WriteOptions mp4_et;
   mp4_et.policy = umm::StoragePolicy::preferred;
   mp4_et.backend = "exiftool";

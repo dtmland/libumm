@@ -307,6 +307,8 @@ int main() {
        umm::StoragePolicy::preferred, true, true},
       {"mov-video", "MOV", raw_stem("video", "minimal", ".mov"),
        umm::StoragePolicy::preferred, true, true},
+    {"avif-embedded", "AVIF", raw_stem("avif", "minimal", ".avif"),
+     umm::StoragePolicy::embedded_only, false, true},
   };
 
   std::set<CoverageKey> coverage;
@@ -344,6 +346,10 @@ int main() {
        umm::StoragePolicy::preferred, false, false},
       {"tierb-mov", "MOV", raw_corpus("video/camera.mov"),
        umm::StoragePolicy::preferred, true, true},
+    {"tierb-heic", "HEIC", raw_corpus("heic/quicktime.heic"),
+     umm::StoragePolicy::embedded_only, false, true},
+    {"tierb-cr3", "CR3", raw_corpus("raw/canon.cr3"),
+     umm::StoragePolicy::preferred, false, true},
   };
   for (const Case& test : tier_b) {
     if (!std::filesystem::is_regular_file(test.source)) {
@@ -352,24 +358,30 @@ int main() {
     }
     if (test.one_directional) {
       if (const int rc =
-              run_case(ledger, test, "exiftool", "exiftool", coverage, false);
+              run_case(ledger, test, "exiftool", "exiftool", coverage, true);
+          rc != 0) {
+        return rc;
+      }
+      if (const int rc =
+              run_case(ledger, test, "exiftool", "exiv2", coverage, false);
           rc != 0) {
         return rc;
       }
       continue;
     }
     if (const int rc =
-            run_case(ledger, test, "exiv2", "exiftool", coverage, false);
+            run_case(ledger, test, "exiv2", "exiftool", coverage, true);
         rc != 0) {
       return rc;
     }
     if (const int rc =
-            run_case(ledger, test, "exiftool", "exiv2", coverage, false);
+            run_case(ledger, test, "exiftool", "exiv2", coverage, true);
         rc != 0) {
       return rc;
     }
   }
 #endif
 
-  return check_coverage(coverage, {"JPEG", "TIFF", "PNG", "WEBP", "DNG", "XMP"});
+  return check_coverage(
+    coverage, {"JPEG", "TIFF", "PNG", "WEBP", "DNG", "XMP", "AVIF"});
 }

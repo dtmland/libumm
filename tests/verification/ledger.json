@@ -47,6 +47,38 @@
       "read_backend": "",
       "kind": "representation",
       "reason": "Source key sets may omit empty companion tags (no SubSecTimeOriginal / OffsetTimeOriginal). Cross-backend identity compares values, families the reader can see, and classification — not exact SourceRef key sets or SourceRef.backend."
+    },
+    {
+      "id": "bmff-exiv2-read-only",
+      "file_types": [
+        "HEIC",
+        "HEIF",
+        "AVIF",
+        "CR3",
+        "JXL"
+      ],
+      "category": "",
+      "property_id": "",
+      "write_backend": "exiftool",
+      "read_backend": "exiv2",
+      "kind": "one-directional",
+      "reason": "Exiv2 BMFF is read-only (EXIV2_ENABLE_BMFF). Writes go through ExifTool embedded_only or sidecar_recommended; Exiv2 is not a BMFF writer. Session 35 coverage is ExifTool write then both-read where capable."
+    },
+    {
+      "id": "bmff-iptc-unsupported",
+      "file_types": [
+        "HEIC",
+        "HEIF",
+        "AVIF",
+        "CR3",
+        "JXL"
+      ],
+      "category": "iptc_iim",
+      "property_id": "",
+      "write_backend": "",
+      "read_backend": "",
+      "kind": "capability",
+      "reason": "ExifTool 13.59 does not persist IPTC-IIM in HEIC/HEIF/AVIF/CR3/JXL (IPTC writes leave the file unchanged). Capability rows list iptc as none; write-sync omits IPTC-IIM."
     }
   ]
 }

@@ -43,7 +43,7 @@ Use it as a quick reference before starting work so you can confirm which phase 
 | 32 | [32-exiv2-shared-linkage-option.md](implementation/32-exiv2-shared-linkage-option.md) | Complete | `UMM_EXIV2_SHARED` (decision P2); system-Exiv2 floor then FetchContent-shared; Linux CI leg. |
 | 33 | [33-exiftool-user-acquisition-tool.md](implementation/33-exiftool-user-acquisition-tool.md) | Complete | `tools/get-exiftool/install.sh` + `install.ps1`: pinned, checksum-verified, fail-closed user acquisition (decisions P3, P9). |
 | 34 | [34-release-pipeline.md](implementation/34-release-pipeline.md) | Complete | Tag-triggered draft GitHub release; three-OS static archives; corresponding source; SHA256SUMS; closes session 26 video write-back cut line. |
-| 35 | [35-bmff-enablement.md](implementation/35-bmff-enablement.md) | Planned | HEIC/HEIF/AVIF/CR3/JXL support (closes R6 deferral); session 28 cut-line depth. |
+| 35 | [35-bmff-enablement.md](implementation/35-bmff-enablement.md) | Complete | HEIC/HEIF/AVIF/CR3/JXL sniffing + Exiv2-read/ExifTool-write; AVIF Tier A; HEIC/CR3/JXL Tier B; ExifTool IPTC none on BMFF; closes R6 and session 28 stability cut line. |
 
 ## How to use this document
 

@@ -76,6 +76,14 @@ WEBP_FILES = (
     "webp/full-agreeing.webp",
 )
 
+# docs/implementation/35-bmff-enablement.md
+AVIF_FILES = (
+    "avif/minimal.avif",
+    "avif/xmp-only.avif",
+    "avif/full-agreeing.avif",
+    "avif/gps.avif",
+)
+
 # docs/implementation/19-raw-read-and-sidecar-write.md
 DNG_FILES = (
     "raw/minimal.dng",
@@ -379,6 +387,13 @@ class TestFixtureCorpus(unittest.TestCase):
         )
         self.assertTrue(
             any(
+                "tests/fixtures/**/*.avif" in line and "binary" in line
+                for line in lines
+            ),
+            ".gitattributes must mark AVIF fixtures as binary",
+        )
+        self.assertTrue(
+            any(
                 "tests/fixtures/**/*.xmp" in line and "eol=lf" in line
                 for line in lines
             ),
@@ -489,6 +504,40 @@ class TestFixtureCorpus(unittest.TestCase):
                 self.assertEqual(brand, b"qt  ", f"{relpath} brand is not qt")
             else:
                 self.assertNotEqual(brand, b"qt  ", f"{relpath} should not be MOV brand")
+
+    def test_avif_matrix_is_present(self) -> None:
+        text = MANIFEST.read_text(encoding="utf-8")
+        entries = parse_manifest(text)
+        for relpath in AVIF_FILES:
+            path = FIXTURES / relpath
+            self.assertIn(relpath, entries, f"{relpath} missing from MANIFEST.md")
+            self.assertTrue(path.is_file(), f"missing fixture {relpath}")
+            data = path.read_bytes()
+            self.assertGreaterEqual(len(data), 12, relpath)
+            self.assertEqual(data[4:8], b"ftyp", f"{relpath} is not ISO BMFF ftyp")
+            self.assertEqual(data[8:12], b"avif", f"{relpath} brand is not avif")
+        open_items = parse_open_items(text)
+        self.assertTrue(
+            any(
+                "HEIC/HEIF" in item and "tests/corpus/manifest.json" in item
+                for item in open_items
+            ),
+            "MANIFEST must point HEIC at the Tier B corpus",
+        )
+        self.assertTrue(
+            any(
+                "CR3" in item and "tests/corpus/manifest.json" in item
+                for item in open_items
+            ),
+            "MANIFEST must point CR3 at the Tier B corpus",
+        )
+        self.assertTrue(
+            any(
+                "JPEG XL" in item and "tests/corpus/manifest.json" in item
+                for item in open_items
+            ),
+            "MANIFEST must point JXL at the Tier B corpus",
+        )
 
     def test_webp_matrix_is_present(self) -> None:
         text = MANIFEST.read_text(encoding="utf-8")
@@ -684,6 +733,24 @@ class TestFixtureExifTool(unittest.TestCase):
         self.assertTrue(xmp_date)
         self.assertNotIn("2020:01:01", xmp_date)
         self.assertNotIn("2020:03:03", qt_date)
+
+    def test_avif_full_agreeing_has_exif_and_xmp(self) -> None:
+        record = exiftool_json(
+            self.perl, self.script, FIXTURES / "avif" / "full-agreeing.avif"
+        )
+        self.assertEqual(record.get("IFD0:Artist"), "Agreeing Creator")
+        self.assertEqual(record.get("XMP-dc:Creator"), "Agreeing Creator")
+
+    def test_avif_gps_has_xmp_and_exif(self) -> None:
+        record = exiftool_json(self.perl, self.script, FIXTURES / "avif" / "gps.avif")
+        self.assertTrue(
+            any("GPSLatitude" in key for key in record),
+            "avif/gps.avif missing GPSLatitude",
+        )
+        self.assertTrue(
+            any(key.startswith("XMP-exif:") and "GPSLatitude" in key for key in record),
+            "avif/gps.avif missing XMP GPS",
+        )
 
     def test_webp_full_agreeing_has_exif_and_xmp_not_iptc(self) -> None:
         record = exiftool_json(

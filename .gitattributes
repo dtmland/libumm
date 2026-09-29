@@ -20,6 +20,7 @@ tests/fixtures/**/*.webp binary
 tests/fixtures/**/*.dng binary
 tests/fixtures/**/*.mp4 binary
 tests/fixtures/**/*.mov binary
+tests/fixtures/**/*.avif binary
 # XMP sidecars are UTF-8 text; pin LF for byte-stable checkouts.
 tests/fixtures/**/*.xmp text eol=lf
 # Session 25 GPS tracks are hand-authored text; pin LF for MANIFEST hashes.
