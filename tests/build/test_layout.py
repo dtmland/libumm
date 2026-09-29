@@ -10,6 +10,8 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 PRESETS_PATH = REPO_ROOT / "CMakePresets.json"
 PINS_SH = REPO_ROOT / "tools" / "build" / "pins.sh"
+GET_EXIFTOOL_SH = REPO_ROOT / "tools" / "get-exiftool" / "install.sh"
+GET_EXIFTOOL_PS1 = REPO_ROOT / "tools" / "get-exiftool" / "install.ps1"
 LINUX_PACKAGES = REPO_ROOT / "tools" / "build" / "linux-packages.txt"
 LIBUMM_PINS_CMAKE = REPO_ROOT / "cmake" / "LibummPins.cmake"
 LIBUMM_EXIFTOOL_CMAKE = REPO_ROOT / "cmake" / "LibummExifTool.cmake"
@@ -75,6 +77,8 @@ class TestLayout(unittest.TestCase):
         for path in (
             PRESETS_PATH,
             PINS_SH,
+            GET_EXIFTOOL_SH,
+            GET_EXIFTOOL_PS1,
             LINUX_PACKAGES,
             LIBUMM_PINS_CMAKE,
             LIBUMM_EXIFTOOL_CMAKE,
