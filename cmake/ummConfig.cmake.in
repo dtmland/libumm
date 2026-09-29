@@ -32,6 +32,20 @@ if(_umm_need_expat)
 endif()
 if(_umm_need_iconv)
   find_dependency(Iconv)
+  # FindIconv may report Iconv_FOUND without creating Iconv::Iconv when
+  # iconv is libc-built-in (typical on Apple). The static umm export still
+  # names that target, so provide a compatible imported interface.
+  if(NOT TARGET Iconv::Iconv)
+    add_library(Iconv::Iconv INTERFACE IMPORTED)
+    if(Iconv_LIBRARIES)
+      set_property(TARGET Iconv::Iconv PROPERTY
+        INTERFACE_LINK_LIBRARIES "${Iconv_LIBRARIES}")
+    endif()
+    if(Iconv_INCLUDE_DIRS)
+      set_property(TARGET Iconv::Iconv PROPERTY
+        INTERFACE_INCLUDE_DIRECTORIES "${Iconv_INCLUDE_DIRS}")
+    endif()
+  endif()
 endif()
 if(_umm_need_threads)
   find_dependency(Threads)
