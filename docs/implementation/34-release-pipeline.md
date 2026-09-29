@@ -65,3 +65,10 @@ and notarization; the Exiv2-free "core" artifact (P1 option 3, unscheduled).
 
 analysis 2026-09-29 §4, §7 (P1); P9 native get-exiftool scripts; sessions 29–33;
 docs/implementation/26 cut line; build-plan.md principles; decision S1d (owner confirmation).
+
+## Implementation notes
+
+- **Workflow:** `.github/workflows/release.yml` on `v*.*.*` tags and `workflow_dispatch` (dry-run: artifacts only). Matrix reuses CI presets (`cmake --preset default`, both backends required, static default, no `UMM_EXIV2_SHARED`). Tests run before `cmake --install` / packaging; asset uploads have no `if: always()`. A draft GitHub release is created only on tag pushes.
+- **Packaging:** `tools/build/package_release.py` archives the install prefix plus `tools/get-exiftool/` (scripts + `backends.env`), `docs/abi-policy.md`, and `README.md`. `tools/build/fetch_corresponding_source.py` checksum-verifies the session 31 manifest (fail-closed). `tools/build/generate_release_notes.py` names the library version, registry standards, backend pins, and the P1 GPL-3.0 / Apache-2.0 statement.
+- **Video write-back:** `tests/backend/test_track_match.cpp` exercises `matchTrack` + `umm::write` GPS on MP4 and MOV (session 26 cut line).
+- **Checklist:** `docs/release-checklist.md` (S1d confirmation, version bump, tag, artifact verification, pin audit).

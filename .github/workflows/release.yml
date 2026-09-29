@@ -1,0 +1,295 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-24.04
+          - windows-2025
+          - macos-15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Ensure python3 on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if (-not (Get-Command python3 -ErrorAction SilentlyContinue)) {
+            $python = (Get-Command python).Source
+            $dir = Join-Path $env:RUNNER_TEMP 'python3-shim'
+            New-Item -ItemType Directory -Force -Path $dir | Out-Null
+            Copy-Item $python (Join-Path $dir 'python3.exe')
+            Add-Content -Path $env:GITHUB_PATH -Value $dir
+          }
+
+      - name: Run build-contract tests
+        run: python3 -m unittest discover -s tests/build -v
+
+      - name: Load pins
+        shell: bash
+        run: sh tools/build/pins.sh
+
+      - name: Install Linux packages
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -eu
+          packages=$(grep -E -v '^[[:space:]]*(#|$)' tools/build/linux-packages.txt)
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends $packages
+
+      - name: Install ffmpeg (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ffmpeg
+
+      - name: Install ffmpeg (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: choco install ffmpeg -y --no-progress
+
+      - name: Setup Ninja
+        if: runner.os != 'Linux'
+        uses: seanmiddleditch/gha-setup-ninja@v5
+
+      - name: Enable MSVC developer environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install pinned Strawberry Perl
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ver = $env:UMM_STRAWBERRY_PERL_VERSION
+          if ([string]::IsNullOrWhiteSpace($ver)) {
+            throw "UMM_STRAWBERRY_PERL_VERSION is not set"
+          }
+          $compact = $ver -replace '\.', ''
+          $url = "https://github.com/StrawberryPerl/Perl-Dist-Strawberry/releases/download/SP_${compact}_64bit/strawberry-perl-${ver}-64bit-portable.zip"
+          $zip = Join-Path $env:TEMP "strawberry-perl.zip"
+          $dest = "C:\Strawberry"
+          New-Item -ItemType Directory -Force -Path $dest | Out-Null
+          Invoke-WebRequest -Uri $url -OutFile $zip
+          Expand-Archive -Path $zip -DestinationPath $dest -Force
+          Add-Content -Path $env:GITHUB_PATH -Value "$dest\perl\bin"
+
+      - name: Cache backend downloads
+        uses: actions/cache@v4
+        with:
+          path: .cache
+          key: ${{ runner.os }}-${{ env.UMM_EXIV2_VERSION }}-${{ env.UMM_EXIV2_SHA256 }}-${{ env.UMM_EXIFTOOL_VERSION }}-${{ env.UMM_EXIFTOOL_SHA256 }}-${{ env.UMM_STRAWBERRY_PERL_VERSION }}
+
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ runner.os }}-release-${{ env.UMM_EXIV2_VERSION }}-${{ env.UMM_EXIV2_SHA256 }}
+          restore-keys: |
+            ${{ runner.os }}-release-${{ env.UMM_EXIV2_VERSION }}-
+            ${{ runner.os }}-
+
+      - name: Configure
+        run: cmake --preset default -DUMM_REQUIRE_EXIV2=ON -DUMM_REQUIRE_EXIFTOOL=ON
+
+      - name: Report acquired backends
+        shell: bash
+        run: cat build/default/backends-acquired.txt
+
+      - name: Build
+        run: cmake --build --preset default
+
+      - name: Test
+        run: |
+          cmake -E make_directory build/default/test-results
+          ctest --preset default --output-junit build/default/test-results/junit.xml
+
+      - name: Install and consumer smoke
+        run: ctest --preset default -R consumer_install --output-on-failure
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: |
+          set -eu
+          VERSION=$(python3 tools/build/generate_release_notes.py --version-only)
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            expected="${GITHUB_REF_NAME#v}"
+            if [ "$expected" != "$VERSION" ]; then
+              echo "tag $GITHUB_REF_NAME does not match version.hpp $VERSION" >&2
+              exit 1
+            fi
+          fi
+
+      - name: Install prefix and package archive
+        shell: bash
+        run: |
+          set -eu
+          prefix="${RUNNER_TEMP}/umm-prefix"
+          out="${GITHUB_WORKSPACE}/release-dist"
+          cmake --install build/default --prefix "$prefix"
+          python3 tools/build/package_release.py package \
+            --install-prefix "$prefix" \
+            --source-root "${GITHUB_WORKSPACE}" \
+            --version "$VERSION" \
+            --os "${{ matrix.os }}" \
+            --output-dir "$out"
+
+      - name: Upload binary archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.os }}
+          path: release-dist/libumm-*.tar.gz
+          if-no-files-found: error
+
+  corresponding-source:
+    name: corresponding-source
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run build-contract tests
+        run: python3 -m unittest discover -s tests/build -v
+
+      - name: Load pins
+        shell: bash
+        run: sh tools/build/pins.sh
+
+      - name: Cache corresponding-source downloads
+        uses: actions/cache@v4
+        with:
+          path: .cache/corresponding-source
+          key: corresponding-source-${{ hashFiles('tools/build/corresponding-source.json') }}
+
+      - name: Resolve version
+        shell: bash
+        run: |
+          set -eu
+          VERSION=$(python3 tools/build/generate_release_notes.py --version-only)
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            expected="${GITHUB_REF_NAME#v}"
+            if [ "$expected" != "$VERSION" ]; then
+              echo "tag $GITHUB_REF_NAME does not match version.hpp $VERSION" >&2
+              exit 1
+            fi
+          fi
+
+      - name: Fetch corresponding source
+        run: |
+          set -eu
+          mkdir -p dist
+          python3 tools/build/fetch_corresponding_source.py \
+            --output-dir dist \
+            --cache-dir .cache/corresponding-source
+
+      - name: Source archive and notes
+        run: |
+          set -eu
+          mkdir -p dist notes
+          git archive --format=tar.gz --prefix="libumm-${VERSION}/" \
+            -o "dist/libumm-${VERSION}-src.tar.gz" HEAD
+          python3 tools/build/generate_release_notes.py --output notes/release-notes.md
+
+      - name: Upload corresponding source
+        uses: actions/upload-artifact@v4
+        with:
+          name: corresponding-source
+          path: dist/*
+          if-no-files-found: error
+
+      - name: Upload release notes
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: notes/release-notes.md
+          if-no-files-found: error
+
+  publish:
+    name: checksums-and-release
+    needs:
+      - build
+      - corresponding-source
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Download binary archives
+        uses: actions/download-artifact@v4
+        with:
+          pattern: binary-*
+          path: dist
+          merge-multiple: true
+
+      - name: Download corresponding source
+        uses: actions/download-artifact@v4
+        with:
+          name: corresponding-source
+          path: dist
+
+      - name: Download release notes
+        uses: actions/download-artifact@v4
+        with:
+          name: release-notes
+          path: notes
+
+      - name: Write SHA256SUMS
+        run: |
+          set -eu
+          python3 tools/build/package_release.py sha256sums \
+            --dir dist \
+            --output dist/SHA256SUMS
+          test -s dist/SHA256SUMS
+          grep -E 'libumm-.*ubuntu-24.04\.tar\.gz$' dist/SHA256SUMS
+          grep -E 'libumm-.*windows-2025\.tar\.gz$' dist/SHA256SUMS
+          grep -E 'libumm-.*macos-15\.tar\.gz$' dist/SHA256SUMS
+          grep -E 'exiv2-.*\.tar\.gz$' dist/SHA256SUMS
+          grep -E 'expat-.*\.tar\.gz$' dist/SHA256SUMS
+          grep -E 'zlib-.*\.tar\.gz$' dist/SHA256SUMS
+          grep -E 'libumm-.*-src\.tar\.gz$' dist/SHA256SUMS
+
+      - name: Upload SHA256SUMS and dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-dist
+          path: |
+            dist/*
+            notes/release-notes.md
+          if-no-files-found: error
+
+      - name: Create draft GitHub release
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -eu
+          VERSION=$(python3 tools/build/generate_release_notes.py --version-only)
+          gh release create "$GITHUB_REF_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --draft \
+            --title "libumm ${VERSION}" \
+            --notes-file notes/release-notes.md \
+            dist/*
