@@ -277,6 +277,49 @@ int probe_backend(const std::string& backend_id) {
       !raw_has_family(dng_agree.value(), "Xmp")) {
     return fail("dng full-agreeing fixture vs EXIF/IPTC/XMP capability");
   }
+
+  const auto mp4_caps = umm::capabilitiesForType("MP4");
+  if (!mp4_caps.ok()) {
+    return fail("probe MP4 caps");
+  }
+  const umm::BackendCapability* mp4_row =
+      find_backend(mp4_caps.value(), backend_id);
+  if (!mp4_row) {
+    return fail("MP4 capability row missing");
+  }
+  if (backend_id == "exiftool") {
+    if (mp4_row->categories.xmp != umm::Access::read_write ||
+        mp4_row->location.container_gps != umm::Access::read_write) {
+      return fail("MP4 ExifTool capability data mismatch");
+    }
+  } else if (mp4_row->categories.xmp != umm::Access::none ||
+             mp4_row->location.container_gps != umm::Access::none) {
+    return fail("MP4 Exiv2 capability data mismatch");
+  }
+  const auto mp4_ok = backend->typeCapabilities("MP4");
+  if (!mp4_ok.ok()) {
+    return fail("typeCapabilities MP4");
+  }
+  const auto mov_ok = backend->typeCapabilities("MOV");
+  if (!mov_ok.ok()) {
+    return fail("typeCapabilities MOV");
+  }
+  const auto sniffed_mp4 = umm::capabilities(raw_stem("video", "full", ".mp4"));
+  if (!sniffed_mp4.ok() || sniffed_mp4.value().file_type != "MP4") {
+    return fail("sniff full.mp4");
+  }
+  const auto sniffed_mov =
+      umm::capabilities(raw_stem("video", "minimal", ".mov"));
+  if (!sniffed_mov.ok() || sniffed_mov.value().file_type != "MOV") {
+    return fail("sniff minimal.mov");
+  }
+  if (backend_id == "exiftool") {
+    const auto video_full = backend->readRaw(raw_stem("video", "full", ".mp4"));
+    if (!video_full.ok() || !raw_has_family(video_full.value(), "QuickTime") ||
+        !raw_has_family(video_full.value(), "Xmp")) {
+      return fail("video full.mp4 fixture vs QuickTime/XMP capability");
+    }
+  }
   return 0;
 }
 

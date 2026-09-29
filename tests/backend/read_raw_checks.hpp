@@ -341,3 +341,36 @@ inline int check_webp_raw_reads(umm::Backend& backend, const char* backend_id) {
   }
   return 0;
 }
+
+inline int check_video_raw_reads(umm::Backend& backend) {
+  const auto full = backend.readRaw(raw_stem("video", "full", ".mp4"));
+  if (!full.ok()) {
+    std::fprintf(stderr, "video/full.mp4 read failed: %s\n",
+                 full.error().message.c_str());
+    return 1;
+  }
+  if (!raw_has_key_with_value(full.value(), "QuickTime.Title",
+                              "Agreeing Title") ||
+      !raw_has_key_with_value(full.value(), "Xmp.dc.creator",
+                              "Agreeing Creator") ||
+      !raw_has_family(full.value(), "QuickTime") ||
+      !raw_has_family(full.value(), "Xmp")) {
+    return raw_fail("video full.mp4 missing mapped QuickTime/XMP");
+  }
+  const auto gps = backend.readRaw(raw_stem("video", "gps", ".mp4"));
+  if (!gps.ok()) {
+    std::fprintf(stderr, "video/gps.mp4 read failed: %s\n",
+                 gps.error().message.c_str());
+    return 1;
+  }
+  if (!raw_value_of(gps.value(), "QuickTime.GPSCoordinates")) {
+    return raw_fail("video gps missing QuickTime.GPSCoordinates");
+  }
+  const auto mov = backend.readRaw(raw_stem("video", "minimal", ".mov"));
+  if (!mov.ok()) {
+    std::fprintf(stderr, "video/minimal.mov read failed: %s\n",
+                 mov.error().message.c_str());
+    return 1;
+  }
+  return 0;
+}

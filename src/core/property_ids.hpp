@@ -17,4 +17,11 @@ inline constexpr std::string_view kRating = "iptc.photo.imageRating";
 inline constexpr std::string_view kLocation = "iptc.photo.locationCreated";
 inline constexpr std::string_view kGps = "exif.gps.position";
 
+inline constexpr std::string_view kVideoTitle = "iptc.video.title";
+inline constexpr std::string_view kVideoDescription = "iptc.video.description";
+inline constexpr std::string_view kVideoCreator = "iptc.video.creator";
+inline constexpr std::string_view kVideoDateCreated = "iptc.video.dateCreated";
+inline constexpr std::string_view kVideoCopyright = "iptc.video.copyrightNotice";
+inline constexpr std::string_view kVideoKeywords = "iptc.video.keywords";
+
 }  // namespace umm::internal

@@ -53,7 +53,15 @@ int main() {
       expect_key("XMP-libummtest:UnknownWidget", "Xmp",
                  "Xmp.libummtest.UnknownWidget") != 0 ||
       expect_key("MakerNotes:LensType", "ExifTool",
-                 "ExifTool.MakerNotes.LensType") != 0) {
+                 "ExifTool.MakerNotes.LensType") != 0 ||
+      expect_key("ItemList:Title", "QuickTime", "QuickTime.Title") != 0 ||
+      expect_key("Keys:CreationDate", "QuickTime", "QuickTime.CreationDate") !=
+          0 ||
+      expect_key("Keys:GPSCoordinates", "QuickTime",
+                 "QuickTime.GPSCoordinates") != 0 ||
+      expect_key("QuickTime:Duration", "QuickTime", "QuickTime.Duration") != 0 ||
+      expect_key("QuickTime:HandlerType", "ExifTool",
+                 "ExifTool.QuickTime.HandlerType") != 0) {
     return 1;
   }
   if (expect_skip("SourceFile") != 0 || expect_skip("File:FileName") != 0 ||
@@ -67,8 +75,14 @@ int main() {
       umm::internal::exiftool_tag_for_raw_key("Iptc.Application2.Byline");
   const auto creator =
       umm::internal::exiftool_tag_for_raw_key("Xmp.dc.creator[1]");
+  const auto title =
+      umm::internal::exiftool_tag_for_raw_key("QuickTime.Title");
+  const auto created =
+      umm::internal::exiftool_tag_for_raw_key("QuickTime.CreationDate");
   if (!artist || *artist != "IFD0:Artist" || !byline ||
-      *byline != "IPTC:By-line" || !creator || *creator != "XMP-dc:Creator") {
+      *byline != "IPTC:By-line" || !creator || *creator != "XMP-dc:Creator" ||
+      !title || *title != "QuickTime:Title" || !created ||
+      *created != "Keys:CreationDate") {
     std::fprintf(stderr, "reverse key mapping failed\n");
     return 1;
   }

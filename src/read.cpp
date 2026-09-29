@@ -70,7 +70,7 @@ Result<Metadata> read(const std::filesystem::path& media, ReadOptions options) {
     keep_xmp_entries(document);
     RawDocument embedded;
     return finish_read(
-        internal::reconcile(embedded, backend->id(), &document), options,
+        internal::reconcile(embedded, backend->id(), &document, "XMP"), options,
         backend->id());
   }
 
@@ -88,8 +88,14 @@ Result<Metadata> read(const std::filesystem::path& media, ReadOptions options) {
     }
   }
 
-  return finish_read(internal::reconcile(document, backend->id(), sidecar),
-                     options, backend->id());
+  std::string file_type;
+  if (const auto caps = capabilities(media); caps.ok()) {
+    file_type = caps.value().file_type;
+  }
+
+  return finish_read(
+      internal::reconcile(document, backend->id(), sidecar, file_type), options,
+      backend->id());
 }
 
 }  // namespace umm

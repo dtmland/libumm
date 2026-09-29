@@ -28,10 +28,9 @@ Session 20 merged.
   raw-accessible (concept.md §18).
 - Reconciliation: `iptc.video.*` properties reconciled from QuickTime-container and XMP sources;
   precedence rules added to `docs/reconciliation-policy.md` (video section — XMP vs container
-  keys, with QuickTime creation-time timezone caveats documented). **Record here the R3 revisit:**
-  whether the per-property `if` dispatch is still acceptable with a second domain or the
-  table-driven refactor is now warranted; decide and note the outcome in the policy doc or a
-  follow-up analysis entry.
+  keys, with QuickTime creation-time timezone caveats documented). **R3 revisit:** keep the
+  per-property `if` dispatch (recorded in the policy doc). A second domain did not warrant a
+  table-driven engine; video is a closed Phase-1-sized set.
 - Exiv2 supplement: where the Exiv2 build reads video keys, they join reconciliation as
   additional sources; absence is fine (capabilities already say `none`).
 - Capability probe extended to MP4/MOV (ExifTool r/w rows; Exiv2 none/rudimentary rows).

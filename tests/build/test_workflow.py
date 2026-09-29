@@ -71,6 +71,21 @@ class TestWorkflow(unittest.TestCase):
         text = workflow_text()
         self.assertRegex(text, r"sh tools/build/pins\.sh")
         self.assertIn("tools/build/linux-packages.txt", text)
+        self.assertIn("brew install ffmpeg", text)
+        self.assertIn("choco install ffmpeg", text)
+
+    def test_linux_packages_include_ffmpeg(self) -> None:
+        packages = (
+            (REPO_ROOT / "tools" / "build" / "linux-packages.txt")
+            .read_text(encoding="utf-8")
+            .splitlines()
+        )
+        names = [
+            line.strip()
+            for line in packages
+            if line.strip() and not line.lstrip().startswith("#")
+        ]
+        self.assertIn("ffmpeg", names)
 
     def test_pinned_runner_labels(self) -> None:
         text = workflow_text()

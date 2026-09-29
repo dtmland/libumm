@@ -6,3 +6,4 @@ perl
 zlib1g-dev
 libexpat1-dev
 ccache
+ffmpeg
