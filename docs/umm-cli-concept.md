@@ -37,7 +37,7 @@ and environment setup.
 | `umm caps FILE|TYPE` | `umm::capabilities` | Show per-backend, per-category capability rows for a file or type — the supported-types answer, live. |
 | `umm geotag --track T.gpx FILE…` | `umm::importTrack` / `matchTrack` / `write` | Correlate capture times with a GPX/NMEA/KML track and write positions; `--offset` for naive timestamps (session 26 policy). |
 | `umm doctor` | backend availability + discovery | Report which backends are usable, which ExifTool/Perl was found and via which discovery step, pinned-version match, and how to fix problems. |
-| `umm setup exiftool` | (tooling, §5) | Download, verify, and install the pinned ExifTool for the current user. |
+| `umm setup exiftool` | (tooling, §4.2) | Download, verify, and install the pinned ExifTool for the current user via libumm's native `tools/get-exiftool/` scripts (P9). |
 | `umm version` | `umm::version()` + `Registry::standards()` | Tool version, libumm version, and the standards/versions implemented (concept.md §21). |
 
 ### 2.2 Cross-cutting behavior
@@ -96,9 +96,9 @@ The CLI follows libumm decisions S1a/S1c exactly: ExifTool is out-of-process, ne
 redistributed, and discovered at runtime (explicit config → `UMM_EXIFTOOL` → PATH). The CLI's
 value-add is making acquisition painless:
 
-- `umm setup exiftool` re-uses libumm's `tools/get-exiftool` machinery (session 33) and the
-  **same pin** (`backends.env` values are embedded into the CLI at build time so the tool and the
-  library agree on the tested ExifTool version):
+- `umm setup exiftool` re-uses libumm's `tools/get-exiftool/` native scripts (session 33,
+  decision P9) and the **same pin** (`backends.env` values are embedded into the CLI at build
+  time so the helper and the library agree on the tested ExifTool version):
   1. download the pinned ExifTool archive from upstream (exiftool.org / GitHub mirror);
   2. verify the pinned SHA-256 — refuse on mismatch (fail closed);
   3. install under a per-user prefix (`$XDG_DATA_HOME/umm/exiftool-<ver>/`,
@@ -135,7 +135,9 @@ libumm's backend-optional-at-runtime rule (S1b).
 
 Conventions carried over from libumm: pins in env files as source of truth; offline contract
 tests for pins/workflows; three-OS CI with both backends required; no exceptions across the
-libumm boundary (the CLI may use exceptions internally but must not rely on any from libumm).
+libumm boundary (the CLI may use exceptions internally but must not rely on any from libumm);
+ExifTool setup wraps the POSIX `sh` / PowerShell scripts from libumm session 33 (P9), not a
+Python helper.
 
 ## 6. Non-goals (v1)
 
@@ -153,5 +155,5 @@ libumm boundary (the CLI may use exceptions internally but must not rely on any 
 2. `--json` schema versioning policy (tie to CLI semver?).
 3. Whether `umm setup exiftool` should optionally install the upstream Windows executable
    packaging of ExifTool instead of tarball+Perl (pin question — libumm currently pins only the
-   tarball).
+   tarball; P9 native scripts still acquire that tarball form).
 4. Shell completion and man pages — generate from the command table.

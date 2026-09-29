@@ -37,7 +37,7 @@ and [docs/test-media-plan.md](../test-media-plan.md) into **session-sized work p
 | **Stage 8 — Sidecar synchronization** | [23](23-conflict-api-detect-merge.md), [24](24-synchronize-and-mixed-storage.md) | `detectConflict()` / `merge()` / `synchronize()`; mixed storage; `SidecarRequired` completion |
 | **Stage 9 — GPS track engine** | [25](25-gps-track-import.md), [26](26-track-correlation-and-location-write.md) | GPX/NMEA/KML import; time correlation/interpolation; location write through the normal path |
 | **Stage 10 — Cross-backend verification** | [27](27-tier-b-corpus-infrastructure.md), [28](28-cross-backend-verification.md) | Tier B checksummed corpus (closes makernote/proprietary-RAW deferrals, R4); write-with-one/read-with-other comparison suite |
-| **Stage 11 — Release engineering** | [29](29-install-and-package-export.md), [30](30-versioning-and-abi-policy.md), [31](31-third-party-notices-and-license-compliance.md), [32](32-exiv2-shared-linkage-option.md), [33](33-exiftool-user-acquisition-tool.md), [34](34-release-pipeline.md) | Install/export + consumer smoke; declared version/ABI policy (P4); license compliance artifacts (P1); shared-Exiv2 option (P2); pinned ExifTool acquisition tool (P3); tag-triggered release workflow |
+| **Stage 11 — Release engineering** | [29](29-install-and-package-export.md), [30](30-versioning-and-abi-policy.md), [31](31-third-party-notices-and-license-compliance.md), [32](32-exiv2-shared-linkage-option.md), [33](33-exiftool-user-acquisition-tool.md), [34](34-release-pipeline.md) | Install/export + consumer smoke; declared version/ABI policy (P4); license compliance artifacts (P1); shared-Exiv2 option (P2); pinned ExifTool acquisition scripts (P3, P9); tag-triggered release workflow |
 | **Stage 12 — BMFF enablement** | [35](35-bmff-enablement.md) | HEIC/HEIF/AVIF/CR3/JXL read + ExifTool-write pattern; closes R6's post-Stage-10 deferral |
 
 The Stage 6–10 session breakdown was authored after the Stage 1–5 implementation review; see
@@ -45,8 +45,11 @@ The Stage 6–10 session breakdown was authored after the Stage 1–5 implementa
 for the findings (R1–R8) and decisions these sessions implement. The Stage 11–12 breakdown was
 authored after the Stage 6–10 implementation review; see
 [docs/analysis/2026-09-29-stage-10-review-release-and-licensing.md](../analysis/2026-09-29-stage-10-review-release-and-licensing.md)
-for the findings and decisions (P1–P8). Wider format expansion beyond BMFF is analyzed there
-(§6.3) and remains unscheduled pending owner confirmation.
+for the findings and decisions (P1–P8). Decision **P9** (session 33 is POSIX `sh` + PowerShell,
+not Python) is in
+[docs/analysis/2026-09-29-exiftool-native-acquisition-scripts.md](../analysis/2026-09-29-exiftool-native-acquisition-scripts.md).
+Wider format expansion beyond BMFF is analyzed in the Stage 10 review (§6.3) and remains
+unscheduled pending owner confirmation.
 
 ## Standing constraints (from the decision index)
 
@@ -54,7 +57,8 @@ for the findings and decisions (P1–P8). Wider format expansion beyond BMFF is 
   Exiv2 (GPL) static-distribution implication and the ExifTool out-of-process-only rule.
 - **Error model:** no exceptions across the public API; `umm::Result<T>` everywhere (M1).
 - **Backends optional at runtime, both required in CI** (S1b); ExifTool via `-stay_open` JSON
-  adapter (S1a); ExifTool located, never bundled (S1c).
+  adapter (S1a); ExifTool located, never bundled (S1c). End-user acquisition of the pin is
+  system-native `tools/get-exiftool/` scripts (P3, P9), not Python.
 - **Reconciliation policy** is written and tested inside Stage 4, not deferred (S4a); MWG treated
   as frozen input with ExifTool-MWG as compatibility reference (S4b).
 - **Fixtures:** generated, tiny, in-repo; third-party media only by checksummed download (M6).

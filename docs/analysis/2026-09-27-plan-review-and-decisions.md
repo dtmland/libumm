@@ -52,6 +52,8 @@ process model, performance profile, deployment burden, and licensing.
   undefined pushes the problem onto every consumer. libumm defines a documented discovery order
   (explicit path → environment variable → PATH) and reports absence through `capabilities()` /
   backend availability rather than failing at load.
+  Later: **P3** adds a checksum-pinned end-user helper; **P9** specifies that helper as
+  system-native POSIX `sh` + PowerShell scripts (not Python). S1c itself is unchanged.
 - **S1d — Project licensing.
   Decision: choice 2 of [1. MIT | 2. Apache-2.0 | 3. LGPL-2.1+ | 4. GPL-3.0].**
   Apache-2.0 is chosen (provisionally, pending owner confirmation before the first code release)
@@ -183,7 +185,7 @@ shape; implementation sessions may amend them (header first, then code).
 |---|---|---|
 | S1a | ExifTool adapter: out-of-process, `-stay_open`, JSON | YES |
 | S1b | Backends optional at runtime; both required in CI | YES |
-| S1c | Consumer ExifTool acquisition | Locate, don't bundle (choice 2) |
+| S1c | Consumer ExifTool acquisition | Locate, don't bundle (choice 2); later P3/P9 helper |
 | S1d | License | Apache-2.0, provisional (choice 2) |
 | S2 | Registry before read/write implementation | YES (phases swapped) |
 | S3 | Phase 1 scope | JPEG + XMP sidecar only (choice 2) |

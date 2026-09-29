@@ -11,8 +11,8 @@ item.
 
 ## Prerequisites
 
-Sessions 29–33 (install tree, version policy, notices, get-exiftool). Session 32's shared mode is
-not part of the default artifacts.
+Sessions 29–33 (install tree, version policy, notices, get-exiftool native scripts). Session 32's
+shared mode is not part of the default artifacts.
 
 ## Deliverables
 
@@ -21,8 +21,8 @@ not part of the default artifacts.
     full test suite green (reusing the CI presets — one build path, per principle 1 of
     build-plan.md);
   - assembles per-OS binary archives from the install prefix: headers, library, CMake package
-    files, `LICENSE`, `NOTICE.md`, `THIRD-PARTY-NOTICES.md`, `licenses/`, `tools/get-exiftool.py`
-    (+ its pin data), and the abi-policy/README pointers;
+    files, `LICENSE`, `NOTICE.md`, `THIRD-PARTY-NOTICES.md`, `licenses/`, `tools/get-exiftool/`
+    (`install.sh`, `install.ps1`, plus pin data), and the abi-policy/README pointers;
   - attaches the corresponding-source archives (pinned exiv2/expat/zlib tarballs, fetched and
     checksum-verified from the session 31 manifest) and a `SHA256SUMS` file covering every asset;
   - creates a draft GitHub release with generated notes naming: libumm version, standards
@@ -63,5 +63,5 @@ and notarization; the Exiv2-free "core" artifact (P1 option 3, unscheduled).
 
 ## References
 
-analysis 2026-09-29 §4, §7 (P1); sessions 29–33; docs/implementation/26 cut line; build-plan.md
-principles; decision S1d (owner confirmation).
+analysis 2026-09-29 §4, §7 (P1); P9 native get-exiftool scripts; sessions 29–33;
+docs/implementation/26 cut line; build-plan.md principles; decision S1d (owner confirmation).
