@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstdint>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -71,6 +72,20 @@ std::string format_real(double value) {
   std::ostringstream out;
   out << value;
   return out.str();
+}
+
+std::string format_gps_number(double value) {
+  std::ostringstream out;
+  out << std::fixed << std::setprecision(7) << value;
+  std::string text = out.str();
+  while (text.size() > 1 && text.find('.') != std::string::npos &&
+         text.back() == '0') {
+    text.pop_back();
+  }
+  if (!text.empty() && text.back() == '.') {
+    text.pop_back();
+  }
+  return text;
 }
 
 std::string format_xmp_datetime(const DateTime& dt) {
@@ -294,23 +309,24 @@ void sync_gps(RawChanges& changes, const Value& value) {
   const char lat_ref = gps->latitude < 0 ? 'S' : 'N';
   const char lon_ref = gps->longitude < 0 ? 'W' : 'E';
   add(changes, "Exif", "Exif.GPSInfo.GPSLatitude",
-      format_real(std::fabs(gps->latitude)), "decimal");
+      format_gps_number(std::fabs(gps->latitude)), "decimal");
   add(changes, "Exif", "Exif.GPSInfo.GPSLatitudeRef", std::string(1, lat_ref));
   add(changes, "Exif", "Exif.GPSInfo.GPSLongitude",
-      format_real(std::fabs(gps->longitude)), "decimal");
+      format_gps_number(std::fabs(gps->longitude)), "decimal");
   add(changes, "Exif", "Exif.GPSInfo.GPSLongitudeRef", std::string(1, lon_ref));
   add(changes, "Xmp", "Xmp.exif.GPSLatitude",
-      format_real(std::fabs(gps->latitude)) + lat_ref);
+      format_gps_number(std::fabs(gps->latitude)) + lat_ref);
   add(changes, "Xmp", "Xmp.exif.GPSLongitude",
-      format_real(std::fabs(gps->longitude)) + lon_ref);
-  std::string qt = format_real(gps->latitude) + ", " + format_real(gps->longitude);
+      format_gps_number(std::fabs(gps->longitude)) + lon_ref);
+  std::string qt = format_gps_number(gps->latitude) + ", " +
+                   format_gps_number(gps->longitude);
   if (gps->altitude_meters) {
     const double alt = *gps->altitude_meters;
-    add(changes, "Exif", "Exif.GPSInfo.GPSAltitude", format_real(std::fabs(alt)),
-        "decimal");
+    add(changes, "Exif", "Exif.GPSInfo.GPSAltitude",
+        format_gps_number(std::fabs(alt)), "decimal");
     add(changes, "Exif", "Exif.GPSInfo.GPSAltitudeRef", alt < 0 ? "1" : "0");
-    add(changes, "Xmp", "Xmp.exif.GPSAltitude", format_real(alt));
-    qt += ", " + format_real(alt);
+    add(changes, "Xmp", "Xmp.exif.GPSAltitude", format_gps_number(alt));
+    qt += ", " + format_gps_number(alt);
   }
   add(changes, "QuickTime", "QuickTime.GPSCoordinates", std::move(qt));
 }
