@@ -196,6 +196,21 @@ install(DIRECTORY "${PROJECT_SOURCE_DIR}/include/umm"
   FILES_MATCHING PATTERN "*.hpp"
 )
 
+# Session 31 / P1: a binary prefix must carry notices and license texts so a
+# distributor can convey the combined Exiv2 work under GPL-3.0. Corresponding
+# source archives themselves are attached at release time (session 34).
+install(FILES
+  "${PROJECT_SOURCE_DIR}/LICENSE"
+  "${PROJECT_SOURCE_DIR}/NOTICE.md"
+  "${PROJECT_SOURCE_DIR}/THIRD-PARTY-NOTICES.md"
+  "${PROJECT_SOURCE_DIR}/tools/build/corresponding-source.json"
+  DESTINATION "${CMAKE_INSTALL_DOCDIR}"
+)
+install(DIRECTORY "${PROJECT_SOURCE_DIR}/licenses/"
+  DESTINATION "${CMAKE_INSTALL_DOCDIR}/licenses"
+  FILES_MATCHING PATTERN "*.txt"
+)
+
 if(UMM_INSTALL_IS_STATIC AND UMM_INSTALL_BUNDLE_EXIV2)
   install(FILES "$<TARGET_FILE:exiv2lib>"
     DESTINATION "${UMM_INSTALL_PRIVATE_LIBDIR}"
