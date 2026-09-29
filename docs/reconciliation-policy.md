@@ -167,7 +167,7 @@ conflicted with another absent offset.
   unequal normalized values: `conflict` (unranked).
 
 `Exif.Image.DateTime` / `Exif.Photo.DateTimeDigitized` are **not** Date Created
-(MWG distinguishes ModifyDate / CreateDate). They stay in `Metadata::raw()`.
+(MWG distinguishes ModifyDate / CreateDate). They stay in `Metadata::unmapped()`.
 
 **Write-sync:** write photoshop DateCreated, EXIF DateTimeOriginal (+ subsec +
 offset when known), and IIM DateCreated+TimeCreated. Do not invent an offset.

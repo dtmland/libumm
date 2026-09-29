@@ -25,9 +25,9 @@ Backend* select_backend(const ReadOptions& options) {
   return manager.firstAvailable();
 }
 
-void keep_xmp_entries(RawDocument& document) {
-  std::vector<RawEntry> xmp;
-  for (RawEntry& entry : document.entries) {
+void keep_xmp_entries(UnmappedDocument& document) {
+  std::vector<UnmappedEntry> xmp;
+  for (UnmappedEntry& entry : document.entries) {
     if (entry.key.family == "Xmp" || entry.key.key.rfind("Xmp.", 0) == 0) {
       xmp.push_back(std::move(entry));
     }
@@ -69,14 +69,14 @@ Result<LoadedRead> load_read(const std::filesystem::path& media,
                        backend->id());
   }
 
-  Result<RawDocument> raw = backend->readRaw(media);
-  if (!raw.ok()) {
-    return raw.error();
+  Result<UnmappedDocument> document = backend->readUnmapped(media);
+  if (!document.ok()) {
+    return document.error();
   }
 
   LoadedRead loaded;
   loaded.backend_id = backend->id();
-  loaded.embedded = std::move(raw).value();
+  loaded.embedded = std::move(document).value();
 
   if (is_xmp_sidecar_path(media)) {
     keep_xmp_entries(loaded.embedded);
@@ -95,11 +95,11 @@ Result<LoadedRead> load_read(const std::filesystem::path& media,
 
   if (options.merge_sidecar) {
     if (sidecar_path) {
-      Result<RawDocument> sidecar_raw = backend->readRaw(*sidecar_path);
-      if (!sidecar_raw.ok()) {
-        return sidecar_raw.error();
+      Result<UnmappedDocument> sidecar_document = backend->readUnmapped(*sidecar_path);
+      if (!sidecar_document.ok()) {
+        return sidecar_document.error();
       }
-      loaded.sidecar_document = std::move(sidecar_raw).value();
+      loaded.sidecar_document = std::move(sidecar_document).value();
       keep_xmp_entries(loaded.sidecar_document);
       loaded.has_sidecar = true;
     }

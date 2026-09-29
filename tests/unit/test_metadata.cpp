@@ -40,9 +40,17 @@ bool require_error(const umm::Result<void>& result, umm::ErrorCode code,
 int main() {
   umm::Metadata md;
 
-  if (md.creator() || !md.propertyIds().empty() || !md.raw().empty() ||
-      md.raw(umm::RawKey{"Exif", "Exif.Image.Artist"})) {
+  if (md.creator() || !md.propertyIds().empty() || !md.unmapped().empty() ||
+      md.unmapped(umm::UnmappedKey{"Exif", "Exif.Image.Artist"})) {
     return fail("empty metadata is not empty");
+  }
+
+  const umm::UnmappedEntry entry{{"Exif", "Exif.Nikon3.LensType"}, "String", "42"};
+  md.assignUnmapped({entry});
+  if (md.unmapped() != std::vector<umm::UnmappedEntry>{entry} ||
+      md.unmapped(entry.key) != entry.value ||
+      md.unmapped(umm::UnmappedKey{"Xmp", entry.key.key})) {
+    return fail("unmapped metadata access");
   }
 
   if (!require_ok(md.setCreator({"Alice", "Bob"}), "setCreator")) {

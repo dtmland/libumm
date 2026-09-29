@@ -27,9 +27,9 @@ int main() {
     return 1;
   }
 
-  const auto read = backend->readRaw(std::filesystem::path("no-such.jpg"));
+  const auto read = backend->readUnmapped(std::filesystem::path("no-such.jpg"));
   if (read.ok()) {
-    std::fprintf(stderr, "readRaw succeeded without ExifTool\n");
+    std::fprintf(stderr, "readUnmapped succeeded without ExifTool\n");
     return 1;
   }
   if (read.error().code != umm::ErrorCode::backend_unavailable) {

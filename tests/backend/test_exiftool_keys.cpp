@@ -70,19 +70,19 @@ int main() {
     return 1;
   }
 
-  const auto artist = umm::internal::exiftool_tag_for_raw_key("Exif.Image.Artist");
+  const auto artist = umm::internal::exiftool_tag_for_unmapped_key("Exif.Image.Artist");
   const auto byline =
-      umm::internal::exiftool_tag_for_raw_key("Iptc.Application2.Byline");
+      umm::internal::exiftool_tag_for_unmapped_key("Iptc.Application2.Byline");
   const auto creator =
-      umm::internal::exiftool_tag_for_raw_key("Xmp.dc.creator[1]");
+      umm::internal::exiftool_tag_for_unmapped_key("Xmp.dc.creator[1]");
   const auto title =
-      umm::internal::exiftool_tag_for_raw_key("QuickTime.Title");
+      umm::internal::exiftool_tag_for_unmapped_key("QuickTime.Title");
   const auto qt_artist =
-      umm::internal::exiftool_tag_for_raw_key("QuickTime.Artist");
+      umm::internal::exiftool_tag_for_unmapped_key("QuickTime.Artist");
   const auto created =
-      umm::internal::exiftool_tag_for_raw_key("QuickTime.CreationDate");
+      umm::internal::exiftool_tag_for_unmapped_key("QuickTime.CreationDate");
   const auto gps =
-      umm::internal::exiftool_tag_for_raw_key("QuickTime.GPSCoordinates");
+      umm::internal::exiftool_tag_for_unmapped_key("QuickTime.GPSCoordinates");
   if (!artist || *artist != "IFD0:Artist" || !byline ||
       *byline != "IPTC:By-line" || !creator || *creator != "XMP-dc:Creator" ||
       !title || *title != "Keys:Title" || !qt_artist ||

@@ -1,4 +1,4 @@
-#include "read_raw_checks.hpp"
+#include "read_unmapped_checks.hpp"
 #include "umm/umm.hpp"
 
 #include <cstdio>
@@ -67,25 +67,25 @@ int probe_backend(const std::string& backend_id) {
     return fail("sniff gps.jpg");
   }
 
-  const auto exif_only = backend->readRaw(raw_jpeg("exif-only.jpg"));
-  if (!exif_only.ok() || !raw_has_family(exif_only.value(), "Exif")) {
+  const auto exif_only = backend->readUnmapped(raw_jpeg("exif-only.jpg"));
+  if (!exif_only.ok() || !unmapped_has_family(exif_only.value(), "Exif")) {
     return fail("exif-only fixture vs EXIF capability");
   }
-  const auto iptc_only = backend->readRaw(raw_jpeg("iptc-only.jpg"));
-  if (!iptc_only.ok() || !raw_has_family(iptc_only.value(), "Iptc")) {
+  const auto iptc_only = backend->readUnmapped(raw_jpeg("iptc-only.jpg"));
+  if (!iptc_only.ok() || !unmapped_has_family(iptc_only.value(), "Iptc")) {
     return fail("iptc-only fixture vs IPTC capability");
   }
-  const auto xmp_only = backend->readRaw(raw_jpeg("xmp-only.jpg"));
-  if (!xmp_only.ok() || !raw_has_family(xmp_only.value(), "Xmp")) {
+  const auto xmp_only = backend->readUnmapped(raw_jpeg("xmp-only.jpg"));
+  if (!xmp_only.ok() || !unmapped_has_family(xmp_only.value(), "Xmp")) {
     return fail("xmp-only fixture vs XMP capability");
   }
-  const auto gps = backend->readRaw(raw_jpeg("gps.jpg"));
+  const auto gps = backend->readUnmapped(raw_jpeg("gps.jpg"));
   if (!gps.ok()) {
     return fail("gps fixture");
   }
   bool has_gps = false;
   bool has_place = false;
-  for (const umm::RawEntry& entry : gps.value().entries) {
+  for (const umm::UnmappedEntry& entry : gps.value().entries) {
     if (entry.key.key.find("GPSLatitude") != std::string::npos) {
       has_gps = true;
     }
@@ -97,7 +97,7 @@ int probe_backend(const std::string& backend_id) {
     return fail("gps fixture vs GPS/named-place split");
   }
 
-  const auto sidecar = backend->readRaw(raw_sidecar("orphan.xmp"));
+  const auto sidecar = backend->readUnmapped(raw_sidecar("orphan.xmp"));
   if (!sidecar.ok()) {
     return fail("orphan sidecar");
   }
@@ -127,25 +127,25 @@ int probe_backend(const std::string& backend_id) {
   if (!sniffed_tiff.ok() || sniffed_tiff.value().file_type != "TIFF") {
     return fail("sniff gps.tif");
   }
-  const auto tiff_exif = backend->readRaw(raw_tiff("exif-only.tif"));
-  if (!tiff_exif.ok() || !raw_has_family(tiff_exif.value(), "Exif")) {
+  const auto tiff_exif = backend->readUnmapped(raw_tiff("exif-only.tif"));
+  if (!tiff_exif.ok() || !unmapped_has_family(tiff_exif.value(), "Exif")) {
     return fail("tiff exif-only fixture vs EXIF capability");
   }
-  const auto tiff_iptc = backend->readRaw(raw_tiff("iptc-only.tif"));
-  if (!tiff_iptc.ok() || !raw_has_family(tiff_iptc.value(), "Iptc")) {
+  const auto tiff_iptc = backend->readUnmapped(raw_tiff("iptc-only.tif"));
+  if (!tiff_iptc.ok() || !unmapped_has_family(tiff_iptc.value(), "Iptc")) {
     return fail("tiff iptc-only fixture vs IPTC capability");
   }
-  const auto tiff_xmp = backend->readRaw(raw_tiff("xmp-only.tif"));
-  if (!tiff_xmp.ok() || !raw_has_family(tiff_xmp.value(), "Xmp")) {
+  const auto tiff_xmp = backend->readUnmapped(raw_tiff("xmp-only.tif"));
+  if (!tiff_xmp.ok() || !unmapped_has_family(tiff_xmp.value(), "Xmp")) {
     return fail("tiff xmp-only fixture vs XMP capability");
   }
-  const auto tiff_gps = backend->readRaw(raw_tiff("gps.tif"));
+  const auto tiff_gps = backend->readUnmapped(raw_tiff("gps.tif"));
   if (!tiff_gps.ok()) {
     return fail("tiff gps fixture");
   }
   bool tiff_has_gps = false;
   bool tiff_has_place = false;
-  for (const umm::RawEntry& entry : tiff_gps.value().entries) {
+  for (const umm::UnmappedEntry& entry : tiff_gps.value().entries) {
     if (entry.key.key.find("GPSLatitude") != std::string::npos) {
       tiff_has_gps = true;
     }
@@ -184,23 +184,23 @@ int probe_backend(const std::string& backend_id) {
   if (!sniffed_png.ok() || sniffed_png.value().file_type != "PNG") {
     return fail("sniff gps.png");
   }
-  const auto png_xmp = backend->readRaw(raw_stem("png", "xmp-only", ".png"));
-  if (!png_xmp.ok() || !raw_has_family(png_xmp.value(), "Xmp")) {
+  const auto png_xmp = backend->readUnmapped(raw_stem("png", "xmp-only", ".png"));
+  if (!png_xmp.ok() || !unmapped_has_family(png_xmp.value(), "Xmp")) {
     return fail("png xmp-only fixture vs XMP capability");
   }
   const auto png_agree =
-      backend->readRaw(raw_stem("png", "full-agreeing", ".png"));
-  if (!png_agree.ok() || !raw_has_family(png_agree.value(), "Xmp") ||
-      !raw_has_family(png_agree.value(), "Iptc")) {
+      backend->readUnmapped(raw_stem("png", "full-agreeing", ".png"));
+  if (!png_agree.ok() || !unmapped_has_family(png_agree.value(), "Xmp") ||
+      !unmapped_has_family(png_agree.value(), "Iptc")) {
     return fail("png full-agreeing fixture vs IPTC/XMP capability");
   }
-  const auto png_gps = backend->readRaw(raw_stem("png", "gps", ".png"));
+  const auto png_gps = backend->readUnmapped(raw_stem("png", "gps", ".png"));
   if (!png_gps.ok()) {
     return fail("png gps fixture");
   }
   bool png_has_gps = false;
   bool png_has_exif_gps = false;
-  for (const umm::RawEntry& entry : png_gps.value().entries) {
+  for (const umm::UnmappedEntry& entry : png_gps.value().entries) {
     if (entry.key.key.find("GPSLatitude") != std::string::npos) {
       png_has_gps = true;
     }
@@ -236,15 +236,15 @@ int probe_backend(const std::string& backend_id) {
     return fail("sniff full-agreeing.webp");
   }
   const auto webp_xmp =
-      backend->readRaw(raw_stem("webp", "xmp-only", ".webp"));
-  if (!webp_xmp.ok() || !raw_has_family(webp_xmp.value(), "Xmp")) {
+      backend->readUnmapped(raw_stem("webp", "xmp-only", ".webp"));
+  if (!webp_xmp.ok() || !unmapped_has_family(webp_xmp.value(), "Xmp")) {
     return fail("webp xmp-only fixture vs XMP capability");
   }
   const auto webp_agree =
-      backend->readRaw(raw_stem("webp", "full-agreeing", ".webp"));
-  if (!webp_agree.ok() || !raw_has_family(webp_agree.value(), "Exif") ||
-      !raw_has_family(webp_agree.value(), "Xmp") ||
-      raw_has_family(webp_agree.value(), "Iptc")) {
+      backend->readUnmapped(raw_stem("webp", "full-agreeing", ".webp"));
+  if (!webp_agree.ok() || !unmapped_has_family(webp_agree.value(), "Exif") ||
+      !unmapped_has_family(webp_agree.value(), "Xmp") ||
+      unmapped_has_family(webp_agree.value(), "Iptc")) {
     return fail("webp full-agreeing fixture vs EXIF/XMP capability");
   }
 
@@ -271,10 +271,10 @@ int probe_backend(const std::string& backend_id) {
     return fail("sniff full-agreeing.dng");
   }
   const auto dng_agree =
-      backend->readRaw(raw_stem("raw", "full-agreeing", ".dng"));
-  if (!dng_agree.ok() || !raw_has_family(dng_agree.value(), "Exif") ||
-      !raw_has_family(dng_agree.value(), "Iptc") ||
-      !raw_has_family(dng_agree.value(), "Xmp")) {
+      backend->readUnmapped(raw_stem("raw", "full-agreeing", ".dng"));
+  if (!dng_agree.ok() || !unmapped_has_family(dng_agree.value(), "Exif") ||
+      !unmapped_has_family(dng_agree.value(), "Iptc") ||
+      !unmapped_has_family(dng_agree.value(), "Xmp")) {
     return fail("dng full-agreeing fixture vs EXIF/IPTC/XMP capability");
   }
 
@@ -314,9 +314,9 @@ int probe_backend(const std::string& backend_id) {
     return fail("sniff minimal.mov");
   }
   if (backend_id == "exiftool") {
-    const auto video_full = backend->readRaw(raw_stem("video", "full", ".mp4"));
-    if (!video_full.ok() || !raw_has_family(video_full.value(), "QuickTime") ||
-        !raw_has_family(video_full.value(), "Xmp")) {
+    const auto video_full = backend->readUnmapped(raw_stem("video", "full", ".mp4"));
+    if (!video_full.ok() || !unmapped_has_family(video_full.value(), "QuickTime") ||
+        !unmapped_has_family(video_full.value(), "Xmp")) {
       return fail("video full.mp4 fixture vs QuickTime/XMP capability");
     }
     const auto dir =
@@ -362,7 +362,7 @@ int probe_backend(const std::string& backend_id) {
       return 1;
     }
     bool saw_gps = false;
-    for (const umm::RawKey& key : written.value().written) {
+    for (const umm::UnmappedKey& key : written.value().written) {
       if (key.key == "QuickTime.GPSCoordinates") {
         saw_gps = true;
       }
@@ -411,14 +411,14 @@ int probe_backend(const std::string& backend_id) {
     return fail("sniff full-agreeing.avif");
   }
   const auto avif_xmp =
-      backend->readRaw(raw_stem("avif", "xmp-only", ".avif"));
-  if (!avif_xmp.ok() || !raw_has_family(avif_xmp.value(), "Xmp")) {
+      backend->readUnmapped(raw_stem("avif", "xmp-only", ".avif"));
+  if (!avif_xmp.ok() || !unmapped_has_family(avif_xmp.value(), "Xmp")) {
     return fail("avif xmp-only fixture vs XMP capability");
   }
   const auto avif_agree =
-      backend->readRaw(raw_stem("avif", "full-agreeing", ".avif"));
-  if (!avif_agree.ok() || !raw_has_family(avif_agree.value(), "Exif") ||
-      !raw_has_family(avif_agree.value(), "Xmp")) {
+      backend->readUnmapped(raw_stem("avif", "full-agreeing", ".avif"));
+  if (!avif_agree.ok() || !unmapped_has_family(avif_agree.value(), "Exif") ||
+      !unmapped_has_family(avif_agree.value(), "Xmp")) {
     return fail("avif full-agreeing fixture vs EXIF/XMP capability");
   }
   return 0;

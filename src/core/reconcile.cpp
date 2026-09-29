@@ -801,10 +801,10 @@ std::string iim_raw_key(std::string_view dataset) {
   return {};
 }
 
-std::vector<const RawEntry*> matching(const RawDocument& document,
+std::vector<const UnmappedEntry*> matching(const UnmappedDocument& document,
                                       std::string_view base) {
-  std::vector<const RawEntry*> out;
-  for (const RawEntry& entry : document.entries) {
+  std::vector<const UnmappedEntry*> out;
+  for (const UnmappedEntry& entry : document.entries) {
     if (key_belongs(entry.key.key, base)) {
       out.push_back(&entry);
     }
@@ -812,9 +812,9 @@ std::vector<const RawEntry*> matching(const RawDocument& document,
   return out;
 }
 
-std::optional<std::string> first_value(const RawDocument& document,
+std::optional<std::string> first_value(const UnmappedDocument& document,
                                        std::string_view base) {
-  for (const RawEntry* entry : matching(document, base)) {
+  for (const UnmappedEntry* entry : matching(document, base)) {
     const std::string value = trimmed(entry->value);
     if (!value.empty()) {
       return value;
@@ -823,9 +823,9 @@ std::optional<std::string> first_value(const RawDocument& document,
   return std::nullopt;
 }
 
-void add_sources(std::vector<SourceRef>& sources, const RawDocument& document,
+void add_sources(std::vector<SourceRef>& sources, const UnmappedDocument& document,
                  std::string_view backend, std::string_view base) {
-  for (const RawEntry* entry : matching(document, base)) {
+  for (const UnmappedEntry* entry : matching(document, base)) {
     SourceRef ref;
     ref.raw_key = entry->key.key;
     ref.backend = std::string(backend);
@@ -1064,12 +1064,12 @@ std::vector<std::string> split_joined_list(std::string_view text) {
   return out;
 }
 
-std::vector<std::string> collect_list(const RawDocument& document,
+std::vector<std::string> collect_list(const UnmappedDocument& document,
                                       std::string_view base) {
   std::vector<std::string> indexed;
   std::vector<std::string> unindexed;
   std::vector<std::string> from_container;
-  for (const RawEntry* entry : matching(document, base)) {
+  for (const UnmappedEntry* entry : matching(document, base)) {
     const std::string value = trimmed(entry->value);
     if (value.empty() || is_xmp_array_token(value)) {
       continue;
@@ -1097,7 +1097,7 @@ std::vector<std::string> collect_list(const RawDocument& document,
   return unindexed;
 }
 
-std::optional<Group> text_list_group(const RawDocument& document,
+std::optional<Group> text_list_group(const UnmappedDocument& document,
                                      std::string_view backend,
                                      std::string_view base,
                                      std::string family, int rank) {
@@ -1114,7 +1114,7 @@ std::optional<Group> text_list_group(const RawDocument& document,
   return group;
 }
 
-std::optional<Group> text_group(const RawDocument& document,
+std::optional<Group> text_group(const UnmappedDocument& document,
                                 std::string_view backend, std::string_view base,
                                 std::string family, int rank) {
   const auto value = first_value(document, base);
@@ -1130,12 +1130,12 @@ std::optional<Group> text_group(const RawDocument& document,
   return group;
 }
 
-std::optional<Group> lang_group(const RawDocument& document,
+std::optional<Group> lang_group(const UnmappedDocument& document,
                                 std::string_view backend, std::string_view base,
                                 std::string family, int rank) {
   LangAlt merged;
   bool any = false;
-  for (const RawEntry* entry : matching(document, base)) {
+  for (const UnmappedEntry* entry : matching(document, base)) {
     if (trim(entry->value).empty()) {
       continue;
     }
@@ -1155,7 +1155,7 @@ std::optional<Group> lang_group(const RawDocument& document,
   return group;
 }
 
-std::optional<Group> date_group(const RawDocument& document,
+std::optional<Group> date_group(const UnmappedDocument& document,
                                 std::string_view backend,
                                 std::string_view primary,
                                 std::string_view extra1,
@@ -1198,7 +1198,7 @@ std::optional<Group> date_group(const RawDocument& document,
   return group;
 }
 
-std::optional<Structure> location_from_fields(const RawDocument& document,
+std::optional<Structure> location_from_fields(const UnmappedDocument& document,
                                               std::string_view city,
                                               std::string_view state,
                                               std::string_view country) {
@@ -1234,7 +1234,7 @@ void put_location_field(Structure& fields, std::string_view name,
   }
 }
 
-std::optional<Group> structured_location(const RawDocument& document,
+std::optional<Group> structured_location(const UnmappedDocument& document,
                                          std::string_view backend,
                                          std::string_view base) {
   const auto entries = matching(document, base);
@@ -1242,7 +1242,7 @@ std::optional<Group> structured_location(const RawDocument& document,
     return std::nullopt;
   }
   Structure fields;
-  for (const RawEntry* entry : entries) {
+  for (const UnmappedEntry* entry : entries) {
     if (entry->key.key == base ||
         (entry->key.key.size() > base.size() &&
          entry->key.key[base.size()] == '[' &&
@@ -1292,7 +1292,7 @@ std::optional<Group> structured_location(const RawDocument& document,
   return group;
 }
 
-std::optional<Group> gps_group(const RawDocument& document,
+std::optional<Group> gps_group(const UnmappedDocument& document,
                                std::string_view backend,
                                std::string_view lat_key,
                                std::string_view lat_ref, std::string_view lon_key,
@@ -1348,7 +1348,7 @@ std::optional<Group> gps_group(const RawDocument& document,
 }
 
 void collect_registry_property(std::vector<Group>& groups,
-                               const RawDocument& document,
+                               const UnmappedDocument& document,
                                std::string_view backend,
                                std::string_view property_id) {
   const auto def = registry().find(property_id);
@@ -1502,7 +1502,7 @@ void collect_registry_property(std::vector<Group>& groups,
   }
 }
 
-void collect_gps(std::vector<Group>& groups, const RawDocument& document,
+void collect_gps(std::vector<Group>& groups, const UnmappedDocument& document,
                  std::string_view backend, bool video) {
   auto push = [&](std::optional<Group> group) {
     if (group) {
@@ -1540,7 +1540,7 @@ void collect_gps(std::vector<Group>& groups, const RawDocument& document,
 }
 
 void collect_video_property(std::vector<Group>& groups,
-                            const RawDocument& document,
+                            const UnmappedDocument& document,
                             std::string_view backend,
                             std::string_view property_id) {
   const auto def = registry().find(property_id);
@@ -1660,7 +1660,7 @@ bool is_video_file_type(std::string_view file_type) {
   return lower == "mp4" || lower == "mov";
 }
 
-void add_document_groups(std::vector<Group>& groups, const RawDocument& document,
+void add_document_groups(std::vector<Group>& groups, const UnmappedDocument& document,
                          std::string_view backend, std::string_view property_id,
                          std::string_view container, bool video) {
   const std::size_t from = groups.size();
@@ -1674,8 +1674,8 @@ void add_document_groups(std::vector<Group>& groups, const RawDocument& document
   stamp_container(groups, from, container);
 }
 
-void reconcile_property(Metadata& metadata, const RawDocument& embedded,
-                        const RawDocument* sidecar, std::string_view backend,
+void reconcile_property(Metadata& metadata, const UnmappedDocument& embedded,
+                        const UnmappedDocument* sidecar, std::string_view backend,
                         std::string_view property_id, bool video,
                         std::vector<ConflictEntry>* disagreements) {
   std::vector<Group> groups;
@@ -1690,17 +1690,17 @@ void reconcile_property(Metadata& metadata, const RawDocument& embedded,
 
 }  // namespace
 
-Result<Metadata> reconcile(const RawDocument& document,
+Result<Metadata> reconcile(const UnmappedDocument& document,
                            std::string_view backend_id,
-                           const RawDocument* sidecar,
+                           const UnmappedDocument* sidecar,
                            std::string_view file_type,
                            std::vector<ConflictEntry>* disagreements) {
   Metadata metadata;
-  std::vector<RawEntry> raw = document.entries;
+  std::vector<UnmappedEntry> entries = document.entries;
   if (sidecar) {
-    raw.insert(raw.end(), sidecar->entries.begin(), sidecar->entries.end());
+    entries.insert(entries.end(), sidecar->entries.begin(), sidecar->entries.end());
   }
-  metadata.assignRaw(std::move(raw));
+  metadata.assignUnmapped(std::move(entries));
   const bool video = is_video_file_type(file_type);
   if (video) {
     reconcile_property(metadata, document, sidecar, backend_id, kVideoTitle,

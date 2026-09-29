@@ -1,4 +1,4 @@
-#include "read_raw_checks.hpp"
+#include "read_unmapped_checks.hpp"
 #include "umm/backend.hpp"
 
 #include <cstdio>
@@ -30,17 +30,17 @@ int main() {
     return 1;
   }
 
-  if (const int rc = check_jpeg_raw_reads(*backend, "exiv2"); rc != 0) {
+  if (const int rc = check_jpeg_unmapped_reads(*backend, "exiv2"); rc != 0) {
     return rc;
   }
-  if (const int rc = check_tiff_raw_reads(*backend, "exiv2"); rc != 0) {
+  if (const int rc = check_tiff_unmapped_reads(*backend, "exiv2"); rc != 0) {
     return rc;
   }
-  if (const int rc = check_png_raw_reads(*backend, "exiv2"); rc != 0) {
+  if (const int rc = check_png_unmapped_reads(*backend, "exiv2"); rc != 0) {
     return rc;
   }
-  if (const int rc = check_webp_raw_reads(*backend, "exiv2"); rc != 0) {
+  if (const int rc = check_webp_unmapped_reads(*backend, "exiv2"); rc != 0) {
     return rc;
   }
-  return check_dng_raw_reads(*backend, "exiv2");
+  return check_dng_unmapped_reads(*backend, "exiv2");
 }

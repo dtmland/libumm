@@ -5,7 +5,7 @@ Stage 4 · Estimated 45–60 min (process plumbing on three OSes; the riskiest s
 ## Goal
 
 The out-of-process ExifTool adapter per decision S1a: persistent `-stay_open` process, JSON
-output, mapped into the same `RawDocument` vocabulary as the Exiv2 backend.
+output, mapped into the same `UnmappedDocument` vocabulary as the Exiv2 backend.
 
 ## Prerequisites
 

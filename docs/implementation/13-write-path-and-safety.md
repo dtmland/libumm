@@ -16,7 +16,7 @@ Sessions 10–12 merged.
 - Write-synchronization implementation: setting a canonical property updates **all**
   representations the policy names for it (e.g. creator → `Exif.Image.Artist` +
   `Iptc.Application2.Byline` + `Xmp.dc.creator`), per docs/reconciliation-policy.md.
-- Backend `writeRaw` implementations:
+- Backend `writeUnmapped` implementations:
   - **Exiv2:** in-process metadata write.
   - **ExifTool:** stay_open write commands (`-TAG=value` batches, `-overwrite_original` **not**
     used — see atomicity below; `-o` to the temp file instead).
@@ -48,7 +48,7 @@ Sessions 10–12 merged.
 ## Acceptance criteria
 
 - All five write-safety groups green on Linux/Windows/macOS for both backends.
-- A write of one property never removes or alters an unrelated raw entry.
+- A write of one property never removes or alters an unrelated unmapped entry.
 - Cross-backend read-back: write with Exiv2, read with ExifTool (and reverse) agree canonically —
   the seed of Stage 10 verification.
 

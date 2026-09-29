@@ -53,7 +53,7 @@ bool is_xmp_simple_array(std::string_view type) {
 }
 
 template <typename Data>
-void append_entries(RawDocument& document, const Data& data,
+void append_entries(UnmappedDocument& document, const Data& data,
                     std::string family) {
   for (const auto& metadatum : data) {
     const char* type_name = metadatum.typeName();
@@ -63,7 +63,7 @@ void append_entries(RawDocument& document, const Data& data,
     // reconcile as separate values (docs/reconciliation-policy.md).
     if (is_xmp_simple_array(type) && metadatum.count() > 1) {
       for (std::size_t i = 0; i < metadatum.count(); ++i) {
-        RawEntry entry;
+        UnmappedEntry entry;
         entry.key.family = family;
         entry.key.key = metadatum.key();
         entry.key.key += '[';
@@ -75,7 +75,7 @@ void append_entries(RawDocument& document, const Data& data,
       }
       continue;
     }
-    RawEntry entry;
+    UnmappedEntry entry;
     entry.key.family = family;
     entry.key.key = metadatum.key();
     entry.type_hint = type;
@@ -175,7 +175,7 @@ Exiv2::Image::UniquePtr open_image(const std::filesystem::path& media) {
 #endif
 }
 
-std::string base_raw_key(std::string_view key) {
+std::string base_unmapped_key(std::string_view key) {
   const auto slash = key.find('/');
   if (slash != std::string_view::npos) {
     key = key.substr(0, slash);
@@ -290,7 +290,7 @@ void apply_xmp(Exiv2::XmpData& data, const std::string& key,
   data.add(Exiv2::XmpKey(key), array.get());
 }
 
-void apply_changes(Exiv2::Image& image, const RawChanges& changes) {
+void apply_changes(Exiv2::Image& image, const UnmappedChanges& changes) {
   Exiv2::ExifData& exif = image.exifData();
   Exiv2::IptcData& iptc = image.iptcData();
   Exiv2::XmpData& xmp = image.xmpData();
@@ -304,16 +304,16 @@ void apply_changes(Exiv2::Image& image, const RawChanges& changes) {
       erase_key(xmp, Exiv2::XmpKey(key));
     }
   };
-  for (const RawKey& key : changes.removals) {
-    erase_one(base_raw_key(key.key));
+  for (const UnmappedKey& key : changes.removals) {
+    erase_one(base_unmapped_key(key.key));
   }
 
   std::vector<std::string> order;
   std::map<std::string, std::vector<std::string>> values;
   std::map<std::string, std::string> hints;
   std::map<std::string, std::string> families;
-  for (const RawEntry& entry : changes.upserts) {
-    const std::string key = base_raw_key(entry.key.key);
+  for (const UnmappedEntry& entry : changes.upserts) {
+    const std::string key = base_unmapped_key(entry.key.key);
     if (!values.contains(key)) {
       order.push_back(key);
       families[key] = entry.key.family;
@@ -383,7 +383,7 @@ class Exiv2Backend final : public Backend {
     return status;
   }
 
-  Result<RawDocument> readRaw(const std::filesystem::path& media) override {
+  Result<UnmappedDocument> readUnmapped(const std::filesystem::path& media) override {
     try {
       if (media.empty() || !std::filesystem::exists(media)) {
         return make_error(ErrorCode::io_not_found, "media file not found",
@@ -401,7 +401,7 @@ class Exiv2Backend final : public Backend {
       }
       image->readMetadata();
 
-      RawDocument document;
+      UnmappedDocument document;
       append_entries(document, image->exifData(), "Exif");
       append_entries(document, image->iptcData(), "Iptc");
       append_entries(document, image->xmpData(), "Xmp");
@@ -417,8 +417,8 @@ class Exiv2Backend final : public Backend {
     }
   }
 
-  Result<void> writeRaw(const std::filesystem::path& media,
-                        const RawChanges& changes) override {
+  Result<void> writeUnmapped(const std::filesystem::path& media,
+                        const UnmappedChanges& changes) override {
     try {
       if (media.empty() || !std::filesystem::exists(media)) {
         return make_error(ErrorCode::io_not_found, "media file not found",

@@ -209,10 +209,10 @@ std::vector<std::string> Metadata::conflictedPropertyIds() const {
   return ids;
 }
 
-const std::vector<RawEntry>& Metadata::raw() const { return raw_; }
+const std::vector<UnmappedEntry>& Metadata::unmapped() const { return unmapped_; }
 
-std::optional<std::string> Metadata::raw(const RawKey& key) const {
-  for (const RawEntry& entry : raw_) {
+std::optional<std::string> Metadata::unmapped(const UnmappedKey& key) const {
+  for (const UnmappedEntry& entry : unmapped_) {
     if (entry.key == key) {
       return entry.value;
     }
@@ -220,8 +220,8 @@ std::optional<std::string> Metadata::raw(const RawKey& key) const {
   return std::nullopt;
 }
 
-void Metadata::assignRaw(std::vector<RawEntry> entries) {
-  raw_ = std::move(entries);
+void Metadata::assignUnmapped(std::vector<UnmappedEntry> entries) {
+  unmapped_ = std::move(entries);
 }
 
 }  // namespace umm

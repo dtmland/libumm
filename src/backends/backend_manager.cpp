@@ -25,12 +25,12 @@ class UnavailableBackend final : public Backend {
     return status;
   }
 
-  Result<RawDocument> readRaw(const std::filesystem::path&) override {
+  Result<UnmappedDocument> readUnmapped(const std::filesystem::path&) override {
     return unavailable();
   }
 
-  Result<void> writeRaw(const std::filesystem::path&,
-                        const RawChanges&) override {
+  Result<void> writeUnmapped(const std::filesystem::path&,
+                        const UnmappedChanges&) override {
     return unavailable();
   }
 

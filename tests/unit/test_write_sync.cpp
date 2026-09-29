@@ -14,9 +14,9 @@ int fail(const char* message) {
   return 1;
 }
 
-bool has_value(const umm::RawChanges& changes, std::string_view key,
+bool has_value(const umm::UnmappedChanges& changes, std::string_view key,
                std::string_view value) {
-  for (const umm::RawEntry& entry : changes.upserts) {
+  for (const umm::UnmappedEntry& entry : changes.upserts) {
     if (entry.key.key == key && entry.value.find(std::string(value)) !=
                                     std::string::npos) {
       return true;
@@ -25,9 +25,9 @@ bool has_value(const umm::RawChanges& changes, std::string_view key,
   return false;
 }
 
-int count_key(const umm::RawChanges& changes, std::string_view key) {
+int count_key(const umm::UnmappedChanges& changes, std::string_view key) {
   int n = 0;
-  for (const umm::RawEntry& entry : changes.upserts) {
+  for (const umm::UnmappedEntry& entry : changes.upserts) {
     if (entry.key.key == key) {
       ++n;
     }
@@ -61,7 +61,7 @@ int main() {
     return fail("setRating");
   }
 
-  const umm::RawChanges changes = umm::internal::write_sync(metadata);
+  const umm::UnmappedChanges changes = umm::internal::write_sync(metadata);
   if (!has_value(changes, "Xmp.dc.creator", "Alice") ||
       !has_value(changes, "Xmp.dc.creator", "Bob") ||
       !has_value(changes, "Iptc.Application2.Byline", "Alice") ||
@@ -138,7 +138,7 @@ int main() {
   if (!video.setGps(gps).ok()) {
     return fail("set video gps");
   }
-  const umm::RawChanges vchanges = umm::internal::write_sync(video);
+  const umm::UnmappedChanges vchanges = umm::internal::write_sync(video);
   if (!has_value(vchanges, "Xmp.dc.title", "Video Title") ||
       !has_value(vchanges, "QuickTime.Title", "Video Title") ||
       !has_value(vchanges, "Xmp.dc.description", "Video description") ||
@@ -161,12 +161,12 @@ int main() {
     return fail("video GPSCoordinates count");
   }
 
-  const umm::RawChanges xmp = umm::internal::write_sync_xmp(metadata);
+  const umm::UnmappedChanges xmp = umm::internal::write_sync_xmp(metadata);
   if (!has_value(xmp, "Xmp.dc.creator", "Alice") ||
       !has_value(xmp, "Xmp.photoshop.DateCreated", "2020-01-02T03:04:05")) {
     return fail("xmp write-sync missing XMP");
   }
-  for (const umm::RawEntry& entry : xmp.upserts) {
+  for (const umm::UnmappedEntry& entry : xmp.upserts) {
     if (entry.key.family != "Xmp" && entry.key.key.rfind("Xmp.", 0) != 0) {
       return fail("xmp write-sync leaked non-XMP");
     }

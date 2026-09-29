@@ -28,7 +28,7 @@ finding R1) must be generalized before any new format lands, and it is scheduled
 
 ## 2. What the review confirmed is solid
 
-- **Read path is format-agnostic.** `umm::read` → `Backend::readRaw()` → `internal::reconcile()`
+- **Read path is format-agnostic.** `umm::read` → `Backend::readUnmapped()` → `internal::reconcile()`
   has no format gates (`src/read.cpp`, `src/core/reconcile.cpp`); any type a backend can parse
   flows into the canonical model today.
 - **Capability data already covers Stage 6/7 formats.** `registry/capabilities/exiv2.json` and
@@ -42,7 +42,7 @@ finding R1) must be generalized before any new format lands, and it is scheduled
   (`include/umm/provenance.hpp`).
 - **Write safety generalizes as-is.** `mutate_file_atomically` (temp + atomic rename,
   `ReplaceFileW` on Windows) is format-independent (`src/core/atomic_write.cpp`), as is the
-  backend `writeRaw`/`RawChanges` contract (`include/umm/backend.hpp`).
+  backend `writeUnmapped`/`UnmappedChanges` contract (`include/umm/backend.hpp`).
 - **ExifTool key translation is bidirectional and centralized.** `Group1:Tag` → Exiv2-vocabulary
   mapping and its inverse live in one table (`src/backends/exiftool/keys.cpp`), which is exactly
   where video-group mappings extend it.
@@ -72,7 +72,7 @@ data + fixtures + tests with no dispatch surgery.
 
 QuickTime tags from ExifTool JSON (`QuickTime:GPSCoordinates`, `QuickTime:CreateDate`, …) have no
 entry in the translation table and land in the `ExifTool.<Group>.<Tag>` fallback family
-(`src/backends/exiftool/keys.cpp:162–164`). They remain raw-accessible (concept.md §18 holds) but
+(`src/backends/exiftool/keys.cpp:162–164`). They remain accessible via `unmapped()` (concept.md §18 holds) but
 bypass the canonical model entirely. Additionally, MOV/MP4 capability rows are all-`none` for
 Exiv2 and read/write only via ExifTool — video is a **single-backend, ExifTool-primary** stage.
 

@@ -2,7 +2,7 @@
 
 Status: **accepted**. This document records a full review of the implementation completed through
 Stage 10 (sessions 01–28), the licensing and distribution audit requested for release planning,
-the ABI position, the concept-coverage verification (raw metadata access, supported-types gap),
+the ABI position, the concept-coverage verification (unmapped metadata access, supported-types gap),
 and the decisions that the Stage 11+ session documents
 ([29](../implementation/29-install-and-package-export.md) through
 [35](../implementation/35-bmff-enablement.md)) are written against. It follows the decision
@@ -163,24 +163,24 @@ possible. Re-evaluate when a non-C++ consumer is real.
 
 ## 6. Concept-coverage answers the owner asked for
 
-### 6.1 concept.md §18 — raw metadata access: **implemented**
+### 6.1 concept.md §18 — unmapped metadata access: **implemented**
 
 The read side of §18 is fully present and populated on every read:
 
-- `umm::RawKey` / `umm::RawEntry` and `Metadata::raw()` / `Metadata::raw(const RawKey&)` are
-  public (`include/umm/metadata.hpp:19–78`); `umm::read` fills them from the backend
-  `RawDocument` (`src/core/reconcile.cpp:1703`).
+- `umm::UnmappedKey` / `umm::UnmappedEntry` and both `Metadata::unmapped()` overloads are
+  public (`include/umm/metadata.hpp`); `umm::read` fills them from the backend
+  `UnmappedDocument` (`src/core/reconcile.cpp`).
 - Unmapped/vendor tags are never dropped: keys with no translation land in the
-  `ExifTool.<Group>.<Tag>` fallback family and remain raw-accessible, and provenance
+  `ExifTool.<Group>.<Tag>` fallback family and remain accessible through `unmapped()`, and provenance
   (`PropertyValue::sources` / `SourceRef::raw_key`) links every canonical value back to its raw
   origins.
-- The concept's `raw.xmp("ns", "Prop")` convenience spelling was not adopted; the equivalent is
-  constructing the `RawKey`. This is a deliberate smaller-API choice, now recorded here.
+- The concept's example uses `UnmappedKey`; no separate namespace-specific convenience
+  accessor was adopted. This is a deliberate smaller-API choice, now recorded here.
 
-One asymmetry is real: **there is no public raw *write*** — `Backend::writeRaw` is plumbing for
-the mapping engine, and `Metadata::assignRaw` is read-side only. §18 as written is about
+One asymmetry is real: **there is no public unmapped *write*** — `Backend::writeUnmapped` is plumbing for
+the mapping engine, and `Metadata::assignUnmapped` is read-side only. §18 as written is about
 *access* (read), so this is not a gap against the concept; it is a potential future feature
-("set `Exif.Nikon3.LensType` without a canonical property"). **Decision P6 — add a public raw
+("set `Exif.Nikon3.LensType` without a canonical property"). **Decision P6 — add a public unmapped
 write now? NO.** It bypasses reconciliation and write-sync, which is exactly the class of
 footgun the policy engine exists to prevent; revisit only with a concrete consumer use case, and
 record the request in the backlog rather than a session.
@@ -193,7 +193,7 @@ record the request in the backlog rather than a session.
 | C ABI / language bindings | Deferred | M1 (reaffirmed as P5). |
 | BMFF types (HEIC/HEIF/AVIF/CR3/JXL) | Read plumbing exists (Exiv2 is built with `EXIV2_ENABLE_BMFF=ON` since session 05) but zero fixtures/tests/capability verification | R6 deferred them "after Stage 10" — that is now, session 35. |
 | Exiv2 rudimentary video read as supplement | Not wired | Session 21 / R2: ExifTool is video-primary; supplement optional. |
-| `raw.xmp()` convenience accessors, raw write | Not adopted / not public | This document (§6.1, P6). |
+| Namespace-specific unmapped convenience accessors, unmapped write | Not adopted / not public | This document (§6.1, P6). |
 
 ### 6.3 supported-types.md — how big is the gap really? (P7)
 
@@ -253,7 +253,7 @@ P1 analysis (its own code can still be Apache-2.0).
 |---|---|---|
 | **11 — Release engineering** | [29 install & package export](../implementation/29-install-and-package-export.md) · [30 versioning & ABI policy](../implementation/30-versioning-and-abi-policy.md) · [31 third-party notices & corresponding source](../implementation/31-third-party-notices-and-license-compliance.md) · [32 shared-Exiv2 option](../implementation/32-exiv2-shared-linkage-option.md) · [33 get-exiftool native scripts](../implementation/33-exiftool-user-acquisition-tool.md) · [34 release workflow](../implementation/34-release-pipeline.md) | 29 → 30 → 31 are ordered; 32 and 33 are independent after 29; 34 assembles everything. Session 34 also closes the session 26 cut-line deferral (video write-back coverage in track correlation) as a pre-release verification item. Session 33 follows P9 (POSIX `sh` + PowerShell), not a Python helper. |
 | **12 — BMFF enablement** | [35 BMFF (HEIC/AVIF/CR3/JXL)](../implementation/35-bmff-enablement.md) | Closes decision R6's "planned after Stage 10"; extends Tier B corpus; absorbs the session 28 cut-line depth (round-trip stability + Tier B integration in the comparison suite). |
-| **(unscheduled)** | Wide format expansion (§6.3 bucket 4), RAW Tier B corpus growth (buckets 2–3), Exiv2-free "core" artifact (P1 option 3), raw-write API (P6) | Await owner confirmation / concrete consumer need. |
+| **(unscheduled)** | Wide format expansion (§6.3 bucket 4), RAW Tier B corpus growth (buckets 2–3), Exiv2-free "core" artifact (P1 option 3), unmapped-write API (P6) | Await owner confirmation / concrete consumer need. |
 
 ## 9. Urgent-improvement recommendations (summary)
 
@@ -277,7 +277,7 @@ inside Stage 11 so they get worked as implementation continues:
 | P3 | Checksum-pinned end-user ExifTool acquisition tool | YES — session 33 (vehicle: **P9**) |
 | P4 | ABI approach: declared semver API contract, no C++ ABI promise, no PIMPL retrofit | choice 2 — session 30 |
 | P5 | C ABI / bindings stay deferred (reaffirm M1) | YES |
-| P6 | Public raw-write escape hatch | NO — revisit with a concrete consumer case |
+| P6 | Public unmapped-write escape hatch | NO — revisit with a concrete consumer case |
 | P7 | Per-format compile-time selection options | NO — capability data + backend switches suffice |
 | P8 | umm CLI concept document as seed for a new repo | YES — docs/umm-cli-concept.md |
 | P9 | Acquisition vehicle: system-native scripts, not Python | choice 2 — POSIX `sh` + PowerShell; [follow-up analysis](2026-09-29-exiftool-native-acquisition-scripts.md) |

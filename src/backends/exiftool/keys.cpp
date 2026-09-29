@@ -106,7 +106,7 @@ std::string mapped_quicktime_tag(std::string_view tag) {
 
 }  // namespace
 
-std::optional<RawKey> map_exiftool_tag(std::string_view json_key) {
+std::optional<UnmappedKey> map_exiftool_tag(std::string_view json_key) {
   if (json_key.empty() || json_key == "SourceFile" || json_key == "Error" ||
       json_key == "Warning") {
     return std::nullopt;
@@ -128,7 +128,7 @@ std::optional<RawKey> map_exiftool_tag(std::string_view json_key) {
     return std::nullopt;
   }
 
-  RawKey key;
+  UnmappedKey key;
   if (group.size() >= 4 && group.substr(0, 4) == "XMP-") {
     const std::string ns(group.substr(4));
     std::string name(tag);
@@ -258,7 +258,7 @@ std::string xmp_exiftool_ns(std::string_view ns) {
   return std::string(ns);
 }
 
-std::optional<std::string> exiftool_tag_for_raw_key(std::string_view raw_key) {
+std::optional<std::string> exiftool_tag_for_unmapped_key(std::string_view raw_key) {
   const std::string key = strip_index_and_field(raw_key);
   auto after_prefix = [&](std::string_view prefix) -> std::optional<std::string> {
     if (key.rfind(prefix, 0) != 0) {

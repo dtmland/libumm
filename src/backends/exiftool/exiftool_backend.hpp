@@ -14,9 +14,9 @@ class ExifToolBackend final : public Backend {
 
   std::string id() const override;
   BackendAvailability availability() const override;
-  Result<RawDocument> readRaw(const std::filesystem::path& media) override;
-  Result<void> writeRaw(const std::filesystem::path& media,
-                        const RawChanges& changes) override;
+  Result<UnmappedDocument> readUnmapped(const std::filesystem::path& media) override;
+  Result<void> writeUnmapped(const std::filesystem::path& media,
+                        const UnmappedChanges& changes) override;
   Result<void> typeCapabilities(std::string_view media_type) const override;
 
   void configure(ExifToolConfig config);

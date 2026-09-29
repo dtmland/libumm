@@ -29,8 +29,8 @@ Promote these design-draft headers to real (banner removed, header-first rule) a
 - `include/umm/metadata.hpp` — `umm::Metadata`: map from registry property id →
   `PropertyValue`, typed getters/setters for the Phase 1 property set (creator, description,
   headline, dateCreated, copyrightNotice, creditLine, keywords, rating, location/GPS), plus
-  generic `get(property_id)` / `set(property_id, Value)`. Raw-metadata escape hatch type
-  declarations (`RawKey`, `RawEntry`) per concept.md §18 (implementation of raw I/O comes with
+  generic `get(property_id)` / `set(property_id, Value)`. Unmapped-metadata escape hatch type
+  declarations (`UnmappedKey`, `UnmappedEntry`) per concept.md §18 (implementation of backend I/O comes with
   backends).
 - `src/` implementations + `tests/unit/` coverage: value equality/conversion edge cases
   (lang-alt default language, partial dates), Result propagation, Metadata set/get round-trip,

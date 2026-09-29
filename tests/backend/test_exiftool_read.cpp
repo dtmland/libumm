@@ -1,5 +1,5 @@
 #include "exiftool/exiftool_backend.hpp"
-#include "read_raw_checks.hpp"
+#include "read_unmapped_checks.hpp"
 #include "umm/backend.hpp"
 
 #include <chrono>
@@ -60,22 +60,22 @@ int main() {
     return 1;
   }
 
-  if (const int rc = check_jpeg_raw_reads(*backend, "exiftool"); rc != 0) {
+  if (const int rc = check_jpeg_unmapped_reads(*backend, "exiftool"); rc != 0) {
     return rc;
   }
-  if (const int rc = check_tiff_raw_reads(*backend, "exiftool"); rc != 0) {
+  if (const int rc = check_tiff_unmapped_reads(*backend, "exiftool"); rc != 0) {
     return rc;
   }
-  if (const int rc = check_png_raw_reads(*backend, "exiftool"); rc != 0) {
+  if (const int rc = check_png_unmapped_reads(*backend, "exiftool"); rc != 0) {
     return rc;
   }
-  if (const int rc = check_webp_raw_reads(*backend, "exiftool"); rc != 0) {
+  if (const int rc = check_webp_unmapped_reads(*backend, "exiftool"); rc != 0) {
     return rc;
   }
-  if (const int rc = check_dng_raw_reads(*backend, "exiftool"); rc != 0) {
+  if (const int rc = check_dng_unmapped_reads(*backend, "exiftool"); rc != 0) {
     return rc;
   }
-  if (const int rc = check_video_raw_reads(*backend); rc != 0) {
+  if (const int rc = check_video_unmapped_reads(*backend); rc != 0) {
     return rc;
   }
 
@@ -85,7 +85,7 @@ int main() {
     return raw_fail("expected ExifTool process to spawn during fixture reads");
   }
   for (int i = 0; i < 100; ++i) {
-    const auto read = backend->readRaw(raw_jpeg("exif-only.jpg"));
+    const auto read = backend->readUnmapped(raw_jpeg("exif-only.jpg"));
     if (!read.ok()) {
       std::fprintf(stderr, "reuse read %d failed: %s\n", i,
                    read.error().message.c_str());
@@ -100,7 +100,7 @@ int main() {
   }
 
   adapter->killChildForTest();
-  const auto after_kill = backend->readRaw(raw_jpeg("exif-only.jpg"));
+  const auto after_kill = backend->readUnmapped(raw_jpeg("exif-only.jpg"));
   if (!after_kill.ok()) {
     std::fprintf(stderr, "read after kill failed: %s\n",
                  after_kill.error().message.c_str());
@@ -119,7 +119,7 @@ int main() {
   timeout_config.exiftool_script = hang;
   timeout_config.command_timeout = std::chrono::milliseconds{1500};
   manager.configureExifTool(timeout_config);
-  const auto timed_out = backend->readRaw(raw_jpeg("exif-only.jpg"));
+  const auto timed_out = backend->readUnmapped(raw_jpeg("exif-only.jpg"));
   std::error_code ec;
   std::filesystem::remove(hang, ec);
   if (timed_out.ok()) {
