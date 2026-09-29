@@ -15,6 +15,7 @@
 #include "umm/metadata.hpp"
 #include "umm/registry.hpp"
 #include "umm/result.hpp"
+#include "umm/track.hpp"
 #include "umm/value.hpp"
 #include "umm/version.hpp"
 
@@ -170,5 +171,7 @@ Result<StorageDecision> evaluateStorage(const std::filesystem::path& media,
 // state; the first file is not rolled back.
 Result<SyncReport> synchronize(const std::filesystem::path& media,
                                SyncOptions options = {});
+
+// GPS track import is declared in umm/track.hpp (session 25).
 
 }  // namespace umm

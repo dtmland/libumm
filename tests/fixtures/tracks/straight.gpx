@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="libumm" xmlns="http://www.topografix.com/GPX/1/1">
+  <trk>
+    <name>straight</name>
+    <trkseg>
+      <trkpt lat="37.7749" lon="-122.4194">
+        <ele>10</ele>
+        <time>2020-01-02T03:04:05Z</time>
+      </trkpt>
+      <trkpt lat="37.7759" lon="-122.4184">
+        <ele>12</ele>
+        <time>2020-01-02T03:05:05Z</time>
+      </trkpt>
+      <trkpt lat="37.7769" lon="-122.4174">
+        <ele>14</ele>
+        <time>2020-01-02T03:06:05Z</time>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>

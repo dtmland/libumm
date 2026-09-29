@@ -73,5 +73,11 @@ int main() {
     return 1;
   }
 
+  const std::filesystem::path gpx = root / "tracks" / "straight.gpx";
+  if (!file_nonempty(gpx)) {
+    std::fprintf(stderr, "missing tracks/straight.gpx under fixture dir\n");
+    return 1;
+  }
+
   return 0;
 }

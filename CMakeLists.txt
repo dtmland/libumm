@@ -32,6 +32,7 @@ add_library(umm
   src/read.cpp
   src/conflict.cpp
   src/sync.cpp
+  src/track.cpp
   src/write.cpp
   src/capabilities.cpp
   src/core/reconcile.cpp
@@ -157,6 +158,12 @@ if(UMM_BUILD_TESTS)
   umm_apply_fixture_dir(test_fixtures_path)
   add_test(NAME test_fixtures_path COMMAND test_fixtures_path)
   umm_apply_fixture_dir_to_test(test_fixtures_path)
+
+  add_executable(test_track tests/unit/test_track.cpp)
+  target_link_libraries(test_track PRIVATE umm::umm)
+  umm_apply_fixture_dir(test_track)
+  add_test(NAME test_track COMMAND test_track)
+  umm_apply_fixture_dir_to_test(test_track)
 
   if(UMM_ENABLE_FAILING_SELFTEST)
     add_executable(test_failing_selftest tests/unit/test_failing_selftest.cpp)
