@@ -116,6 +116,9 @@ struct TrackMatch {
 Result<TrackMatch> matchTrack(const Metadata& metadata, const Track& track,
                               MatchOptions options = {});
 
+// Reads capture time via umm::read using the type's preferred_backend when
+// that backend is available (ExifTool for MP4/MOV; Exiv2 for JPEG).
+// Read errors propagate.
 Result<TrackMatch> matchTrack(const std::filesystem::path& media,
                               const Track& track, MatchOptions options = {});
 

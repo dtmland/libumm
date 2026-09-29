@@ -182,6 +182,8 @@ int test_mp4() {
   }
   umm::MatchOptions naive_utc;
   naive_utc.naive_utc_offset_minutes = 0;
+  // Path overload must pick ExifTool for MP4 (preferred_backend); default
+  // umm::read uses first-available Exiv2, which cannot read video.
   const auto matched = umm::matchTrack(file, track.value(), naive_utc);
   if (!matched.ok() || matched.value().kind != umm::TrackMatchKind::exact ||
       !near(matched.value().position.latitude, 37.7749) ||

@@ -996,6 +996,23 @@ Error match_error(std::string message) {
   return Error{ErrorCode::invalid_value, std::move(message), "", ""};
 }
 
+// High-level path matching uses the type's preferred backend when it is
+// available (ExifTool for MP4/MOV). umm::read itself still defaults to
+// first-available, which is Exiv2 and cannot read video.
+ReadOptions media_read_options(const std::filesystem::path& media) {
+  ReadOptions options;
+  const Result<Capabilities> caps = capabilities(media);
+  if (!caps.ok() || caps.value().preferred_backend.empty()) {
+    return options;
+  }
+  Backend* backend =
+      BackendManager::instance().get(caps.value().preferred_backend);
+  if (backend && backend->availability().available) {
+    options.backend = backend->id();
+  }
+  return options;
+}
+
 std::optional<DateTime> capture_time(const Metadata& metadata) {
   if (const auto photo = metadata.get(internal::kDateCreated)) {
     if (const auto* dt = std::get_if<DateTime>(&photo->value.data)) {
@@ -1211,7 +1228,7 @@ Result<TrackMatch> matchTrack(const Metadata& metadata, const Track& track,
 
 Result<TrackMatch> matchTrack(const std::filesystem::path& media,
                               const Track& track, MatchOptions options) {
-  const Result<Metadata> metadata = read(media);
+  const Result<Metadata> metadata = read(media, media_read_options(media));
   if (!metadata) {
     return metadata.error();
   }
