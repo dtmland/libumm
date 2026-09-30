@@ -59,23 +59,45 @@ not aliases of `set`. `umm read` is not an alias of `umm get`: `read` prints the
 ### 2.3 Property IDs and convenience accessors
 
 The CLI offers the same two addressing styles as `umm::Metadata`: **typed convenience
-accessors** for the Phase 1 photo set, and **full canonical property ids** for every registry
-property (required for video and for photo properties with no accessor).
+accessors** for cross-media concepts (and the photo-only `rating`), and **full canonical
+property ids** for every registry property.
 
-Convenience accessors (photo only; they map 1:1 onto the C++ typed API):
+The CLI itself remains **unimplemented**; this section is the concept alignment only.
+When it is built, `umm set FILE key=value` uses the same accessor names as the C++ API
+for both photo and video files:
 
-| Accessor | Canonical id |
-|---|---|
-| `creator` | `iptc.photo.creator` |
-| `description` | `iptc.photo.description` |
-| `headline` | `iptc.photo.headline` |
-| `dateCreated` | `iptc.photo.dateCreated` |
-| `copyrightNotice` | `iptc.photo.copyrightNotice` |
-| `creditLine` | `iptc.photo.creditLine` |
-| `keywords` | `iptc.photo.keywords` |
-| `rating` | `iptc.photo.imageRating` |
-| `gps` | `exif.gps.position` |
-| `locationCreated` | `iptc.photo.locationCreated` |
+```bash
+umm set photo.jpg creator="Jane Doe" keywords="nature,landscape" dateCreated="2025-01-15"
+umm set video.mp4 creator="Jane Doe" keywords="nature,landscape" dateCreated="2025-01-15"
+```
+
+Unknown/default domain writes photo ids. Video files sniffed by `umm::read` set
+`MediaDomain::video`, so the same accessor name stores `iptc.video.*`. Full ids always
+work (`iptc.photo.creator=…` / `iptc.video.creator=…`). `rating` stays photo-only
+(`iptc.photo.imageRating`). `gps` is the well-known `exif.gps.position`. `objectShown`
+is deferred.
+
+Convenience accessors (1:1 with the C++ typed API; photo id shown, video id when the
+concept is cross-media):
+
+| Accessor | Photo id | Video id |
+|---|---|---|
+| `creator` | `iptc.photo.creator` | `iptc.video.creator` |
+| `description` | `iptc.photo.description` | `iptc.video.description` |
+| `headline` | `iptc.photo.headline` | `iptc.video.headline` |
+| `dateCreated` | `iptc.photo.dateCreated` | `iptc.video.dateCreated` |
+| `copyrightNotice` | `iptc.photo.copyrightNotice` | `iptc.video.copyrightNotice` |
+| `creditLine` | `iptc.photo.creditLine` | `iptc.video.creditLine` |
+| `keywords` | `iptc.photo.keywords` | `iptc.video.keywords` |
+| `title` | `iptc.photo.title` | `iptc.video.title` |
+| `locationCreated` | `iptc.photo.locationCreated` | `iptc.video.locationShot` |
+| `shownEvent` | `eventName` + `eventIdentifier` | `iptc.video.shownEvent` |
+| `assetIdentifier` | `iptc.photo.digitalImageGuid` | `iptc.video.videoIdentifier` |
+| `rating` | `iptc.photo.imageRating` | — |
+| `gps` | `exif.gps.position` | `exif.gps.position` |
+
+The remaining Tier 1–3 accessors (`altTextAccessibility`, `personShown`, `supplier`, …)
+follow the same rule; see [docs/user/guide.md](user/guide.md) “Cross-media accessors”.
 
 ```
 # Convenience accessors (common photo properties)
@@ -87,10 +109,10 @@ umm get photo.jpg iptc.photo.creator
 umm get video.mp4 iptc.video.creator --json
 ```
 
-Photo and video namespaces are distinct. `creator` is `iptc.photo.creator` (string, multi).
-Video uses `iptc.video.creator` (struct `EntityWRole`, multi) and has **no** convenience
-accessor — short names never silently retarget `iptc.video.*`. GPS is the well-known
-`exif.gps.position` for both photos and video; only photos get the `gps` accessor.
+Photo and video namespaces stay distinct as registry ids. Short accessor names such as
+`creator` resolve through `MediaDomain` (unknown → photo; sniffed video → `iptc.video.*`)
+and transpose where the map says so. Full ids never retarget the other domain. GPS is
+`exif.gps.position` for both photos and video via `gps`.
 
 Discover what is present on a file with `umm read FILE --json` (full dump) or `umm caps FILE`
 (what the backends can store). `umm get` is for known names.

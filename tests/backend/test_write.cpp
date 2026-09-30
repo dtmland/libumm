@@ -1410,6 +1410,77 @@ int test_tier2_accessor_roundtrip(const std::string& backend, const char* folder
   return 0;
 }
 
+int test_tier3_accessor_roundtrip(const std::string& backend, const char* folder,
+                                  const char* ext, umm::MediaDomain domain) {
+  const auto file = copy_fixture(raw_stem(folder, "minimal", ext),
+                                 backend + std::string("-tier3") + ext);
+  umm::Metadata metadata;
+  metadata.setMediaDomain(domain);
+  umm::Value city;
+  city.data = std::string("Tier3 City");
+  umm::Structure location;
+  location.emplace("city", city);
+  umm::Value person_name;
+  person_name.data = umm::LangAlt{{"x-default", "Tier3 Person"}};
+  umm::Structure person;
+  person.emplace("name", person_name);
+  const umm::LangAlt event_name{{"x-default", "Tier3 Event"}};
+  const std::vector<std::string> event_ids{"http://example.com/event/tier3"};
+  if (!metadata.setLocationCreated({location}).ok() ||
+      !metadata.setPersonShown({person}).ok() ||
+      !metadata.setShownEvent(event_name, event_ids).ok() ||
+      !metadata.setAssetIdentifier("tier3-guid-001").ok()) {
+    return fail("tier3 set accessors");
+  }
+  const auto written = umm::write(file, metadata, opts(backend));
+  if (!written.ok()) {
+    std::fprintf(stderr, "tier3 write failed (%s %s): %s (%s)\n", folder, ext,
+                 written.error().message.c_str(),
+                 written.error().detail.c_str());
+    return 1;
+  }
+  const auto round = umm::read(file, ropts(backend));
+  if (!round.ok()) {
+    std::fprintf(stderr, "tier3 read failed (%s %s): %s\n", folder, ext,
+                 round.error().message.c_str());
+    return 1;
+  }
+  const umm::Metadata& got = round.value();
+  if (!got.locationCreated() || !got.personShown() || !got.shownEvent() ||
+      !got.assetIdentifier()) {
+    return fail("tier3 accessors missing after read");
+  }
+  if (!value_has_text(got.locationCreated()->value, "Tier3 City") ||
+      !value_has_text(got.personShown()->value, "Tier3 Person") ||
+      !value_has_text(got.shownEvent()->value, "Tier3 Event") ||
+      !value_has_text(got.assetIdentifier()->value, "tier3-guid-001")) {
+    std::fprintf(stderr,
+                 "tier3 values location=%s person=%s event=%s asset=%s\n",
+                 got.locationCreated()->value.toString().c_str(),
+                 got.personShown()->value.toString().c_str(),
+                 got.shownEvent()->value.toString().c_str(),
+                 got.assetIdentifier()->value.toString().c_str());
+    return fail("tier3 value round-trip");
+  }
+  if (domain == umm::MediaDomain::video) {
+    if (!got.get("iptc.video.locationShot") ||
+        !got.get("iptc.video.personShown") ||
+        !got.get("iptc.video.shownEvent") ||
+        !got.get("iptc.video.videoIdentifier")) {
+      return fail("tier3 video full ids missing");
+    }
+  } else {
+    if (!got.get("iptc.photo.locationCreated") ||
+        !got.get("iptc.photo.personShownInTheImageWithDetails") ||
+        !got.get("iptc.photo.eventName") ||
+        !got.get("iptc.photo.eventIdentifier") ||
+        !got.get("iptc.photo.digitalImageGuid")) {
+      return fail("tier3 photo full ids missing");
+    }
+  }
+  return 0;
+}
+
 int check_backend(const std::string& backend,
                   const std::vector<std::string>& readers) {
   if (const int rc = test_payload(backend, "jpeg", ".jpg"); rc != 0) {
@@ -1505,6 +1576,11 @@ int check_backend(const std::string& backend,
       rc != 0) {
     return rc;
   }
+  if (const int rc = test_tier3_accessor_roundtrip(
+          backend, "jpeg", ".jpg", umm::MediaDomain::photo);
+      rc != 0) {
+    return rc;
+  }
   return 0;
 }
 
@@ -1551,7 +1627,12 @@ int main() {
         rc != 0) {
       return rc;
     }
-    return test_tier2_accessor_roundtrip("exiftool", "video", ".mp4",
+    if (const int rc = test_tier2_accessor_roundtrip(
+            "exiftool", "video", ".mp4", umm::MediaDomain::video);
+        rc != 0) {
+      return rc;
+    }
+    return test_tier3_accessor_roundtrip("exiftool", "video", ".mp4",
                                         umm::MediaDomain::video);
   }
   return 0;

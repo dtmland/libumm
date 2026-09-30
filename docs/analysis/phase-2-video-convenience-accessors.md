@@ -207,13 +207,18 @@ umm set video.mp4 creator="Jane Doe" keywords="nature,landscape" dateCreated="20
 Work is broken into session documents under `docs/implementation/` (numbering continues
 from the completed sessions 01–35):
 
-- [ ] Session 36 — Media domain context on `Metadata`
-- [ ] Session 37 — Cross-media accessor map codegen from the registries
-- [ ] Session 38 — Video reconcile/write-sync generalization for the Phase 2 property set
-- [ ] Session 39 — Tier 1 pass-through accessors
-- [ ] Session 40 — Tier 2 transposing accessors
-- [ ] Session 41 — Tier 3 renamed-concept accessors
-- [ ] Session 42 — Cross-media verification, user guide, CLI-concept alignment
+- [x] Session 36 — Media domain context on `Metadata`
+- [x] Session 37 — Cross-media accessor map codegen from the registries
+- [x] Session 38 — Video reconcile/write-sync generalization for the Phase 2 property set
+- [x] Session 39 — Tier 1 pass-through accessors
+- [x] Session 40 — Tier 2 transposing accessors
+- [x] Session 41 — Tier 3 renamed-concept accessors
+- [x] Session 42 — Cross-media verification, user guide, CLI-concept alignment
+
+Shipped catalog: every non-deferred row in `registry/mappings/cross-media-accessors.json`.
+**Dropped during implementation:** `objectShown` remains `deferred: true` (ArtworkOrObject ↔
+Entity would keep only `title`↔`name`). `rating` stays photo-only; `gps()` is omitted from
+the map because `exif.gps.position` is not an IPTC registry id.
 
 ### Phase 3+ (future)
 - Audio domain when an IPTC audio standard (or agreed mapping) exists; accessors extend

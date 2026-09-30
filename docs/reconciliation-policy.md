@@ -444,6 +444,23 @@ of a preferred-source choice when the application supplies a new value.
 `Resolution::single` and empty sources. Applications that need to keep
 candidates must use `merge`.
 
+## Accessor transposition
+
+Convenience accessors store the **domain-native** property (no shadow
+storage). Transposition runs only inside the accessor; `get`/`set` with a
+full registry id is unchanged. Getters return the stored domain value except
+`shownEvent()`, which always assembles an Entity list.
+
+| Accessor | Photo storage | Video storage | Lossy direction |
+| --- | --- | --- | --- |
+| `locationCreated` | `iptc.photo.locationCreated` Location list, including `gpsAltitudeRef` | `iptc.video.locationShot`; `gpsAltitudeRef` is dropped on set | Photo → video drops `gpsAltitudeRef` (absent from the VMH Location struct). |
+| `shownEvent` | `eventName` (lang-alt) + `eventIdentifier` (uri list) | one Entity in `iptc.video.shownEvent` | Photo can represent one name; extra video entities stay reachable only via the full id. |
+| `featuredOrganisation` | string list | Entity list (`name` only) | Video roles/identifiers are not representable on the photo accessor. |
+| `supplier` | ImageSupplier list | single Entity (`name`/`identifiers`) | Setter with more than one entry on video returns `invalid_value`. |
+
+`objectShown` remains deferred: ArtworkOrObject → Entity would keep only
+`title`↔`name`.
+
 ## Cross-backend identity
 
 Exiv2 and ExifTool must produce the same canonical **values** and

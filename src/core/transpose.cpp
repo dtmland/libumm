@@ -129,7 +129,29 @@ std::optional<std::string> cv_term_to_uri(const Structure& term) {
   return uri;
 }
 
+namespace {
+
+bool is_location_struct(const Structure& fields) {
+  for (const char* key :
+       {"city", "countryCode", "countryName", "provinceState", "sublocation",
+        "worldRegion", "gpsLatitude", "gpsLongitude", "gpsAltitude",
+        "gpsAltitudeRef"}) {
+    if (fields.find(key) != fields.end()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+}  // namespace
+
 Structure struct_field_subset(const Structure& fields) {
+  if (is_location_struct(fields)) {
+    Structure out = fields;
+    out.erase("gpsAltitudeRef");
+    return out;
+  }
+
   Structure out;
   std::string name = field_text(fields, "name");
   if (name.empty()) {
@@ -143,6 +165,12 @@ Structure struct_field_subset(const Structure& fields) {
   }
   if (name.empty()) {
     name = field_text(fields, "CopyrightOwnerName");
+  }
+  if (name.empty()) {
+    name = field_text(fields, "imageSupplierName");
+  }
+  if (name.empty()) {
+    name = field_text(fields, "ImageSupplierName");
   }
   if (!name.empty()) {
     if (const auto it = fields.find("name");
@@ -166,7 +194,8 @@ Structure struct_field_subset(const Structure& fields) {
   }
   if (ids.empty()) {
     for (const char* key :
-         {"copyrightOwnerId", "licensorID", "licensorId", "LicensorID"}) {
+         {"copyrightOwnerId", "licensorID", "licensorId", "LicensorID",
+          "imageSupplierId", "imageSupplierID", "ImageSupplierID"}) {
       const std::string id = field_text(fields, key);
       if (!id.empty()) {
         ids.push_back(id);
@@ -189,6 +218,41 @@ std::optional<Structure> list_to_single(const std::vector<Structure>& items) {
 
 std::vector<Structure> single_to_list(const Structure& fields) {
   return {fields};
+}
+
+Structure name_uri_to_entity(LangAlt name,
+                             std::vector<std::string> identifiers) {
+  Structure entity;
+  entity.emplace("name", make_value(std::move(name)));
+  entity.emplace("identifiers", make_value(std::move(identifiers)));
+  return entity;
+}
+
+std::pair<LangAlt, std::vector<std::string>> entity_to_name_uri(
+    const Structure& entity) {
+  LangAlt name;
+  if (const auto it = entity.find("name"); it != entity.end()) {
+    if (const auto* alt = std::get_if<LangAlt>(&it->second.data)) {
+      name = *alt;
+    } else {
+      const std::string text = field_text(entity, "name");
+      if (!text.empty()) {
+        name = string_to_lang_alt(text);
+      }
+    }
+  }
+  std::vector<std::string> ids;
+  if (const auto it = entity.find("identifiers"); it != entity.end()) {
+    if (const auto* list =
+            std::get_if<std::vector<std::string>>(&it->second.data)) {
+      ids = *list;
+    } else if (const auto* text = std::get_if<std::string>(&it->second.data)) {
+      if (!text->empty()) {
+        ids.push_back(*text);
+      }
+    }
+  }
+  return {std::move(name), std::move(ids)};
 }
 
 }  // namespace umm::internal

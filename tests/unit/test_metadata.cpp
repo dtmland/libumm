@@ -398,9 +398,10 @@ int main() {
                   "photo setKeywords")) {
     return 1;
   }
+  const auto photo_creator = photo_tier2.creator();
   if (!require_id(photo_tier2, "iptc.photo.creator", "photo creator id") ||
-      !std::get_if<std::vector<std::string>>(
-          &photo_tier2.creator()->value.data)) {
+      !photo_creator ||
+      !std::get_if<std::vector<std::string>>(&photo_creator->value.data)) {
     return fail("photo creator stays string list");
   }
 
@@ -509,6 +510,180 @@ int main() {
   }
   if (!unknown_probe.creator()) {
     return fail("creator getter did not probe video id");
+  }
+
+  umm::Value location_city;
+  location_city.data = std::string("Paris");
+  umm::Value alt_ref;
+  alt_ref.data = 0.0;
+  umm::Structure location;
+  location.emplace("city", location_city);
+  location.emplace("gpsAltitudeRef", alt_ref);
+
+  umm::Value person_shown_name;
+  person_shown_name.data = umm::LangAlt{{"x-default", "Pat Person"}};
+  umm::Structure person_shown;
+  person_shown.emplace("name", person_shown_name);
+
+  umm::Value product_name;
+  product_name.data = umm::LangAlt{{"x-default", "Camera"}};
+  umm::Structure product;
+  product.emplace("name", product_name);
+
+  umm::Value registry_id;
+  registry_id.data = std::string("reg-1");
+  umm::Structure registry;
+  registry.emplace("assetIdentifier", registry_id);
+
+  umm::Value about_id;
+  about_id.data = std::string("http://example.com/cv/about");
+  umm::Structure about;
+  about.emplace("cvId", about_id);
+
+  umm::Value supplier_name;
+  supplier_name.data = std::string("Wire Service");
+  umm::Structure supplier;
+  supplier.emplace("imageSupplierName", supplier_name);
+
+  const umm::LangAlt event_name{{"x-default", "Opening ceremony"}};
+  const std::vector<std::string> event_ids{"http://example.com/event/1"};
+
+  for (umm::MediaDomain domain :
+       {umm::MediaDomain::unknown, umm::MediaDomain::photo,
+        umm::MediaDomain::video}) {
+    umm::Metadata tier3;
+    tier3.setMediaDomain(domain);
+    const bool video = domain == umm::MediaDomain::video;
+    if (!require_ok(tier3.setLocationCreated({location}),
+                    "setLocationCreated") ||
+        !require_ok(tier3.setLocationShown({location}), "setLocationShown") ||
+        !require_ok(tier3.setPersonShown({person_shown}), "setPersonShown") ||
+        !require_ok(tier3.setProductShown({product}), "setProductShown") ||
+        !require_ok(tier3.setShownEvent(event_name, event_ids),
+                    "setShownEvent") ||
+        !require_ok(tier3.setRegistryEntry({registry}), "setRegistryEntry") ||
+        !require_ok(tier3.setAssetIdentifier("guid-123"),
+                    "setAssetIdentifier") ||
+        !require_ok(tier3.setAboutCvTerms({about}), "setAboutCvTerms") ||
+        !require_ok(tier3.setFeaturedOrganisation({"Org One"}),
+                    "setFeaturedOrganisation") ||
+        !require_ok(tier3.setSupplier({supplier}), "setSupplier")) {
+      return 1;
+    }
+    if (!tier3.locationCreated() || !tier3.locationShown() ||
+        !tier3.personShown() || !tier3.productShown() || !tier3.shownEvent() ||
+        !tier3.registryEntry() || !tier3.assetIdentifier() ||
+        !tier3.aboutCvTerms() || !tier3.featuredOrganisation() ||
+        !tier3.supplier()) {
+      return fail("Tier 3 getter missing after set");
+    }
+    if (video) {
+      if (!require_id(tier3, "iptc.video.locationShot", "video locationShot") ||
+          !require_absent(tier3, "iptc.photo.locationCreated",
+                          "photo locationCreated") ||
+          !require_id(tier3, "iptc.video.locationShown", "video locationShown") ||
+          !require_id(tier3, "iptc.video.personShown", "video personShown") ||
+          !require_absent(tier3, "iptc.photo.personShownInTheImage",
+                          "legacy person string list") ||
+          !require_id(tier3, "iptc.video.shownEvent", "video shownEvent") ||
+          !require_absent(tier3, "iptc.photo.eventName", "photo eventName") ||
+          !require_id(tier3, "iptc.video.videoIdentifier",
+                      "video asset id")) {
+        return 1;
+      }
+      const auto video_location = tier3.locationCreated();
+      const auto* vloc =
+          video_location
+              ? std::get_if<std::vector<umm::Structure>>(
+                    &video_location->value.data)
+              : nullptr;
+      if (!vloc || vloc->front().find("gpsAltitudeRef") != vloc->front().end() ||
+          vloc->front().find("city") == vloc->front().end()) {
+        return fail("video locationCreated dropped gpsAltitudeRef");
+      }
+      const auto video_orgs = tier3.featuredOrganisation();
+      const auto* orgs =
+          video_orgs ? std::get_if<std::vector<umm::Structure>>(
+                           &video_orgs->value.data)
+                     : nullptr;
+      if (!orgs) {
+        return fail("video featuredOrganisation stores entities");
+      }
+      const auto video_supplier = tier3.supplier();
+      if (!video_supplier ||
+          !std::get_if<umm::Structure>(&video_supplier->value.data)) {
+        return fail("video supplier stores a single struct");
+      }
+      if (!require_error(tier3.setSupplier({supplier, supplier}),
+                         umm::ErrorCode::invalid_value,
+                         "video supplier extra entries")) {
+        return 1;
+      }
+    } else {
+      if (!require_id(tier3, "iptc.photo.locationCreated",
+                      "photo locationCreated") ||
+          !require_id(tier3, "iptc.photo.locationShownInTheImage",
+                      "photo locationShown") ||
+          !require_id(tier3, "iptc.photo.personShownInTheImageWithDetails",
+                      "photo personShown details") ||
+          !require_id(tier3, "iptc.photo.eventName", "photo eventName") ||
+          !require_id(tier3, "iptc.photo.eventIdentifier",
+                      "photo eventIdentifier") ||
+          !require_id(tier3, "iptc.photo.digitalImageGuid",
+                      "photo asset id")) {
+        return 1;
+      }
+      const auto photo_location = tier3.locationCreated();
+      const auto* ploc =
+          photo_location
+              ? std::get_if<std::vector<umm::Structure>>(
+                    &photo_location->value.data)
+              : nullptr;
+      if (!ploc || ploc->front().find("gpsAltitudeRef") == ploc->front().end()) {
+        return fail("photo locationCreated keeps gpsAltitudeRef");
+      }
+      const auto photo_orgs = tier3.featuredOrganisation();
+      const auto* names =
+          photo_orgs ? std::get_if<std::vector<std::string>>(
+                           &photo_orgs->value.data)
+                     : nullptr;
+      if (!names || *names != std::vector<std::string>{"Org One"}) {
+        return fail("photo featuredOrganisation stays string list");
+      }
+    }
+    const auto shown = tier3.shownEvent();
+    const auto* events =
+        shown ? std::get_if<std::vector<umm::Structure>>(&shown->value.data)
+              : nullptr;
+    if (!events || events->size() != 1) {
+      return fail("shownEvent getter shape");
+    }
+    const auto* got_name =
+        std::get_if<umm::LangAlt>(&events->front().at("name").data);
+    const auto* got_ids = std::get_if<std::vector<std::string>>(
+        &events->front().at("identifiers").data);
+    if (!got_name || got_name->at("x-default") != "Opening ceremony" ||
+        !got_ids || *got_ids != event_ids) {
+      return fail("shownEvent assembled name+identifiers");
+    }
+  }
+
+  umm::Metadata event_probe;
+  umm::Value video_event;
+  umm::Structure video_entity;
+  umm::Value video_event_name;
+  video_event_name.data = event_name;
+  video_entity.emplace("name", video_event_name);
+  umm::Value video_event_ids;
+  video_event_ids.data = event_ids;
+  video_entity.emplace("identifiers", video_event_ids);
+  video_event.data = std::vector<umm::Structure>{video_entity};
+  if (!require_ok(event_probe.set("iptc.video.shownEvent", video_event),
+                  "set video shownEvent by id")) {
+    return 1;
+  }
+  if (!event_probe.shownEvent()) {
+    return fail("shownEvent getter did not probe video id");
   }
 
   return 0;

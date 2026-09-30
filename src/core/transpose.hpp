@@ -6,6 +6,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace umm::internal {
@@ -32,5 +33,10 @@ Structure struct_field_subset(const Structure& fields);
 
 std::optional<Structure> list_to_single(const std::vector<Structure>& items);
 std::vector<Structure> single_to_list(const Structure& fields);
+
+// shownEvent: photo eventName + eventIdentifier ↔ one Entity.
+Structure name_uri_to_entity(LangAlt name, std::vector<std::string> identifiers);
+std::pair<LangAlt, std::vector<std::string>> entity_to_name_uri(
+    const Structure& entity);
 
 }  // namespace umm::internal
