@@ -7,20 +7,14 @@
 #include <variant>
 
 #include "core/property_ids.hpp"
+#include "core/transpose.hpp"
 #include "cross_media_accessors.hpp"
 #include "umm/registry.hpp"
 
 namespace umm {
 namespace {
 
-using internal::kCopyright;
-using internal::kCreator;
-using internal::kCredit;
-using internal::kDateCreated;
-using internal::kDescription;
 using internal::kGps;
-using internal::kHeadline;
-using internal::kKeywords;
 using internal::kLocation;
 using internal::kRating;
 
@@ -165,20 +159,104 @@ Result<void> Metadata::setConcept(std::string_view concept_name, Value value) {
                  "unknown cross-media concept: " + std::string(concept_name),
                  "", ""};
   }
-  const std::string_view id = media_domain_ == MediaDomain::video
-                                  ? def->video_ids[0]
-                                  : def->photo_ids[0];
+  const bool video = media_domain_ == MediaDomain::video;
+  const std::string_view id = video ? def->video_ids[0] : def->photo_ids[0];
+  if (video) {
+    using internal::CrossMediaTransposition;
+    switch (def->transposition) {
+      case CrossMediaTransposition::passthrough:
+        break;
+      case CrossMediaTransposition::string_to_lang_alt: {
+        const auto* text = std::get_if<std::string>(&value.data);
+        if (!text) {
+          return invalidValue(id);
+        }
+        value = makeValue(internal::string_to_lang_alt(*text));
+        break;
+      }
+      case CrossMediaTransposition::string_list_to_lang_alt: {
+        const auto* words =
+            std::get_if<std::vector<std::string>>(&value.data);
+        if (!words) {
+          return invalidValue(id);
+        }
+        value = makeValue(internal::string_list_to_lang_alt(*words));
+        break;
+      }
+      case CrossMediaTransposition::lang_alt_to_string: {
+        const auto* alt = std::get_if<LangAlt>(&value.data);
+        if (!alt) {
+          return invalidValue(id);
+        }
+        value = makeValue(internal::lang_alt_to_string(*alt));
+        break;
+      }
+      case CrossMediaTransposition::names_to_entity_list: {
+        const auto* names =
+            std::get_if<std::vector<std::string>>(&value.data);
+        if (!names) {
+          return invalidValue(id);
+        }
+        value = makeValue(internal::names_to_entity_list(*names));
+        break;
+      }
+      case CrossMediaTransposition::uri_to_cv_term: {
+        const auto* uri = std::get_if<std::string>(&value.data);
+        if (!uri) {
+          return invalidValue(id);
+        }
+        value = makeValue(internal::uri_to_cv_term(*uri));
+        break;
+      }
+      case CrossMediaTransposition::struct_field_subset: {
+        const auto* items =
+            std::get_if<std::vector<Structure>>(&value.data);
+        if (!items) {
+          return invalidValue(id);
+        }
+        std::vector<Structure> subset;
+        subset.reserve(items->size());
+        for (const Structure& item : *items) {
+          subset.push_back(internal::struct_field_subset(item));
+        }
+        value = makeValue(std::move(subset));
+        break;
+      }
+      case CrossMediaTransposition::list_to_single: {
+        const auto* items =
+            std::get_if<std::vector<Structure>>(&value.data);
+        if (!items) {
+          return invalidValue(id);
+        }
+        auto one = internal::list_to_single(*items);
+        if (!one) {
+          return Error{
+              ErrorCode::invalid_value,
+              "video licensor accepts a single entry; extra entries require "
+              "the full property id",
+              "", ""};
+        }
+        value = makeValue(internal::struct_field_subset(*one));
+        break;
+      }
+      case CrossMediaTransposition::name_uri_to_entity:
+        return Error{ErrorCode::internal,
+                     "name_uri_to_entity is session 41", "", ""};
+    }
+  }
   return set(id, std::move(value));
 }
 
-std::optional<PropertyValue> Metadata::creator() const { return get(kCreator); }
+std::optional<PropertyValue> Metadata::creator() const {
+  return getConcept("creator");
+}
 
 std::optional<PropertyValue> Metadata::description() const {
   return getConcept("description");
 }
 
 std::optional<PropertyValue> Metadata::headline() const {
-  return get(kHeadline);
+  return getConcept("headline");
 }
 
 std::optional<PropertyValue> Metadata::dateCreated() const {
@@ -194,7 +272,7 @@ std::optional<PropertyValue> Metadata::creditLine() const {
 }
 
 std::optional<PropertyValue> Metadata::keywords() const {
-  return get(kKeywords);
+  return getConcept("keywords");
 }
 
 std::optional<PropertyValue> Metadata::rating() const {
@@ -257,6 +335,30 @@ std::optional<PropertyValue> Metadata::aiSystemVersionUsed() const {
   return getConcept("aiSystemVersionUsed");
 }
 
+std::optional<PropertyValue> Metadata::otherConstraints() const {
+  return getConcept("otherConstraints");
+}
+
+std::optional<PropertyValue> Metadata::digitalSourceType() const {
+  return getConcept("digitalSourceType");
+}
+
+std::optional<PropertyValue> Metadata::modelReleaseStatus() const {
+  return getConcept("modelReleaseStatus");
+}
+
+std::optional<PropertyValue> Metadata::propertyReleaseStatus() const {
+  return getConcept("propertyReleaseStatus");
+}
+
+std::optional<PropertyValue> Metadata::copyrightOwner() const {
+  return getConcept("copyrightOwner");
+}
+
+std::optional<PropertyValue> Metadata::licensor() const {
+  return getConcept("licensor");
+}
+
 std::optional<PropertyValue> Metadata::gps() const { return get(kGps); }
 
 std::optional<PropertyValue> Metadata::locationCreated() const {
@@ -264,7 +366,7 @@ std::optional<PropertyValue> Metadata::locationCreated() const {
 }
 
 Result<void> Metadata::setCreator(std::vector<std::string> names) {
-  return set(kCreator, makeValue(std::move(names)));
+  return setConcept("creator", makeValue(std::move(names)));
 }
 
 Result<void> Metadata::setDescription(LangAlt text) {
@@ -272,7 +374,7 @@ Result<void> Metadata::setDescription(LangAlt text) {
 }
 
 Result<void> Metadata::setHeadline(std::string headline) {
-  return set(kHeadline, makeValue(std::move(headline)));
+  return setConcept("headline", makeValue(std::move(headline)));
 }
 
 Result<void> Metadata::setDateCreated(DateTime when) {
@@ -288,7 +390,7 @@ Result<void> Metadata::setCreditLine(std::string credit) {
 }
 
 Result<void> Metadata::setKeywords(std::vector<std::string> keywords) {
-  return set(kKeywords, makeValue(std::move(keywords)));
+  return setConcept("keywords", makeValue(std::move(keywords)));
 }
 
 Result<void> Metadata::setRating(double rating) {
@@ -354,6 +456,30 @@ Result<void> Metadata::setAiSystemUsed(std::string system) {
 
 Result<void> Metadata::setAiSystemVersionUsed(std::string version) {
   return setConcept("aiSystemVersionUsed", makeValue(std::move(version)));
+}
+
+Result<void> Metadata::setOtherConstraints(LangAlt text) {
+  return setConcept("otherConstraints", makeValue(std::move(text)));
+}
+
+Result<void> Metadata::setDigitalSourceType(std::string uri) {
+  return setConcept("digitalSourceType", makeValue(std::move(uri)));
+}
+
+Result<void> Metadata::setModelReleaseStatus(std::string uri) {
+  return setConcept("modelReleaseStatus", makeValue(std::move(uri)));
+}
+
+Result<void> Metadata::setPropertyReleaseStatus(std::string uri) {
+  return setConcept("propertyReleaseStatus", makeValue(std::move(uri)));
+}
+
+Result<void> Metadata::setCopyrightOwner(std::vector<Structure> owners) {
+  return setConcept("copyrightOwner", makeValue(std::move(owners)));
+}
+
+Result<void> Metadata::setLicensor(std::vector<Structure> licensors) {
+  return setConcept("licensor", makeValue(std::move(licensors)));
 }
 
 Result<void> Metadata::setGps(GpsCoordinate position) {

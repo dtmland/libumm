@@ -55,15 +55,16 @@ class Metadata {
   // mediaDomain(). Cross-media setters resolve through the generated
   // CrossMediaAccessorDef table; unknown domain writes the photo id (Phase 1).
   //
-  // Photo-only until later sessions: creator/headline/keywords (session 40),
-  // locationCreated (session 41). rating() stays photo-only.
-  std::optional<PropertyValue> creator() const;          // photo-only: iptc.photo.creator
+  // Photo-only until later sessions: locationCreated (session 41).
+  // rating() stays photo-only. Tier 2 setters transpose photo-native values
+  // into the domain shape; getters return the stored domain value.
+  std::optional<PropertyValue> creator() const;          // cross-media: names ↔ EntityWRole.name
   std::optional<PropertyValue> description() const;      // cross-media: iptc.photo.description / iptc.video.description
-  std::optional<PropertyValue> headline() const;         // photo-only: iptc.photo.headline
+  std::optional<PropertyValue> headline() const;         // cross-media: string ↔ x-default lang-alt
   std::optional<PropertyValue> dateCreated() const;      // cross-media: iptc.photo.dateCreated / iptc.video.dateCreated
   std::optional<PropertyValue> copyrightNotice() const;  // cross-media: iptc.photo.copyrightNotice / iptc.video.copyrightNotice
   std::optional<PropertyValue> creditLine() const;       // cross-media: iptc.photo.creditLine / iptc.video.creditLine
-  std::optional<PropertyValue> keywords() const;         // photo-only: iptc.photo.keywords
+  std::optional<PropertyValue> keywords() const;         // cross-media: string list ↔ joined x-default lang-alt
   std::optional<PropertyValue> rating() const;           // photo-only: iptc.photo.imageRating
   std::optional<PropertyValue> title() const;            // cross-media: iptc.photo.title / iptc.video.title
   std::optional<PropertyValue> altTextAccessibility() const;  // cross-media: iptc.photo.altTextAccessibility / iptc.video.altTextAccessibility
@@ -81,6 +82,12 @@ class Metadata {
   std::optional<PropertyValue> aiSystemVersionUsed() const;   // cross-media: iptc.photo.aiSystemVersionUsed / iptc.video.aiSystemVersionUsed
   // Location: GPS coordinates and named place are SEPARATE properties
   // (supported-types.md §3).
+  std::optional<PropertyValue> otherConstraints() const;  // cross-media: lang-alt ↔ string
+  std::optional<PropertyValue> digitalSourceType() const;  // cross-media: URI ↔ CvTerm.cvId
+  std::optional<PropertyValue> modelReleaseStatus() const;  // cross-media: URI ↔ CvTerm.cvId
+  std::optional<PropertyValue> propertyReleaseStatus() const;  // cross-media: URI ↔ CvTerm.cvId
+  std::optional<PropertyValue> copyrightOwner() const;  // cross-media: name/identifiers subset; role video-only
+  std::optional<PropertyValue> licensor() const;  // cross-media: photo list ↔ video single; >1 on video errors
   std::optional<PropertyValue> gps() const;              // cross-media: exif.gps.position
   std::optional<PropertyValue> locationCreated() const;  // photo-only until session 41: iptc.photo.locationCreated
 
@@ -106,6 +113,12 @@ class Metadata {
   Result<void> setAiPromptWriterName(std::string name);
   Result<void> setAiSystemUsed(std::string system);
   Result<void> setAiSystemVersionUsed(std::string version);
+  Result<void> setOtherConstraints(LangAlt text);
+  Result<void> setDigitalSourceType(std::string uri);
+  Result<void> setModelReleaseStatus(std::string uri);
+  Result<void> setPropertyReleaseStatus(std::string uri);
+  Result<void> setCopyrightOwner(std::vector<Structure> owners);
+  Result<void> setLicensor(std::vector<Structure> licensors);
   Result<void> setGps(GpsCoordinate position);
   Result<void> setLocationCreated(std::vector<Structure> locations);
 

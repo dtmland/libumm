@@ -391,5 +391,114 @@ int main() {
     return 1;
   }
 
+  umm::Metadata photo_tier2;
+  if (!require_ok(photo_tier2.setCreator({"Alice", "Bob"}), "photo setCreator") ||
+      !require_ok(photo_tier2.setHeadline("Head"), "photo setHeadline") ||
+      !require_ok(photo_tier2.setKeywords({"nature", "lake"}),
+                  "photo setKeywords")) {
+    return 1;
+  }
+  if (!require_id(photo_tier2, "iptc.photo.creator", "photo creator id") ||
+      !std::get_if<std::vector<std::string>>(
+          &photo_tier2.creator()->value.data)) {
+    return fail("photo creator stays string list");
+  }
+
+  umm::Metadata video_tier2;
+  video_tier2.setMediaDomain(umm::MediaDomain::video);
+  if (!require_ok(video_tier2.setCreator({"Alice"}), "video setCreator") ||
+      !require_ok(video_tier2.setHeadline("Head"), "video setHeadline") ||
+      !require_ok(video_tier2.setKeywords({"nature", "lake"}),
+                  "video setKeywords") ||
+      !require_ok(video_tier2.setOtherConstraints(
+                      umm::LangAlt{{"x-default", "No mining"}}),
+                  "video setOtherConstraints") ||
+      !require_ok(video_tier2.setDigitalSourceType(
+                      "http://cv.iptc.org/newscodes/digitalsourcetype/"
+                      "digitalCapture"),
+                  "video setDigitalSourceType")) {
+    return 1;
+  }
+  if (!require_id(video_tier2, "iptc.video.creator", "video creator id") ||
+      !std::get_if<std::vector<umm::Structure>>(
+          &video_tier2.creator()->value.data)) {
+    return fail("video creator stores entities");
+  }
+  const auto* v_headline =
+      std::get_if<umm::LangAlt>(&video_tier2.headline()->value.data);
+  if (!v_headline || v_headline->at("x-default") != "Head") {
+    return fail("video headline stores lang-alt");
+  }
+  const auto* v_keywords =
+      std::get_if<umm::LangAlt>(&video_tier2.keywords()->value.data);
+  if (!v_keywords || v_keywords->at("x-default") != "nature, lake") {
+    return fail("video keywords joined lang-alt");
+  }
+  const auto* v_other =
+      std::get_if<std::string>(&video_tier2.otherConstraints()->value.data);
+  if (!v_other || *v_other != "No mining") {
+    return fail("video otherConstraints stores string");
+  }
+  const auto dst_prop = video_tier2.digitalSourceType();
+  if (!dst_prop) {
+    return fail("video digitalSourceType missing");
+  }
+  const auto* v_dst = std::get_if<umm::Structure>(&dst_prop->value.data);
+  if (!v_dst) {
+    std::fprintf(stderr, "digitalSourceType index=%zu toString=%s\n",
+                 dst_prop->value.data.index(),
+                 dst_prop->value.toString().c_str());
+    return fail("video digitalSourceType stores CvTerm");
+  }
+  if (!std::get_if<std::string>(&v_dst->at("cvId").data)) {
+    return fail("video digitalSourceType cvId");
+  }
+
+  umm::Structure owner;
+  umm::Value owner_name;
+  owner_name.data = std::string("Rights Holder");
+  owner.emplace("copyrightOwnerName", owner_name);
+  if (!require_ok(video_tier2.setCopyrightOwner({owner}),
+                  "video setCopyrightOwner")) {
+    return 1;
+  }
+  const auto* owners = std::get_if<std::vector<umm::Structure>>(
+      &video_tier2.copyrightOwner()->value.data);
+  if (!owners || owners->size() != 1 ||
+      owners->front().find("copyrightOwnerName") != owners->front().end()) {
+    return fail("video copyrightOwner subsets fields");
+  }
+
+  umm::Structure licensor;
+  umm::Value licensor_name;
+  licensor_name.data = umm::LangAlt{{"x-default", "License Co"}};
+  licensor.emplace("name", licensor_name);
+  if (!require_ok(video_tier2.setLicensor({licensor}), "video setLicensor")) {
+    return 1;
+  }
+  if (!std::get_if<umm::Structure>(&video_tier2.licensor()->value.data)) {
+    return fail("video licensor stores a single struct");
+  }
+  if (!require_error(video_tier2.setLicensor({licensor, licensor}),
+                     umm::ErrorCode::invalid_value,
+                     "video licensor extra entries")) {
+    return 1;
+  }
+
+  umm::Metadata unknown_probe;
+  umm::Value video_creator;
+  umm::Structure entity;
+  umm::Value entity_name;
+  entity_name.data = umm::LangAlt{{"x-default", "Pat"}};
+  entity.emplace("name", entity_name);
+  video_creator.data = std::vector<umm::Structure>{entity};
+  if (!require_ok(unknown_probe.set("iptc.video.creator", video_creator),
+                  "set video creator by id")) {
+    return 1;
+  }
+  if (!unknown_probe.creator()) {
+    return fail("creator getter did not probe video id");
+  }
+
   return 0;
 }

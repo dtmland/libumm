@@ -238,6 +238,22 @@ contributor, shownEvent, genre, dataMining, aiSystemUsed) are collected from
 XMP using the same datatype dispatch as video. Write-sync for those extras is
 XMP-only; IIM/EXIF families remain the Phase 1 specials listed above.
 
+## Accessor transposition (session 40)
+
+Convenience accessors store the **domain-native** shape. Getters return that
+stored value; they do not normalize to the photo type. Setters take the
+photo-native convenience type and transpose when `mediaDomain()` is `video`.
+
+| Kind | Photo → video | Lossy notes |
+| --- | --- | --- |
+| `string_to_lang_alt` (headline) | string → `x-default` lang-alt | Reverse keeps `x-default` (or the sole language); extra languages drop |
+| `string_list_to_lang_alt` (keywords) | bag joined with `", "` into `x-default` | Reverse splits on `", "` (same rule as video keyword reconcile) |
+| `lang_alt_to_string` (otherConstraints) | `x-default` (or sole language) → string | Extra languages drop |
+| `names_to_entity_list` (creator) | name strings → EntityWRole `{name}` lang-alt | Reverse reads `name`; role is not reconstructed |
+| `uri_to_cv_term` (digitalSourceType, model/propertyReleaseStatus) | URI → `{cvId}` | Reverse reads `cvId` (and URI-like aliases) |
+| `struct_field_subset` (copyrightOwner) | keep `name`/`identifiers` (PLUS aliases mapped) | Video-only `role` and other PLUS fields drop |
+| `list_to_single` (licensor) | one Licensor/Entity → single Entity | Setter with 0 or >1 entries on video is `invalid_value`; extras stay only under the full property id |
+
 ## Video (MP4/MOV)
 
 Sniffed file types `MP4` and `MOV` select the `iptc.video.*` domain instead of
