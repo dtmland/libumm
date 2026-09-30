@@ -339,4 +339,22 @@ std::optional<std::string> exiftool_tag_for_unmapped_key(std::string_view raw_ke
   return std::nullopt;
 }
 
+std::string_view exiftool_assign_operator(std::string_view tag,
+                                          std::string_view value) {
+  if (tag.rfind("XMP-", 0) != 0) {
+    return "=";
+  }
+  // PLUS controlled-vocabulary tags reject URIs unless written raw.
+  if (tag.rfind("XMP-plus:", 0) == 0) {
+    return "#=";
+  }
+  if (tag.find("DigitalSourceType") != std::string_view::npos) {
+    return "#=";
+  }
+  if (value.find("://") != std::string_view::npos) {
+    return "#=";
+  }
+  return "=";
+}
+
 }  // namespace umm::internal

@@ -115,5 +115,22 @@ int main() {
     std::fprintf(stderr, "reverse key mapping failed\n");
     return 1;
   }
+  if (umm::internal::exiftool_assign_operator("XMP-dc:Description",
+                                              "Cross-backend description") !=
+          "=" ||
+      umm::internal::exiftool_assign_operator("XMP-exif:GPSLatitude",
+                                              "37.7749") != "=" ||
+      umm::internal::exiftool_assign_operator("XMP-plus:DataMining",
+                                              "Shape text") != "#=" ||
+      umm::internal::exiftool_assign_operator(
+          "XMP-plus:DataMining", "http://example.com/cv/data-mining") !=
+          "#=" ||
+      umm::internal::exiftool_assign_operator(
+          "XMP-iptcExt:DigitalSourceType",
+          "http://example.com/cv/trained") != "#=" ||
+      umm::internal::exiftool_assign_operator("IFD0:Artist", "Alice") != "=") {
+    std::fprintf(stderr, "ExifTool assign operator selection failed\n");
+    return 1;
+  }
   return 0;
 }

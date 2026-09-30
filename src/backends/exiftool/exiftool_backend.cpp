@@ -496,9 +496,9 @@ Result<void> ExifToolBackend::writeUnmapped(const std::filesystem::path& media,
       if (!tag) {
         continue;
       }
-      const std::string assign =
-          tag->rfind("XMP-", 0) == 0 ? (*tag + "#=") : (*tag + "=");
-      line("-" + assign + entry.value);
+      line("-" + *tag +
+           std::string(exiftool_assign_operator(*tag, entry.value)) +
+           entry.value);
     }
     line("-o");
     line(path_to_utf8(out));
