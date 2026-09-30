@@ -11,6 +11,7 @@
 #include <variant>
 #include <vector>
 
+#include "core/media_domain.hpp"
 #include "core/property_ids.hpp"
 #include "umm/registry.hpp"
 
@@ -1655,11 +1656,6 @@ void collect_video_property(std::vector<Group>& groups,
   }
 }
 
-bool is_video_file_type(std::string_view file_type) {
-  const std::string lower = ascii_lower(file_type);
-  return lower == "mp4" || lower == "mov";
-}
-
 void add_document_groups(std::vector<Group>& groups, const UnmappedDocument& document,
                          std::string_view backend, std::string_view property_id,
                          std::string_view container, bool video) {
@@ -1701,7 +1697,9 @@ Result<Metadata> reconcile(const UnmappedDocument& document,
     entries.insert(entries.end(), sidecar->entries.begin(), sidecar->entries.end());
   }
   metadata.assignUnmapped(std::move(entries));
-  const bool video = is_video_file_type(file_type);
+  const MediaDomain domain = media_domain_from_file_type(file_type);
+  metadata.setMediaDomain(domain);
+  const bool video = domain == MediaDomain::video;
   if (video) {
     reconcile_property(metadata, document, sidecar, backend_id, kVideoTitle,
                        true, disagreements);

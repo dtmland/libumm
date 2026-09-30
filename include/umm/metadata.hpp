@@ -16,6 +16,11 @@
 
 namespace umm {
 
+// Media domain for cross-media setters (Phase 2). Getters probe both photo and
+// video property ids and do not require this. Default `unknown` preserves
+// Phase 1 setter semantics (accessors resolve to `iptc.photo.*`).
+enum class MediaDomain { photo, video, unknown };
+
 // Unmapped metadata escape hatch (concept.md §18): standardized metadata gets standardized
 // semantics; everything else remains accessible without a fake definition.
 struct UnmappedKey {
@@ -35,6 +40,9 @@ struct UnmappedEntry {
 
 class Metadata {
  public:
+  MediaDomain mediaDomain() const;
+  void setMediaDomain(MediaDomain domain);
+
   // --- Generic access by registry property id -------------------------------
   std::optional<PropertyValue> get(std::string_view property_id) const;
   Result<void> set(std::string_view property_id, Value value);
@@ -80,6 +88,7 @@ class Metadata {
  private:
   std::map<std::string, PropertyValue> properties_;
   std::vector<UnmappedEntry> unmapped_;
+  MediaDomain media_domain_{MediaDomain::unknown};
 };
 
 }  // namespace umm
