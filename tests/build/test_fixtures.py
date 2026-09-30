@@ -97,6 +97,7 @@ VIDEO_FILES = (
     "video/full.mp4",
     "video/gps.mp4",
     "video/conflicting.mp4",
+    "video/xmp-shapes.mp4",
 )
 
 # Session 25 (docs/developer/implementation-history.md) — hand-authored text tracks.

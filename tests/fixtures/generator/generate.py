@@ -126,6 +126,9 @@ PURPOSES = {
     "video/conflicting.mp4": (
         "QuickTime vs XMP date disagreement — video conflict/reconcile path"
     ),
+    "video/xmp-shapes.mp4": (
+        "XMP-only video shapes (text, lang-alt, uri, structure) for session 38"
+    ),
     "tracks/straight.gpx": "Straight-line GPX 1.1 track (three timed trkpt samples)",
     "tracks/nmea.nmea": "NMEA RMC+GGA log matching tracks/straight.gpx",
     "tracks/gaps.gpx": "GPX with duplicate timestamps and a one-hour gap",
@@ -1362,6 +1365,26 @@ def generate(
             [
                 ("Keys:CreationDate", DATE_EXIF),
                 ("XMP-photoshop:DateCreated", DATE_XMP),
+            ],
+            "mp4",
+        ),
+    )
+    add(
+        "video/xmp-shapes.mp4",
+        make_video(
+            tool,
+            ffmpeg,
+            output_dir / "video/xmp-shapes.mp4",
+            [
+                ("XMP-photoshop:Credit", "Shape Credit"),
+                ("XMP-iptcExt:Headline", "Shape Headline"),
+                ("XMP-iptcCore:AltTextAccessibility", "Shape alt text"),
+                ("XMP-plus:DataMining", "http://example.com/data-mining"),
+                ("XMP-dc:identifier", "shape-id-1"),
+                (
+                    "XMP-iptcExt:LocationCreated",
+                    "{City=Shape City,CountryName=Shape Country}",
+                ),
             ],
             "mp4",
         ),

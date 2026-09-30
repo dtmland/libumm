@@ -296,6 +296,13 @@ Each committed media file is generator-produced (decision **M6**); track files a
 - **Purpose:** QuickTime vs XMP date disagreement — video conflict/reconcile path
 - **Command:** `ffmpeg -y -hide_banner -loglevel error -f lavfi -i color=c=gray:s=16x16:r=10 -t 0.1 -an -c:v mpeg4 -q:v 12 -movflags +faststart video/conflicting.mp4 && exiftool -overwrite_original -all= video/conflicting.mp4 && exiftool -overwrite_original -Keys:CreationDate=2020:01:01 00:00:00 -XMP-photoshop:DateCreated=2020:03:03T00:00:00 video/conflicting.mp4`
 
+### `video/xmp-shapes.mp4`
+
+- **SHA-256:** `78ad65a577628e4fcc5e8d1bf61f8a7f35032bfbc9f48722065ae893f4498939`
+- **Size:** 4581 bytes
+- **Purpose:** XMP-only video shapes (text, lang-alt, uri, structure) for session 38
+- **Command:** `ffmpeg -y -hide_banner -loglevel error -f lavfi -i color=c=gray:s=16x16:r=10 -t 0.1 -an -c:v mpeg4 -q:v 12 -movflags +faststart video/xmp-shapes.mp4 && exiftool -overwrite_original -all= video/xmp-shapes.mp4 && exiftool -overwrite_original -XMP-photoshop:Credit=Shape Credit -XMP-iptcExt:Headline=Shape Headline -XMP-iptcCore:AltTextAccessibility=Shape alt text -XMP-plus:DataMining=http://example.com/data-mining -XMP-dc:identifier=shape-id-1 -XMP-iptcExt:LocationCreated={City=Shape City,CountryName=Shape Country} video/xmp-shapes.mp4`
+
 ### `tracks/straight.gpx`
 
 - **SHA-256:** `bdfa6c12c629e98e5792bfe46aa26f0a6553571b550b942d26c5c69edd6865cc`

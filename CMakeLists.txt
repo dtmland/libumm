@@ -71,6 +71,7 @@ add_library(umm
   src/write.cpp
   src/capabilities.cpp
   src/core/reconcile.cpp
+  src/core/xmp_codec.cpp
   src/core/write_sync.cpp
   src/core/atomic_write.cpp
   src/core/sidecar.cpp

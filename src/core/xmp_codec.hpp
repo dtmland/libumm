@@ -1,0 +1,39 @@
+#pragma once
+
+#include "umm/registry.hpp"
+#include "umm/value.hpp"
+
+#include <optional>
+#include <string>
+#include <string_view>
+#include <vector>
+
+namespace umm::internal {
+
+// Registry `xmp_property` token(s) -> Exiv2-syntax raw key(s). Multi-token
+// properties (space-separated) become one key each.
+std::string xmp_raw_key(std::string_view property);
+std::vector<std::string> xmp_raw_keys(std::string_view property);
+
+// Registry QuickTime key text -> QuickTime.* vocabulary. Prose / unknown
+// tokens are skipped; only com.apple.quicktime.* keys are mapped.
+std::vector<std::string> quicktime_raw_keys(std::string_view registry_key);
+
+std::string lang_plain_text(const LangAlt& alt);
+std::string format_xmp_datetime(const DateTime& dt);
+
+std::string encode_structure_json(const Structure& fields);
+std::string encode_exiftool_struct(const Structure& fields);
+std::optional<Structure> decode_structure_text(std::string_view text);
+std::optional<std::vector<Structure>> decode_structure_list_text(
+    std::string_view text);
+
+bool structure_is_uri_like(const Structure& fields);
+std::string uri_from_structure(const Structure& fields);
+Structure structure_from_uri(std::string_view uri);
+std::string structure_display_name(const Structure& fields);
+
+// Non-deferred video ids from the generated cross-media map, plus GPS.
+std::vector<std::string_view> mapped_video_property_ids();
+
+}  // namespace umm::internal

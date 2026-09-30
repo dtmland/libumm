@@ -469,5 +469,100 @@ int main() {
     }
   }
 
+  {
+    const auto result = umm::internal::reconcile(
+        doc({entry("Xmp", "Xmp.photoshop.Credit", "Shape Credit"),
+             entry("Xmp", "Xmp.Iptc4xmpExt.Headline", "Shape Headline"),
+             entry("Xmp", "Xmp.Iptc4xmpCore.AltTextAccessibility",
+                   "Shape alt text"),
+             entry("Xmp", "Xmp.plus.DataMining",
+                   "http://example.com/data-mining"),
+             entry("Xmp", "Xmp.dc.identifier", "shape-id-1"),
+             entry("Xmp", "Xmp.Iptc4xmpExt.LocationCreated",
+                   R"({"City":"Shape City","CountryName":"Shape Country"})"),
+             entry("Xmp", "Xmp.Iptc4xmpExt.DigitalSourceType",
+                   "http://example.com/cv/trained"),
+             entry("Xmp", "Xmp.Iptc4xmpExt.OrganisationInImageName",
+                   "Shape Org")}),
+        "test", nullptr, "MP4");
+    if (!result.ok()) {
+      return fail("video shape reconcile failed");
+    }
+    const auto credit = result.value().get("iptc.video.creditLine");
+    const auto* credit_text =
+        credit ? std::get_if<std::string>(&credit->value.data) : nullptr;
+    if (!credit_text || *credit_text != "Shape Credit") {
+      return fail("video text shape");
+    }
+    const auto headline = result.value().get("iptc.video.headline");
+    const auto* headline_lang = headline ? as_lang(*headline) : nullptr;
+    if (!headline_lang || headline_lang->count("x-default") == 0 ||
+        headline_lang->at("x-default") != "Shape Headline") {
+      return fail("video lang-alt shape");
+    }
+    const auto alt = result.value().get("iptc.video.altTextAccessibility");
+    const auto* alt_lang = alt ? as_lang(*alt) : nullptr;
+    if (!alt_lang || alt_lang->count("x-default") == 0 ||
+        alt_lang->at("x-default") != "Shape alt text") {
+      return fail("video Iptc4xmpCore lang-alt shape");
+    }
+    const auto mining = result.value().get("iptc.video.dataMining");
+    const auto* mining_text =
+        mining ? std::get_if<std::string>(&mining->value.data) : nullptr;
+    if (!mining_text || *mining_text != "http://example.com/data-mining") {
+      return fail("video uri shape");
+    }
+    const auto ident = result.value().get("iptc.video.videoIdentifier");
+    const auto* ident_text =
+        ident ? std::get_if<std::string>(&ident->value.data) : nullptr;
+    if (!ident_text || *ident_text != "shape-id-1") {
+      return fail("video identifier shape");
+    }
+    const auto loc = result.value().get("iptc.video.locationShot");
+    const auto* loc_list =
+        loc ? std::get_if<std::vector<umm::Structure>>(&loc->value.data)
+            : nullptr;
+    if (!loc_list || loc_list->empty()) {
+      return fail("video structure-list shape");
+    }
+    const auto city = loc_list->front().find("City");
+    const auto* city_text =
+        city == loc_list->front().end()
+            ? nullptr
+            : std::get_if<std::string>(&city->second.data);
+    if (!city_text || *city_text != "Shape City") {
+      return fail("video structure field");
+    }
+    const auto source = result.value().get("iptc.video.digitalSourceType");
+    const auto* source_fields =
+        source ? std::get_if<umm::Structure>(&source->value.data) : nullptr;
+    if (!source_fields) {
+      return fail("video uri-wrap structure");
+    }
+    const auto cv = source_fields->find("cvId");
+    const auto* cv_text =
+        cv != source_fields->end() ? std::get_if<std::string>(&cv->second.data)
+                                   : nullptr;
+    if (!cv_text || *cv_text != "http://example.com/cv/trained") {
+      return fail("video uri-wrap structure");
+    }
+    const auto org = result.value().get("iptc.video.featuredOrganisation");
+    const auto* org_list =
+        org ? std::get_if<std::vector<umm::Structure>>(&org->value.data)
+            : nullptr;
+    if (!org_list || org_list->empty()) {
+      return fail("video name-bag structure-list");
+    }
+    const auto name = org_list->front().find("name");
+    const auto* name_lang =
+        name == org_list->front().end()
+            ? nullptr
+            : std::get_if<umm::LangAlt>(&name->second.data);
+    if (!name_lang || name_lang->count("x-default") == 0 ||
+        name_lang->at("x-default") != "Shape Org") {
+      return fail("video featuredOrganisation name");
+    }
+  }
+
   return 0;
 }

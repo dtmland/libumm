@@ -50,6 +50,17 @@ int main() {
       expect_key("XMP-dc:Creator", "Xmp", "Xmp.dc.creator") != 0 ||
       expect_key("XMP-photoshop:DateCreated", "Xmp",
                  "Xmp.photoshop.DateCreated") != 0 ||
+      expect_key("XMP-iptcExt:LocationCreated", "Xmp",
+                 "Xmp.Iptc4xmpExt.LocationCreated") != 0 ||
+      expect_key("XMP-iptcExt:ShownEvent", "Xmp",
+                 "Xmp.Iptc4xmpExt.EventExt") != 0 ||
+      expect_key("XMP-iptcExt:RegistryID", "Xmp",
+                 "Xmp.Iptc4xmpExt.RegistryId") != 0 ||
+      expect_key("XMP-iptcCore:AltTextAccessibility", "Xmp",
+                 "Xmp.Iptc4xmpCore.AltTextAccessibility") != 0 ||
+      expect_key("XMP-plus:DataMining", "Xmp", "Xmp.plus.DataMining") != 0 ||
+      expect_key("XMP-xmpRights:UsageTerms", "Xmp",
+                 "Xmp.xmpRights.UsageTerms") != 0 ||
       expect_key("XMP-libummtest:UnknownWidget", "Xmp",
                  "Xmp.libummtest.UnknownWidget") != 0 ||
       expect_key("MakerNotes:LensType", "ExifTool",
@@ -83,12 +94,24 @@ int main() {
       umm::internal::exiftool_tag_for_unmapped_key("QuickTime.CreationDate");
   const auto gps =
       umm::internal::exiftool_tag_for_unmapped_key("QuickTime.GPSCoordinates");
+  const auto loc = umm::internal::exiftool_tag_for_unmapped_key(
+      "Xmp.Iptc4xmpExt.LocationCreated");
+  const auto alt = umm::internal::exiftool_tag_for_unmapped_key(
+      "Xmp.Iptc4xmpCore.AltTextAccessibility");
+  const auto event = umm::internal::exiftool_tag_for_unmapped_key(
+      "Xmp.Iptc4xmpExt.EventExt");
+  const auto registry = umm::internal::exiftool_tag_for_unmapped_key(
+      "Xmp.Iptc4xmpExt.RegistryId");
   if (!artist || *artist != "IFD0:Artist" || !byline ||
       *byline != "IPTC:By-line" || !creator || *creator != "XMP-dc:Creator" ||
       !title || *title != "Keys:Title" || !qt_artist ||
       *qt_artist != "ItemList:Artist" || !created ||
       *created != "Keys:CreationDate" || !gps ||
-      *gps != "Keys:GPSCoordinates") {
+      *gps != "Keys:GPSCoordinates" || !loc ||
+      *loc != "XMP-iptcExt:LocationCreated" || !alt ||
+      *alt != "XMP-iptcCore:AltTextAccessibility" || !event ||
+      *event != "XMP-iptcExt:ShownEvent" || !registry ||
+      *registry != "XMP-iptcExt:RegistryID") {
     std::fprintf(stderr, "reverse key mapping failed\n");
     return 1;
   }

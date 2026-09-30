@@ -250,7 +250,22 @@ field**. libumm does **not** invent UTC (`+00:00`) for a naive header date.
 `Keys:CreationDate` (`com.apple.quicktime.creationdate`) may include an
 offset; missing vs present offset stays equivalent (`opt_equal`).
 
-### `iptc.video.title` / `description` / `creator` / `copyrightNotice` / `keywords` / `dateCreated`
+### Table-driven video properties (session 38)
+
+Every non-deferred video id in the generated cross-media map is reconciled and
+write-synced from registry `PropertyDef` rows (XMP namespace+property, datatype,
+and real `com.apple.quicktime.*` keys). See
+[2026-09-30-table-driven-video-pipeline.md](analysis/2026-09-30-table-driven-video-pipeline.md).
+
+| Shape | Read | Write |
+| --- | --- | --- |
+| lang-alt | XMP; QT plain text as `x-default` when mapped | XMP LangAlt + QT plain text |
+| text / uri | XMP (and QT when mapped) | XMP string (+ QT when mapped) |
+| date-time | XMP rank 0; QT `CreationDate` rank 1; movie-header `CreateDate` rank 2 for `dateCreated` | XMP + `CreationDate` |
+| structure | JSON / ExifTool struct; a plain URI wraps as `{cvId}` | ExifTool struct, or the URI string when URI-like |
+| structure list | JSON array / repeated structs; a name bag wraps as Entity `name` | structs, name bag, or URI strings |
+
+Phase-1 specials stay behavior-identical:
 
 | Family | Raw keys |
 | --- | --- |
@@ -261,13 +276,14 @@ offset; missing vs present offset stays equivalent (`opt_equal`).
 `iptc.video.title` / `description` / `copyrightNotice` / `keywords` are lang-alt.
 `iptc.video.creator` is a structure list (`name` only for Phase 1 string sources).
 `iptc.video.keywords` joins bag values into `x-default` (VMH types the property as lang-alt).
+Creator write emits `Xmp.dc.creator` + `QuickTime.Artist` only (not a second same-tier XMP Creator group).
 
-**Write-sync (session 22):** each property expands to its XMP encoding plus the
-QuickTime key above (`QuickTime.Artist` for creator names; `CreationDate` not
-movie-header `CreateDate`). `umm::write` then keeps the families named by
-`StorageDecision::formats`. MP4/MOV ExifTool rows expose XMP plus
-`container_gps` (QuickTime); requesting `backend: "exiv2"` is
-`unsupported_capability`. Sidecar-only writes keep XMP only, as for stills.
+**Write-sync:** each property expands to its XMP encoding plus a QuickTime key
+when the registry names a real apple key (scalar types only, plus creator).
+`umm::write` then keeps the families named by `StorageDecision::formats`.
+MP4/MOV ExifTool rows expose XMP plus `container_gps` (QuickTime); requesting
+`backend: "exiv2"` is `unsupported_capability`. Sidecar-only writes keep XMP
+only, as for stills.
 
 ### `exif.gps.position` on video
 
@@ -285,10 +301,10 @@ GPS writer and is dropped when the storage decision does not list EXIF (MP4/MOV)
 
 ### R3 (per-property dispatch)
 
-Session 21 keeps the per-property `if` dispatch. A second domain did not make a
-table-driven engine necessary: video is a closed Phase-1-sized set with the same
-classify/merge helpers. Revisit if a third domain or generated mapping tables
-land.
+Session 38 replaced the closed Phase-1-sized video `if` chains with a
+table-driven engine over generated `PropertyDef` rows and the cross-media map.
+Photo-side dispatch is unchanged. The original R3 deferral is superseded by
+[2026-09-30-table-driven-video-pipeline.md](analysis/2026-09-30-table-driven-video-pipeline.md).
 
 ## Sidecars
 
