@@ -47,8 +47,8 @@ int main() {
   if (md.mediaDomain() != umm::MediaDomain::video) {
     return fail("setMediaDomain did not stick");
   }
-  umm::Metadata copied = md;
-  if (copied.mediaDomain() != umm::MediaDomain::video) {
+  umm::Metadata copied_domain = md;
+  if (copied_domain.mediaDomain() != umm::MediaDomain::video) {
     return fail("copy did not preserve media domain");
   }
   umm::Metadata assigned;

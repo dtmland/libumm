@@ -10,8 +10,8 @@ This directory holds the **Phase 2 — cross-media convenience accessors** sessi
 
 | Session | Title | Depends on | Progress |
 |---|---|---|---|
-| [36](36-media-domain-context.md) | Media domain context on `Metadata` | — | in progress |
-| [37](37-cross-media-map-codegen.md) | Cross-media accessor map codegen | — (parallel with 36) | in progress |
+| [36](36-media-domain-context.md) | Media domain context on `Metadata` | — | complete |
+| [37](37-cross-media-map-codegen.md) | Cross-media accessor map codegen | — (parallel with 36) | complete |
 | [38](38-video-pipeline-generalization.md) | Video reconcile/write-sync generalization | 37 | not started |
 | [39](39-tier1-passthrough-accessors.md) | Tier 1 pass-through accessors | 36, 37, 38 | not started |
 | [40](40-tier2-transposing-accessors.md) | Tier 2 transposing accessors | 39 | not started |

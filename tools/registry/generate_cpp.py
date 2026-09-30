@@ -15,10 +15,12 @@ DEFAULT_REGISTRY_DIRS = (
     REPO_ROOT / "registry" / "iptc-video",
 )
 DEFAULT_OVERLAY = REPO_ROOT / "registry" / "mappings" / "iptc-exif-overlay.json"
+DEFAULT_CROSS_MEDIA = REPO_ROOT / "registry" / "mappings" / "cross-media-accessors.json"
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "src" / "generated"
 
 HEADER_NAME = "property_registry.hpp"
 SOURCE_NAME = "property_registry.cpp"
+CROSS_MEDIA_HEADER_NAME = "cross_media_accessors.hpp"
 
 OVERLAY_SOURCE_KEYS = (
     "document",
@@ -29,6 +31,34 @@ OVERLAY_SOURCE_KEYS = (
 )
 OVERLAY_MAPPING_KEYS = ("id", "exif_tag")
 OVERLAY_KEYS = ("partial", "source", "mappings")
+
+CROSS_MEDIA_KEYS = ("document", "version", "source", "accessors")
+CROSS_MEDIA_SOURCE_KEYS = ("document", "note")
+CROSS_MEDIA_ACCESSOR_KEYS = (
+    "concept",
+    "photo_ids",
+    "video_ids",
+    "audio_ids",
+    "tier",
+    "transposition",
+    "photo_datatype",
+    "photo_cardinality",
+    "video_datatype",
+    "video_cardinality",
+    "deferred",
+    "notes",
+)
+TRANSPOSITIONS = (
+    "passthrough",
+    "string_to_lang_alt",
+    "string_list_to_lang_alt",
+    "lang_alt_to_string",
+    "names_to_entity_list",
+    "uri_to_cv_term",
+    "struct_field_subset",
+    "list_to_single",
+    "name_uri_to_entity",
+)
 
 # JSON datatype + cardinality -> umm::Datatype enumerator (include/umm/registry.hpp).
 DATATYPE_ENUM = {
@@ -168,6 +198,100 @@ def apply_overlay(
     return merged
 
 
+def load_cross_media(path: Path, properties_by_id: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    raw = load_json(path)
+    mapping = ordered(raw, CROSS_MEDIA_KEYS, path=str(path))
+    source = mapping["source"]
+    if not isinstance(source, dict):
+        raise CodegenError(f"{path}: source must be an object")
+    mapping["source"] = ordered(source, CROSS_MEDIA_SOURCE_KEYS, path=f"{path} source")
+    accessors = mapping["accessors"]
+    if not isinstance(accessors, list) or not accessors:
+        raise CodegenError(f"{path}: accessors must be a non-empty array")
+    normalized: list[dict[str, Any]] = []
+    concepts: list[str] = []
+    for index, item in enumerate(accessors):
+        if not isinstance(item, dict):
+            raise CodegenError(f"{path}: accessors[{index}] must be an object")
+        row = ordered(item, CROSS_MEDIA_ACCESSOR_KEYS, path=f"{path} accessors[{index}]")
+        concept = row["concept"]
+        if not concept or not isinstance(concept, str):
+            raise CodegenError(f"{path}: accessors[{index}] has empty concept")
+        if concept in concepts:
+            raise CodegenError(f"{path}: duplicate concept {concept!r}")
+        concepts.append(concept)
+        if row["tier"] not in (1, 2, 3):
+            raise CodegenError(f"{path}: {concept}: tier must be 1, 2, or 3")
+        if row["transposition"] not in TRANSPOSITIONS:
+            raise CodegenError(f"{path}: {concept}: unknown transposition {row['transposition']!r}")
+        if not isinstance(row["deferred"], bool):
+            raise CodegenError(f"{path}: {concept}: deferred must be a boolean")
+        if not isinstance(row["notes"], str):
+            raise CodegenError(f"{path}: {concept}: notes must be a string")
+        if not isinstance(row["audio_ids"], list) or row["audio_ids"]:
+            raise CodegenError(f"{path}: {concept}: audio_ids is reserved and must be []")
+        photo_ids = row["photo_ids"]
+        video_ids = row["video_ids"]
+        if not isinstance(photo_ids, list) or not photo_ids or len(photo_ids) > 2:
+            raise CodegenError(f"{path}: {concept}: photo_ids must be 1 or 2 registry ids")
+        if not isinstance(video_ids, list) or not video_ids or len(video_ids) > 2:
+            raise CodegenError(f"{path}: {concept}: video_ids must be 1 or 2 registry ids")
+        for property_id in photo_ids + video_ids:
+            if property_id not in properties_by_id:
+                raise CodegenError(f"{path}: {concept}: unknown id {property_id!r}")
+        photo = properties_by_id[photo_ids[0]]
+        video = properties_by_id[video_ids[0]]
+        declared_photo = (row["photo_datatype"], row["photo_cardinality"])
+        declared_video = (row["video_datatype"], row["video_cardinality"])
+        actual_photo = (photo["datatype"], photo["cardinality"])
+        actual_video = (video["datatype"], video["cardinality"])
+        if declared_photo != actual_photo:
+            raise CodegenError(
+                f"{path}: {concept}: photo datatype/cardinality {declared_photo} "
+                f"does not match registry {actual_photo}"
+            )
+        if declared_video != actual_video:
+            raise CodegenError(
+                f"{path}: {concept}: video datatype/cardinality {declared_video} "
+                f"does not match registry {actual_video}"
+            )
+        validate_transposition(path, row, photo, video, len(photo_ids))
+        normalized.append(row)
+    mapping["accessors"] = normalized
+    return mapping
+
+
+def validate_transposition(
+    path: Path,
+    row: dict[str, Any],
+    photo: dict[str, Any],
+    video: dict[str, Any],
+    photo_id_count: int,
+) -> None:
+    kind = row["transposition"]
+    concept = row["concept"]
+    p = (photo["datatype"], photo["cardinality"])
+    v = (video["datatype"], video["cardinality"])
+    expected: dict[str, Any] = {
+        "passthrough": p == v,
+        "string_to_lang_alt": p == ("string", "one") and v == ("lang-alt", "one"),
+        "string_list_to_lang_alt": p == ("string", "many") and v == ("lang-alt", "one"),
+        "lang_alt_to_string": p == ("lang-alt", "one") and v == ("string", "one"),
+        "names_to_entity_list": p == ("string", "many") and v == ("struct", "many"),
+        "uri_to_cv_term": p == ("uri", "one") and v == ("struct", "one"),
+        "struct_field_subset": p[0] == "struct" and v[0] == "struct",
+        "list_to_single": p[1] == "many" and v[1] == "one",
+        "name_uri_to_entity": (
+            p == ("lang-alt", "one") and v == ("struct", "many") and photo_id_count == 2
+        ),
+    }
+    if not expected[kind]:
+        raise CodegenError(
+            f"{path}: {concept}: transposition {kind} is inconsistent with "
+            f"photo {p} / video {v}"
+        )
+
+
 def map_datatype(record: dict[str, Any]) -> str:
     key = (record["datatype"], record["cardinality"])
     enumerator = DATATYPE_ENUM.get(key)
@@ -200,7 +324,12 @@ def representation_field(record: dict[str, Any], *path: str) -> str:
     return value
 
 
-def banner(registry_paths: list[Path], overlay_path: Path, registries: list[dict[str, Any]]) -> str:
+def banner(
+    registry_paths: list[Path],
+    overlay_path: Path,
+    registries: list[dict[str, Any]],
+    cross_media_path: Path | None = None,
+) -> str:
     lines = [
         "// GENERATED — do not edit",
         "//",
@@ -219,6 +348,12 @@ def banner(registry_paths: list[Path], overlay_path: Path, registries: list[dict
     except ValueError:
         overlay_rel = overlay_path.as_posix()
     lines.append(f"// EXIF overlay: {overlay_rel}")
+    if cross_media_path is not None:
+        try:
+            map_rel = cross_media_path.resolve().relative_to(REPO_ROOT).as_posix()
+        except ValueError:
+            map_rel = cross_media_path.as_posix()
+        lines.append(f"// Cross-media map: {map_rel}")
     return "\n".join(lines) + "\n\n"
 
 
@@ -306,11 +441,98 @@ def generate_header(
     )
 
 
+def pad_ids(ids: list[str]) -> tuple[str, str]:
+    first = ids[0]
+    second = ids[1] if len(ids) > 1 else ""
+    return first, second
+
+
+def emit_cross_media_row(row: dict[str, Any]) -> str:
+    photo_a, photo_b = pad_ids(row["photo_ids"])
+    video_a, video_b = pad_ids(row["video_ids"])
+    photo_dt = DATATYPE_ENUM[(row["photo_datatype"], row["photo_cardinality"])]
+    video_dt = DATATYPE_ENUM[(row["video_datatype"], row["video_cardinality"])]
+    deferred = "true" if row["deferred"] else "false"
+    return "\n".join(
+        [
+            "    {",
+            f"        {cpp_string(row['concept'])},",
+            f"        {{{cpp_string(photo_a)}, {cpp_string(photo_b)}}},",
+            f"        {len(row['photo_ids'])},",
+            f"        {{{cpp_string(video_a)}, {cpp_string(video_b)}}},",
+            f"        {len(row['video_ids'])},",
+            f"        {row['tier']},",
+            f"        CrossMediaTransposition::{row['transposition']},",
+            f"        Datatype::{photo_dt},",
+            f"        Cardinality::{row['photo_cardinality']},",
+            f"        Datatype::{video_dt},",
+            f"        Cardinality::{row['video_cardinality']},",
+            f"        {deferred},",
+            "    }",
+        ]
+    )
+
+
+def generate_cross_media_header(*, banner_text: str, accessors: list[dict[str, Any]]) -> str:
+    rows = [emit_cross_media_row(row) for row in accessors]
+    body = ",\n".join(rows)
+    return (
+        f"{banner_text}"
+        "#pragma once\n"
+        "\n"
+        '#include "umm/registry.hpp"\n'
+        "\n"
+        "#include <cstddef>\n"
+        "#include <iterator>\n"
+        "#include <string_view>\n"
+        "\n"
+        "namespace umm::internal {\n"
+        "\n"
+        "enum class CrossMediaTransposition {\n"
+        "  passthrough,\n"
+        "  string_to_lang_alt,\n"
+        "  string_list_to_lang_alt,\n"
+        "  lang_alt_to_string,\n"
+        "  names_to_entity_list,\n"
+        "  uri_to_cv_term,\n"
+        "  struct_field_subset,\n"
+        "  list_to_single,\n"
+        "  name_uri_to_entity,\n"
+        "};\n"
+        "\n"
+        "struct CrossMediaAccessorDef {\n"
+        "  std::string_view concept_name;\n"
+        "  std::string_view photo_ids[2];\n"
+        "  std::size_t photo_id_count;\n"
+        "  std::string_view video_ids[2];\n"
+        "  std::size_t video_id_count;\n"
+        "  int tier;\n"
+        "  CrossMediaTransposition transposition;\n"
+        "  Datatype photo_datatype;\n"
+        "  Cardinality photo_cardinality;\n"
+        "  Datatype video_datatype;\n"
+        "  Cardinality video_cardinality;\n"
+        "  bool deferred;\n"
+        "};\n"
+        "\n"
+        f"inline constexpr std::size_t kCrossMediaAccessorCount = {len(accessors)};\n"
+        "\n"
+        "inline constexpr CrossMediaAccessorDef kCrossMediaAccessors[] = {\n"
+        f"{body}\n"
+        "};\n"
+        "\n"
+        "static_assert(std::size(kCrossMediaAccessors) == kCrossMediaAccessorCount);\n"
+        "\n"
+        "}  // namespace umm::internal\n"
+    )
+
+
 def generate_source(banner_text: str) -> str:
     return (
         f"{banner_text}"
         '#include "umm/registry.hpp"\n'
         "\n"
+        '#include "cross_media_accessors.hpp"\n'
         '#include "property_registry.hpp"\n'
         "\n"
         "#include <iterator>\n"
@@ -357,7 +579,8 @@ def generate(
     registry_dirs: list[Path],
     overlay_path: Path,
     output_dir: Path,
-) -> tuple[Path, Path]:
+    cross_media_path: Path | None = None,
+) -> tuple[Path, Path, Path]:
     files = registry_files(registry_dirs)
     overlay = load_overlay(overlay_path)
     registries: list[dict[str, Any]] = []
@@ -390,9 +613,12 @@ def generate(
         )
 
     overlay_exif = apply_overlay(properties, known_ids, overlay, overlay_path)
+    mapping_path = cross_media_path or DEFAULT_CROSS_MEDIA
+    properties_by_id = {record["id"]: record for record in properties}
+    cross_media = load_cross_media(mapping_path, properties_by_id)
 
     properties.sort(key=lambda item: item["id"])
-    banner_text = banner(files, overlay_path, registries)
+    banner_text = banner(files, overlay_path, registries, mapping_path)
     header = generate_header(
         banner_text=banner_text,
         properties=properties,
@@ -400,12 +626,18 @@ def generate(
         standards=standards,
     )
     source = generate_source(banner_text)
+    cross_header = generate_cross_media_header(
+        banner_text=banner_text,
+        accessors=cross_media["accessors"],
+    )
     output_dir.mkdir(parents=True, exist_ok=True)
     header_path = output_dir / HEADER_NAME
     source_path = output_dir / SOURCE_NAME
+    cross_path = output_dir / CROSS_MEDIA_HEADER_NAME
     write_text(header_path, header)
     write_text(source_path, source)
-    return header_path, source_path
+    write_text(cross_path, cross_header)
+    return header_path, source_path, cross_path
 
 
 def write_text(path: Path, text: str) -> None:
@@ -436,6 +668,12 @@ def main(argv: list[str] | None = None) -> int:
         default=DEFAULT_OUTPUT_DIR,
         help="Directory for generated C++ files",
     )
+    parser.add_argument(
+        "--cross-media",
+        type=Path,
+        default=DEFAULT_CROSS_MEDIA,
+        help="Hand-curated cross-media accessor map JSON",
+    )
     args = parser.parse_args(argv)
     try:
         registry_dirs = args.registry_dirs or list(DEFAULT_REGISTRY_DIRS)
@@ -443,6 +681,7 @@ def main(argv: list[str] | None = None) -> int:
             [path.resolve() for path in registry_dirs],
             args.overlay.resolve(),
             args.output_dir.resolve(),
+            args.cross_media.resolve(),
         )
     except (CodegenError, OSError, json.JSONDecodeError, KeyError) as exc:
         print(f"generate_cpp: {exc}", file=sys.stderr)
