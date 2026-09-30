@@ -1,0 +1,695 @@
+{
+  "document": "libumm cross-media accessor map",
+  "version": "1",
+  "source": {
+    "document": "docs/analysis/phase-2-video-convenience-accessors.md",
+    "note": "Hand-curated Phase 2 catalog. gps() is already cross-media via well-known id exif.gps.position and is omitted because that id is not in the IPTC registries. audio_ids is reserved empty until an audio registry exists."
+  },
+  "accessors": [
+    {
+      "concept": "title",
+      "photo_ids": [
+        "iptc.photo.title"
+      ],
+      "video_ids": [
+        "iptc.video.title"
+      ],
+      "audio_ids": [],
+      "tier": 1,
+      "transposition": "passthrough",
+      "photo_datatype": "lang-alt",
+      "photo_cardinality": "one",
+      "video_datatype": "lang-alt",
+      "video_cardinality": "one",
+      "deferred": false,
+      "notes": ""
+    },
+    {
+      "concept": "description",
+      "photo_ids": [
+        "iptc.photo.description"
+      ],
+      "video_ids": [
+        "iptc.video.description"
+      ],
+      "audio_ids": [],
+      "tier": 1,
+      "transposition": "passthrough",
+      "photo_datatype": "lang-alt",
+      "photo_cardinality": "one",
+      "video_datatype": "lang-alt",
+      "video_cardinality": "one",
+      "deferred": false,
+      "notes": ""
+    },
+    {
+      "concept": "copyrightNotice",
+      "photo_ids": [
+        "iptc.photo.copyrightNotice"
+      ],
+      "video_ids": [
+        "iptc.video.copyrightNotice"
+      ],
+      "audio_ids": [],
+      "tier": 1,
+      "transposition": "passthrough",
+      "photo_datatype": "lang-alt",
+      "photo_cardinality": "one",
+      "video_datatype": "lang-alt",
+      "video_cardinality": "one",
+      "deferred": false,
+      "notes": ""
+    },
+    {
+      "concept": "creditLine",
+      "photo_ids": [
+        "iptc.photo.creditLine"
+      ],
+      "video_ids": [
+        "iptc.video.creditLine"
+      ],
+      "audio_ids": [],
+      "tier": 1,
+      "transposition": "passthrough",
+      "photo_datatype": "string",
+      "photo_cardinality": "one",
+      "video_datatype": "string",
+      "video_cardinality": "one",
+      "deferred": false,
+      "notes": ""
+    },
+    {
+      "concept": "dateCreated",
+      "photo_ids": [
+        "iptc.photo.dateCreated"
+      ],
+      "video_ids": [
+        "iptc.video.dateCreated"
+      ],
+      "audio_ids": [],
+      "tier": 1,
+      "transposition": "passthrough",
+      "photo_datatype": "date-time",
+      "photo_cardinality": "one",
+      "video_datatype": "date-time",
+      "video_cardinality": "one",
+      "deferred": false,
+      "notes": ""
+    },
+    {
+      "concept": "altTextAccessibility",
+      "photo_ids": [
+        "iptc.photo.altTextAccessibility"
+      ],
+      "video_ids": [
+        "iptc.video.altTextAccessibility"
+      ],
+      "audio_ids": [],
+      "tier": 1,
+      "transposition": "passthrough",
+      "photo_datatype": "lang-alt",
+      "photo_cardinality": "one",
+      "video_datatype": "lang-alt",
+      "video_cardinality": "one",
+      "deferred": false,
+      "notes": ""
+    },
+    {
+      "concept": "extendedDescriptionAccessibility",
+      "photo_ids": [
+        "iptc.photo.extendedDescriptionAccessibility"
+      ],
+      "video_ids": [
+        "iptc.video.extendedDescriptionAccessibility"
+      ],
+      "audio_ids": [],
+      "tier": 1,
+      "transposition": "passthrough",
+      "photo_datatype": "lang-alt",
+      "photo_cardinality": "one",
+      "video_datatype": "lang-alt",
+      "video_cardinality": "one",
+      "deferred": false,
+      "notes": ""
+    },
+    {
+      "concept": "rightsUsageTerms",
+      "photo_ids": [
+        "iptc.photo.rightsUsageTerms"
+      ],
+      "video_ids": [
+        "iptc.video.rightsUsageTerms"
+      ],
+      "audio_ids": [],
+      "tier": 1,
+      "transposition": "passthrough",
+      "photo_datatype": "lang-alt",
+      "photo_cardinality": "one",
+      "video_datatype": "lang-alt",
+      "video_cardinality": "one",
+      "deferred": false,
+      "notes": ""
+    },
+    {
+      "concept": "sourceSupplyChain",
+      "photo_ids": [
+        "iptc.photo.sourceSupplyChain"
+      ],
+      "video_ids": [
+        "iptc.video.sourceSupplyChain"
+      ],
+      "audio_ids": [],
+      "tier": 1,
+      "transposition": "passthrough",
+      "photo_datatype": "string",
+      "photo_cardinality": "one",
+      "video_datatype": "string",
+      "video_cardinality": "one",
+      "deferred": false,
+      "notes": ""
+    },
+    {
+      "concept": "dataMining",
+      "photo_ids": [
+        "iptc.photo.dataMining"
+      ],
+      "video_ids": [
+        "iptc.video.dataMining"
+      ],
+      "audio_ids": [],
+      "tier": 1,
+      "transposition": "passthrough",
+      "photo_datatype": "uri",
+      "photo_cardinality": "one",
+      "video_datatype": "uri",
+      "video_cardinality": "one",
+      "deferred": false,
+      "notes": ""
+    },
+    {
+      "concept": "contributor",
+      "photo_ids": [
+        "iptc.photo.contributor"
+      ],
+      "video_ids": [
+        "iptc.video.contributor"
+      ],
+      "audio_ids": [],
+      "tier": 1,
+      "transposition": "passthrough",
+      "photo_datatype": "struct",
+      "photo_cardinality": "many",
+      "video_datatype": "struct",
+      "video_cardinality": "many",
+      "deferred": false,
+      "notes": ""
+    },
+    {
+      "concept": "genre",
+      "photo_ids": [
+        "iptc.photo.genre"
+      ],
+      "video_ids": [
+        "iptc.video.genre"
+      ],
+      "audio_ids": [],
+      "tier": 1,
+      "transposition": "passthrough",
+      "photo_datatype": "struct",
+      "photo_cardinality": "many",
+      "video_datatype": "struct",
+      "video_cardinality": "many",
+      "deferred": false,
+      "notes": ""
+    },
+    {
+      "concept": "embeddedEncodedRightsExpression",
+      "photo_ids": [
+        "iptc.photo.embeddedEncodedRightsExpression"
+      ],
+      "video_ids": [
+        "iptc.video.embeddedEncodedRightsExpression"
+      ],
+      "audio_ids": [],
+      "tier": 1,
+      "transposition": "passthrough",
+      "photo_datatype": "struct",
+      "photo_cardinality": "many",
+      "video_datatype": "struct",
+      "video_cardinality": "many",
+      "deferred": false,
+      "notes": ""
+    },
+    {
+      "concept": "linkedEncodedRightsExpression",
+      "photo_ids": [
+        "iptc.photo.linkedEncodedRightsExpression"
+      ],
+      "video_ids": [
+        "iptc.video.linkedEncodedRightsExpression"
+      ],
+      "audio_ids": [],
+      "tier": 1,
+      "transposition": "passthrough",
+      "photo_datatype": "struct",
+      "photo_cardinality": "many",
+      "video_datatype": "struct",
+      "video_cardinality": "many",
+      "deferred": false,
+      "notes": ""
+    },
+    {
+      "concept": "aiPromptInformation",
+      "photo_ids": [
+        "iptc.photo.aiPromptInformation"
+      ],
+      "video_ids": [
+        "iptc.video.aiPromptInformation"
+      ],
+      "audio_ids": [],
+      "tier": 1,
+      "transposition": "passthrough",
+      "photo_datatype": "string",
+      "photo_cardinality": "one",
+      "video_datatype": "string",
+      "video_cardinality": "one",
+      "deferred": false,
+      "notes": ""
+    },
+    {
+      "concept": "aiPromptWriterName",
+      "photo_ids": [
+        "iptc.photo.aiPromptWriterName"
+      ],
+      "video_ids": [
+        "iptc.video.aiPromptWriterName"
+      ],
+      "audio_ids": [],
+      "tier": 1,
+      "transposition": "passthrough",
+      "photo_datatype": "string",
+      "photo_cardinality": "one",
+      "video_datatype": "string",
+      "video_cardinality": "one",
+      "deferred": false,
+      "notes": ""
+    },
+    {
+      "concept": "aiSystemUsed",
+      "photo_ids": [
+        "iptc.photo.aiSystemUsed"
+      ],
+      "video_ids": [
+        "iptc.video.aiSystemUsed"
+      ],
+      "audio_ids": [],
+      "tier": 1,
+      "transposition": "passthrough",
+      "photo_datatype": "string",
+      "photo_cardinality": "one",
+      "video_datatype": "string",
+      "video_cardinality": "one",
+      "deferred": false,
+      "notes": ""
+    },
+    {
+      "concept": "aiSystemVersionUsed",
+      "photo_ids": [
+        "iptc.photo.aiSystemVersionUsed"
+      ],
+      "video_ids": [
+        "iptc.video.aiSystemVersionUsed"
+      ],
+      "audio_ids": [],
+      "tier": 1,
+      "transposition": "passthrough",
+      "photo_datatype": "string",
+      "photo_cardinality": "one",
+      "video_datatype": "string",
+      "video_cardinality": "one",
+      "deferred": false,
+      "notes": ""
+    },
+    {
+      "concept": "creator",
+      "photo_ids": [
+        "iptc.photo.creator"
+      ],
+      "video_ids": [
+        "iptc.video.creator"
+      ],
+      "audio_ids": [],
+      "tier": 2,
+      "transposition": "names_to_entity_list",
+      "photo_datatype": "string",
+      "photo_cardinality": "many",
+      "video_datatype": "struct",
+      "video_cardinality": "many",
+      "deferred": false,
+      "notes": "Photo string list ↔ video EntityWRole.name; Phase 1 video reconcile already does this."
+    },
+    {
+      "concept": "headline",
+      "photo_ids": [
+        "iptc.photo.headline"
+      ],
+      "video_ids": [
+        "iptc.video.headline"
+      ],
+      "audio_ids": [],
+      "tier": 2,
+      "transposition": "string_to_lang_alt",
+      "photo_datatype": "string",
+      "photo_cardinality": "one",
+      "video_datatype": "lang-alt",
+      "video_cardinality": "one",
+      "deferred": false,
+      "notes": "Photo string ↔ video x-default lang-alt entry."
+    },
+    {
+      "concept": "keywords",
+      "photo_ids": [
+        "iptc.photo.keywords"
+      ],
+      "video_ids": [
+        "iptc.video.keywords"
+      ],
+      "audio_ids": [],
+      "tier": 2,
+      "transposition": "string_list_to_lang_alt",
+      "photo_datatype": "string",
+      "photo_cardinality": "many",
+      "video_datatype": "lang-alt",
+      "video_cardinality": "one",
+      "deferred": false,
+      "notes": "Both map to XMP dc:subject; bag ↔ joined x-default (existing reconcile rule)."
+    },
+    {
+      "concept": "otherConstraints",
+      "photo_ids": [
+        "iptc.photo.otherConstraints"
+      ],
+      "video_ids": [
+        "iptc.video.otherConstraints"
+      ],
+      "audio_ids": [],
+      "tier": 2,
+      "transposition": "lang_alt_to_string",
+      "photo_datatype": "lang-alt",
+      "photo_cardinality": "one",
+      "video_datatype": "string",
+      "video_cardinality": "one",
+      "deferred": false,
+      "notes": "Photo x-default entry ↔ video string."
+    },
+    {
+      "concept": "digitalSourceType",
+      "photo_ids": [
+        "iptc.photo.digitalSourceType"
+      ],
+      "video_ids": [
+        "iptc.video.digitalSourceType"
+      ],
+      "audio_ids": [],
+      "tier": 2,
+      "transposition": "uri_to_cv_term",
+      "photo_datatype": "uri",
+      "photo_cardinality": "one",
+      "video_datatype": "struct",
+      "video_cardinality": "one",
+      "deferred": false,
+      "notes": "IPTC digitalsourcetype CV URI ↔ CvTerm with that CV id."
+    },
+    {
+      "concept": "modelReleaseStatus",
+      "photo_ids": [
+        "iptc.photo.modelReleaseStatus"
+      ],
+      "video_ids": [
+        "iptc.video.modelReleaseStatus"
+      ],
+      "audio_ids": [],
+      "tier": 2,
+      "transposition": "uri_to_cv_term",
+      "photo_datatype": "uri",
+      "photo_cardinality": "one",
+      "video_datatype": "struct",
+      "video_cardinality": "one",
+      "deferred": false,
+      "notes": "Same CV-URI ↔ CvTerm pattern as digitalSourceType."
+    },
+    {
+      "concept": "propertyReleaseStatus",
+      "photo_ids": [
+        "iptc.photo.propertyReleaseStatus"
+      ],
+      "video_ids": [
+        "iptc.video.propertyReleaseStatus"
+      ],
+      "audio_ids": [],
+      "tier": 2,
+      "transposition": "uri_to_cv_term",
+      "photo_datatype": "uri",
+      "photo_cardinality": "one",
+      "video_datatype": "struct",
+      "video_cardinality": "one",
+      "deferred": false,
+      "notes": "Same CV-URI ↔ CvTerm pattern as digitalSourceType."
+    },
+    {
+      "concept": "copyrightOwner",
+      "photo_ids": [
+        "iptc.photo.copyrightOwner"
+      ],
+      "video_ids": [
+        "iptc.video.copyrightOwner"
+      ],
+      "audio_ids": [],
+      "tier": 2,
+      "transposition": "struct_field_subset",
+      "photo_datatype": "struct",
+      "photo_cardinality": "many",
+      "video_datatype": "struct",
+      "video_cardinality": "many",
+      "deferred": false,
+      "notes": "Shared name/identifiers carry over; role exists only on video."
+    },
+    {
+      "concept": "licensor",
+      "photo_ids": [
+        "iptc.photo.licensor"
+      ],
+      "video_ids": [
+        "iptc.video.licensor"
+      ],
+      "audio_ids": [],
+      "tier": 2,
+      "transposition": "list_to_single",
+      "photo_datatype": "struct",
+      "photo_cardinality": "many",
+      "video_datatype": "struct",
+      "video_cardinality": "one",
+      "deferred": false,
+      "notes": "Photo Licensor list ↔ video Entity; extra photo entries preserved only under full IDs."
+    },
+    {
+      "concept": "locationCreated",
+      "photo_ids": [
+        "iptc.photo.locationCreated"
+      ],
+      "video_ids": [
+        "iptc.video.locationShot"
+      ],
+      "audio_ids": [],
+      "tier": 3,
+      "transposition": "struct_field_subset",
+      "photo_datatype": "struct",
+      "photo_cardinality": "many",
+      "video_datatype": "struct",
+      "video_cardinality": "many",
+      "deferred": false,
+      "notes": "Both Location lists; video Location lacks gpsAltitudeRef."
+    },
+    {
+      "concept": "locationShown",
+      "photo_ids": [
+        "iptc.photo.locationShownInTheImage"
+      ],
+      "video_ids": [
+        "iptc.video.locationShown"
+      ],
+      "audio_ids": [],
+      "tier": 3,
+      "transposition": "passthrough",
+      "photo_datatype": "struct",
+      "photo_cardinality": "many",
+      "video_datatype": "struct",
+      "video_cardinality": "many",
+      "deferred": false,
+      "notes": "Same Location struct list; photo property is locationShownInTheImage."
+    },
+    {
+      "concept": "personShown",
+      "photo_ids": [
+        "iptc.photo.personShownInTheImageWithDetails"
+      ],
+      "video_ids": [
+        "iptc.video.personShown"
+      ],
+      "audio_ids": [],
+      "tier": 3,
+      "transposition": "passthrough",
+      "photo_datatype": "struct",
+      "photo_cardinality": "many",
+      "video_datatype": "struct",
+      "video_cardinality": "many",
+      "deferred": false,
+      "notes": "Identical PersonWDetails struct lists."
+    },
+    {
+      "concept": "productShown",
+      "photo_ids": [
+        "iptc.photo.productShownInTheImage"
+      ],
+      "video_ids": [
+        "iptc.video.productShown"
+      ],
+      "audio_ids": [],
+      "tier": 3,
+      "transposition": "passthrough",
+      "photo_datatype": "struct",
+      "photo_cardinality": "many",
+      "video_datatype": "struct",
+      "video_cardinality": "many",
+      "deferred": false,
+      "notes": "ProductWGtin ↔ ProductWGTIN; same fields."
+    },
+    {
+      "concept": "shownEvent",
+      "photo_ids": [
+        "iptc.photo.eventName",
+        "iptc.photo.eventIdentifier"
+      ],
+      "video_ids": [
+        "iptc.video.shownEvent"
+      ],
+      "audio_ids": [],
+      "tier": 3,
+      "transposition": "name_uri_to_entity",
+      "photo_datatype": "lang-alt",
+      "photo_cardinality": "one",
+      "video_datatype": "struct",
+      "video_cardinality": "many",
+      "deferred": false,
+      "notes": "Photo eventName (lang-alt) + eventIdentifier (uri list) ↔ video Entity list."
+    },
+    {
+      "concept": "registryEntry",
+      "photo_ids": [
+        "iptc.photo.imageRegistryEntry"
+      ],
+      "video_ids": [
+        "iptc.video.registryEntry"
+      ],
+      "audio_ids": [],
+      "tier": 3,
+      "transposition": "passthrough",
+      "photo_datatype": "struct",
+      "photo_cardinality": "many",
+      "video_datatype": "struct",
+      "video_cardinality": "many",
+      "deferred": false,
+      "notes": "RegistryEntry struct lists."
+    },
+    {
+      "concept": "assetIdentifier",
+      "photo_ids": [
+        "iptc.photo.digitalImageGuid"
+      ],
+      "video_ids": [
+        "iptc.video.videoIdentifier"
+      ],
+      "audio_ids": [],
+      "tier": 3,
+      "transposition": "passthrough",
+      "photo_datatype": "string",
+      "photo_cardinality": "one",
+      "video_datatype": "string",
+      "video_cardinality": "one",
+      "deferred": false,
+      "notes": ""
+    },
+    {
+      "concept": "aboutCvTerms",
+      "photo_ids": [
+        "iptc.photo.cvTermAboutImage"
+      ],
+      "video_ids": [
+        "iptc.video.cvTermAboutTheContent"
+      ],
+      "audio_ids": [],
+      "tier": 3,
+      "transposition": "passthrough",
+      "photo_datatype": "struct",
+      "photo_cardinality": "many",
+      "video_datatype": "struct",
+      "video_cardinality": "many",
+      "deferred": false,
+      "notes": "CvTerm struct lists."
+    },
+    {
+      "concept": "featuredOrganisation",
+      "photo_ids": [
+        "iptc.photo.nameOfOrganisationFeaturedInTheImage"
+      ],
+      "video_ids": [
+        "iptc.video.featuredOrganisation"
+      ],
+      "audio_ids": [],
+      "tier": 3,
+      "transposition": "names_to_entity_list",
+      "photo_datatype": "string",
+      "photo_cardinality": "many",
+      "video_datatype": "struct",
+      "video_cardinality": "many",
+      "deferred": false,
+      "notes": "Photo string list ↔ video Entity.name."
+    },
+    {
+      "concept": "supplier",
+      "photo_ids": [
+        "iptc.photo.imageSupplier"
+      ],
+      "video_ids": [
+        "iptc.video.supplier"
+      ],
+      "audio_ids": [],
+      "tier": 3,
+      "transposition": "list_to_single",
+      "photo_datatype": "struct",
+      "photo_cardinality": "many",
+      "video_datatype": "struct",
+      "video_cardinality": "one",
+      "deferred": false,
+      "notes": "Photo ImageSupplier list ↔ video Entity; extra photo entries preserved only under full IDs."
+    },
+    {
+      "concept": "objectShown",
+      "photo_ids": [
+        "iptc.photo.artworkOrObjectInTheImage"
+      ],
+      "video_ids": [
+        "iptc.video.objectShown"
+      ],
+      "audio_ids": [],
+      "tier": 3,
+      "transposition": "struct_field_subset",
+      "photo_datatype": "struct",
+      "photo_cardinality": "many",
+      "video_datatype": "struct",
+      "video_cardinality": "many",
+      "deferred": true,
+      "notes": "Borderline: photo ArtworkOrObject is far richer; only title↔name transposes."
+    }
+  ]
+}

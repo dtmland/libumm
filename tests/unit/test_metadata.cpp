@@ -40,6 +40,24 @@ bool require_error(const umm::Result<void>& result, umm::ErrorCode code,
 int main() {
   umm::Metadata md;
 
+  if (md.mediaDomain() != umm::MediaDomain::unknown) {
+    return fail("default media domain is not unknown");
+  }
+  md.setMediaDomain(umm::MediaDomain::video);
+  if (md.mediaDomain() != umm::MediaDomain::video) {
+    return fail("setMediaDomain did not stick");
+  }
+  umm::Metadata copied_domain = md;
+  if (copied_domain.mediaDomain() != umm::MediaDomain::video) {
+    return fail("copy did not preserve media domain");
+  }
+  umm::Metadata assigned;
+  assigned = md;
+  if (assigned.mediaDomain() != umm::MediaDomain::video) {
+    return fail("assignment did not preserve media domain");
+  }
+  md.setMediaDomain(umm::MediaDomain::unknown);
+
   if (md.creator() || !md.propertyIds().empty() || !md.unmapped().empty() ||
       md.unmapped(umm::UnmappedKey{"Exif", "Exif.Image.Artist"})) {
     return fail("empty metadata is not empty");

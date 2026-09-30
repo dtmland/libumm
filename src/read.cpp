@@ -1,5 +1,6 @@
 #include "umm/umm.hpp"
 
+#include "core/media_domain.hpp"
 #include "core/read_internal.hpp"
 #include "core/reconcile.hpp"
 #include "core/sidecar.hpp"
@@ -119,10 +120,14 @@ Result<Metadata> read(const std::filesystem::path& media, ReadOptions options) {
     return loaded.error();
   }
   internal::LoadedRead asset = std::move(loaded).value();
-  return finish_read(
-      internal::reconcile(asset.embedded, asset.backend_id, asset.sidecar(),
-                          asset.file_type),
-      options, asset.backend_id);
+  Result<Metadata> metadata = internal::reconcile(
+      asset.embedded, asset.backend_id, asset.sidecar(), asset.file_type);
+  if (metadata.ok()) {
+    Metadata value = std::move(metadata).value();
+    value.setMediaDomain(internal::media_domain_from_file_type(asset.file_type));
+    metadata = std::move(value);
+  }
+  return finish_read(std::move(metadata), options, asset.backend_id);
 }
 
 }  // namespace umm

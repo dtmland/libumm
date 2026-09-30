@@ -57,6 +57,9 @@ int check_backend(const std::string& backend_id, const char* folder,
                  minimal.error().message.c_str());
     return 1;
   }
+  if (minimal.value().mediaDomain() != umm::MediaDomain::photo) {
+    return fail_read("stills read should set photo domain");
+  }
   if (!minimal.value().propertyIds().empty()) {
     return fail_read("minimal should have no Phase 1 properties");
   }
@@ -541,6 +544,9 @@ int check_video_backend() {
                  minimal.error().message.c_str());
     return 1;
   }
+  if (minimal.value().mediaDomain() != umm::MediaDomain::video) {
+    return fail_read("video read should set video domain");
+  }
   if (minimal.value().get("iptc.video.title") ||
       minimal.value().get("iptc.video.creator") ||
       minimal.value().creator()) {
@@ -632,6 +638,9 @@ int check_video_backend() {
     std::fprintf(stderr, "video minimal.mov read failed: %s\n",
                  mov.error().message.c_str());
     return 1;
+  }
+  if (mov.value().mediaDomain() != umm::MediaDomain::video) {
+    return fail_read("MOV read should set video domain");
   }
   return 0;
 }

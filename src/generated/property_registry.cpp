@@ -4,9 +4,11 @@
 // Source registry: registry/iptc-photo/iptc-photo.json (IPTC Photo Metadata 2025.1)
 // Source registry: registry/iptc-video/iptc-video.json (IPTC Video Metadata Hub 1.7)
 // EXIF overlay: registry/mappings/iptc-exif-overlay.json
+// Cross-media map: registry/mappings/cross-media-accessors.json
 
 #include "umm/registry.hpp"
 
+#include "cross_media_accessors.hpp"
 #include "property_registry.hpp"
 
 #include <iterator>

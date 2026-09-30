@@ -79,6 +79,10 @@ Value makeValue(auto payload) {
 
 }  // namespace
 
+MediaDomain Metadata::mediaDomain() const { return media_domain_; }
+
+void Metadata::setMediaDomain(MediaDomain domain) { media_domain_ = domain; }
+
 std::optional<PropertyValue> Metadata::get(std::string_view property_id) const {
   const auto it = properties_.find(std::string(property_id));
   if (it == properties_.end()) {

@@ -8,15 +8,18 @@ set(UMM_REGISTRY_GENERATOR "${CMAKE_CURRENT_SOURCE_DIR}/tools/registry/generate_
 set(UMM_REGISTRY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/registry/iptc-photo")
 set(UMM_REGISTRY_VIDEO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/registry/iptc-video")
 set(UMM_REGISTRY_OVERLAY "${CMAKE_CURRENT_SOURCE_DIR}/registry/mappings/iptc-exif-overlay.json")
+set(UMM_REGISTRY_CROSS_MEDIA "${CMAKE_CURRENT_SOURCE_DIR}/registry/mappings/cross-media-accessors.json")
 set(UMM_REGISTRY_GENERATED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/generated")
 set(UMM_REGISTRY_GENERATED_CPP "${UMM_REGISTRY_GENERATED_DIR}/property_registry.cpp")
 set(UMM_REGISTRY_GENERATED_HPP "${UMM_REGISTRY_GENERATED_DIR}/property_registry.hpp")
+set(UMM_REGISTRY_CROSS_MEDIA_HPP "${UMM_REGISTRY_GENERATED_DIR}/cross_media_accessors.hpp")
 set(UMM_CAPABILITIES_GENERATOR "${CMAKE_CURRENT_SOURCE_DIR}/tools/registry/generate_supported_types.py")
 set(UMM_CAPABILITIES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/registry/capabilities")
 set(UMM_CAPABILITIES_GENERATED_HPP "${UMM_REGISTRY_GENERATED_DIR}/capabilities_data.hpp")
 set(UMM_SUPPORTED_TYPES_MD "${CMAKE_CURRENT_SOURCE_DIR}/docs/supported-types.md")
 
-if(NOT EXISTS "${UMM_REGISTRY_GENERATED_CPP}" OR NOT EXISTS "${UMM_REGISTRY_GENERATED_HPP}")
+if(NOT EXISTS "${UMM_REGISTRY_GENERATED_CPP}" OR NOT EXISTS "${UMM_REGISTRY_GENERATED_HPP}"
+   OR NOT EXISTS "${UMM_REGISTRY_CROSS_MEDIA_HPP}")
   message(FATAL_ERROR
     "Committed registry sources missing under ${UMM_REGISTRY_GENERATED_DIR}. "
     "Run: python3 tools/registry/generate_cpp.py")
@@ -43,12 +46,14 @@ if(Python3_Interpreter_FOUND)
             --registry-dir "${UMM_REGISTRY_DIR}"
             --registry-dir "${UMM_REGISTRY_VIDEO_DIR}"
             --overlay "${UMM_REGISTRY_OVERLAY}"
+            --cross-media "${UMM_REGISTRY_CROSS_MEDIA}"
             --output-dir "${UMM_REGISTRY_GENERATED_DIR}"
     COMMAND "${CMAKE_COMMAND}" -E touch
             "${CMAKE_CURRENT_BINARY_DIR}/umm_registry_codegen.stamp"
     DEPENDS
       "${UMM_REGISTRY_GENERATOR}"
       "${UMM_REGISTRY_OVERLAY}"
+      "${UMM_REGISTRY_CROSS_MEDIA}"
       ${UMM_REGISTRY_JSON}
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     COMMENT "Regenerate src/generated property registry"

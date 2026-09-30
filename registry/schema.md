@@ -19,6 +19,7 @@ answered from the data alone.
 | `registry/iptc-photo/iptc-photo.json` | Photo importer output (generated-but-committed) |
 | `registry/iptc-video/iptc-video.json` | VMH importer output (generated-but-committed) |
 | `registry/mappings/iptc-exif-overlay.json` | Curated EXIF mappings from the IPTC Mapping Guidelines (session 07; `partial: true` until Stage 6) |
+| `registry/mappings/cross-media-accessors.json` | Hand-curated Phase 2 accessor map (session 37); photo+video ids, tier, transposition |
 | `tools/registry/import_iptc.py` | Stdlib-only IPTC Photo importer |
 | `tools/registry/import_vmh.py` | Stdlib-only IPTC Video Metadata Hub importer |
 | `tools/registry/generate_cpp.py` | Stdlib-only C++ table generator |
@@ -104,6 +105,44 @@ with a TR tag. The overlay is marked `partial: true` until Stage 6 completes it.
 `id` is a registry property id or struct-field id. Overlay tags use the same
 ExifTool-style names as the Technical Reference (`IFD0:Artist`, `GPS:GPSLatitude`).
 
+## Cross-media accessor map (`registry/mappings/cross-media-accessors.json`)
+
+Hand-curated decision artifact for Phase 2 convenience accessors. Rows are **not**
+inferred from name equality. `tools/registry/generate_cpp.py` validates every id
+against the imported registries and that declared datatype/cardinality match,
+then emits `src/generated/cross_media_accessors.hpp`.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `document` | string | Map title |
+| `version` | string | Map schema version |
+| `source` | object | `document` + `note` citing the Phase 2 analysis record |
+| `accessors` | array | One row per catalog concept |
+
+Each accessor row:
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `concept` | string | Accessor name (`title`, `locationCreated`, …) |
+| `photo_ids` | array of string | 1 or 2 `iptc.photo.*` ids (`shownEvent` has two) |
+| `video_ids` | array of string | 1 or 2 `iptc.video.*` ids |
+| `audio_ids` | array | Reserved; must be `[]` until an audio registry exists |
+| `tier` | integer | `1` (passthrough), `2` (transpose), or `3` (renamed) |
+| `transposition` | string | Closed vocabulary below |
+| `photo_datatype` | string | Registry datatype of the **first** photo id |
+| `photo_cardinality` | string | Registry cardinality of the first photo id |
+| `video_datatype` | string | Registry datatype of the first video id |
+| `video_cardinality` | string | Registry cardinality of the first video id |
+| `deferred` | boolean | `true` to skip until review accepts the row (`objectShown`) |
+| `notes` | string | Lossy directions and rename rationale |
+
+`transposition` vocabulary: `passthrough`, `string_to_lang_alt`,
+`string_list_to_lang_alt`, `lang_alt_to_string`, `names_to_entity_list`,
+`uri_to_cv_term`, `struct_field_subset`, `list_to_single`, `name_uri_to_entity`.
+
+`gps()` is already cross-media via well-known id `exif.gps.position` and is
+omitted: that id is not in the IPTC registries.
+
 ## C++ table (`src/generated/`)
 
 Session 07 generates `umm::PropertyDef` rows from `properties` (not structs).
@@ -128,6 +167,10 @@ LF newlines. `.gitattributes` pins `src/generated/**` to LF.
 `umm::Representations` also carries `quicktime_key` and `ebucore` (empty for
 photo rows). Only XMP and QuickTime mappings are used at runtime in Stage 7;
 EBUCore is imported as data.
+
+Session 37 also emits `cross_media_accessors.hpp`: `CrossMediaAccessorDef` rows
+with both-side `Datatype`/`Cardinality` so accessor code does not re-read the
+registry at runtime. The table is unused until session 39.
 
 ## Struct record
 
