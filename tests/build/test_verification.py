@@ -65,6 +65,8 @@ class TestVerificationLedger(unittest.TestCase):
         self.assertIn("test_cross_backend", text)
         self.assertIn("UMM_VERIFICATION_LEDGER", text)
         self.assertIn("tests/backend/test_cross_backend.cpp", text)
+        self.assertIn("test_cross_media", text)
+        self.assertIn("tests/backend/test_cross_media.cpp", text)
 
     def test_gitattributes_pins_lf(self) -> None:
         text = GITATTRIBUTES.read_text(encoding="utf-8")

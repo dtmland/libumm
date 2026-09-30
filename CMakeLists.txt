@@ -319,6 +319,27 @@ if(UMM_BUILD_TESTS)
     umm_apply_fixture_dir_to_test(test_write)
     umm_apply_corpus_dir_to_test(test_write)
 
+    add_executable(test_cross_media tests/backend/test_cross_media.cpp)
+    target_link_libraries(test_cross_media PRIVATE umm::umm)
+    target_include_directories(test_cross_media
+      PRIVATE
+        "${UMM_REGISTRY_GENERATED_DIR}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/backend"
+    )
+    umm_apply_fixture_dir(test_cross_media)
+    if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)
+      file(TO_CMAKE_PATH "${UMM_EXIFTOOL_SCRIPT}" UMM_TEST_XMEDIA_EXIFTOOL_SCRIPT)
+      file(TO_CMAKE_PATH "${UMM_PERL_EXECUTABLE}" UMM_TEST_XMEDIA_EXIFTOOL_PERL)
+      target_compile_definitions(test_cross_media
+        PRIVATE
+          "UMM_TEST_EXIFTOOL_SCRIPT=R\"(${UMM_TEST_XMEDIA_EXIFTOOL_SCRIPT})\""
+          "UMM_TEST_EXIFTOOL_PERL=R\"(${UMM_TEST_XMEDIA_EXIFTOOL_PERL})\""
+      )
+    endif()
+    add_test(NAME test_cross_media COMMAND test_cross_media)
+    umm_apply_fixture_dir_to_test(test_cross_media)
+
     add_executable(test_read tests/backend/test_read.cpp)
     target_link_libraries(test_read PRIVATE umm::umm)
     target_include_directories(test_read

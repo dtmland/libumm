@@ -46,6 +46,7 @@ These rules were applied throughout and still govern changes:
 | **10 — Cross-backend verification** | 27–28 | Tier B checksummed download corpus (closes MakerNote and proprietary-RAW deferrals); write-with-one/read-with-other comparison suite and divergence ledger. |
 | **11 — Release engineering** | 29–34 | Install rules and `umm::umm` CMake package export with consumer smoke test; version macros and `docs/abi-policy.md` (P4); THIRD-PARTY-NOTICES, vendored license texts, corresponding-source manifest (P1); `UMM_EXIV2_SHARED` option (P2); `tools/get-exiftool/` native acquisition scripts (P3, P9); tag-triggered draft-release pipeline with three-OS archives and SHA256SUMS. |
 | **12 — BMFF enablement** | 35 | HEIC/HEIF/AVIF/CR3/JXL sniffing, Exiv2-read/ExifTool-write pattern; AVIF in Tier A, HEIC/CR3/JXL in Tier B; ExifTool writes no IPTC IIM on BMFF. |
+| **13 — Cross-media accessors (Phase 2)** | 36–42 | `MediaDomain` on `Metadata`; generated photo↔video accessor map; table-driven video reconcile/write-sync; Tier 1–3 convenience accessors; catalog contract + JPEG/MP4/MOV matrix. `objectShown` stays deferred (title↔name only). |
 
 ## Conventions worth keeping
 

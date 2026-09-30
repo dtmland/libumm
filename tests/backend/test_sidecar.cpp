@@ -287,6 +287,66 @@ int test_unicode_pair(const std::string& backend) {
   return 0;
 }
 
+int test_video_embedded_vs_sidecar() {
+  umm::Backend* backend = umm::BackendManager::instance().get("exiftool");
+  if (!backend || !backend->availability().available) {
+    return 0;
+  }
+  const auto media = copy_named(raw_stem("video", "minimal", ".mp4"),
+                                "video-embedded-vs-sidecar.mp4");
+  umm::Metadata embedded;
+  embedded.setMediaDomain(umm::MediaDomain::video);
+  if (!embedded.setTitle({{"x-default", "Embedded Title"}}).ok()) {
+    return fail("video set embedded title");
+  }
+  const auto wrote_embedded =
+      umm::write(media, embedded,
+                 wopts("exiftool", umm::StoragePolicy::embedded_only));
+  if (!wrote_embedded.ok()) {
+    std::fprintf(stderr, "video embedded write failed: %s (%s)\n",
+                 wrote_embedded.error().message.c_str(),
+                 wrote_embedded.error().detail.c_str());
+    return 1;
+  }
+  umm::Metadata sidecar;
+  sidecar.setMediaDomain(umm::MediaDomain::video);
+  if (!sidecar.setTitle({{"x-default", "Sidecar Title"}}).ok()) {
+    return fail("video set sidecar title");
+  }
+  const auto wrote_sidecar =
+      umm::write(media, sidecar,
+                 wopts("exiftool", umm::StoragePolicy::sidecar_only));
+  if (!wrote_sidecar.ok()) {
+    std::fprintf(stderr, "video sidecar write failed: %s (%s)\n",
+                 wrote_sidecar.error().message.c_str(),
+                 wrote_sidecar.error().detail.c_str());
+    return 1;
+  }
+  const auto merged = umm::read(media, ropts("exiftool"));
+  if (!merged.ok()) {
+    return fail("video merged sidecar read failed");
+  }
+  const auto title = merged.value().title();
+  if (!title || title->resolution != umm::Resolution::conflict) {
+    return fail("video embedded vs sidecar title not conflict");
+  }
+  if (!has_container(*title, "embedded") || !has_container(*title, "sidecar")) {
+    return fail("video title missing embedded/sidecar provenance");
+  }
+  umm::ReadOptions no_merge = ropts("exiftool", false);
+  const auto embedded_only = umm::read(media, no_merge);
+  if (!embedded_only.ok()) {
+    return fail("video merge_sidecar=false failed");
+  }
+  const auto only_title = embedded_only.value().title();
+  const auto* alt =
+      only_title ? std::get_if<umm::LangAlt>(&only_title->value.data) : nullptr;
+  if (!alt || alt->at("x-default") != "Embedded Title") {
+    return fail("video unmerged title");
+  }
+  return 0;
+}
+
 int check_backend(const std::string& backend) {
   if (const int rc = test_paired_read(backend); rc != 0) {
     return rc;
@@ -315,6 +375,11 @@ int check_backend(const std::string& backend) {
   }
   if (const int rc = test_unicode_pair(backend); rc != 0) {
     return rc;
+  }
+  if (backend == "exiftool") {
+    if (const int rc = test_video_embedded_vs_sidecar(); rc != 0) {
+      return rc;
+    }
   }
   return 0;
 }

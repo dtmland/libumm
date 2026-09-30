@@ -67,6 +67,92 @@ for every property):
 GPS coordinates and named place are **separate** properties with different backend support;
 see [docs/supported-types.md §3](../supported-types.md#3-location-metadata-gps-and-named-place).
 
+## Cross-media accessors
+
+Convenience accessors exist only for concepts IPTC defines in **both** Photo Metadata and
+the Video Metadata Hub. Setters take a photo-native value and write the domain-correct
+property id. Getters probe `iptc.photo.*` then `iptc.video.*` and do not need
+`mediaDomain()`.
+
+- `MediaDomain::unknown` (the default) writes the photo id — Phase 1 setter behavior.
+- `MediaDomain::photo` / `MediaDomain::video` select that domain on set.
+- `umm::read` sets the domain from the sniffed file type (JPEG → photo, MP4/MOV → video).
+- Full registry ids stay reachable via `get`/`set`. Photo-only `rating()` (`iptc.photo.imageRating`)
+  is not a cross-media accessor. `gps()` is already cross-media via well-known
+  `exif.gps.position` (not an IPTC registry id).
+- `objectShown` is **deferred**: ArtworkOrObject ↔ Entity would keep only `title`↔`name`.
+
+### Domain and transposition
+
+| Rule | Behavior |
+|---|---|
+| Unknown domain on set | Photo property ids |
+| Getters | Probe photo ids, then video ids |
+| Tier 1 | Same shape both sides (pass-through) |
+| Tier 2 | Datatype transpose (string ↔ lang-alt, names ↔ Entity, URI ↔ CvTerm, list ↔ single) |
+| Tier 3 | Same concept, different property names (`locationCreated` ↔ `locationShot`, and so on) |
+| `shownEvent` | Photo `eventName` + `eventIdentifier` ↔ video Entity list; setter takes name + identifiers |
+| Lossy transposes | Extra photo fields/entries stay only under full ids (licensor/supplier list→single; location drops `gpsAltitudeRef` on video) |
+
+### Tier 1 — identical shape
+
+| Accessor | Photo id | Video id |
+|---|---|---|
+| `title` | `iptc.photo.title` | `iptc.video.title` |
+| `description` | `iptc.photo.description` | `iptc.video.description` |
+| `copyrightNotice` | `iptc.photo.copyrightNotice` | `iptc.video.copyrightNotice` |
+| `creditLine` | `iptc.photo.creditLine` | `iptc.video.creditLine` |
+| `dateCreated` | `iptc.photo.dateCreated` | `iptc.video.dateCreated` |
+| `altTextAccessibility` | `iptc.photo.altTextAccessibility` | `iptc.video.altTextAccessibility` |
+| `extendedDescriptionAccessibility` | `iptc.photo.extendedDescriptionAccessibility` | `iptc.video.extendedDescriptionAccessibility` |
+| `rightsUsageTerms` | `iptc.photo.rightsUsageTerms` | `iptc.video.rightsUsageTerms` |
+| `sourceSupplyChain` | `iptc.photo.sourceSupplyChain` | `iptc.video.sourceSupplyChain` |
+| `dataMining` | `iptc.photo.dataMining` | `iptc.video.dataMining` |
+| `contributor` | `iptc.photo.contributor` | `iptc.video.contributor` |
+| `genre` | `iptc.photo.genre` | `iptc.video.genre` |
+| `embeddedEncodedRightsExpression` | `iptc.photo.embeddedEncodedRightsExpression` | `iptc.video.embeddedEncodedRightsExpression` |
+| `linkedEncodedRightsExpression` | `iptc.photo.linkedEncodedRightsExpression` | `iptc.video.linkedEncodedRightsExpression` |
+| `aiPromptInformation` | `iptc.photo.aiPromptInformation` | `iptc.video.aiPromptInformation` |
+| `aiPromptWriterName` | `iptc.photo.aiPromptWriterName` | `iptc.video.aiPromptWriterName` |
+| `aiSystemUsed` | `iptc.photo.aiSystemUsed` | `iptc.video.aiSystemUsed` |
+| `aiSystemVersionUsed` | `iptc.photo.aiSystemVersionUsed` | `iptc.video.aiSystemVersionUsed` |
+
+### Tier 2 — transposing
+
+| Accessor | Photo | Video | Transpose |
+|---|---|---|---|
+| `creator` | string list | Entity list | names ↔ Entity.name |
+| `headline` | string | lang-alt | string ↔ x-default |
+| `keywords` | string list | lang-alt | joined x-default |
+| `otherConstraints` | lang-alt | string | x-default ↔ string |
+| `digitalSourceType` | URI | CvTerm | URI ↔ cvId |
+| `modelReleaseStatus` | URI | CvTerm | URI ↔ cvId |
+| `propertyReleaseStatus` | URI | CvTerm | URI ↔ cvId |
+| `copyrightOwner` | struct list | struct list | name/identifiers subset; role video-only |
+| `licensor` | struct list | single Entity | extra photo entries stay on the full id |
+
+### Tier 3 — renamed concepts
+
+| Accessor | Photo id(s) | Video id |
+|---|---|---|
+| `locationCreated` | `iptc.photo.locationCreated` | `iptc.video.locationShot` |
+| `locationShown` | `iptc.photo.locationShownInTheImage` | `iptc.video.locationShown` |
+| `personShown` | `iptc.photo.personShownInTheImageWithDetails` | `iptc.video.personShown` |
+| `productShown` | `iptc.photo.productShownInTheImage` | `iptc.video.productShown` |
+| `shownEvent` | `iptc.photo.eventName` + `iptc.photo.eventIdentifier` | `iptc.video.shownEvent` |
+| `registryEntry` | `iptc.photo.imageRegistryEntry` | `iptc.video.registryEntry` |
+| `assetIdentifier` | `iptc.photo.digitalImageGuid` | `iptc.video.videoIdentifier` |
+| `aboutCvTerms` | `iptc.photo.cvTermAboutImage` | `iptc.video.cvTermAboutTheContent` |
+| `featuredOrganisation` | `iptc.photo.nameOfOrganisationFeaturedInTheImage` | `iptc.video.featuredOrganisation` |
+| `supplier` | `iptc.photo.imageSupplier` | `iptc.video.supplier` |
+
+Photo `locationCreated` still writes the Phase 1 named-place path (photoshop/IIM city).
+`personShown` uses the WithDetails struct list, not the legacy string-list
+`iptc.photo.personShownInTheImage`.
+
+The map in `registry/mappings/cross-media-accessors.json` is the source of truth; a
+contract test fails if a non-deferred row lacks a header accessor.
+
 ## Full property reference
 
 The tables below list every canonical property. The registry JSON in `registry/` is the

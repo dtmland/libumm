@@ -25,6 +25,8 @@ Documentation is organized by audience.
   XMP / IPTC IIM / EXIF / QuickTime (normative; referenced from `src/`).
 - [Versioning and ABI policy](abi-policy.md) — semver rules, version macros, package
   compatibility.
+- [Unreleased notes](developer/release-notes.md) — pre-1.0 ABI/layout notes for the next
+  release (session 36 `Metadata` domain member).
 - [Test media plan](test-media-plan.md) — fixture strategy (Tier A generated, Tier B
   checksummed downloads).
 - [Decision records](analysis/) — dated, authoritative design decisions (S/M/R/P series),
