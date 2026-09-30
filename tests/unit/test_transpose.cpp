@@ -133,8 +133,8 @@ int main() {
   const std::vector<std::string> event_ids{"http://example.com/event/1"};
   const umm::Structure entity =
       umm::internal::name_uri_to_entity(event_name, event_ids);
-  const auto back = umm::internal::entity_to_name_uri(entity);
-  if (back.first != event_name || back.second != event_ids) {
+  const auto event_back = umm::internal::entity_to_name_uri(entity);
+  if (event_back.first != event_name || event_back.second != event_ids) {
     return fail("name_uri_to_entity round-trip");
   }
 

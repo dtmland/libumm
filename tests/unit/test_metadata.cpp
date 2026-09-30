@@ -511,12 +511,12 @@ int main() {
     return fail("creator getter did not probe video id");
   }
 
-  umm::Value city;
-  city.data = std::string("Paris");
+  umm::Value location_city;
+  location_city.data = std::string("Paris");
   umm::Value alt_ref;
   alt_ref.data = 0.0;
   umm::Structure location;
-  location.emplace("city", city);
+  location.emplace("city", location_city);
   location.emplace("gpsAltitudeRef", alt_ref);
 
   umm::Value person_shown_name;
