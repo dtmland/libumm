@@ -1331,14 +1331,24 @@ int test_tier1_accessor_roundtrip(const std::string& backend, const char* folder
                  got.aiSystemUsed().has_value());
     return fail("tier1 accessors missing after read");
   }
-  const auto* mining = std::get_if<std::string>(&got.dataMining()->value.data);
-  const auto* ai = std::get_if<std::string>(&got.aiSystemUsed()->value.data);
-  if (!mining || mining->find("data-mining") == std::string::npos || !ai ||
-      ai->find("libumm-test-ai") == std::string::npos) {
+  const auto mining = got.dataMining();
+  const auto ai = got.aiSystemUsed();
+  if (!mining || !ai || !value_has_text(mining->value, "data-mining") ||
+      !value_has_text(ai->value, "libumm-test-ai")) {
+    std::fprintf(stderr, "tier1 scalars mining=%s ai=%s\n",
+                 mining ? mining->value.toString().c_str() : "(missing)",
+                 ai ? ai->value.toString().c_str() : "(missing)");
     return fail("tier1 scalar round-trip");
   }
-  if (!value_has_text(got.contributor()->value, "Pat Contributor") ||
-      !value_has_text(got.genre()->value, "example.com/cv/news")) {
+  const auto contributor = got.contributor();
+  const auto genre = got.genre();
+  if (!contributor || !genre ||
+      !value_has_text(contributor->value, "Pat Contributor") ||
+      !value_has_text(genre->value, "example.com/cv/news")) {
+    std::fprintf(stderr, "tier1 structs contributor=%s genre=%s\n",
+                 contributor ? contributor->value.toString().c_str()
+                             : "(missing)",
+                 genre ? genre->value.toString().c_str() : "(missing)");
     return fail("tier1 struct round-trip");
   }
   return 0;

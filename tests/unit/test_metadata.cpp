@@ -456,9 +456,7 @@ int main() {
                  dst_prop->value.toString().c_str());
     return fail("video digitalSourceType stores CvTerm");
   }
-  const auto cv_id = v_dst->find("cvId");
-  if (cv_id == v_dst->end() ||
-      !std::get_if<std::string>(&cv_id->second.data)) {
+  if (!std::get_if<std::string>(&v_dst->at("cvId").data)) {
     return fail("video digitalSourceType cvId");
   }
 
@@ -499,13 +497,13 @@ int main() {
   }
 
   umm::Metadata unknown_probe;
-  umm::Value video_creator;
+  umm::Value video_creator_by_id;
   umm::Structure entity;
   umm::Value entity_name;
   entity_name.data = umm::LangAlt{{"x-default", "Pat"}};
   entity.emplace("name", entity_name);
-  video_creator.data = std::vector<umm::Structure>{entity};
-  if (!require_ok(unknown_probe.set("iptc.video.creator", video_creator),
+  video_creator_by_id.data = std::vector<umm::Structure>{entity};
+  if (!require_ok(unknown_probe.set("iptc.video.creator", video_creator_by_id),
                   "set video creator by id")) {
     return 1;
   }
