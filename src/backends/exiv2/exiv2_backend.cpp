@@ -52,6 +52,29 @@ bool is_xmp_simple_array(std::string_view type) {
   return type == "XmpBag" || type == "XmpSeq";
 }
 
+// Exiv2's preferred prefixes are iptcExt/iptc; it also accepts Iptc4xmpExt/
+// Iptc4xmpCore on write but returns the short prefixes on read. Reconcile
+// and the ExifTool adapter use the official prefixes.
+std::string canonicalize_exiv2_xmp_key(std::string key) {
+  auto replace_ns = [&](std::string_view from, std::string_view to) {
+    const std::string prefix = "Xmp." + std::string(from) + ".";
+    if (key.rfind(prefix, 0) == 0) {
+      key.replace(0, prefix.size(), "Xmp." + std::string(to) + ".");
+    }
+  };
+  replace_ns("iptcExt", "Iptc4xmpExt");
+  replace_ns("iptcCore", "Iptc4xmpCore");
+  replace_ns("iptc", "Iptc4xmpCore");
+  return key;
+}
+
+std::string exiv2_entry_key(std::string family, std::string key) {
+  if (family == "Xmp") {
+    return canonicalize_exiv2_xmp_key(std::move(key));
+  }
+  return key;
+}
+
 template <typename Data>
 void append_entries(UnmappedDocument& document, const Data& data,
                     std::string family) {
@@ -65,7 +88,7 @@ void append_entries(UnmappedDocument& document, const Data& data,
       for (std::size_t i = 0; i < metadatum.count(); ++i) {
         UnmappedEntry entry;
         entry.key.family = family;
-        entry.key.key = metadatum.key();
+        entry.key.key = exiv2_entry_key(family, metadatum.key());
         entry.key.key += '[';
         entry.key.key += std::to_string(i + 1);
         entry.key.key += ']';
@@ -77,7 +100,7 @@ void append_entries(UnmappedDocument& document, const Data& data,
     }
     UnmappedEntry entry;
     entry.key.family = family;
-    entry.key.key = metadatum.key();
+    entry.key.key = exiv2_entry_key(family, metadatum.key());
     entry.type_hint = type;
     entry.value = metadatum.toString();
     document.entries.push_back(std::move(entry));

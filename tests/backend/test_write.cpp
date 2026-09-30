@@ -1272,6 +1272,144 @@ int test_video_mapped_roundtrip() {
   return test_video_mapped_container(".mov");
 }
 
+umm::Structure sample_person() {
+  umm::Value name;
+  name.data = umm::LangAlt{{"x-default", "Pat Contributor"}};
+  umm::Structure person;
+  person.emplace("name", std::move(name));
+  return person;
+}
+
+umm::Structure sample_genre() {
+  umm::Value cv;
+  cv.data = std::string("http://example.com/cv/news");
+  umm::Structure term;
+  term.emplace("cvId", std::move(cv));
+  return term;
+}
+
+int test_tier1_accessor_roundtrip(const std::string& backend, const char* folder,
+                                  const char* ext, umm::MediaDomain domain) {
+  const auto file = copy_fixture(raw_stem(folder, "minimal", ext),
+                                 backend + std::string("-tier1") + ext);
+  umm::Metadata metadata;
+  metadata.setMediaDomain(domain);
+  umm::LangAlt title{{"x-default", "Tier1 Title"}};
+  if (!metadata.setTitle(title).ok() ||
+      !metadata.setContributor({sample_person()}).ok() ||
+      !metadata.setGenre({sample_genre()}).ok() ||
+      !metadata.setDataMining("http://example.com/data-mining").ok() ||
+      !metadata.setAiSystemUsed("libumm-test-ai").ok()) {
+    return fail("tier1 set accessors");
+  }
+  const auto written = umm::write(file, metadata, opts(backend));
+  if (!written.ok()) {
+    std::fprintf(stderr, "tier1 write failed (%s %s): %s (%s)\n", folder, ext,
+                 written.error().message.c_str(),
+                 written.error().detail.c_str());
+    return 1;
+  }
+  const auto round = umm::read(file, ropts(backend));
+  if (!round.ok()) {
+    std::fprintf(stderr, "tier1 read failed (%s %s): %s\n", folder, ext,
+                 round.error().message.c_str());
+    return 1;
+  }
+  const umm::Metadata& got = round.value();
+  if (!lang_is(got, domain == umm::MediaDomain::video ? "iptc.video.title"
+                                                     : "iptc.photo.title",
+               "Tier1 Title")) {
+    return fail("tier1 title round-trip");
+  }
+  if (!got.title() || !got.contributor() || !got.genre() || !got.dataMining() ||
+      !got.aiSystemUsed()) {
+    std::fprintf(stderr,
+                 "tier1 accessors after read title=%d contributor=%d genre=%d "
+                 "dataMining=%d aiSystemUsed=%d\n",
+                 got.title().has_value(), got.contributor().has_value(),
+                 got.genre().has_value(), got.dataMining().has_value(),
+                 got.aiSystemUsed().has_value());
+    return fail("tier1 accessors missing after read");
+  }
+  const auto mining = got.dataMining();
+  const auto ai = got.aiSystemUsed();
+  if (!mining || !ai || !value_has_text(mining->value, "data-mining") ||
+      !value_has_text(ai->value, "libumm-test-ai")) {
+    std::fprintf(stderr, "tier1 scalars mining=%s ai=%s\n",
+                 mining ? mining->value.toString().c_str() : "(missing)",
+                 ai ? ai->value.toString().c_str() : "(missing)");
+    return fail("tier1 scalar round-trip");
+  }
+  const auto contributor = got.contributor();
+  const auto genre = got.genre();
+  if (!contributor || !genre ||
+      !value_has_text(contributor->value, "Pat Contributor") ||
+      !value_has_text(genre->value, "example.com/cv/news")) {
+    std::fprintf(stderr, "tier1 structs contributor=%s genre=%s\n",
+                 contributor ? contributor->value.toString().c_str()
+                             : "(missing)",
+                 genre ? genre->value.toString().c_str() : "(missing)");
+    return fail("tier1 struct round-trip");
+  }
+  return 0;
+}
+
+int test_tier2_accessor_roundtrip(const std::string& backend, const char* folder,
+                                  const char* ext, umm::MediaDomain domain) {
+  const auto file = copy_fixture(raw_stem(folder, "minimal", ext),
+                                 backend + std::string("-tier2") + ext);
+  umm::Metadata metadata;
+  metadata.setMediaDomain(domain);
+  const std::string dst =
+      "http://cv.iptc.org/newscodes/digitalsourcetype/digitalCapture";
+  if (!metadata.setCreator({"Tier2 Creator"}).ok() ||
+      !metadata.setHeadline("Tier2 Headline").ok() ||
+      !metadata.setKeywords({"alpha", "beta"}).ok() ||
+      !metadata.setDigitalSourceType(dst).ok()) {
+    return fail("tier2 set accessors");
+  }
+  const auto written = umm::write(file, metadata, opts(backend));
+  if (!written.ok()) {
+    std::fprintf(stderr, "tier2 write failed (%s %s): %s (%s)\n", folder, ext,
+                 written.error().message.c_str(),
+                 written.error().detail.c_str());
+    return 1;
+  }
+  const auto round = umm::read(file, ropts(backend));
+  if (!round.ok()) {
+    std::fprintf(stderr, "tier2 read failed (%s %s): %s\n", folder, ext,
+                 round.error().message.c_str());
+    return 1;
+  }
+  const umm::Metadata& got = round.value();
+  if (!got.creator() || !got.headline() || !got.keywords() ||
+      !got.digitalSourceType()) {
+    return fail("tier2 accessors missing after read");
+  }
+  if (!value_has_text(got.creator()->value, "Tier2 Creator") ||
+      !value_has_text(got.headline()->value, "Tier2 Headline") ||
+      !value_has_text(got.keywords()->value, "alpha") ||
+      !value_has_text(got.digitalSourceType()->value, "digitalCapture")) {
+    return fail("tier2 value round-trip");
+  }
+  if (domain == umm::MediaDomain::video) {
+    if (!std::get_if<std::vector<umm::Structure>>(&got.creator()->value.data) ||
+        !std::get_if<umm::LangAlt>(&got.headline()->value.data) ||
+        !std::get_if<umm::LangAlt>(&got.keywords()->value.data) ||
+        !std::get_if<umm::Structure>(&got.digitalSourceType()->value.data)) {
+      return fail("tier2 video stored domain shapes");
+    }
+  } else {
+    if (!std::get_if<std::vector<std::string>>(&got.creator()->value.data) ||
+        !std::get_if<std::string>(&got.headline()->value.data) ||
+        !std::get_if<std::vector<std::string>>(&got.keywords()->value.data) ||
+        !std::get_if<std::string>(&got.digitalSourceType()->value.data)) {
+      return fail("tier2 photo stored domain shapes");
+    }
+  }
+  return 0;
+}
+
 int check_backend(const std::string& backend,
                   const std::vector<std::string>& readers) {
   if (const int rc = test_payload(backend, "jpeg", ".jpg"); rc != 0) {
@@ -1357,6 +1495,16 @@ int check_backend(const std::string& backend,
   if (const int rc = test_webp_no_iptc_write(backend); rc != 0) {
     return rc;
   }
+  if (const int rc = test_tier1_accessor_roundtrip(
+          backend, "jpeg", ".jpg", umm::MediaDomain::photo);
+      rc != 0) {
+    return rc;
+  }
+  if (const int rc = test_tier2_accessor_roundtrip(
+          backend, "jpeg", ".jpg", umm::MediaDomain::photo);
+      rc != 0) {
+    return rc;
+  }
   return 0;
 }
 
@@ -1393,5 +1541,18 @@ int main() {
   if (const int rc = test_video_write(); rc != 0) {
     return rc;
   }
-  return test_video_mapped_roundtrip();
+  if (const int rc = test_video_mapped_roundtrip(); rc != 0) {
+    return rc;
+  }
+  umm::Backend* exiftool = manager.get("exiftool");
+  if (exiftool && exiftool->availability().available) {
+    if (const int rc = test_tier1_accessor_roundtrip(
+            "exiftool", "video", ".mp4", umm::MediaDomain::video);
+        rc != 0) {
+      return rc;
+    }
+    return test_tier2_accessor_roundtrip("exiftool", "video", ".mp4",
+                                        umm::MediaDomain::video);
+  }
+  return 0;
 }

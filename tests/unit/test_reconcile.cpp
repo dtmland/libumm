@@ -360,7 +360,8 @@ int main() {
     if (!result.ok()) {
       return fail("video qt-only reconcile failed");
     }
-    if (result.value().creator() || result.value().description()) {
+    if (result.value().get("iptc.photo.creator") ||
+        result.value().get("iptc.photo.description")) {
       return fail("video file filled photo properties");
     }
     const auto title = result.value().get("iptc.video.title");

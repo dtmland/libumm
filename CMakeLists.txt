@@ -72,6 +72,7 @@ add_library(umm
   src/capabilities.cpp
   src/core/reconcile.cpp
   src/core/xmp_codec.cpp
+  src/core/transpose.cpp
   src/core/write_sync.cpp
   src/core/atomic_write.cpp
   src/core/sidecar.cpp
@@ -148,6 +149,14 @@ if(UMM_BUILD_TESTS)
   add_executable(test_metadata tests/unit/test_metadata.cpp)
   target_link_libraries(test_metadata PRIVATE umm::umm)
   add_test(NAME test_metadata COMMAND test_metadata)
+
+  add_executable(test_transpose tests/unit/test_transpose.cpp)
+  target_link_libraries(test_transpose PRIVATE umm::umm)
+  target_include_directories(test_transpose
+    PRIVATE
+      "${CMAKE_CURRENT_SOURCE_DIR}/src"
+  )
+  add_test(NAME test_transpose COMMAND test_transpose)
 
   add_executable(test_reconcile tests/unit/test_reconcile.cpp)
   target_link_libraries(test_reconcile PRIVATE umm::umm)

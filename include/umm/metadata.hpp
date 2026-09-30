@@ -50,19 +50,46 @@ class Metadata {
   Result<void> remove(std::string_view property_id);
   std::vector<std::string> propertyIds() const;  // properties present
 
-  // --- Typed convenience accessors (Phase 1 set; IPTC semantics) ------------
-  std::optional<PropertyValue> creator() const;          // iptc.photo.creator
-  std::optional<PropertyValue> description() const;      // iptc.photo.description
-  std::optional<PropertyValue> headline() const;         // iptc.photo.headline
-  std::optional<PropertyValue> dateCreated() const;      // iptc.photo.dateCreated
-  std::optional<PropertyValue> copyrightNotice() const;  // iptc.photo.copyrightNotice
-  std::optional<PropertyValue> creditLine() const;       // iptc.photo.creditLine
-  std::optional<PropertyValue> keywords() const;         // iptc.photo.keywords
-  std::optional<PropertyValue> rating() const;           // iptc.photo.imageRating
+  // --- Typed convenience accessors ------------------------------------------
+  // Cross-media getters probe iptc.photo.* then iptc.video.* and do not need
+  // mediaDomain(). Cross-media setters resolve through the generated
+  // CrossMediaAccessorDef table; unknown domain writes the photo id (Phase 1).
+  //
+  // Photo-only until later sessions: locationCreated (session 41).
+  // rating() stays photo-only. Tier 2 setters transpose photo-native values
+  // into the domain shape; getters return the stored domain value.
+  std::optional<PropertyValue> creator() const;          // cross-media: names ↔ EntityWRole.name
+  std::optional<PropertyValue> description() const;      // cross-media: iptc.photo.description / iptc.video.description
+  std::optional<PropertyValue> headline() const;         // cross-media: string ↔ x-default lang-alt
+  std::optional<PropertyValue> dateCreated() const;      // cross-media: iptc.photo.dateCreated / iptc.video.dateCreated
+  std::optional<PropertyValue> copyrightNotice() const;  // cross-media: iptc.photo.copyrightNotice / iptc.video.copyrightNotice
+  std::optional<PropertyValue> creditLine() const;       // cross-media: iptc.photo.creditLine / iptc.video.creditLine
+  std::optional<PropertyValue> keywords() const;         // cross-media: string list ↔ joined x-default lang-alt
+  std::optional<PropertyValue> rating() const;           // photo-only: iptc.photo.imageRating
+  std::optional<PropertyValue> title() const;            // cross-media: iptc.photo.title / iptc.video.title
+  std::optional<PropertyValue> altTextAccessibility() const;  // cross-media: iptc.photo.altTextAccessibility / iptc.video.altTextAccessibility
+  std::optional<PropertyValue> extendedDescriptionAccessibility() const;  // cross-media: iptc.photo.extendedDescriptionAccessibility / iptc.video.extendedDescriptionAccessibility
+  std::optional<PropertyValue> rightsUsageTerms() const;  // cross-media: iptc.photo.rightsUsageTerms / iptc.video.rightsUsageTerms
+  std::optional<PropertyValue> sourceSupplyChain() const;  // cross-media: iptc.photo.sourceSupplyChain / iptc.video.sourceSupplyChain
+  std::optional<PropertyValue> dataMining() const;         // cross-media: iptc.photo.dataMining / iptc.video.dataMining
+  std::optional<PropertyValue> contributor() const;        // cross-media: iptc.photo.contributor / iptc.video.contributor
+  std::optional<PropertyValue> genre() const;              // cross-media: iptc.photo.genre / iptc.video.genre
+  std::optional<PropertyValue> embeddedEncodedRightsExpression() const;  // cross-media: iptc.photo.embeddedEncodedRightsExpression / iptc.video.embeddedEncodedRightsExpression
+  std::optional<PropertyValue> linkedEncodedRightsExpression() const;    // cross-media: iptc.photo.linkedEncodedRightsExpression / iptc.video.linkedEncodedRightsExpression
+  std::optional<PropertyValue> aiPromptInformation() const;   // cross-media: iptc.photo.aiPromptInformation / iptc.video.aiPromptInformation
+  std::optional<PropertyValue> aiPromptWriterName() const;    // cross-media: iptc.photo.aiPromptWriterName / iptc.video.aiPromptWriterName
+  std::optional<PropertyValue> aiSystemUsed() const;          // cross-media: iptc.photo.aiSystemUsed / iptc.video.aiSystemUsed
+  std::optional<PropertyValue> aiSystemVersionUsed() const;   // cross-media: iptc.photo.aiSystemVersionUsed / iptc.video.aiSystemVersionUsed
   // Location: GPS coordinates and named place are SEPARATE properties
   // (supported-types.md §3).
-  std::optional<PropertyValue> gps() const;              // exif.gps.position
-  std::optional<PropertyValue> locationCreated() const;  // iptc.photo.locationCreated
+  std::optional<PropertyValue> otherConstraints() const;  // cross-media: lang-alt ↔ string
+  std::optional<PropertyValue> digitalSourceType() const;  // cross-media: URI ↔ CvTerm.cvId
+  std::optional<PropertyValue> modelReleaseStatus() const;  // cross-media: URI ↔ CvTerm.cvId
+  std::optional<PropertyValue> propertyReleaseStatus() const;  // cross-media: URI ↔ CvTerm.cvId
+  std::optional<PropertyValue> copyrightOwner() const;  // cross-media: name/identifiers subset; role video-only
+  std::optional<PropertyValue> licensor() const;  // cross-media: photo list ↔ video single; >1 on video errors
+  std::optional<PropertyValue> gps() const;              // cross-media: exif.gps.position
+  std::optional<PropertyValue> locationCreated() const;  // photo-only until session 41: iptc.photo.locationCreated
 
   Result<void> setCreator(std::vector<std::string> names);
   Result<void> setDescription(LangAlt text);
@@ -72,6 +99,26 @@ class Metadata {
   Result<void> setCreditLine(std::string credit);
   Result<void> setKeywords(std::vector<std::string> keywords);
   Result<void> setRating(double rating);
+  Result<void> setTitle(LangAlt text);
+  Result<void> setAltTextAccessibility(LangAlt text);
+  Result<void> setExtendedDescriptionAccessibility(LangAlt text);
+  Result<void> setRightsUsageTerms(LangAlt text);
+  Result<void> setSourceSupplyChain(std::string source);
+  Result<void> setDataMining(std::string uri);
+  Result<void> setContributor(std::vector<Structure> contributors);
+  Result<void> setGenre(std::vector<Structure> terms);
+  Result<void> setEmbeddedEncodedRightsExpression(std::vector<Structure> expressions);
+  Result<void> setLinkedEncodedRightsExpression(std::vector<Structure> expressions);
+  Result<void> setAiPromptInformation(std::string text);
+  Result<void> setAiPromptWriterName(std::string name);
+  Result<void> setAiSystemUsed(std::string system);
+  Result<void> setAiSystemVersionUsed(std::string version);
+  Result<void> setOtherConstraints(LangAlt text);
+  Result<void> setDigitalSourceType(std::string uri);
+  Result<void> setModelReleaseStatus(std::string uri);
+  Result<void> setPropertyReleaseStatus(std::string uri);
+  Result<void> setCopyrightOwner(std::vector<Structure> owners);
+  Result<void> setLicensor(std::vector<Structure> licensors);
   Result<void> setGps(GpsCoordinate position);
   Result<void> setLocationCreated(std::vector<Structure> locations);
 
@@ -86,6 +133,9 @@ class Metadata {
   void assignUnmapped(std::vector<UnmappedEntry> entries);
 
  private:
+  std::optional<PropertyValue> getConcept(std::string_view concept_name) const;
+  Result<void> setConcept(std::string_view concept_name, Value value);
+
   std::map<std::string, PropertyValue> properties_;
   std::vector<UnmappedEntry> unmapped_;
   MediaDomain media_domain_{MediaDomain::unknown};
