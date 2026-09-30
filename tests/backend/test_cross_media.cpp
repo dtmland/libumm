@@ -4,6 +4,7 @@
 
 #include <cstdio>
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <variant>
@@ -60,8 +61,8 @@ umm::Value make_value(auto payload) {
   return value;
 }
 
-std::string marker_for(std::string_view concept) {
-  return "XM-" + std::string(concept);
+std::string marker_for(std::string_view name) {
+  return "XM-" + std::string(name);
 }
 
 umm::Structure named_entity(const std::string& marker) {
@@ -72,8 +73,8 @@ umm::Structure named_entity(const std::string& marker) {
 
 umm::Value sample_photo_value(const umm::internal::CrossMediaAccessorDef& def) {
   const std::string marker = marker_for(def.concept_name);
-  const std::string_view concept = def.concept_name;
-  if (concept == "dateCreated") {
+  const std::string_view name = def.concept_name;
+  if (name == "dateCreated") {
     umm::DateTime when;
     when.year = 2020;
     when.month = 1;
@@ -83,7 +84,7 @@ umm::Value sample_photo_value(const umm::internal::CrossMediaAccessorDef& def) {
     when.second = 5;
     return make_value(when);
   }
-  if (concept == "shownEvent") {
+  if (name == "shownEvent") {
     umm::Structure entity = named_entity(marker);
     entity.emplace("identifiers",
                    make_value(std::vector<std::string>{
@@ -97,33 +98,35 @@ umm::Value sample_photo_value(const umm::internal::CrossMediaAccessorDef& def) {
     return make_value(std::vector<std::string>{marker});
   }
   if (def.photo_datatype == umm::Datatype::text) {
-    if (concept == "dataMining" || concept == "digitalSourceType" ||
-        concept == "modelReleaseStatus" ||
-        concept == "propertyReleaseStatus") {
+    if (name == "dataMining" || name == "digitalSourceType" ||
+        name == "modelReleaseStatus" || name == "propertyReleaseStatus") {
       return make_value("http://example.com/cv/" + marker);
     }
     return make_value(marker);
   }
   umm::Structure fields;
-  if (concept == "locationCreated" || concept == "locationShown") {
+  if (name == "locationCreated" || name == "locationShown") {
     fields.emplace("city", make_value(std::string("City-") + marker));
-  } else if (concept == "personShown" || concept == "productShown" ||
-             concept == "contributor" || concept == "licensor") {
+  } else if (name == "personShown" || name == "productShown" ||
+             name == "contributor") {
     fields = named_entity(marker);
-  } else if (concept == "genre" || concept == "aboutCvTerms" ||
-             concept == "digitalSourceType" ||
-             concept == "modelReleaseStatus" ||
-             concept == "propertyReleaseStatus") {
+  } else if (name == "licensor") {
+    fields = named_entity(marker);
+    fields.emplace("LicensorName", make_value(marker));
+  } else if (name == "genre" || name == "aboutCvTerms" ||
+             name == "digitalSourceType" || name == "modelReleaseStatus" ||
+             name == "propertyReleaseStatus") {
     fields.emplace("cvId", make_value("http://example.com/cv/" + marker));
-  } else if (concept == "registryEntry") {
+  } else if (name == "registryEntry") {
     fields.emplace("assetIdentifier", make_value(marker));
-  } else if (concept == "copyrightOwner") {
+    fields.emplace("RegOrgId", make_value(marker));
+  } else if (name == "copyrightOwner") {
     fields.emplace("copyrightOwnerName", make_value(marker));
-  } else if (concept == "supplier") {
+  } else if (name == "supplier") {
     fields.emplace("imageSupplierName", make_value(marker));
-  } else if (concept == "embeddedEncodedRightsExpression") {
+  } else if (name == "embeddedEncodedRightsExpression") {
     fields.emplace("EncRightsExpr", make_value(marker));
-  } else if (concept == "linkedEncodedRightsExpression") {
+  } else if (name == "linkedEncodedRightsExpression") {
     fields.emplace("LinkedRightsExpr", make_value(marker));
   } else {
     fields.emplace("name", make_value(marker));
@@ -194,6 +197,231 @@ bool value_has_text(const umm::Value& value, const std::string& needle) {
   return false;
 }
 
+umm::Error bad_sample(std::string_view name) {
+  return umm::Error{umm::ErrorCode::invalid_value,
+                    "sample value mismatch for " + std::string(name), "", ""};
+}
+
+std::optional<umm::PropertyValue> get_named(const umm::Metadata& metadata,
+                                            std::string_view name) {
+  if (name == "title") return metadata.title();
+  if (name == "description") return metadata.description();
+  if (name == "copyrightNotice") return metadata.copyrightNotice();
+  if (name == "creditLine") return metadata.creditLine();
+  if (name == "dateCreated") return metadata.dateCreated();
+  if (name == "altTextAccessibility") return metadata.altTextAccessibility();
+  if (name == "extendedDescriptionAccessibility") {
+    return metadata.extendedDescriptionAccessibility();
+  }
+  if (name == "rightsUsageTerms") return metadata.rightsUsageTerms();
+  if (name == "sourceSupplyChain") return metadata.sourceSupplyChain();
+  if (name == "dataMining") return metadata.dataMining();
+  if (name == "contributor") return metadata.contributor();
+  if (name == "genre") return metadata.genre();
+  if (name == "embeddedEncodedRightsExpression") {
+    return metadata.embeddedEncodedRightsExpression();
+  }
+  if (name == "linkedEncodedRightsExpression") {
+    return metadata.linkedEncodedRightsExpression();
+  }
+  if (name == "aiPromptInformation") return metadata.aiPromptInformation();
+  if (name == "aiPromptWriterName") return metadata.aiPromptWriterName();
+  if (name == "aiSystemUsed") return metadata.aiSystemUsed();
+  if (name == "aiSystemVersionUsed") return metadata.aiSystemVersionUsed();
+  if (name == "creator") return metadata.creator();
+  if (name == "headline") return metadata.headline();
+  if (name == "keywords") return metadata.keywords();
+  if (name == "otherConstraints") return metadata.otherConstraints();
+  if (name == "digitalSourceType") return metadata.digitalSourceType();
+  if (name == "modelReleaseStatus") return metadata.modelReleaseStatus();
+  if (name == "propertyReleaseStatus") return metadata.propertyReleaseStatus();
+  if (name == "copyrightOwner") return metadata.copyrightOwner();
+  if (name == "licensor") return metadata.licensor();
+  if (name == "locationCreated") return metadata.locationCreated();
+  if (name == "locationShown") return metadata.locationShown();
+  if (name == "personShown") return metadata.personShown();
+  if (name == "productShown") return metadata.productShown();
+  if (name == "shownEvent") return metadata.shownEvent();
+  if (name == "registryEntry") return metadata.registryEntry();
+  if (name == "assetIdentifier") return metadata.assetIdentifier();
+  if (name == "aboutCvTerms") return metadata.aboutCvTerms();
+  if (name == "featuredOrganisation") return metadata.featuredOrganisation();
+  if (name == "supplier") return metadata.supplier();
+  return std::nullopt;
+}
+
+umm::Result<void> set_named(umm::Metadata& metadata, std::string_view name,
+                            const umm::Value& value) {
+  if (name == "title") {
+    const auto* alt = std::get_if<umm::LangAlt>(&value.data);
+    return alt ? metadata.setTitle(*alt) : bad_sample(name);
+  }
+  if (name == "description") {
+    const auto* alt = std::get_if<umm::LangAlt>(&value.data);
+    return alt ? metadata.setDescription(*alt) : bad_sample(name);
+  }
+  if (name == "copyrightNotice") {
+    const auto* alt = std::get_if<umm::LangAlt>(&value.data);
+    return alt ? metadata.setCopyrightNotice(*alt) : bad_sample(name);
+  }
+  if (name == "creditLine") {
+    const auto* text = std::get_if<std::string>(&value.data);
+    return text ? metadata.setCreditLine(*text) : bad_sample(name);
+  }
+  if (name == "dateCreated") {
+    const auto* when = std::get_if<umm::DateTime>(&value.data);
+    return when ? metadata.setDateCreated(*when) : bad_sample(name);
+  }
+  if (name == "altTextAccessibility") {
+    const auto* alt = std::get_if<umm::LangAlt>(&value.data);
+    return alt ? metadata.setAltTextAccessibility(*alt) : bad_sample(name);
+  }
+  if (name == "extendedDescriptionAccessibility") {
+    const auto* alt = std::get_if<umm::LangAlt>(&value.data);
+    return alt ? metadata.setExtendedDescriptionAccessibility(*alt)
+               : bad_sample(name);
+  }
+  if (name == "rightsUsageTerms") {
+    const auto* alt = std::get_if<umm::LangAlt>(&value.data);
+    return alt ? metadata.setRightsUsageTerms(*alt) : bad_sample(name);
+  }
+  if (name == "sourceSupplyChain") {
+    const auto* text = std::get_if<std::string>(&value.data);
+    return text ? metadata.setSourceSupplyChain(*text) : bad_sample(name);
+  }
+  if (name == "dataMining") {
+    const auto* text = std::get_if<std::string>(&value.data);
+    return text ? metadata.setDataMining(*text) : bad_sample(name);
+  }
+  if (name == "contributor") {
+    const auto* list = std::get_if<std::vector<umm::Structure>>(&value.data);
+    return list ? metadata.setContributor(*list) : bad_sample(name);
+  }
+  if (name == "genre") {
+    const auto* list = std::get_if<std::vector<umm::Structure>>(&value.data);
+    return list ? metadata.setGenre(*list) : bad_sample(name);
+  }
+  if (name == "embeddedEncodedRightsExpression") {
+    const auto* list = std::get_if<std::vector<umm::Structure>>(&value.data);
+    return list ? metadata.setEmbeddedEncodedRightsExpression(*list)
+                : bad_sample(name);
+  }
+  if (name == "linkedEncodedRightsExpression") {
+    const auto* list = std::get_if<std::vector<umm::Structure>>(&value.data);
+    return list ? metadata.setLinkedEncodedRightsExpression(*list)
+                : bad_sample(name);
+  }
+  if (name == "aiPromptInformation") {
+    const auto* text = std::get_if<std::string>(&value.data);
+    return text ? metadata.setAiPromptInformation(*text) : bad_sample(name);
+  }
+  if (name == "aiPromptWriterName") {
+    const auto* text = std::get_if<std::string>(&value.data);
+    return text ? metadata.setAiPromptWriterName(*text) : bad_sample(name);
+  }
+  if (name == "aiSystemUsed") {
+    const auto* text = std::get_if<std::string>(&value.data);
+    return text ? metadata.setAiSystemUsed(*text) : bad_sample(name);
+  }
+  if (name == "aiSystemVersionUsed") {
+    const auto* text = std::get_if<std::string>(&value.data);
+    return text ? metadata.setAiSystemVersionUsed(*text) : bad_sample(name);
+  }
+  if (name == "creator") {
+    const auto* list = std::get_if<std::vector<std::string>>(&value.data);
+    return list ? metadata.setCreator(*list) : bad_sample(name);
+  }
+  if (name == "headline") {
+    const auto* text = std::get_if<std::string>(&value.data);
+    return text ? metadata.setHeadline(*text) : bad_sample(name);
+  }
+  if (name == "keywords") {
+    const auto* list = std::get_if<std::vector<std::string>>(&value.data);
+    return list ? metadata.setKeywords(*list) : bad_sample(name);
+  }
+  if (name == "otherConstraints") {
+    const auto* alt = std::get_if<umm::LangAlt>(&value.data);
+    return alt ? metadata.setOtherConstraints(*alt) : bad_sample(name);
+  }
+  if (name == "digitalSourceType") {
+    const auto* text = std::get_if<std::string>(&value.data);
+    return text ? metadata.setDigitalSourceType(*text) : bad_sample(name);
+  }
+  if (name == "modelReleaseStatus") {
+    const auto* text = std::get_if<std::string>(&value.data);
+    return text ? metadata.setModelReleaseStatus(*text) : bad_sample(name);
+  }
+  if (name == "propertyReleaseStatus") {
+    const auto* text = std::get_if<std::string>(&value.data);
+    return text ? metadata.setPropertyReleaseStatus(*text) : bad_sample(name);
+  }
+  if (name == "copyrightOwner") {
+    const auto* list = std::get_if<std::vector<umm::Structure>>(&value.data);
+    return list ? metadata.setCopyrightOwner(*list) : bad_sample(name);
+  }
+  if (name == "licensor") {
+    const auto* list = std::get_if<std::vector<umm::Structure>>(&value.data);
+    return list ? metadata.setLicensor(*list) : bad_sample(name);
+  }
+  if (name == "locationCreated") {
+    const auto* list = std::get_if<std::vector<umm::Structure>>(&value.data);
+    return list ? metadata.setLocationCreated(*list) : bad_sample(name);
+  }
+  if (name == "locationShown") {
+    const auto* list = std::get_if<std::vector<umm::Structure>>(&value.data);
+    return list ? metadata.setLocationShown(*list) : bad_sample(name);
+  }
+  if (name == "personShown") {
+    const auto* list = std::get_if<std::vector<umm::Structure>>(&value.data);
+    return list ? metadata.setPersonShown(*list) : bad_sample(name);
+  }
+  if (name == "productShown") {
+    const auto* list = std::get_if<std::vector<umm::Structure>>(&value.data);
+    return list ? metadata.setProductShown(*list) : bad_sample(name);
+  }
+  if (name == "shownEvent") {
+    const auto* list = std::get_if<std::vector<umm::Structure>>(&value.data);
+    if (!list || list->size() != 1) {
+      return bad_sample(name);
+    }
+    const auto name_it = list->front().find("name");
+    const auto ids_it = list->front().find("identifiers");
+    const auto* alt =
+        name_it == list->front().end()
+            ? nullptr
+            : std::get_if<umm::LangAlt>(&name_it->second.data);
+    const auto* ids =
+        ids_it == list->front().end()
+            ? nullptr
+            : std::get_if<std::vector<std::string>>(&ids_it->second.data);
+    if (!alt || !ids) {
+      return bad_sample(name);
+    }
+    return metadata.setShownEvent(*alt, *ids);
+  }
+  if (name == "registryEntry") {
+    const auto* list = std::get_if<std::vector<umm::Structure>>(&value.data);
+    return list ? metadata.setRegistryEntry(*list) : bad_sample(name);
+  }
+  if (name == "assetIdentifier") {
+    const auto* text = std::get_if<std::string>(&value.data);
+    return text ? metadata.setAssetIdentifier(*text) : bad_sample(name);
+  }
+  if (name == "aboutCvTerms") {
+    const auto* list = std::get_if<std::vector<umm::Structure>>(&value.data);
+    return list ? metadata.setAboutCvTerms(*list) : bad_sample(name);
+  }
+  if (name == "featuredOrganisation") {
+    const auto* list = std::get_if<std::vector<std::string>>(&value.data);
+    return list ? metadata.setFeaturedOrganisation(*list) : bad_sample(name);
+  }
+  if (name == "supplier") {
+    const auto* list = std::get_if<std::vector<umm::Structure>>(&value.data);
+    return list ? metadata.setSupplier(*list) : bad_sample(name);
+  }
+  return bad_sample(name);
+}
+
 int roundtrip_one(const umm::internal::CrossMediaAccessorDef& def,
                   const std::string& backend, const char* folder,
                   const char* ext, umm::MediaDomain domain) {
@@ -202,10 +430,9 @@ int roundtrip_one(const umm::internal::CrossMediaAccessorDef& def,
       backend + "-" + std::string(def.concept_name) + ext);
   umm::Metadata metadata;
   metadata.setMediaDomain(domain);
-  const auto set =
-      metadata.setConcept(def.concept_name, sample_photo_value(def));
+  const auto set = set_named(metadata, def.concept_name, sample_photo_value(def));
   if (!set.ok()) {
-    std::fprintf(stderr, "setConcept %s failed: %s\n",
+    std::fprintf(stderr, "set %s failed: %s\n",
                  std::string(def.concept_name).c_str(),
                  set.error().message.c_str());
     return 1;
@@ -225,7 +452,7 @@ int roundtrip_one(const umm::internal::CrossMediaAccessorDef& def,
                  folder, ext, round.error().message.c_str());
     return 1;
   }
-  const auto got = round.value().getConcept(def.concept_name);
+  const auto got = get_named(round.value(), def.concept_name);
   const std::string needle = sample_needle(def);
   if (!got || !value_has_text(got->value, needle)) {
     std::fprintf(stderr, "mismatch %s on %s %s %s got=%s\n",
@@ -239,6 +466,7 @@ int roundtrip_one(const umm::internal::CrossMediaAccessorDef& def,
 
 int run_matrix(const std::string& backend, const char* folder, const char* ext,
                umm::MediaDomain domain) {
+  int failures = 0;
   for (const umm::internal::CrossMediaAccessorDef& def :
        umm::internal::kCrossMediaAccessors) {
     if (def.deferred) {
@@ -246,8 +474,13 @@ int run_matrix(const std::string& backend, const char* folder, const char* ext,
     }
     if (const int rc = roundtrip_one(def, backend, folder, ext, domain);
         rc != 0) {
-      return rc;
+      ++failures;
     }
+  }
+  if (failures != 0) {
+    std::fprintf(stderr, "%d accessor round-trips failed on %s %s%s\n",
+                 failures, backend.c_str(), folder, ext);
+    return 1;
   }
   return 0;
 }

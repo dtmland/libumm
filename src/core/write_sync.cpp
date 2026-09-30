@@ -354,6 +354,15 @@ Structure alias_exiftool_struct_fields(std::string_view xmp_property,
   } else if (local == "ProductInImage") {
     from = "name";
     to = "ProductName";
+  } else if (local == "CopyrightOwner") {
+    from = "name";
+    to = "CopyrightOwnerName";
+  } else if (local == "Licensor") {
+    from = "name";
+    to = "LicensorName";
+  } else if (local == "ImageSupplier") {
+    from = "name";
+    to = "ImageSupplierName";
   } else {
     return fields;
   }
