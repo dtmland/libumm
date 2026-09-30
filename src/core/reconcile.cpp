@@ -1358,6 +1358,14 @@ std::optional<Group> gps_group(const UnmappedDocument& document,
   return group;
 }
 
+std::optional<Group> video_structure_group(const UnmappedDocument& document,
+                                           std::string_view backend,
+                                           std::string_view base,
+                                           std::string family, int rank);
+std::optional<Group> video_structure_list_group(
+    const UnmappedDocument& document, std::string_view backend,
+    std::string_view base, std::string family, int rank, bool names_as_entities);
+
 void collect_registry_property(std::vector<Group>& groups,
                                const UnmappedDocument& document,
                                std::string_view backend,
@@ -1498,6 +1506,45 @@ void collect_registry_property(std::vector<Group>& groups,
           groups.push_back(std::move(group));
         }
       }
+    }
+    return;
+  }
+
+  if (def->datatype == Datatype::lang_alt) {
+    if (!xmp.empty()) {
+      push(lang_group(document, backend, xmp, "xmp", 0));
+    }
+    if (!iim.empty()) {
+      push(lang_group(document, backend, iim, "iim", 1));
+    }
+    if (!exif.empty()) {
+      push(lang_group(document, backend, exif, "exif", 2));
+    }
+    return;
+  }
+  if (def->datatype == Datatype::text_list) {
+    if (!xmp.empty()) {
+      push(text_list_group(document, backend, xmp, "xmp", 0));
+    }
+    if (!iim.empty()) {
+      push(text_list_group(document, backend, iim, "iim", 1));
+    }
+    if (!exif.empty()) {
+      push(text_list_group(document, backend, exif, "exif", 2));
+    }
+    return;
+  }
+  if (def->datatype == Datatype::structure) {
+    if (!xmp.empty()) {
+      push(video_structure_group(document, backend, xmp, "xmp", 0));
+    }
+    return;
+  }
+  if (def->datatype == Datatype::structure_list) {
+    if (!xmp.empty()) {
+      const bool names_as_entities = xmp_raw_keys(rep.xmp_property).size() > 1;
+      push(video_structure_list_group(document, backend, xmp, "xmp", 0,
+                                      names_as_entities));
     }
     return;
   }
@@ -1866,26 +1913,10 @@ Result<Metadata> reconcile(const UnmappedDocument& document,
     }
     return metadata;
   }
-  reconcile_property(metadata, document, sidecar, backend_id, kCreator, false,
-                     disagreements);
-  reconcile_property(metadata, document, sidecar, backend_id, kDescription,
-                     false, disagreements);
-  reconcile_property(metadata, document, sidecar, backend_id, kHeadline, false,
-                     disagreements);
-  reconcile_property(metadata, document, sidecar, backend_id, kDateCreated,
-                     false, disagreements);
-  reconcile_property(metadata, document, sidecar, backend_id, kCopyright,
-                     false, disagreements);
-  reconcile_property(metadata, document, sidecar, backend_id, kCredit, false,
-                     disagreements);
-  reconcile_property(metadata, document, sidecar, backend_id, kKeywords, false,
-                     disagreements);
-  reconcile_property(metadata, document, sidecar, backend_id, kRating, false,
-                     disagreements);
-  reconcile_property(metadata, document, sidecar, backend_id, kLocation, false,
-                     disagreements);
-  reconcile_property(metadata, document, sidecar, backend_id, kGps, false,
-                     disagreements);
+  for (std::string_view id : mapped_photo_property_ids()) {
+    reconcile_property(metadata, document, sidecar, backend_id, id, false,
+                       disagreements);
+  }
   return metadata;
 }
 

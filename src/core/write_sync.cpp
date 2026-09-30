@@ -578,7 +578,8 @@ UnmappedChanges write_sync(const Metadata& metadata) {
       sync_video_keywords(changes, property->value);
     } else if (id == kVideoDateCreated) {
       sync_video_date(changes, property->value);
-    } else if (id.rfind("iptc.video.", 0) == 0) {
+    } else if (id.rfind("iptc.video.", 0) == 0 ||
+               id.rfind("iptc.photo.", 0) == 0) {
       sync_video_generic(changes, id, property->value);
     }
   }

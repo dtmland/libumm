@@ -231,6 +231,13 @@ Phase 1 stores one `Structure` with fields `city`, `provinceState`,
   IIM + photoshop fields from `city` / `provinceState` / `countryName`. Full
   Extension location structures are Stage 6.
 
+### Table-driven photo properties (session 39)
+
+Mapped `iptc.photo.*` ids beyond the Phase 1 specials (for example title,
+contributor, shownEvent, genre, dataMining, aiSystemUsed) are collected from
+XMP using the same datatype dispatch as video. Write-sync for those extras is
+XMP-only; IIM/EXIF families remain the Phase 1 specials listed above.
+
 ## Video (MP4/MOV)
 
 Sniffed file types `MP4` and `MOV` select the `iptc.video.*` domain instead of
@@ -303,7 +310,9 @@ GPS writer and is dropped when the storage decision does not list EXIF (MP4/MOV)
 
 Session 38 replaced the closed Phase-1-sized video `if` chains with a
 table-driven engine over generated `PropertyDef` rows and the cross-media map.
-Photo-side dispatch is unchanged. The original R3 deferral is superseded by
+Session 39 feeds the same engine the remaining mapped `iptc.photo.*` ids
+(XMP-only write-sync for those extras). The original R3 deferral is superseded
+by
 [2026-09-30-table-driven-video-pipeline.md](analysis/2026-09-30-table-driven-video-pipeline.md).
 
 ## Sidecars

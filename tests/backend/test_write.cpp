@@ -1272,6 +1272,72 @@ int test_video_mapped_roundtrip() {
   return test_video_mapped_container(".mov");
 }
 
+umm::Structure sample_person() {
+  umm::Value name;
+  name.data = umm::LangAlt{{"x-default", "Pat Contributor"}};
+  umm::Structure person;
+  person.emplace("name", std::move(name));
+  return person;
+}
+
+umm::Structure sample_genre() {
+  umm::Value cv;
+  cv.data = std::string("http://example.com/cv/news");
+  umm::Structure term;
+  term.emplace("cvId", std::move(cv));
+  return term;
+}
+
+int test_tier1_accessor_roundtrip(const std::string& backend, const char* folder,
+                                  const char* ext, umm::MediaDomain domain) {
+  const auto file = copy_fixture(raw_stem(folder, "minimal", ext),
+                                 backend + std::string("-tier1") + ext);
+  umm::Metadata metadata;
+  metadata.setMediaDomain(domain);
+  umm::LangAlt title{{"x-default", "Tier1 Title"}};
+  if (!metadata.setTitle(title).ok() ||
+      !metadata.setContributor({sample_person()}).ok() ||
+      !metadata.setGenre({sample_genre()}).ok() ||
+      !metadata.setDataMining("http://example.com/data-mining").ok() ||
+      !metadata.setAiSystemUsed("libumm-test-ai").ok()) {
+    return fail("tier1 set accessors");
+  }
+  const auto written = umm::write(file, metadata, opts(backend));
+  if (!written.ok()) {
+    std::fprintf(stderr, "tier1 write failed (%s %s): %s (%s)\n", folder, ext,
+                 written.error().message.c_str(),
+                 written.error().detail.c_str());
+    return 1;
+  }
+  const auto round = umm::read(file, ropts(backend));
+  if (!round.ok()) {
+    std::fprintf(stderr, "tier1 read failed (%s %s): %s\n", folder, ext,
+                 round.error().message.c_str());
+    return 1;
+  }
+  const umm::Metadata& got = round.value();
+  if (!lang_is(got, domain == umm::MediaDomain::video ? "iptc.video.title"
+                                                     : "iptc.photo.title",
+               "Tier1 Title")) {
+    return fail("tier1 title round-trip");
+  }
+  if (!got.title() || !got.contributor() || !got.genre() || !got.dataMining() ||
+      !got.aiSystemUsed()) {
+    return fail("tier1 accessors missing after read");
+  }
+  const auto* mining = std::get_if<std::string>(&got.dataMining()->value.data);
+  const auto* ai = std::get_if<std::string>(&got.aiSystemUsed()->value.data);
+  if (!mining || mining->find("data-mining") == std::string::npos || !ai ||
+      ai->find("libumm-test-ai") == std::string::npos) {
+    return fail("tier1 scalar round-trip");
+  }
+  if (!value_has_text(got.contributor()->value, "Pat Contributor") ||
+      !value_has_text(got.genre()->value, "example.com/cv/news")) {
+    return fail("tier1 struct round-trip");
+  }
+  return 0;
+}
+
 int check_backend(const std::string& backend,
                   const std::vector<std::string>& readers) {
   if (const int rc = test_payload(backend, "jpeg", ".jpg"); rc != 0) {
@@ -1357,6 +1423,11 @@ int check_backend(const std::string& backend,
   if (const int rc = test_webp_no_iptc_write(backend); rc != 0) {
     return rc;
   }
+  if (const int rc = test_tier1_accessor_roundtrip(
+          backend, "jpeg", ".jpg", umm::MediaDomain::photo);
+      rc != 0) {
+    return rc;
+  }
   return 0;
 }
 
@@ -1393,5 +1464,13 @@ int main() {
   if (const int rc = test_video_write(); rc != 0) {
     return rc;
   }
-  return test_video_mapped_roundtrip();
+  if (const int rc = test_video_mapped_roundtrip(); rc != 0) {
+    return rc;
+  }
+  umm::Backend* exiftool = manager.get("exiftool");
+  if (exiftool && exiftool->availability().available) {
+    return test_tier1_accessor_roundtrip("exiftool", "video", ".mp4",
+                                        umm::MediaDomain::video);
+  }
+  return 0;
 }

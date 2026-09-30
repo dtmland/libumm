@@ -1,11 +1,13 @@
 #include "umm/metadata.hpp"
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <utility>
 #include <variant>
 
 #include "core/property_ids.hpp"
+#include "cross_media_accessors.hpp"
 #include "umm/registry.hpp"
 
 namespace umm {
@@ -77,6 +79,16 @@ Value makeValue(auto payload) {
   return value;
 }
 
+const internal::CrossMediaAccessorDef* findAccessor(std::string_view name) {
+  for (const internal::CrossMediaAccessorDef& row :
+       internal::kCrossMediaAccessors) {
+    if (row.concept_name == name) {
+      return &row;
+    }
+  }
+  return nullptr;
+}
+
 }  // namespace
 
 MediaDomain Metadata::mediaDomain() const { return media_domain_; }
@@ -127,10 +139,42 @@ std::vector<std::string> Metadata::propertyIds() const {
   return ids;
 }
 
+std::optional<PropertyValue> Metadata::getConcept(
+    std::string_view concept_name) const {
+  const auto* def = findAccessor(concept_name);
+  if (!def) {
+    return std::nullopt;
+  }
+  for (std::size_t i = 0; i < def->photo_id_count; ++i) {
+    if (auto property = get(def->photo_ids[i])) {
+      return property;
+    }
+  }
+  for (std::size_t i = 0; i < def->video_id_count; ++i) {
+    if (auto property = get(def->video_ids[i])) {
+      return property;
+    }
+  }
+  return std::nullopt;
+}
+
+Result<void> Metadata::setConcept(std::string_view concept_name, Value value) {
+  const auto* def = findAccessor(concept_name);
+  if (!def || def->photo_id_count == 0 || def->video_id_count == 0) {
+    return Error{ErrorCode::internal,
+                 "unknown cross-media concept: " + std::string(concept_name),
+                 "", ""};
+  }
+  const std::string_view id = media_domain_ == MediaDomain::video
+                                  ? def->video_ids[0]
+                                  : def->photo_ids[0];
+  return set(id, std::move(value));
+}
+
 std::optional<PropertyValue> Metadata::creator() const { return get(kCreator); }
 
 std::optional<PropertyValue> Metadata::description() const {
-  return get(kDescription);
+  return getConcept("description");
 }
 
 std::optional<PropertyValue> Metadata::headline() const {
@@ -138,15 +182,15 @@ std::optional<PropertyValue> Metadata::headline() const {
 }
 
 std::optional<PropertyValue> Metadata::dateCreated() const {
-  return get(kDateCreated);
+  return getConcept("dateCreated");
 }
 
 std::optional<PropertyValue> Metadata::copyrightNotice() const {
-  return get(kCopyright);
+  return getConcept("copyrightNotice");
 }
 
 std::optional<PropertyValue> Metadata::creditLine() const {
-  return get(kCredit);
+  return getConcept("creditLine");
 }
 
 std::optional<PropertyValue> Metadata::keywords() const {
@@ -155,6 +199,62 @@ std::optional<PropertyValue> Metadata::keywords() const {
 
 std::optional<PropertyValue> Metadata::rating() const {
   return get(kRating);
+}
+
+std::optional<PropertyValue> Metadata::title() const {
+  return getConcept("title");
+}
+
+std::optional<PropertyValue> Metadata::altTextAccessibility() const {
+  return getConcept("altTextAccessibility");
+}
+
+std::optional<PropertyValue> Metadata::extendedDescriptionAccessibility() const {
+  return getConcept("extendedDescriptionAccessibility");
+}
+
+std::optional<PropertyValue> Metadata::rightsUsageTerms() const {
+  return getConcept("rightsUsageTerms");
+}
+
+std::optional<PropertyValue> Metadata::sourceSupplyChain() const {
+  return getConcept("sourceSupplyChain");
+}
+
+std::optional<PropertyValue> Metadata::dataMining() const {
+  return getConcept("dataMining");
+}
+
+std::optional<PropertyValue> Metadata::contributor() const {
+  return getConcept("contributor");
+}
+
+std::optional<PropertyValue> Metadata::genre() const {
+  return getConcept("genre");
+}
+
+std::optional<PropertyValue> Metadata::embeddedEncodedRightsExpression() const {
+  return getConcept("embeddedEncodedRightsExpression");
+}
+
+std::optional<PropertyValue> Metadata::linkedEncodedRightsExpression() const {
+  return getConcept("linkedEncodedRightsExpression");
+}
+
+std::optional<PropertyValue> Metadata::aiPromptInformation() const {
+  return getConcept("aiPromptInformation");
+}
+
+std::optional<PropertyValue> Metadata::aiPromptWriterName() const {
+  return getConcept("aiPromptWriterName");
+}
+
+std::optional<PropertyValue> Metadata::aiSystemUsed() const {
+  return getConcept("aiSystemUsed");
+}
+
+std::optional<PropertyValue> Metadata::aiSystemVersionUsed() const {
+  return getConcept("aiSystemVersionUsed");
 }
 
 std::optional<PropertyValue> Metadata::gps() const { return get(kGps); }
@@ -168,7 +268,7 @@ Result<void> Metadata::setCreator(std::vector<std::string> names) {
 }
 
 Result<void> Metadata::setDescription(LangAlt text) {
-  return set(kDescription, makeValue(std::move(text)));
+  return setConcept("description", makeValue(std::move(text)));
 }
 
 Result<void> Metadata::setHeadline(std::string headline) {
@@ -176,15 +276,15 @@ Result<void> Metadata::setHeadline(std::string headline) {
 }
 
 Result<void> Metadata::setDateCreated(DateTime when) {
-  return set(kDateCreated, makeValue(when));
+  return setConcept("dateCreated", makeValue(when));
 }
 
 Result<void> Metadata::setCopyrightNotice(LangAlt text) {
-  return set(kCopyright, makeValue(std::move(text)));
+  return setConcept("copyrightNotice", makeValue(std::move(text)));
 }
 
 Result<void> Metadata::setCreditLine(std::string credit) {
-  return set(kCredit, makeValue(std::move(credit)));
+  return setConcept("creditLine", makeValue(std::move(credit)));
 }
 
 Result<void> Metadata::setKeywords(std::vector<std::string> keywords) {
@@ -193,6 +293,67 @@ Result<void> Metadata::setKeywords(std::vector<std::string> keywords) {
 
 Result<void> Metadata::setRating(double rating) {
   return set(kRating, makeValue(rating));
+}
+
+Result<void> Metadata::setTitle(LangAlt text) {
+  return setConcept("title", makeValue(std::move(text)));
+}
+
+Result<void> Metadata::setAltTextAccessibility(LangAlt text) {
+  return setConcept("altTextAccessibility", makeValue(std::move(text)));
+}
+
+Result<void> Metadata::setExtendedDescriptionAccessibility(LangAlt text) {
+  return setConcept("extendedDescriptionAccessibility",
+                    makeValue(std::move(text)));
+}
+
+Result<void> Metadata::setRightsUsageTerms(LangAlt text) {
+  return setConcept("rightsUsageTerms", makeValue(std::move(text)));
+}
+
+Result<void> Metadata::setSourceSupplyChain(std::string source) {
+  return setConcept("sourceSupplyChain", makeValue(std::move(source)));
+}
+
+Result<void> Metadata::setDataMining(std::string uri) {
+  return setConcept("dataMining", makeValue(std::move(uri)));
+}
+
+Result<void> Metadata::setContributor(std::vector<Structure> contributors) {
+  return setConcept("contributor", makeValue(std::move(contributors)));
+}
+
+Result<void> Metadata::setGenre(std::vector<Structure> terms) {
+  return setConcept("genre", makeValue(std::move(terms)));
+}
+
+Result<void> Metadata::setEmbeddedEncodedRightsExpression(
+    std::vector<Structure> expressions) {
+  return setConcept("embeddedEncodedRightsExpression",
+                    makeValue(std::move(expressions)));
+}
+
+Result<void> Metadata::setLinkedEncodedRightsExpression(
+    std::vector<Structure> expressions) {
+  return setConcept("linkedEncodedRightsExpression",
+                    makeValue(std::move(expressions)));
+}
+
+Result<void> Metadata::setAiPromptInformation(std::string text) {
+  return setConcept("aiPromptInformation", makeValue(std::move(text)));
+}
+
+Result<void> Metadata::setAiPromptWriterName(std::string name) {
+  return setConcept("aiPromptWriterName", makeValue(std::move(name)));
+}
+
+Result<void> Metadata::setAiSystemUsed(std::string system) {
+  return setConcept("aiSystemUsed", makeValue(std::move(system)));
+}
+
+Result<void> Metadata::setAiSystemVersionUsed(std::string version) {
+  return setConcept("aiSystemVersionUsed", makeValue(std::move(version)));
 }
 
 Result<void> Metadata::setGps(GpsCoordinate position) {

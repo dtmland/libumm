@@ -618,4 +618,19 @@ std::vector<std::string_view> mapped_video_property_ids() {
   return ids;
 }
 
+std::vector<std::string_view> mapped_photo_property_ids() {
+  std::vector<std::string_view> ids;
+  for (const CrossMediaAccessorDef& row : kCrossMediaAccessors) {
+    if (row.deferred) {
+      continue;
+    }
+    for (std::size_t i = 0; i < row.photo_id_count; ++i) {
+      ids.push_back(row.photo_ids[i]);
+    }
+  }
+  ids.push_back(kRating);
+  ids.push_back(kGps);
+  return ids;
+}
+
 }  // namespace umm::internal

@@ -36,4 +36,8 @@ std::string structure_display_name(const Structure& fields);
 // Non-deferred video ids from the generated cross-media map, plus GPS.
 std::vector<std::string_view> mapped_video_property_ids();
 
+// Non-deferred photo ids from the generated cross-media map, plus
+// photo-only rating and GPS.
+std::vector<std::string_view> mapped_photo_property_ids();
+
 }  // namespace umm::internal

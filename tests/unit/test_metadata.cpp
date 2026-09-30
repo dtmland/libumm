@@ -262,5 +262,134 @@ int main() {
     return fail("conflict provenance preserved");
   }
 
+  auto require_id = [](const umm::Metadata& meta, const char* id,
+                       const char* what) {
+    if (!meta.get(id)) {
+      std::fprintf(stderr, "%s missing %s\n", what, id);
+      return false;
+    }
+    return true;
+  };
+
+  auto require_absent = [](const umm::Metadata& meta, const char* id,
+                           const char* what) {
+    if (meta.get(id)) {
+      std::fprintf(stderr, "%s unexpectedly has %s\n", what, id);
+      return false;
+    }
+    return true;
+  };
+
+  const umm::LangAlt title_text{{"x-default", "Cross title"}};
+  const umm::LangAlt alt_text{{"x-default", "Alt text"}};
+  const umm::LangAlt ext_text{{"x-default", "Extended alt"}};
+  const umm::LangAlt rights_text{{"x-default", "Usage terms"}};
+  umm::DateTime created_when;
+  created_when.year = 2024;
+  created_when.month = 6;
+  created_when.day = 15;
+  umm::Structure person;
+  umm::Value person_name;
+  person_name.data = umm::LangAlt{{"x-default", "Pat Contributor"}};
+  person.emplace("name", person_name);
+  umm::Structure cv_term;
+  umm::Value cv_id;
+  cv_id.data = std::string("http://example.com/cv/news");
+  cv_term.emplace("cvId", cv_id);
+  umm::Structure embedded;
+  umm::Value encoded;
+  encoded.data = std::string("embedded-rights");
+  embedded.emplace("EncRightsExpr", encoded);
+  umm::Structure linked;
+  umm::Value linked_expr;
+  linked_expr.data = std::string("linked-rights");
+  linked.emplace("LinkedRightsExpr", linked_expr);
+
+  for (umm::MediaDomain domain :
+       {umm::MediaDomain::unknown, umm::MediaDomain::photo,
+        umm::MediaDomain::video}) {
+    umm::Metadata cross;
+    cross.setMediaDomain(domain);
+    const char* photo_or_video =
+        domain == umm::MediaDomain::video ? "video" : "photo";
+    const std::string title_id =
+        std::string("iptc.") + photo_or_video + ".title";
+    const std::string other_title_id = domain == umm::MediaDomain::video
+                                           ? "iptc.photo.title"
+                                           : "iptc.video.title";
+    if (!require_ok(cross.setTitle(title_text), "setTitle") ||
+        !require_ok(cross.setDescription(title_text), "setDescription") ||
+        !require_ok(cross.setCopyrightNotice(title_text),
+                    "setCopyrightNotice") ||
+        !require_ok(cross.setCreditLine("Credit line"), "setCreditLine") ||
+        !require_ok(cross.setDateCreated(created_when), "setDateCreated") ||
+        !require_ok(cross.setAltTextAccessibility(alt_text),
+                    "setAltTextAccessibility") ||
+        !require_ok(cross.setExtendedDescriptionAccessibility(ext_text),
+                    "setExtendedDescriptionAccessibility") ||
+        !require_ok(cross.setRightsUsageTerms(rights_text),
+                    "setRightsUsageTerms") ||
+        !require_ok(cross.setSourceSupplyChain("Supply"),
+                    "setSourceSupplyChain") ||
+        !require_ok(cross.setDataMining("http://example.com/dm"),
+                    "setDataMining") ||
+        !require_ok(cross.setContributor({person}), "setContributor") ||
+        !require_ok(cross.setGenre({cv_term}), "setGenre") ||
+        !require_ok(cross.setEmbeddedEncodedRightsExpression({embedded}),
+                    "setEmbeddedEncodedRightsExpression") ||
+        !require_ok(cross.setLinkedEncodedRightsExpression({linked}),
+                    "setLinkedEncodedRightsExpression") ||
+        !require_ok(cross.setAiPromptInformation("prompt"),
+                    "setAiPromptInformation") ||
+        !require_ok(cross.setAiPromptWriterName("Writer"),
+                    "setAiPromptWriterName") ||
+        !require_ok(cross.setAiSystemUsed("system"), "setAiSystemUsed") ||
+        !require_ok(cross.setAiSystemVersionUsed("1.0"),
+                    "setAiSystemVersionUsed")) {
+      return 1;
+    }
+    if (!cross.title() || !cross.description() || !cross.copyrightNotice() ||
+        !cross.creditLine() || !cross.dateCreated() ||
+        !cross.altTextAccessibility() ||
+        !cross.extendedDescriptionAccessibility() || !cross.rightsUsageTerms() ||
+        !cross.sourceSupplyChain() || !cross.dataMining() ||
+        !cross.contributor() || !cross.genre() ||
+        !cross.embeddedEncodedRightsExpression() ||
+        !cross.linkedEncodedRightsExpression() || !cross.aiPromptInformation() ||
+        !cross.aiPromptWriterName() || !cross.aiSystemUsed() ||
+        !cross.aiSystemVersionUsed()) {
+      return fail("Tier 1 getter missing after set");
+    }
+    if (!require_id(cross, title_id.c_str(), "domain id") ||
+        !require_absent(cross, other_title_id.c_str(), "other domain id")) {
+      return 1;
+    }
+  }
+
+  umm::Metadata probe;
+  umm::Value video_title;
+  video_title.data = title_text;
+  if (!require_ok(probe.set("iptc.video.title", video_title),
+                  "set video title by id")) {
+    return 1;
+  }
+  if (probe.mediaDomain() != umm::MediaDomain::unknown) {
+    return fail("probe metadata domain changed");
+  }
+  const auto probed = probe.title();
+  const auto* probed_lang = probed ? std::get_if<umm::LangAlt>(&probed->value.data)
+                                   : nullptr;
+  if (!probed_lang || *probed_lang != title_text) {
+    return fail("getter without domain did not probe video id");
+  }
+
+  umm::Metadata still_photo_only;
+  still_photo_only.setMediaDomain(umm::MediaDomain::video);
+  if (!require_ok(still_photo_only.setRating(3.0), "setRating on video domain") ||
+      !require_id(still_photo_only, "iptc.photo.imageRating",
+                  "rating stays photo")) {
+    return 1;
+  }
+
   return 0;
 }
