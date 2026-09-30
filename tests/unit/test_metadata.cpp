@@ -419,23 +419,29 @@ int main() {
                   "video setDigitalSourceType")) {
     return 1;
   }
+  const auto video_creator = video_tier2.creator();
   if (!require_id(video_tier2, "iptc.video.creator", "video creator id") ||
-      !std::get_if<std::vector<umm::Structure>>(
-          &video_tier2.creator()->value.data)) {
+      !video_creator ||
+      !std::get_if<std::vector<umm::Structure>>(&video_creator->value.data)) {
     return fail("video creator stores entities");
   }
+  const auto headline_prop = video_tier2.headline();
   const auto* v_headline =
-      std::get_if<umm::LangAlt>(&video_tier2.headline()->value.data);
+      headline_prop ? std::get_if<umm::LangAlt>(&headline_prop->value.data)
+                    : nullptr;
   if (!v_headline || v_headline->at("x-default") != "Head") {
     return fail("video headline stores lang-alt");
   }
+  const auto keywords_prop = video_tier2.keywords();
   const auto* v_keywords =
-      std::get_if<umm::LangAlt>(&video_tier2.keywords()->value.data);
+      keywords_prop ? std::get_if<umm::LangAlt>(&keywords_prop->value.data)
+                    : nullptr;
   if (!v_keywords || v_keywords->at("x-default") != "nature, lake") {
     return fail("video keywords joined lang-alt");
   }
+  const auto other_prop = video_tier2.otherConstraints();
   const auto* v_other =
-      std::get_if<std::string>(&video_tier2.otherConstraints()->value.data);
+      other_prop ? std::get_if<std::string>(&other_prop->value.data) : nullptr;
   if (!v_other || *v_other != "No mining") {
     return fail("video otherConstraints stores string");
   }
@@ -450,7 +456,9 @@ int main() {
                  dst_prop->value.toString().c_str());
     return fail("video digitalSourceType stores CvTerm");
   }
-  if (!std::get_if<std::string>(&v_dst->at("cvId").data)) {
+  const auto cv_id = v_dst->find("cvId");
+  if (cv_id == v_dst->end() ||
+      !std::get_if<std::string>(&cv_id->second.data)) {
     return fail("video digitalSourceType cvId");
   }
 
@@ -462,8 +470,11 @@ int main() {
                   "video setCopyrightOwner")) {
     return 1;
   }
-  const auto* owners = std::get_if<std::vector<umm::Structure>>(
-      &video_tier2.copyrightOwner()->value.data);
+  const auto owner_prop = video_tier2.copyrightOwner();
+  const auto* owners =
+      owner_prop ? std::get_if<std::vector<umm::Structure>>(
+                       &owner_prop->value.data)
+                 : nullptr;
   if (!owners || owners->size() != 1 ||
       owners->front().find("copyrightOwnerName") != owners->front().end()) {
     return fail("video copyrightOwner subsets fields");
@@ -476,7 +487,9 @@ int main() {
   if (!require_ok(video_tier2.setLicensor({licensor}), "video setLicensor")) {
     return 1;
   }
-  if (!std::get_if<umm::Structure>(&video_tier2.licensor()->value.data)) {
+  const auto licensor_prop = video_tier2.licensor();
+  if (!licensor_prop ||
+      !std::get_if<umm::Structure>(&licensor_prop->value.data)) {
     return fail("video licensor stores a single struct");
   }
   if (!require_error(video_tier2.setLicensor({licensor, licensor}),

@@ -1323,6 +1323,12 @@ int test_tier1_accessor_roundtrip(const std::string& backend, const char* folder
   }
   if (!got.title() || !got.contributor() || !got.genre() || !got.dataMining() ||
       !got.aiSystemUsed()) {
+    std::fprintf(stderr,
+                 "tier1 accessors after read title=%d contributor=%d genre=%d "
+                 "dataMining=%d aiSystemUsed=%d\n",
+                 got.title().has_value(), got.contributor().has_value(),
+                 got.genre().has_value(), got.dataMining().has_value(),
+                 got.aiSystemUsed().has_value());
     return fail("tier1 accessors missing after read");
   }
   const auto* mining = std::get_if<std::string>(&got.dataMining()->value.data);

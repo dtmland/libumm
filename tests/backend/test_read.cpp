@@ -598,8 +598,11 @@ int check_video_backend() {
   if (!dt || dt->year != 2020 || dt->month != 1 || dt->day != 2) {
     return fail_read("video full date value");
   }
-  if (full.value().creator()) {
+  if (full.value().get("iptc.photo.creator")) {
     return fail_read("video full filled photo creator");
+  }
+  if (!full.value().creator()) {
+    return fail_read("video full creator accessor");
   }
 
   const auto gps = umm::read(raw_stem("video", "gps", ".mp4"), options);
