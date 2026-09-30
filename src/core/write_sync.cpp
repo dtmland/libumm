@@ -334,6 +334,47 @@ void sync_gps(UnmappedChanges& changes, const Value& value) {
   add(changes, "QuickTime", "QuickTime.GPSCoordinates", std::move(qt));
 }
 
+// ExifTool PersonDetails/ProductDetails reject IPTC logical field `name`.
+std::string_view xmp_local_name(std::string_view property) {
+  const auto colon = property.rfind(':');
+  if (colon == std::string_view::npos) {
+    return property;
+  }
+  return property.substr(colon + 1);
+}
+
+Structure alias_exiftool_struct_fields(std::string_view xmp_property,
+                                       const Structure& fields) {
+  const std::string_view local = xmp_local_name(xmp_property);
+  std::string_view from;
+  std::string_view to;
+  if (local == "PersonInImageWDetails") {
+    from = "name";
+    to = "PersonName";
+  } else if (local == "ProductInImage") {
+    from = "name";
+    to = "ProductName";
+  } else {
+    return fields;
+  }
+  if (fields.find(std::string(to)) != fields.end()) {
+    return fields;
+  }
+  const auto it = fields.find(std::string(from));
+  if (it == fields.end()) {
+    return fields;
+  }
+  Structure out;
+  for (const auto& [name, value] : fields) {
+    if (name == from) {
+      out.emplace(std::string(to), value);
+    } else {
+      out.emplace(name, value);
+    }
+  }
+  return out;
+}
+
 std::string structure_lang_or_text(const Structure& fields,
                                    std::string_view name) {
   const auto it = fields.find(std::string(name));
@@ -413,7 +454,11 @@ void sync_video_generic(UnmappedChanges& changes, std::string_view property_id,
     if (structure_is_uri_like(*fields)) {
       add(changes, "Xmp", xmp, uri_from_structure(*fields));
     } else {
-      add(changes, "Xmp", xmp, encode_exiftool_struct(*fields), "struct");
+      add(changes, "Xmp", xmp,
+          encode_exiftool_struct(
+              alias_exiftool_struct_fields(def->representations.xmp_property,
+                                           *fields)),
+          "struct");
     }
     return;
   }
@@ -429,7 +474,10 @@ void sync_video_generic(UnmappedChanges& changes, std::string_view property_id,
       return;
     }
     for (const Structure& item : *list) {
-      add(changes, "Xmp", xmp, encode_exiftool_struct(item), "struct");
+      add(changes, "Xmp", xmp,
+          encode_exiftool_struct(alias_exiftool_struct_fields(
+              def->representations.xmp_property, item)),
+          "struct");
     }
   }
 }

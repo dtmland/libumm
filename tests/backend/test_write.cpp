@@ -1439,11 +1439,6 @@ int test_tier3_accessor_roundtrip(const std::string& backend, const char* folder
                  written.error().detail.c_str());
     return 1;
   }
-  std::fprintf(stderr, "tier3 write keys (%s %s):", folder, ext);
-  for (const auto& key : written.value().written) {
-    std::fprintf(stderr, " %s/%s", key.family.c_str(), key.key.c_str());
-  }
-  std::fprintf(stderr, "\n");
   const auto round = umm::read(file, ropts(backend));
   if (!round.ok()) {
     std::fprintf(stderr, "tier3 read failed (%s %s): %s\n", folder, ext,
@@ -1453,16 +1448,6 @@ int test_tier3_accessor_roundtrip(const std::string& backend, const char* folder
   const umm::Metadata& got = round.value();
   if (!got.locationCreated() || !got.personShown() || !got.shownEvent() ||
       !got.assetIdentifier()) {
-    std::fprintf(stderr,
-                 "tier3 accessors after read location=%d person=%d event=%d "
-                 "asset=%d ids=",
-                 got.locationCreated().has_value(),
-                 got.personShown().has_value(), got.shownEvent().has_value(),
-                 got.assetIdentifier().has_value());
-    for (const std::string& id : got.propertyIds()) {
-      std::fprintf(stderr, " %s", id.c_str());
-    }
-    std::fprintf(stderr, "\n");
     return fail("tier3 accessors missing after read");
   }
   if (!value_has_text(got.locationCreated()->value, "Tier3 City") ||

@@ -141,6 +141,10 @@ std::optional<UnmappedKey> map_exiftool_tag(std::string_view json_key) {
         name = "EventExt";
       } else if (name == "RegistryID") {
         name = "RegistryId";
+      } else if (name == "EventID") {
+        name = "EventId";
+      } else if (name == "DigitalImageGUID") {
+        name = "DigImageGUID";
       }
     } else if (ns == "iptcCore") {
       ns = "Iptc4xmpCore";
@@ -332,6 +336,10 @@ std::optional<std::string> exiftool_tag_for_unmapped_key(std::string_view raw_ke
         tag = "ShownEvent";
       } else if (tag == "RegistryId") {
         tag = "RegistryID";
+      } else if (tag == "EventId") {
+        tag = "EventID";
+      } else if (tag == "DigImageGUID") {
+        tag = "DigitalImageGUID";
       }
     }
     return "XMP-" + ns + ":" + tag;

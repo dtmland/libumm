@@ -56,6 +56,9 @@ int main() {
                  "Xmp.Iptc4xmpExt.EventExt") != 0 ||
       expect_key("XMP-iptcExt:RegistryID", "Xmp",
                  "Xmp.Iptc4xmpExt.RegistryId") != 0 ||
+      expect_key("XMP-iptcExt:EventID", "Xmp", "Xmp.Iptc4xmpExt.EventId") != 0 ||
+      expect_key("XMP-iptcExt:DigitalImageGUID", "Xmp",
+                 "Xmp.Iptc4xmpExt.DigImageGUID") != 0 ||
       expect_key("XMP-iptcCore:AltTextAccessibility", "Xmp",
                  "Xmp.Iptc4xmpCore.AltTextAccessibility") != 0 ||
       expect_key("XMP-plus:DataMining", "Xmp", "Xmp.plus.DataMining") != 0 ||
@@ -102,6 +105,10 @@ int main() {
       "Xmp.Iptc4xmpExt.EventExt");
   const auto registry = umm::internal::exiftool_tag_for_unmapped_key(
       "Xmp.Iptc4xmpExt.RegistryId");
+  const auto event_id = umm::internal::exiftool_tag_for_unmapped_key(
+      "Xmp.Iptc4xmpExt.EventId");
+  const auto guid = umm::internal::exiftool_tag_for_unmapped_key(
+      "Xmp.Iptc4xmpExt.DigImageGUID");
   if (!artist || *artist != "IFD0:Artist" || !byline ||
       *byline != "IPTC:By-line" || !creator || *creator != "XMP-dc:Creator" ||
       !title || *title != "Keys:Title" || !qt_artist ||
@@ -111,7 +118,9 @@ int main() {
       *loc != "XMP-iptcExt:LocationCreated" || !alt ||
       *alt != "XMP-iptcCore:AltTextAccessibility" || !event ||
       *event != "XMP-iptcExt:ShownEvent" || !registry ||
-      *registry != "XMP-iptcExt:RegistryID") {
+      *registry != "XMP-iptcExt:RegistryID" || !event_id ||
+      *event_id != "XMP-iptcExt:EventID" || !guid ||
+      *guid != "XMP-iptcExt:DigitalImageGUID") {
     std::fprintf(stderr, "reverse key mapping failed\n");
     return 1;
   }
