@@ -53,3 +53,11 @@ Sessions 39–41 (all accessors landed).
 - Matrix suite green on all three CI OSes with both backends installed.
 - Contract test fails when a map row lacks an accessor (verified by mutation).
 - Docs updated; analysis doc reflects the final shipped catalog.
+
+## Notes from the matrix
+
+ExifTool PLUS structs (`CopyrightOwner`, `Licensor`, `ImageSupplier`) reject
+IPTC Entity field `name`. Write-sync aliases it to `CopyrightOwnerName`,
+`LicensorName`, and `ImageSupplierName` using the XMP local name from the
+registry (same pattern as `PersonName` / `ProductName`). No ledger entries
+were needed once those aliases landed. `objectShown` stays deferred.
