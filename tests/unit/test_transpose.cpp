@@ -104,5 +104,39 @@ int main() {
     return fail("single to list");
   }
 
+  umm::Structure location;
+  location.emplace("city", make(std::string("Paris")));
+  location.emplace("gpsAltitudeRef", make(0.0));
+  location.emplace("gpsAltitude", make(35.0));
+  const umm::Structure video_location = struct_field_subset(location);
+  if (video_location.find("gpsAltitudeRef") != video_location.end() ||
+      !std::get_if<std::string>(&video_location.at("city").data) ||
+      !std::get_if<double>(&video_location.at("gpsAltitude").data)) {
+    return fail("location subset drops gpsAltitudeRef only");
+  }
+
+  umm::Structure supplier;
+  supplier.emplace("imageSupplierName", make(std::string("Wire Service")));
+  supplier.emplace("imageSupplierId", make(std::string("http://id.example/sup")));
+  const umm::Structure supplier_entity = struct_field_subset(supplier);
+  const auto* supplier_name =
+      std::get_if<umm::LangAlt>(&supplier_entity.at("name").data);
+  const auto* supplier_ids = std::get_if<std::vector<std::string>>(
+      &supplier_entity.at("identifiers").data);
+  if (!supplier_name || supplier_name->at("x-default") != "Wire Service" ||
+      !supplier_ids ||
+      *supplier_ids != std::vector<std::string>{"http://id.example/sup"}) {
+    return fail("imageSupplier subset");
+  }
+
+  const umm::LangAlt event_name{{"x-default", "Opening"}};
+  const std::vector<std::string> event_ids{"http://example.com/event/1"};
+  const umm::Structure entity =
+      umm::internal::name_uri_to_entity(event_name, event_ids);
+  const auto back = umm::internal::entity_to_name_uri(entity);
+  if (back.first != event_name || back.second != event_ids) {
+    return fail("name_uri_to_entity round-trip");
+  }
+
   return 0;
 }

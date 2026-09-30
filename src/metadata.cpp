@@ -15,7 +15,6 @@ namespace umm {
 namespace {
 
 using internal::kGps;
-using internal::kLocation;
 using internal::kRating;
 
 std::optional<Datatype> datatypeFor(std::string_view property_id) {
@@ -139,6 +138,44 @@ std::optional<PropertyValue> Metadata::getConcept(
   if (!def) {
     return std::nullopt;
   }
+  if (def->transposition ==
+      internal::CrossMediaTransposition::name_uri_to_entity) {
+    LangAlt name;
+    std::vector<std::string> identifiers;
+    bool have_photo = false;
+    if (def->photo_id_count >= 1) {
+      if (auto property = get(def->photo_ids[0])) {
+        if (const auto* alt =
+                std::get_if<LangAlt>(&property->value.data)) {
+          name = *alt;
+          have_photo = true;
+        }
+      }
+    }
+    if (def->photo_id_count >= 2) {
+      if (auto property = get(def->photo_ids[1])) {
+        if (const auto* list = std::get_if<std::vector<std::string>>(
+                &property->value.data)) {
+          identifiers = *list;
+          have_photo = true;
+        }
+      }
+    }
+    if (have_photo) {
+      PropertyValue assembled;
+      assembled.value =
+          makeValue(std::vector<Structure>{internal::name_uri_to_entity(
+              std::move(name), std::move(identifiers))});
+      assembled.resolution = Resolution::single;
+      return assembled;
+    }
+    for (std::size_t i = 0; i < def->video_id_count; ++i) {
+      if (auto property = get(def->video_ids[i])) {
+        return property;
+      }
+    }
+    return std::nullopt;
+  }
   for (std::size_t i = 0; i < def->photo_id_count; ++i) {
     if (auto property = get(def->photo_ids[i])) {
       return property;
@@ -161,8 +198,34 @@ Result<void> Metadata::setConcept(std::string_view concept_name, Value value) {
   }
   const bool video = media_domain_ == MediaDomain::video;
   const std::string_view id = video ? def->video_ids[0] : def->photo_ids[0];
+  using internal::CrossMediaTransposition;
+  if (def->transposition == CrossMediaTransposition::name_uri_to_entity) {
+    const Structure* entity = std::get_if<Structure>(&value.data);
+    std::vector<Structure> owned;
+    if (!entity) {
+      const auto* list = std::get_if<std::vector<Structure>>(&value.data);
+      if (!list || list->size() != 1) {
+        return invalidValue(id);
+      }
+      owned = *list;
+      entity = &owned.front();
+    }
+    if (video) {
+      return set(id, makeValue(std::vector<Structure>{*entity}));
+    }
+    auto [name, identifiers] = internal::entity_to_name_uri(*entity);
+    if (def->photo_id_count < 2) {
+      return Error{ErrorCode::internal,
+                   "shownEvent photo fan-out requires two property ids", "",
+                   ""};
+    }
+    auto first = set(def->photo_ids[0], makeValue(std::move(name)));
+    if (!first.ok()) {
+      return first;
+    }
+    return set(def->photo_ids[1], makeValue(std::move(identifiers)));
+  }
   if (video) {
-    using internal::CrossMediaTransposition;
     switch (def->transposition) {
       case CrossMediaTransposition::passthrough:
         break;
@@ -232,8 +295,9 @@ Result<void> Metadata::setConcept(std::string_view concept_name, Value value) {
         if (!one) {
           return Error{
               ErrorCode::invalid_value,
-              "video licensor accepts a single entry; extra entries require "
-              "the full property id",
+              "video " + std::string(concept_name) +
+                  " accepts a single entry; extra entries require the full "
+                  "property id",
               "", ""};
         }
         value = makeValue(internal::struct_field_subset(*one));
@@ -241,7 +305,7 @@ Result<void> Metadata::setConcept(std::string_view concept_name, Value value) {
       }
       case CrossMediaTransposition::name_uri_to_entity:
         return Error{ErrorCode::internal,
-                     "name_uri_to_entity is session 41", "", ""};
+                     "name_uri_to_entity already handled", "", ""};
     }
   }
   return set(id, std::move(value));
@@ -362,7 +426,43 @@ std::optional<PropertyValue> Metadata::licensor() const {
 std::optional<PropertyValue> Metadata::gps() const { return get(kGps); }
 
 std::optional<PropertyValue> Metadata::locationCreated() const {
-  return get(kLocation);
+  return getConcept("locationCreated");
+}
+
+std::optional<PropertyValue> Metadata::locationShown() const {
+  return getConcept("locationShown");
+}
+
+std::optional<PropertyValue> Metadata::personShown() const {
+  return getConcept("personShown");
+}
+
+std::optional<PropertyValue> Metadata::productShown() const {
+  return getConcept("productShown");
+}
+
+std::optional<PropertyValue> Metadata::shownEvent() const {
+  return getConcept("shownEvent");
+}
+
+std::optional<PropertyValue> Metadata::registryEntry() const {
+  return getConcept("registryEntry");
+}
+
+std::optional<PropertyValue> Metadata::assetIdentifier() const {
+  return getConcept("assetIdentifier");
+}
+
+std::optional<PropertyValue> Metadata::aboutCvTerms() const {
+  return getConcept("aboutCvTerms");
+}
+
+std::optional<PropertyValue> Metadata::featuredOrganisation() const {
+  return getConcept("featuredOrganisation");
+}
+
+std::optional<PropertyValue> Metadata::supplier() const {
+  return getConcept("supplier");
 }
 
 Result<void> Metadata::setCreator(std::vector<std::string> names) {
@@ -487,7 +587,46 @@ Result<void> Metadata::setGps(GpsCoordinate position) {
 }
 
 Result<void> Metadata::setLocationCreated(std::vector<Structure> locations) {
-  return set(kLocation, makeValue(std::move(locations)));
+  return setConcept("locationCreated", makeValue(std::move(locations)));
+}
+
+Result<void> Metadata::setLocationShown(std::vector<Structure> locations) {
+  return setConcept("locationShown", makeValue(std::move(locations)));
+}
+
+Result<void> Metadata::setPersonShown(std::vector<Structure> people) {
+  return setConcept("personShown", makeValue(std::move(people)));
+}
+
+Result<void> Metadata::setProductShown(std::vector<Structure> products) {
+  return setConcept("productShown", makeValue(std::move(products)));
+}
+
+Result<void> Metadata::setShownEvent(LangAlt name,
+                                    std::vector<std::string> identifiers) {
+  return setConcept("shownEvent",
+                    makeValue(internal::name_uri_to_entity(
+                        std::move(name), std::move(identifiers))));
+}
+
+Result<void> Metadata::setRegistryEntry(std::vector<Structure> entries) {
+  return setConcept("registryEntry", makeValue(std::move(entries)));
+}
+
+Result<void> Metadata::setAssetIdentifier(std::string identifier) {
+  return setConcept("assetIdentifier", makeValue(std::move(identifier)));
+}
+
+Result<void> Metadata::setAboutCvTerms(std::vector<Structure> terms) {
+  return setConcept("aboutCvTerms", makeValue(std::move(terms)));
+}
+
+Result<void> Metadata::setFeaturedOrganisation(std::vector<std::string> names) {
+  return setConcept("featuredOrganisation", makeValue(std::move(names)));
+}
+
+Result<void> Metadata::setSupplier(std::vector<Structure> suppliers) {
+  return setConcept("supplier", makeValue(std::move(suppliers)));
 }
 
 std::vector<std::string> Metadata::conflictedPropertyIds() const {

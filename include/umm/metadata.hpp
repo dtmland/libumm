@@ -55,9 +55,10 @@ class Metadata {
   // mediaDomain(). Cross-media setters resolve through the generated
   // CrossMediaAccessorDef table; unknown domain writes the photo id (Phase 1).
   //
-  // Photo-only until later sessions: locationCreated (session 41).
-  // rating() stays photo-only. Tier 2 setters transpose photo-native values
-  // into the domain shape; getters return the stored domain value.
+  // rating() stays photo-only. Tier 2/3 setters transpose photo-native values
+  // into the domain shape; getters return the stored domain value except
+  // shownEvent(), which assembles name+identifiers from the photo pair or the
+  // video Entity list. objectShown is deferred (too lossy: title↔name only).
   std::optional<PropertyValue> creator() const;          // cross-media: names ↔ EntityWRole.name
   std::optional<PropertyValue> description() const;      // cross-media: iptc.photo.description / iptc.video.description
   std::optional<PropertyValue> headline() const;         // cross-media: string ↔ x-default lang-alt
@@ -89,7 +90,16 @@ class Metadata {
   std::optional<PropertyValue> copyrightOwner() const;  // cross-media: name/identifiers subset; role video-only
   std::optional<PropertyValue> licensor() const;  // cross-media: photo list ↔ video single; >1 on video errors
   std::optional<PropertyValue> gps() const;              // cross-media: exif.gps.position
-  std::optional<PropertyValue> locationCreated() const;  // photo-only until session 41: iptc.photo.locationCreated
+  std::optional<PropertyValue> locationCreated() const;  // cross-media: iptc.photo.locationCreated / iptc.video.locationShot; video drops gpsAltitudeRef
+  std::optional<PropertyValue> locationShown() const;    // cross-media: iptc.photo.locationShownInTheImage / iptc.video.locationShown
+  std::optional<PropertyValue> personShown() const;      // cross-media: iptc.photo.personShownInTheImageWithDetails / iptc.video.personShown
+  std::optional<PropertyValue> productShown() const;     // cross-media: iptc.photo.productShownInTheImage / iptc.video.productShown
+  std::optional<PropertyValue> shownEvent() const;       // cross-media: eventName+eventIdentifier ↔ iptc.video.shownEvent
+  std::optional<PropertyValue> registryEntry() const;    // cross-media: iptc.photo.imageRegistryEntry / iptc.video.registryEntry
+  std::optional<PropertyValue> assetIdentifier() const;  // cross-media: iptc.photo.digitalImageGuid / iptc.video.videoIdentifier
+  std::optional<PropertyValue> aboutCvTerms() const;     // cross-media: iptc.photo.cvTermAboutImage / iptc.video.cvTermAboutTheContent
+  std::optional<PropertyValue> featuredOrganisation() const;  // cross-media: names ↔ Entity.name
+  std::optional<PropertyValue> supplier() const;         // cross-media: ImageSupplier list ↔ Entity single; >1 on video errors
 
   Result<void> setCreator(std::vector<std::string> names);
   Result<void> setDescription(LangAlt text);
@@ -121,6 +131,15 @@ class Metadata {
   Result<void> setLicensor(std::vector<Structure> licensors);
   Result<void> setGps(GpsCoordinate position);
   Result<void> setLocationCreated(std::vector<Structure> locations);
+  Result<void> setLocationShown(std::vector<Structure> locations);
+  Result<void> setPersonShown(std::vector<Structure> people);
+  Result<void> setProductShown(std::vector<Structure> products);
+  Result<void> setShownEvent(LangAlt name, std::vector<std::string> identifiers);
+  Result<void> setRegistryEntry(std::vector<Structure> entries);
+  Result<void> setAssetIdentifier(std::string identifier);
+  Result<void> setAboutCvTerms(std::vector<Structure> terms);
+  Result<void> setFeaturedOrganisation(std::vector<std::string> names);
+  Result<void> setSupplier(std::vector<Structure> suppliers);
 
   // --- Conflicts -------------------------------------------------------------
   // Properties whose resolution == Resolution::conflict (never hidden).
