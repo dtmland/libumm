@@ -398,9 +398,10 @@ int main() {
                   "photo setKeywords")) {
     return 1;
   }
+  const auto photo_creator = photo_tier2.creator();
   if (!require_id(photo_tier2, "iptc.photo.creator", "photo creator id") ||
-      !std::get_if<std::vector<std::string>>(
-          &photo_tier2.creator()->value.data)) {
+      !photo_creator ||
+      !std::get_if<std::vector<std::string>>(&photo_creator->value.data)) {
     return fail("photo creator stays string list");
   }
 
@@ -590,18 +591,27 @@ int main() {
                       "video asset id")) {
         return 1;
       }
-      const auto* vloc = std::get_if<std::vector<umm::Structure>>(
-          &tier3.locationCreated()->value.data);
+      const auto video_location = tier3.locationCreated();
+      const auto* vloc =
+          video_location
+              ? std::get_if<std::vector<umm::Structure>>(
+                    &video_location->value.data)
+              : nullptr;
       if (!vloc || vloc->front().find("gpsAltitudeRef") != vloc->front().end() ||
           vloc->front().find("city") == vloc->front().end()) {
         return fail("video locationCreated dropped gpsAltitudeRef");
       }
-      const auto* orgs = std::get_if<std::vector<umm::Structure>>(
-          &tier3.featuredOrganisation()->value.data);
+      const auto video_orgs = tier3.featuredOrganisation();
+      const auto* orgs =
+          video_orgs ? std::get_if<std::vector<umm::Structure>>(
+                           &video_orgs->value.data)
+                     : nullptr;
       if (!orgs) {
         return fail("video featuredOrganisation stores entities");
       }
-      if (!std::get_if<umm::Structure>(&tier3.supplier()->value.data)) {
+      const auto video_supplier = tier3.supplier();
+      if (!video_supplier ||
+          !std::get_if<umm::Structure>(&video_supplier->value.data)) {
         return fail("video supplier stores a single struct");
       }
       if (!require_error(tier3.setSupplier({supplier, supplier}),
@@ -623,13 +633,20 @@ int main() {
                       "photo asset id")) {
         return 1;
       }
-      const auto* ploc = std::get_if<std::vector<umm::Structure>>(
-          &tier3.locationCreated()->value.data);
+      const auto photo_location = tier3.locationCreated();
+      const auto* ploc =
+          photo_location
+              ? std::get_if<std::vector<umm::Structure>>(
+                    &photo_location->value.data)
+              : nullptr;
       if (!ploc || ploc->front().find("gpsAltitudeRef") == ploc->front().end()) {
         return fail("photo locationCreated keeps gpsAltitudeRef");
       }
-      const auto* names = std::get_if<std::vector<std::string>>(
-          &tier3.featuredOrganisation()->value.data);
+      const auto photo_orgs = tier3.featuredOrganisation();
+      const auto* names =
+          photo_orgs ? std::get_if<std::vector<std::string>>(
+                           &photo_orgs->value.data)
+                     : nullptr;
       if (!names || *names != std::vector<std::string>{"Org One"}) {
         return fail("photo featuredOrganisation stays string list");
       }
