@@ -633,6 +633,25 @@ int check_video_backend() {
     return fail_read("video conflicting date did not prefer XMP");
   }
 
+  const auto shapes = umm::read(raw_stem("video", "xmp-shapes", ".mp4"), options);
+  if (!shapes.ok()) {
+    std::fprintf(stderr, "video xmp-shapes read failed: %s\n",
+                 shapes.error().message.c_str());
+    return 1;
+  }
+  const auto credit = shapes.value().get("iptc.video.creditLine");
+  const auto* credit_text =
+      credit ? std::get_if<std::string>(&credit->value.data) : nullptr;
+  if (!credit_text || *credit_text != "Shape Credit") {
+    return fail_read("video xmp-shapes creditLine");
+  }
+  const auto headline = shapes.value().get("iptc.video.headline");
+  if (!headline || !as_lang(*headline) ||
+      as_lang(*headline)->count("x-default") == 0 ||
+      as_lang(*headline)->at("x-default") != "Shape Headline") {
+    return fail_read("video xmp-shapes headline");
+  }
+
   const auto mov = umm::read(raw_stem("video", "minimal", ".mov"), options);
   if (!mov.ok()) {
     std::fprintf(stderr, "video minimal.mov read failed: %s\n",

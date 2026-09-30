@@ -13,6 +13,7 @@
 
 #include "core/media_domain.hpp"
 #include "core/property_ids.hpp"
+#include "core/xmp_codec.hpp"
 #include "umm/registry.hpp"
 
 namespace umm::internal {
@@ -726,19 +727,6 @@ bool list_equal_set(const std::vector<std::string>& a,
   return left == right;
 }
 
-std::string xmp_raw_key(std::string_view property) {
-  const auto colon = property.find(':');
-  if (colon == std::string_view::npos) {
-    return "Xmp." + std::string(property);
-  }
-  std::string ns(property.substr(0, colon));
-  std::string name(property.substr(colon + 1));
-  if (ascii_lower(ns) == "dc") {
-    name = ascii_lower(name);
-  }
-  return "Xmp." + ns + "." + name;
-}
-
 std::string exif_raw_key(std::string_view tag) {
   const auto colon = tag.find(':');
   std::string group;
@@ -915,6 +903,28 @@ bool values_equivalent(std::string_view property_id, const Value& a,
       }
     }
     return true;
+  }
+  if (const auto def = registry().find(property_id)) {
+    if (def->datatype == Datatype::lang_alt) {
+      const auto* la = std::get_if<LangAlt>(&a.data);
+      const auto* lb = std::get_if<LangAlt>(&b.data);
+      return la && lb && lang_equivalent(*la, *lb);
+    }
+    if (def->datatype == Datatype::date_time) {
+      const auto* da = std::get_if<DateTime>(&a.data);
+      const auto* db = std::get_if<DateTime>(&b.data);
+      return da && db && datetime_equivalent(*da, *db);
+    }
+    if (def->datatype == Datatype::structure) {
+      const auto* sa = std::get_if<Structure>(&a.data);
+      const auto* sb = std::get_if<Structure>(&b.data);
+      return sa && sb && *sa == *sb;
+    }
+    if (def->datatype == Datatype::structure_list) {
+      const auto* la = std::get_if<std::vector<Structure>>(&a.data);
+      const auto* lb = std::get_if<std::vector<Structure>>(&b.data);
+      return la && lb && *la == *lb;
+    }
   }
   if (property_id == kRating) {
     const auto* da = std::get_if<double>(&a.data);
@@ -1540,6 +1550,167 @@ void collect_gps(std::vector<Group>& groups, const UnmappedDocument& document,
                  "Xmp.exif.GPSAltitudeRef", "xmp", 1));
 }
 
+std::optional<Group> video_structure_group(const UnmappedDocument& document,
+                                           std::string_view backend,
+                                           std::string_view base,
+                                           std::string family, int rank) {
+  const auto entries = matching(document, base);
+  if (entries.empty()) {
+    return std::nullopt;
+  }
+  Structure fields;
+  for (const UnmappedEntry* entry : entries) {
+    if (entry->key.key == base ||
+        (entry->key.key.size() > base.size() &&
+         entry->key.key[base.size()] == '[' &&
+         entry->key.key.find('/') == std::string::npos)) {
+      if (auto parsed = decode_structure_text(entry->value)) {
+        for (auto& [name, value] : *parsed) {
+          fields.insert_or_assign(name, std::move(value));
+        }
+      } else {
+        const std::string text = trimmed(entry->value);
+        if (!text.empty()) {
+          fields = structure_from_uri(text);
+        }
+      }
+      continue;
+    }
+    const std::string name(last_field(entry->key.key));
+    const std::string text = trimmed(entry->value);
+    if (!name.empty() && !text.empty()) {
+      fields.insert_or_assign(name, make_value(text));
+    }
+  }
+  if (fields.empty()) {
+    return std::nullopt;
+  }
+  Group group;
+  group.family = std::move(family);
+  group.rank = rank;
+  group.primary_key = std::string(base);
+  add_sources(group.sources, document, backend, base);
+  group.value = make_value(std::move(fields));
+  return group;
+}
+
+std::optional<Group> video_structure_list_group(
+    const UnmappedDocument& document, std::string_view backend,
+    std::string_view base, std::string family, int rank, bool names_as_entities) {
+  const auto entries = matching(document, base);
+  if (entries.empty()) {
+    return std::nullopt;
+  }
+  std::vector<Structure> items;
+  Structure flattened;
+  for (const UnmappedEntry* entry : entries) {
+    if (entry->key.key == base ||
+        (entry->key.key.size() > base.size() &&
+         entry->key.key[base.size()] == '[' &&
+         entry->key.key.find('/') == std::string::npos)) {
+      if (auto list = decode_structure_list_text(entry->value)) {
+        items.insert(items.end(), list->begin(), list->end());
+        continue;
+      }
+      if (auto one = decode_structure_text(entry->value)) {
+        items.push_back(std::move(*one));
+        continue;
+      }
+      const std::string text = trimmed(entry->value);
+      if (text.empty()) {
+        continue;
+      }
+      if (names_as_entities) {
+        Structure entity;
+        entity.emplace("name", make_value(LangAlt{{"x-default", text}}));
+        items.push_back(std::move(entity));
+      } else if (text.find("://") != std::string::npos) {
+        items.push_back(structure_from_uri(text));
+      } else {
+        Structure entity;
+        entity.emplace("Name", make_value(text));
+        items.push_back(std::move(entity));
+      }
+      continue;
+    }
+    const std::string name(last_field(entry->key.key));
+    const std::string text = trimmed(entry->value);
+    if (!name.empty() && !text.empty()) {
+      flattened.insert_or_assign(name, make_value(text));
+    }
+  }
+  if (items.empty() && !flattened.empty()) {
+    items.push_back(std::move(flattened));
+  }
+  if (items.empty()) {
+    return std::nullopt;
+  }
+  Group group;
+  group.family = std::move(family);
+  group.rank = rank;
+  group.primary_key = std::string(base);
+  add_sources(group.sources, document, backend, base);
+  group.value = make_value(std::move(items));
+  return group;
+}
+
+void collect_video_generic(std::vector<Group>& groups,
+                           const UnmappedDocument& document,
+                           std::string_view backend,
+                           std::string_view property_id) {
+  const auto def = registry().find(property_id);
+  if (!def) {
+    return;
+  }
+  const auto xmp_keys = xmp_raw_keys(def->representations.xmp_property);
+  const auto qt_keys = quicktime_raw_keys(def->representations.quicktime_key);
+  auto push = [&](std::optional<Group> group) {
+    if (group) {
+      groups.push_back(std::move(*group));
+    }
+  };
+  const bool names_as_entities =
+      def->datatype == Datatype::structure_list && xmp_keys.size() > 1;
+  auto push_typed = [&](std::string_view key, std::string family, int rank) {
+    switch (def->datatype) {
+      case Datatype::lang_alt:
+        push(lang_group(document, backend, key, std::move(family), rank));
+        break;
+      case Datatype::date_time:
+        push(date_group(document, backend, key, "", "", std::move(family),
+                        rank));
+        break;
+      case Datatype::text_list:
+        push(text_list_group(document, backend, key, std::move(family), rank));
+        break;
+      case Datatype::structure:
+        push(video_structure_group(document, backend, key, std::move(family),
+                                   rank));
+        break;
+      case Datatype::structure_list:
+        push(video_structure_list_group(document, backend, key,
+                                        std::move(family), rank,
+                                        names_as_entities));
+        break;
+      default:
+        push(text_group(document, backend, key, std::move(family), rank));
+        break;
+    }
+  };
+  if (!xmp_keys.empty()) {
+    push_typed(xmp_keys.front(), "xmp", 0);
+  }
+  const bool qt_scalar = def->datatype == Datatype::lang_alt ||
+                         def->datatype == Datatype::text ||
+                         def->datatype == Datatype::date_time ||
+                         def->datatype == Datatype::text_list;
+  if (qt_scalar) {
+    for (const std::string& key : qt_keys) {
+      push_typed(key, "quicktime", 1);
+    }
+  }
+}
+
 void collect_video_property(std::vector<Group>& groups,
                             const UnmappedDocument& document,
                             std::string_view backend,
@@ -1641,19 +1812,7 @@ void collect_video_property(std::vector<Group>& groups,
     push(as_lang("QuickTime.Keywords", "quicktime", 1));
     return;
   }
-  if (property_id == kVideoTitle || property_id == kVideoDescription ||
-      property_id == kVideoCopyright) {
-    if (!xmp.empty()) {
-      push(lang_group(document, backend, xmp, "xmp", 0));
-    }
-    const char* qt = "QuickTime.Title";
-    if (property_id == kVideoDescription) {
-      qt = "QuickTime.Description";
-    } else if (property_id == kVideoCopyright) {
-      qt = "QuickTime.Copyright";
-    }
-    push(lang_group(document, backend, qt, "quicktime", 1));
-  }
+  collect_video_generic(groups, document, backend, property_id);
 }
 
 void add_document_groups(std::vector<Group>& groups, const UnmappedDocument& document,
@@ -1701,20 +1860,10 @@ Result<Metadata> reconcile(const UnmappedDocument& document,
   metadata.setMediaDomain(domain);
   const bool video = domain == MediaDomain::video;
   if (video) {
-    reconcile_property(metadata, document, sidecar, backend_id, kVideoTitle,
-                       true, disagreements);
-    reconcile_property(metadata, document, sidecar, backend_id,
-                       kVideoDescription, true, disagreements);
-    reconcile_property(metadata, document, sidecar, backend_id, kVideoCreator,
-                       true, disagreements);
-    reconcile_property(metadata, document, sidecar, backend_id,
-                       kVideoDateCreated, true, disagreements);
-    reconcile_property(metadata, document, sidecar, backend_id,
-                       kVideoCopyright, true, disagreements);
-    reconcile_property(metadata, document, sidecar, backend_id, kVideoKeywords,
-                       true, disagreements);
-    reconcile_property(metadata, document, sidecar, backend_id, kGps, true,
-                       disagreements);
+    for (std::string_view id : mapped_video_property_ids()) {
+      reconcile_property(metadata, document, sidecar, backend_id, id, true,
+                         disagreements);
+    }
     return metadata;
   }
   reconcile_property(metadata, document, sidecar, backend_id, kCreator, false,

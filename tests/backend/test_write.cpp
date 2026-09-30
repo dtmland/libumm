@@ -1,4 +1,5 @@
 #include "core/atomic_write.hpp"
+#include "core/xmp_codec.hpp"
 #include "read_unmapped_checks.hpp"
 #include "umm/umm.hpp"
 
@@ -1071,6 +1072,206 @@ int test_video_write() {
   return test_video_container(".mov");
 }
 
+bool id_ends(std::string_view id, std::string_view suffix) {
+  return id.size() >= suffix.size() &&
+         id.substr(id.size() - suffix.size()) == suffix;
+}
+
+umm::Value sample_video_value(const umm::PropertyDef& def) {
+  umm::Value value;
+  switch (def.datatype) {
+    case umm::Datatype::lang_alt:
+      value.data = umm::LangAlt{{"x-default", "Shape text"}};
+      return value;
+    case umm::Datatype::date_time: {
+      umm::DateTime when;
+      when.year = 2020;
+      when.month = 1;
+      when.day = 2;
+      when.hour = 3;
+      when.minute = 4;
+      when.second = 5;
+      value.data = when;
+      return value;
+    }
+    case umm::Datatype::structure:
+    case umm::Datatype::structure_list: {
+      umm::Structure fields;
+      if (id_ends(def.id, "digitalSourceType") ||
+          id_ends(def.id, "modelReleaseStatus") ||
+          id_ends(def.id, "propertyReleaseStatus") ||
+          id_ends(def.id, "genre") ||
+          id_ends(def.id, "cvTermAboutTheContent")) {
+        fields.emplace("cvId", umm::Value{std::string("http://example.com/cv/shape")});
+      } else if (id_ends(def.id, "locationShot") ||
+                 id_ends(def.id, "locationShown")) {
+        fields.emplace("City", umm::Value{std::string("Shape City")});
+      } else if (id_ends(def.id, "personShown")) {
+        fields.emplace("PersonName", umm::Value{std::string("Shape Person")});
+      } else if (id_ends(def.id, "productShown")) {
+        fields.emplace("ProductName", umm::Value{std::string("Shape Name")});
+      } else if (id_ends(def.id, "registryEntry")) {
+        fields.emplace("RegOrgId", umm::Value{std::string("Shape Name")});
+      } else if (id_ends(def.id, "embeddedEncodedRightsExpression")) {
+        fields.emplace("EncRightsExpr", umm::Value{std::string("Shape Name")});
+      } else if (id_ends(def.id, "linkedEncodedRightsExpression")) {
+        fields.emplace("LinkedRightsExpr", umm::Value{std::string("Shape Name")});
+      } else if (id_ends(def.id, "licensor")) {
+        fields.emplace("LicensorName", umm::Value{std::string("Shape Name")});
+      } else if (id_ends(def.id, "supplier")) {
+        fields.emplace("ImageSupplierName", umm::Value{std::string("Shape Name")});
+      } else if (id_ends(def.id, "featuredOrganisation")) {
+        fields.emplace("name",
+                       umm::Value{umm::LangAlt{{"x-default", "Shape Org"}}});
+      } else if (id_ends(def.id, "copyrightOwner")) {
+        fields.emplace("CopyrightOwnerName",
+                       umm::Value{std::string("Shape Owner")});
+      } else {
+        fields.emplace("Name", umm::Value{std::string("Shape Name")});
+      }
+      if (def.datatype == umm::Datatype::structure) {
+        value.data = std::move(fields);
+      } else {
+        value.data = std::vector<umm::Structure>{std::move(fields)};
+      }
+      return value;
+    }
+    default:
+      value.data = std::string("Shape text");
+      return value;
+  }
+}
+
+bool value_has_text(const umm::Value& value, const std::string& needle) {
+  if (const auto* text = std::get_if<std::string>(&value.data)) {
+    return text->find(needle) != std::string::npos;
+  }
+  if (const auto* alt = std::get_if<umm::LangAlt>(&value.data)) {
+    for (const auto& [lang, text] : *alt) {
+      if (text.find(needle) != std::string::npos) {
+        return true;
+      }
+    }
+    return false;
+  }
+  if (const auto* list = std::get_if<std::vector<std::string>>(&value.data)) {
+    for (const std::string& item : *list) {
+      if (item.find(needle) != std::string::npos) {
+        return true;
+      }
+    }
+    return false;
+  }
+  if (const auto* dt = std::get_if<umm::DateTime>(&value.data)) {
+    return needle == "2020" && dt->year == 2020;
+  }
+  if (const auto* fields = std::get_if<umm::Structure>(&value.data)) {
+    for (const auto& [name, field] : *fields) {
+      if (value_has_text(field, needle)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  if (const auto* items = std::get_if<std::vector<umm::Structure>>(&value.data)) {
+    for (const umm::Structure& item : *items) {
+      umm::Value wrapped;
+      wrapped.data = item;
+      if (value_has_text(wrapped, needle)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+std::string sample_needle(const umm::PropertyDef& def) {
+  if (def.datatype == umm::Datatype::date_time) {
+    return "2020";
+  }
+  if (id_ends(def.id, "digitalSourceType") ||
+      id_ends(def.id, "modelReleaseStatus") ||
+      id_ends(def.id, "propertyReleaseStatus") ||
+      id_ends(def.id, "genre") ||
+      id_ends(def.id, "cvTermAboutTheContent")) {
+    return "example.com/cv/shape";
+  }
+  if (id_ends(def.id, "locationShot") || id_ends(def.id, "locationShown")) {
+    return "Shape City";
+  }
+  if (id_ends(def.id, "personShown")) {
+    return "Shape Person";
+  }
+  if (id_ends(def.id, "featuredOrganisation")) {
+    return "Shape Org";
+  }
+  if (id_ends(def.id, "copyrightOwner")) {
+    return "Shape Owner";
+  }
+  if (def.datatype == umm::Datatype::structure ||
+      def.datatype == umm::Datatype::structure_list) {
+    return "Shape Name";
+  }
+  return "Shape text";
+}
+
+int test_video_mapped_container(const char* ext) {
+  int index = 0;
+  for (std::string_view id : umm::internal::mapped_video_property_ids()) {
+    if (id == "exif.gps.position") {
+      continue;
+    }
+    const auto found = umm::registry().find(id);
+    if (!found) {
+      std::fprintf(stderr, "mapped missing registry %s\n",
+                   std::string(id).c_str());
+      return 1;
+    }
+    const umm::PropertyDef& def = *found;
+    const std::string name =
+        std::string("mapped-") + std::to_string(index++) + ext;
+    const auto file = copy_fixture(raw_stem("video", "minimal", ext), name);
+    umm::Metadata metadata;
+    if (!metadata.set(std::string(def.id), sample_video_value(def)).ok()) {
+      std::fprintf(stderr, "set %s failed\n", std::string(def.id).c_str());
+      return 1;
+    }
+    const auto written = umm::write(file, metadata, opts("exiftool"));
+    if (!written.ok()) {
+      std::fprintf(stderr, "mapped write %s (%s): %s (%s)\n",
+                   std::string(def.id).c_str(), ext,
+                   written.error().message.c_str(),
+                   written.error().detail.c_str());
+      return 1;
+    }
+    const auto round = umm::read(file, ropts("exiftool"));
+    if (!round.ok()) {
+      std::fprintf(stderr, "mapped read %s (%s): %s\n",
+                   std::string(def.id).c_str(), ext,
+                   round.error().message.c_str());
+      return 1;
+    }
+    const auto got = round.value().get(std::string(def.id));
+    if (!got || !value_has_text(got->value, sample_needle(def))) {
+      std::fprintf(stderr, "mapped mismatch %s on %s\n",
+                   std::string(def.id).c_str(), ext);
+      return 1;
+    }
+  }
+  return 0;
+}
+
+int test_video_mapped_roundtrip() {
+  umm::Backend* backend = umm::BackendManager::instance().get("exiftool");
+  if (!backend || !backend->availability().available) {
+    return 0;
+  }
+  if (const int rc = test_video_mapped_container(".mp4"); rc != 0) {
+    return rc;
+  }
+  return test_video_mapped_container(".mov");
+}
+
 int check_backend(const std::string& backend,
                   const std::vector<std::string>& readers) {
   if (const int rc = test_payload(backend, "jpeg", ".jpg"); rc != 0) {
@@ -1189,5 +1390,8 @@ int main() {
   if (const int rc = test_video_exiv2_rejected(); rc != 0) {
     return rc;
   }
-  return test_video_write();
+  if (const int rc = test_video_write(); rc != 0) {
+    return rc;
+  }
+  return test_video_mapped_roundtrip();
 }

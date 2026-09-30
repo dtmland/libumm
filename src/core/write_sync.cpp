@@ -7,8 +7,11 @@
 #include <string>
 #include <string_view>
 #include <variant>
+#include <vector>
 
 #include "core/property_ids.hpp"
+#include "core/xmp_codec.hpp"
+#include "umm/registry.hpp"
 
 namespace umm::internal {
 namespace {
@@ -346,19 +349,89 @@ std::string structure_lang_or_text(const Structure& fields,
   return {};
 }
 
-void sync_video_lang(UnmappedChanges& changes, const Value& value,
-                     std::string_view xmp, std::string_view qt) {
-  const auto* alt = std::get_if<LangAlt>(&value.data);
-  if (!alt) {
+void sync_video_generic(UnmappedChanges& changes, std::string_view property_id,
+                        const Value& value) {
+  const auto def = registry().find(property_id);
+  if (!def) {
     return;
   }
-  const std::string plain = lang_plain(*alt);
-  const auto xd = alt->find("x-default");
-  const std::string xmp_text =
-      xd != alt->end() ? xd->second
-                       : (alt->size() == 1 ? alt->begin()->second : plain);
-  add(changes, "Xmp", std::string(xmp), xmp_text, "LangAlt");
-  add(changes, "QuickTime", std::string(qt), plain);
+  const auto xmp_keys = xmp_raw_keys(def->representations.xmp_property);
+  const auto qt_keys = quicktime_raw_keys(def->representations.quicktime_key);
+  if (xmp_keys.empty()) {
+    return;
+  }
+  const std::string& xmp = xmp_keys.front();
+  auto add_qt_plain = [&](const std::string& text) {
+    if (qt_keys.empty() || text.empty()) {
+      return;
+    }
+    add(changes, "QuickTime", qt_keys.front(), text);
+  };
+  if (def->datatype == Datatype::lang_alt) {
+    const auto* alt = std::get_if<LangAlt>(&value.data);
+    if (!alt) {
+      return;
+    }
+    const std::string plain = lang_plain(*alt);
+    const auto xd = alt->find("x-default");
+    const std::string xmp_text =
+        xd != alt->end() ? xd->second
+                         : (alt->size() == 1 ? alt->begin()->second : plain);
+    add(changes, "Xmp", xmp, xmp_text, "LangAlt");
+    add_qt_plain(plain);
+    return;
+  }
+  if (def->datatype == Datatype::date_time) {
+    const auto* dt = std::get_if<DateTime>(&value.data);
+    if (!dt) {
+      return;
+    }
+    const std::string iso = format_xmp_datetime(*dt);
+    add(changes, "Xmp", xmp, iso);
+    add_qt_plain(iso);
+    return;
+  }
+  if (def->datatype == Datatype::text || def->datatype == Datatype::text_list) {
+    if (const auto* text = std::get_if<std::string>(&value.data)) {
+      add(changes, "Xmp", xmp, *text);
+      add_qt_plain(*text);
+      return;
+    }
+    if (const auto* list = std::get_if<std::vector<std::string>>(&value.data)) {
+      for (const std::string& item : *list) {
+        add(changes, "Xmp", xmp, item);
+      }
+      add_qt_plain(join_names(*list, ", "));
+    }
+    return;
+  }
+  if (def->datatype == Datatype::structure) {
+    const auto* fields = std::get_if<Structure>(&value.data);
+    if (!fields || fields->empty()) {
+      return;
+    }
+    if (structure_is_uri_like(*fields)) {
+      add(changes, "Xmp", xmp, uri_from_structure(*fields));
+    } else {
+      add(changes, "Xmp", xmp, encode_exiftool_struct(*fields), "struct");
+    }
+    return;
+  }
+  if (def->datatype == Datatype::structure_list) {
+    const auto* list = std::get_if<std::vector<Structure>>(&value.data);
+    if (!list || list->empty()) {
+      return;
+    }
+    if (xmp_keys.size() > 1) {
+      for (const Structure& item : *list) {
+        add(changes, "Xmp", xmp, structure_display_name(item));
+      }
+      return;
+    }
+    for (const Structure& item : *list) {
+      add(changes, "Xmp", xmp, encode_exiftool_struct(item), "struct");
+    }
+  }
 }
 
 void sync_video_creator(UnmappedChanges& changes, const Value& value) {
@@ -368,7 +441,10 @@ void sync_video_creator(UnmappedChanges& changes, const Value& value) {
   }
   std::vector<std::string> names;
   for (const Structure& entity : *list) {
-    const std::string name = structure_lang_or_text(entity, "name");
+    std::string name = structure_display_name(entity);
+    if (name.empty()) {
+      name = structure_lang_or_text(entity, "name");
+    }
     if (!name.empty()) {
       names.push_back(name);
     }
@@ -496,21 +572,14 @@ UnmappedChanges write_sync(const Metadata& metadata) {
       sync_gps(changes, property->value);
     } else if (id == kLocation) {
       sync_location(changes, property->value);
-    } else if (id == kVideoTitle) {
-      sync_video_lang(changes, property->value, "Xmp.dc.title",
-                      "QuickTime.Title");
-    } else if (id == kVideoDescription) {
-      sync_video_lang(changes, property->value, "Xmp.dc.description",
-                      "QuickTime.Description");
     } else if (id == kVideoCreator) {
       sync_video_creator(changes, property->value);
-    } else if (id == kVideoCopyright) {
-      sync_video_lang(changes, property->value, "Xmp.dc.rights",
-                      "QuickTime.Copyright");
     } else if (id == kVideoKeywords) {
       sync_video_keywords(changes, property->value);
     } else if (id == kVideoDateCreated) {
       sync_video_date(changes, property->value);
+    } else if (id.rfind("iptc.video.", 0) == 0) {
+      sync_video_generic(changes, id, property->value);
     }
   }
   if (writes_iptc_application(changes)) {

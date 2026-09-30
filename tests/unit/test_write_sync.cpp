@@ -131,6 +131,23 @@ int main() {
   if (!video.set("iptc.video.dateCreated", umm::Value{when_v}).ok()) {
     return fail("set video date");
   }
+  if (!video.set("iptc.video.creditLine", umm::Value{std::string("Video credit")})
+           .ok()) {
+    return fail("set video credit");
+  }
+  umm::LangAlt vheadline;
+  vheadline.emplace("x-default", "Video headline");
+  if (!video.set("iptc.video.headline", umm::Value{vheadline}).ok()) {
+    return fail("set video headline");
+  }
+  umm::Structure loc;
+  loc.emplace("City", umm::Value{std::string("Paris")});
+  if (!video
+           .set("iptc.video.locationShot",
+                umm::Value{std::vector<umm::Structure>{loc}})
+           .ok()) {
+    return fail("set video locationShot");
+  }
   umm::GpsCoordinate gps;
   gps.latitude = 37.7749;
   gps.longitude = -122.4194;
@@ -154,7 +171,10 @@ int main() {
                  "2020-01-02T03:04:05") ||
       !has_value(vchanges, "QuickTime.CreationDate", "2020-01-02T03:04:05") ||
       !has_value(vchanges, "QuickTime.GPSCoordinates", "37.7749") ||
-      !has_value(vchanges, "Xmp.exif.GPSLatitude", "37.7749")) {
+      !has_value(vchanges, "Xmp.exif.GPSLatitude", "37.7749") ||
+      !has_value(vchanges, "Xmp.photoshop.Credit", "Video credit") ||
+      !has_value(vchanges, "Xmp.Iptc4xmpExt.Headline", "Video headline") ||
+      !has_value(vchanges, "Xmp.Iptc4xmpExt.LocationCreated", "Paris")) {
     return fail("video write-sync");
   }
   if (count_key(vchanges, "QuickTime.GPSCoordinates") != 1) {

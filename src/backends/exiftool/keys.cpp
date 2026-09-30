@@ -130,10 +130,20 @@ std::optional<UnmappedKey> map_exiftool_tag(std::string_view json_key) {
 
   UnmappedKey key;
   if (group.size() >= 4 && group.substr(0, 4) == "XMP-") {
-    const std::string ns(group.substr(4));
+    std::string ns(group.substr(4));
     std::string name(tag);
     if (ns == "dc") {
       name = ascii_lower(tag);
+    }
+    if (ns == "iptcExt") {
+      ns = "Iptc4xmpExt";
+      if (name == "ShownEvent") {
+        name = "EventExt";
+      } else if (name == "RegistryID") {
+        name = "RegistryId";
+      }
+    } else if (ns == "iptcCore") {
+      ns = "Iptc4xmpCore";
     }
     key.family = "Xmp";
     key.key = "Xmp." + ns + "." + name;
@@ -255,6 +265,9 @@ std::string xmp_exiftool_ns(std::string_view ns) {
   if (ns == "Iptc4xmpExt") {
     return "iptcExt";
   }
+  if (ns == "Iptc4xmpCore") {
+    return "iptcCore";
+  }
   return std::string(ns);
 }
 
@@ -292,7 +305,8 @@ std::optional<std::string> exiftool_tag_for_unmapped_key(std::string_view raw_ke
     return "IPTC:" + iptc_exiftool_name(*name);
   }
   if (const auto name = after_prefix("QuickTime.")) {
-    if (*name == "Artist") {
+    if (*name == "Artist" || *name == "Director" || *name == "Genre" ||
+        *name == "Publisher") {
       return std::string("ItemList") + ":" + *name;
     }
     if (*name == "CreationDate" || *name == "GPSCoordinates" ||
@@ -313,9 +327,34 @@ std::optional<std::string> exiftool_tag_for_unmapped_key(std::string_view raw_ke
     if (ns == "dc") {
       tag = capitalize_dc(tag);
     }
+    if (ns == "iptcExt") {
+      if (tag == "EventExt") {
+        tag = "ShownEvent";
+      } else if (tag == "RegistryId") {
+        tag = "RegistryID";
+      }
+    }
     return "XMP-" + ns + ":" + tag;
   }
   return std::nullopt;
+}
+
+std::string_view exiftool_assign_operator(std::string_view tag,
+                                          std::string_view value) {
+  if (tag.rfind("XMP-", 0) != 0) {
+    return "=";
+  }
+  // PLUS controlled-vocabulary tags reject URIs unless written raw.
+  if (tag.rfind("XMP-plus:", 0) == 0) {
+    return "#=";
+  }
+  if (tag.find("DigitalSourceType") != std::string_view::npos) {
+    return "#=";
+  }
+  if (value.find("://") != std::string_view::npos) {
+    return "#=";
+  }
+  return "=";
 }
 
 }  // namespace umm::internal

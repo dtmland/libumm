@@ -17,4 +17,11 @@ std::optional<UnmappedKey> map_exiftool_tag(std::string_view json_key);
 // are stripped. nullopt means the raw key cannot be expressed as a tag.
 std::optional<std::string> exiftool_tag_for_unmapped_key(std::string_view raw_key);
 
+// ExifTool assignment operator for a write. PLUS CV tags and URI-like XMP
+// values (DigitalSourceType) need "#=" so print conversion does not reject
+// the value. Ordinary XMP lang-alt/bag/GPS writes must keep "=" so Exiv2
+// can read the packet.
+std::string_view exiftool_assign_operator(std::string_view tag,
+                                          std::string_view value);
+
 }  // namespace umm::internal
