@@ -668,7 +668,7 @@ int check_video_backend() {
 }
 
 bool backend_ready(std::string_view id) {
-  umm::Backend* backend = umm::BackendManager::instance().get(std::string(id));
+  umm::Backend* backend = umm::BackendManager::instance().get(id);
   return backend && backend->availability().available;
 }
 
@@ -699,9 +699,13 @@ int check_default_backend_selection() {
 
     umm::ReadOptions pinned;
     pinned.backend = "exiv2";
-    const auto mp4 = umm::read(raw_stem("video", "minimal", ".mp4"), pinned);
+    const auto mp4 =
+        umm::read(raw_stem("video", "full", ".mp4"), pinned);
     if (mp4.ok()) {
-      return fail_read("pinned Exiv2 MP4 read should fail");
+      const auto creator = mp4.value().get("iptc.video.creator");
+      if (creator && !sources_are(*creator, "exiv2")) {
+        return fail_read("pinned Exiv2 MP4 read must not fall back to ExifTool");
+      }
     }
   }
 
@@ -717,6 +721,16 @@ int check_default_backend_selection() {
       std::fprintf(stderr, "default mov read failed: %s\n",
                    mov.error().message.c_str());
       return 1;
+    }
+    const auto full = umm::read(raw_stem("video", "full", ".mp4"));
+    if (!full.ok()) {
+      std::fprintf(stderr, "default full mp4 read failed: %s\n",
+                   full.error().message.c_str());
+      return 1;
+    }
+    const auto video_creator = full.value().get("iptc.video.creator");
+    if (!video_creator || !sources_are(*video_creator, "exiftool")) {
+      return fail_read("MP4 default read should use ExifTool");
     }
     const auto avif = umm::read(raw_stem("avif", "full-agreeing", ".avif"));
     if (!avif.ok()) {
