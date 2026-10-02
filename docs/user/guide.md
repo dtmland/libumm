@@ -25,7 +25,10 @@ auto report = umm::write("photo.jpg", m);      // atomic, write-synchronized
 
 - `umm::read` reconciles all embedded representations (XMP, IPTC IIM, EXIF, QuickTime) and a
   paired `.xmp` sidecar into one canonical value per property, with provenance and conflict
-  detection (see [docs/reconciliation-policy.md](../reconciliation-policy.md)).
+  detection (see [docs/reconciliation-policy.md](../reconciliation-policy.md)). With an empty
+  `ReadOptions::backend`, the type's `preferred_backend` is used when that backend is
+  available (ExifTool for video and other Exiv2-weak types, Exiv2 for JPEG); otherwise the
+  first available backend. An explicit `backend` is a hard pin with no fallback.
 - `umm::write` keeps every synchronized representation up to date and replaces files
   atomically (temp file + rename). `WriteOptions::policy` selects embedded vs sidecar
   storage; `dry_run` previews the decision.

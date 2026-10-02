@@ -36,7 +36,7 @@ struct StorageDecision {
 };
 
 struct ReadOptions {
-  std::string backend;          // empty = first available (manager order)
+  std::string backend;          // empty = type preferred_backend, else first available
   bool merge_sidecar{true};     // pair media.xmp per session-14 pairing rules
   bool conflicts_as_errors{false};  // else recorded in Metadata::conflictedPropertyIds()
   // When true, a non-sidecar path with no paired .xmp fails
@@ -71,7 +71,7 @@ enum class SyncDirection {
 };
 
 struct SyncOptions {
-  std::string backend;  // empty = first available (manager order)
+  std::string backend;  // empty = type preferred_backend, else first available
   SyncDirection direction{SyncDirection::both};
   // When set, this canonical state is written (session 23 merge output).
   // When unset, synchronize() reads first according to `direction`.
