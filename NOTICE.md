@@ -33,7 +33,8 @@ Exiv2 is not bundled in this source repository.
 
 ExifTool is invoked **out-of-process only** (decision **S1a**) and is **never
 bundled** with libumm (decision **S1c**). libumm locates an installed ExifTool
-and Perl interpreter; it does not redistribute ExifTool.
+at runtime; a Perl interpreter is required only for the Perl-script packaging,
+not for the standalone Windows `.exe`. libumm does not redistribute ExifTool.
 
 ### IPTC Photo Metadata Technical Reference
 

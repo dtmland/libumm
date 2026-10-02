@@ -236,11 +236,16 @@ std::string ChildProcess::spawn(const std::filesystem::path& exe,
   std::wstring command = build_command_line(argv);
   std::wstring exe_wide = utf8_to_wide(path_to_utf8(exe));
   PROCESS_INFORMATION pi{};
+  // SEM_FAILCRITICALERRORS avoids a modal "not a valid Win32 application"
+  // dialog that can block CreateProcessW indefinitely in CI / umm doctor.
+  const UINT previous_error_mode = SetErrorMode(
+      SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
   const BOOL ok =
       CreateProcessW(exe_wide.empty() ? nullptr : exe_wide.c_str(),
                      command.empty() ? nullptr : command.data(), nullptr,
                      nullptr, TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &si,
                      &pi);
+  SetErrorMode(previous_error_mode);
   close_handle(stdin_r);
   close_handle(stdout_w);
   close_handle(stderr_w);

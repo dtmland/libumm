@@ -32,6 +32,7 @@ class ExifToolBackend final : public Backend {
   ExifToolConfig config_;
   mutable std::filesystem::path perl_;
   mutable std::filesystem::path script_;
+  mutable bool native_exe_{false};
   mutable std::string absence_reason_;
   mutable std::string version_;
   std::unique_ptr<class ChildProcess> child_;

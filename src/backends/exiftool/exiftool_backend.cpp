@@ -73,6 +73,33 @@ bool is_file(const std::filesystem::path& path) {
   return !path.empty() && std::filesystem::is_regular_file(path, ec);
 }
 
+bool is_native_windows_exe(const std::filesystem::path& path) {
+  std::string ext = path.extension().string();
+  for (char& c : ext) {
+    if (c >= 'A' && c <= 'Z') {
+      c = static_cast<char>(c - 'A' + 'a');
+    }
+  }
+  return ext == ".exe";
+}
+
+struct SpawnCommand {
+  std::filesystem::path exe;
+  std::vector<std::string> argv;
+};
+
+SpawnCommand make_spawn_command(bool native_exe,
+                                const std::filesystem::path& perl,
+                                const std::filesystem::path& script) {
+  SpawnCommand command;
+  command.exe = native_exe ? script : perl;
+  command.argv.push_back(path_to_utf8(command.exe));
+  if (!native_exe) {
+    command.argv.push_back(path_to_utf8(script));
+  }
+  return command;
+}
+
 const JsonValue* find_named_field(const JsonValue& object, std::string_view bare,
                                   std::string_view group) {
   if (const JsonValue* field = object.field(bare)) {
@@ -174,6 +201,7 @@ void ExifToolBackend::configure(ExifToolConfig config) {
   config_ = std::move(config);
   perl_.clear();
   script_.clear();
+  native_exe_ = false;
   absence_reason_.clear();
   version_.clear();
 }
@@ -202,6 +230,8 @@ void ExifToolBackend::shutdown() {
 
 void ExifToolBackend::resolve() const {
   absence_reason_.clear();
+  native_exe_ = false;
+  perl_.clear();
   if (!config_.exiftool_script.empty()) {
     script_ = config_.exiftool_script;
   } else if (const char* env = std::getenv("UMM_EXIFTOOL"); env && *env) {
@@ -210,15 +240,20 @@ void ExifToolBackend::resolve() const {
     script_ = which("exiftool");
   }
 
+  if (script_.empty() || !is_file(script_)) {
+    absence_reason_ = "ExifTool script not found";
+    return;
+  }
+
+  if (is_native_windows_exe(script_)) {
+    native_exe_ = true;
+    return;
+  }
+
   if (!config_.perl_interpreter.empty()) {
     perl_ = config_.perl_interpreter;
   } else {
     perl_ = which("perl");
-  }
-
-  if (script_.empty() || !is_file(script_)) {
-    absence_reason_ = "ExifTool script not found";
-    return;
   }
   if (perl_.empty() || !is_file(perl_)) {
     absence_reason_ = "Perl interpreter not found";
@@ -237,9 +272,9 @@ BackendAvailability ExifToolBackend::availability() const {
   status.available = true;
   if (version_.empty()) {
     ChildProcess probe;
-    const std::string exe = path_to_utf8(perl_);
-    const std::string err = probe.spawn(
-        perl_, {exe, path_to_utf8(script_), "-ver"});
+    SpawnCommand command = make_spawn_command(native_exe_, perl_, script_);
+    command.argv.emplace_back("-ver");
+    const std::string err = probe.spawn(command.exe, command.argv);
     if (err.empty()) {
       std::string out;
       std::string stderr_text;
@@ -294,11 +329,8 @@ Result<void> ExifToolBackend::ensure_process() {
   }
 
   auto process = std::make_unique<ChildProcess>();
-  const std::string perl = path_to_utf8(perl_);
-  const std::string script = path_to_utf8(script_);
-  const std::vector<std::string> argv = {
-      perl,
-      script,
+  SpawnCommand command = make_spawn_command(native_exe_, perl_, script_);
+  command.argv.insert(command.argv.end(), {
       "-charset",
       "utf8",
       "-charset",
@@ -313,8 +345,8 @@ Result<void> ExifToolBackend::ensure_process() {
       "-b",
       "-charset",
       "IPTC=UTF8",
-  };
-  const std::string err = process->spawn(perl_, argv);
+  });
+  const std::string err = process->spawn(command.exe, command.argv);
   if (!err.empty()) {
     return make_error(ErrorCode::backend_failed, "failed to start ExifTool",
                       err);

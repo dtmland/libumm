@@ -15,7 +15,8 @@ These rules were applied throughout and still govern changes:
 - **Error model:** no exceptions across the public API; `umm::Result<T>` everywhere (M1).
 - **Backends optional at runtime, both required in CI** (S1b). ExifTool is an out-of-process
   `-stay_open` JSON adapter (S1a), located at runtime and never bundled (S1c). Discovery order:
-  explicit config → `UMM_EXIFTOOL` → PATH.
+  explicit config → `UMM_EXIFTOOL` → PATH. A Windows `.exe` is spawned directly (no Perl);
+  the Perl-script packaging still runs as `perl script …`.
 - **Registry-first** (S2): property semantics are imported from IPTC Technical References into
   `registry/` JSON and code-generated; libumm never invents metadata definitions.
 - **Capability data is machine-readable** (M2): `registry/capabilities/` is the source of

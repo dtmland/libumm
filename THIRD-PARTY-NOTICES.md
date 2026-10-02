@@ -55,9 +55,10 @@ corresponding source for that fallback.
 
 ExifTool is invoked **out-of-process only** (decision **S1a**) and is **never
 bundled** or redistributed with libumm (decision **S1c**). libumm locates an
-installed ExifTool and Perl interpreter at runtime. ExifTool is therefore not
-part of the combined binary and is not listed in the corresponding-source
-manifest.
+installed ExifTool at runtime. A Perl interpreter is required only for the
+Perl-script packaging, not for the standalone Windows `.exe`. ExifTool is
+therefore not part of the combined binary and is not listed in the
+corresponding-source manifest.
 
 ## Other components not distributed in libumm binaries
 
