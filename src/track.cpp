@@ -996,9 +996,8 @@ Error match_error(std::string message) {
   return Error{ErrorCode::invalid_value, std::move(message), "", ""};
 }
 
-// High-level path matching uses the type's preferred backend when it is
-// available (ExifTool for MP4/MOV). umm::read itself still defaults to
-// first-available, which is Exiv2 and cannot read video.
+// High-level path matching pins the type's preferred backend when it is
+// available (ExifTool for MP4/MOV), matching default umm::read.
 ReadOptions media_read_options(const std::filesystem::path& media) {
   ReadOptions options;
   const Result<Capabilities> caps = capabilities(media);

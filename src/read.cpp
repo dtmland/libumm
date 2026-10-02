@@ -18,10 +18,19 @@ Error unavailable(std::string message, std::string backend) {
                std::move(backend), ""};
 }
 
-Backend* select_backend(const ReadOptions& options) {
+Backend* select_backend(const std::filesystem::path& media,
+                        const ReadOptions& options) {
   BackendManager& manager = BackendManager::instance();
   if (!options.backend.empty()) {
     return manager.get(options.backend);
+  }
+  if (const Result<Capabilities> caps = capabilities(media);
+      caps.ok() && !caps.value().preferred_backend.empty()) {
+    if (Backend* backend = manager.get(caps.value().preferred_backend)) {
+      if (backend->availability().available) {
+        return backend;
+      }
+    }
   }
   return manager.firstAvailable();
 }
@@ -55,7 +64,7 @@ namespace internal {
 
 Result<LoadedRead> load_read(const std::filesystem::path& media,
                              const ReadOptions& options) {
-  Backend* backend = select_backend(options);
+  Backend* backend = select_backend(media, options);
   if (!backend) {
     if (!options.backend.empty()) {
       return unavailable("unknown backend: " + options.backend,

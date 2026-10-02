@@ -182,8 +182,8 @@ int test_video(const char* ext) {
   }
   umm::MatchOptions naive_utc;
   naive_utc.naive_utc_offset_minutes = 0;
-  // Path overload must pick ExifTool for MP4/MOV (preferred_backend); default
-  // umm::read uses first-available Exiv2, which cannot read video.
+  // Path overload pins ExifTool for MP4/MOV (preferred_backend), matching
+  // default umm::read.
   // Session 34: MOV write-back closes the session 26 cut line.
   const auto matched = umm::matchTrack(file, track.value(), naive_utc);
   if (!matched.ok() || matched.value().kind != umm::TrackMatchKind::exact ||
