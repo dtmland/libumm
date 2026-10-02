@@ -296,6 +296,14 @@ if(UMM_BUILD_TESTS)
   target_link_libraries(test_exiftool_unavailable PRIVATE umm::umm)
   add_test(NAME test_exiftool_unavailable COMMAND test_exiftool_unavailable)
 
+  add_executable(test_exiftool_native_exe tests/backend/test_exiftool_native_exe.cpp)
+  target_link_libraries(test_exiftool_native_exe PRIVATE umm::umm)
+  target_include_directories(test_exiftool_native_exe
+    PRIVATE
+      "${CMAKE_CURRENT_SOURCE_DIR}/src/backends"
+  )
+  add_test(NAME test_exiftool_native_exe COMMAND test_exiftool_native_exe)
+
   if(UMM_EXIV2_ACQUIRED OR (UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE))
     add_executable(test_write tests/backend/test_write.cpp)
     target_link_libraries(test_write PRIVATE umm::umm)

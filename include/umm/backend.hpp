@@ -108,12 +108,16 @@ class Backend {
 // ExifTool adapter configuration (decision S1c: locate, never bundle).
 // Discovery order: non-empty paths here -> UMM_EXIFTOOL env var -> PATH.
 // An explicit path that does not exist is absent (no env/PATH fallback).
-// Perl: non-empty perl_interpreter here, else PATH (`perl` / `perl.exe`).
-// End-user acquisition is tools/get-exiftool/ (session 33); those scripts
-// write only to the install prefix and cache dir (never PATH/profiles).
+// Windows `.exe` packaging (`exiftool.exe` / `ExifTool.exe`, including the
+// official Oliver Betz / winget build) is spawned directly; Perl is not
+// required. Perl-script packaging (`exiftool` without `.exe`, or `.pl`)
+// still runs as `perl script …`: non-empty perl_interpreter here, else
+// PATH (`perl` / `perl.exe`). End-user acquisition is
+// tools/get-exiftool/ (session 33); those scripts write only to the
+// install prefix and cache dir (never PATH/profiles).
 struct ExifToolConfig {
   std::filesystem::path exiftool_script;  // empty = discover
-  std::filesystem::path perl_interpreter; // empty = discover
+  std::filesystem::path perl_interpreter; // empty = discover (script packaging)
   std::chrono::milliseconds command_timeout{30'000};  // kill + restart after
 };
 
