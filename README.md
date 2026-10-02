@@ -81,8 +81,8 @@ promised ([docs/abi-policy.md](docs/abi-policy.md)). Standards versions are repo
 `umm::Registry::standards()`, not by library semver.
 
 Tagging `vX.Y.Z` runs the release workflow: three-OS static builds, notices and
-corresponding source, and a **draft** GitHub release. See
-[docs/release-checklist.md](docs/release-checklist.md).
+corresponding source, attached to that tag's GitHub release (draft when the
+workflow creates it). See [docs/release-checklist.md](docs/release-checklist.md).
 
 ## License
 

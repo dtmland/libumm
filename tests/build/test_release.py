@@ -98,6 +98,16 @@ class TestReleaseWorkflow(unittest.TestCase):
         self.assertIn("generate_release_notes.py", text)
         self.assertIn("libumm-${VERSION}-src.tar.gz", text)
         self.assertIn("gh release create", text)
+        self.assertIn("gh release view", text)
+        self.assertIn("gh release upload", text)
+        self.assertIn("gh release edit", text)
+        self.assertIn("--clobber", text)
+        self.assertIn("--verify-tag", text)
+        self.assertRegex(
+            text,
+            r"if gh release view[\s\S]*then\s+gh release upload[\s\S]*else\s+gh release create",
+            msg="must upload onto an existing tag release instead of a second draft",
+        )
         self.assertIn(
             "github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')",
             text,
