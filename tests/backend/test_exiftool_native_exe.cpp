@@ -1,16 +1,13 @@
 #include "exiftool/exiftool_backend.hpp"
 #include "umm/backend.hpp"
 
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <string>
 #include <system_error>
-
-#if defined(_WIN32)
-#include <stdlib.h>
-#endif
 
 namespace {
 
@@ -19,27 +16,9 @@ int fail(const char* message) {
   return 1;
 }
 
-void set_path(const char* value) {
-#if defined(_WIN32)
-  _putenv_s("PATH", value ? value : "");
-#else
-  if (value == nullptr) {
-    unsetenv("PATH");
-  } else {
-    setenv("PATH", value, 1);
-  }
-#endif
-}
-
-std::string current_path() {
-  const char* path = std::getenv("PATH");
-  return path ? std::string(path) : std::string();
-}
-
 }  // namespace
 
 int main() {
-  const std::string saved_path = current_path();
   const std::filesystem::path dir =
       std::filesystem::temp_directory_path() / "umm-exiftool-native-exe";
   std::error_code ec;
@@ -50,6 +29,22 @@ int main() {
 
   const std::filesystem::path exe = dir / "ExifTool.exe";
   const std::filesystem::path script = dir / "exiftool";
+  std::filesystem::remove(exe, ec);
+#if defined(_WIN32)
+  // CreateProcessW of a non-PE .exe can block on a modal error dialog, so the
+  // native-exe fixture must be a real image. hostname.exe exits immediately
+  // even with a dummy `-ver` argument.
+  const char* root = std::getenv("SystemRoot");
+  const std::filesystem::path host =
+      std::filesystem::path(root && *root ? root : "C:\\Windows") / "System32" /
+      "hostname.exe";
+  std::filesystem::copy_file(host, exe, ec);
+  if (ec) {
+    std::fprintf(stderr, "failed to copy hostname.exe: %s\n",
+                 ec.message().c_str());
+    return 1;
+  }
+#else
   {
     std::ofstream out(exe, std::ios::binary);
     if (!out) {
@@ -57,6 +52,7 @@ int main() {
     }
     out << "not a real windows executable\n";
   }
+#endif
   {
     std::ofstream out(script, std::ios::binary);
     if (!out) {
@@ -65,27 +61,26 @@ int main() {
     out << "#!/usr/bin/env perl\n";
   }
 
-  set_path("");
-
   umm::ExifToolConfig exe_config;
   exe_config.exiftool_script = exe;
+  exe_config.command_timeout = std::chrono::milliseconds{2000};
   umm::internal::ExifToolBackend exe_backend(exe_config);
   const umm::BackendAvailability exe_status = exe_backend.availability();
   if (exe_status.reason == "Perl interpreter not found") {
-    set_path(saved_path.c_str());
     return fail("Windows .exe packaging required Perl");
   }
 
   umm::ExifToolConfig script_config;
   script_config.exiftool_script = script;
+  script_config.perl_interpreter =
+      std::filesystem::path("umm-missing-perl-interpreter");
+  script_config.command_timeout = std::chrono::milliseconds{2000};
   umm::internal::ExifToolBackend script_backend(script_config);
   const umm::BackendAvailability script_status = script_backend.availability();
   if (script_status.available) {
-    set_path(saved_path.c_str());
     return fail("Perl script packaging reported available without Perl");
   }
   if (script_status.reason != "Perl interpreter not found") {
-    set_path(saved_path.c_str());
     std::fprintf(stderr, "script absence reason: %s\n",
                  script_status.reason.c_str());
     return fail("Perl script packaging missing Perl reason");
@@ -96,7 +91,6 @@ int main() {
   {
     std::ofstream out(stub, std::ios::binary);
     if (!out) {
-      set_path(saved_path.c_str());
       return fail("failed to create native stub");
     }
     out << "#!/bin/sh\n"
@@ -111,28 +105,25 @@ int main() {
       std::filesystem::perms::owner_exec | std::filesystem::perms::owner_read,
       std::filesystem::perm_options::add, ec);
   if (ec) {
-    set_path(saved_path.c_str());
     return fail("failed to chmod native stub");
   }
 
   umm::ExifToolConfig stub_config;
   stub_config.exiftool_script = stub;
+  stub_config.command_timeout = std::chrono::milliseconds{2000};
   umm::internal::ExifToolBackend stub_backend(stub_config);
   const umm::BackendAvailability stub_status = stub_backend.availability();
   if (!stub_status.available) {
-    set_path(saved_path.c_str());
     std::fprintf(stderr, "native stub unavailable: %s\n",
                  stub_status.reason.c_str());
     return 1;
   }
   if (stub_status.version != "13.40") {
-    set_path(saved_path.c_str());
     std::fprintf(stderr, "native stub version \"%s\"\n",
                  stub_status.version.c_str());
     return fail("native .exe version probe did not spawn the stub directly");
   }
 #endif
 
-  set_path(saved_path.c_str());
   return 0;
 }
