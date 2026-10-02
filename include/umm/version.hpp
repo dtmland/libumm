@@ -7,7 +7,7 @@
 // umm::version(); they do not encode standards versions (concept.md §21).
 #define UMM_VERSION_MAJOR 0
 #define UMM_VERSION_MINOR 1
-#define UMM_VERSION_PATCH 0
+#define UMM_VERSION_PATCH 1
 
 #define UMM_VERSION_STRING_XSTR(s) #s
 #define UMM_VERSION_STRING_STR(maj, min, pat) \
