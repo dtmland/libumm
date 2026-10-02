@@ -72,7 +72,9 @@ libumm, so its Artistic/GPL dual license does not enter the analysis.
 Tagging `vX.Y.Z` (matching `include/umm/version.hpp`) runs
 `.github/workflows/release.yml`, which builds the static default configuration on all three
 OSes, packages install prefixes with notices, `tools/get-exiftool/`, and corresponding
-source, and opens a **draft** GitHub release. Follow
+source, and attaches those archives to the GitHub release for that tag (a **draft** when
+the workflow creates the release; upload onto an existing tag release otherwise). Push the
+tag only — do not create an empty GitHub Release in the UI first. Follow
 [docs/release-checklist.md](../release-checklist.md) before publishing. Version semantics
 are defined in [docs/abi-policy.md](../abi-policy.md): source API follows semver; C++ ABI
 stability is not promised.

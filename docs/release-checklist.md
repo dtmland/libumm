@@ -36,8 +36,13 @@ semver does not encode IPTC/ExifTool/Exiv2 versions (`Registry::standards()`).
    still match `tools/build/backends.env`.
 3. Tag `vX.Y.Z` matching `UMM_VERSION_*` exactly (example: version `0.1.0` →
    `v0.1.0`). The release workflow fails if they disagree.
-4. Push the tag. Do not use `*-latest` runners or a shared-Exiv2
-   (`UMM_EXIV2_SHARED`) artifact; default static three-OS builds only.
+4. Push the tag **without** creating a GitHub Release in the UI first. A UI
+   release binds the tag and GitHub only shows auto-generated source archives
+   until artifacts are uploaded. The workflow now uploads onto an existing tag
+   release when one is already there; if none exists it opens a **draft** with
+   the three-OS binaries, corresponding source, and `SHA256SUMS`. Do not use
+   `*-latest` runners or a shared-Exiv2 (`UMM_EXIV2_SHARED`) artifact; default
+   static three-OS builds only.
 
 A `workflow_dispatch` run is a **dry-run**: it builds artifacts and
 `SHA256SUMS` but does **not** create a GitHub release.
@@ -74,9 +79,14 @@ location write-back on JPEG, MP4, and MOV (session 26 cut line, closed here).
 ## 5. Publish the draft
 
 1. Read the generated notes: libumm version, standards versions, backend pins,
-   and the P1 GPL-3.0 / Apache-2.0 statement.
+   and the P1 GPL-3.0 / Apache-2.0 statement. Confirm the three-OS binary
+   archives, corresponding source, `libumm-*-src.tar.gz`, and `SHA256SUMS` are
+   attached as release assets (not only GitHub's auto-generated Source code
+   zip/tarball).
 2. Confirm S1d is settled.
-3. Mark the GitHub release as published.
+3. If the workflow created a draft, mark the GitHub release as published. If
+   artifacts were uploaded onto an already-published tag release, verify the
+   assets on that release instead.
 
 ## 6. Post-release pin audit
 
