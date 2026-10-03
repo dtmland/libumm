@@ -153,6 +153,9 @@ VMH Location Shot to `Iptc4xmpExt:LocationCreated`, and the shown-location
 pair to `Iptc4xmpExt:LocationShown`. The VMH standard has other representations
 too (the registry includes EBUCore and descriptive QuickTime location
 guidance); reusing an XMP path does not make the *canonical IDs* identical.
+VMH's JSON representation calls the shot-location array `locationsCreated`
+and the shown-location array `locationsShown`; these are neither XMP prefixes
+nor libumm property IDs.
 
 **Important correction to the quoted search result:** the imported **2025.1
 Photo and VMH 1.7 registry data specify nested `exif:GPSLatitude`,
@@ -164,6 +167,16 @@ libumm property ID. The exact prefixes and serialized shape must be checked
 against IPTC's technical reference and real XMP/ExifTool output before
 publishing copy-paste paths. The namespace prefix is an alias for a URI, not
 a standard version indicator.
+
+Primary sources vendored in this repository: the
+[IPTC Photo Metadata 2025.1 Technical Reference](../../registry/sources/iptc-pmd-techreference_2025.1.json)
+(`locationCreated`, `locationsShown`, and the `Location` structure's GPS
+members), [VMH 1.7 properties and XMP mappings](../../registry/sources/vmh/IPTC-VideoMetadataHub-props-Rec_1.7.html)
+(`Location Shot`/`Location Shown` and nested `exif:` GPS members), and the
+[VMH 1.7 JSON schema](../../registry/sources/vmh/iptc-vmhub-1.7-schema.json).
+These support the location semantics and mappings above independently of the
+search-result paraphrase. They do not by themselves establish that libumm
+round-trips each nested member.
 
 ## 6. Proposed follow-up, not authorized implementation
 
