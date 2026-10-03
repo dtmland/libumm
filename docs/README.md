@@ -33,8 +33,12 @@ Documentation is organized by audience.
   including the archived original [concept](analysis/concept.md) and
   [build plan](analysis/build-plan.md).
 - [Canonical properties and location review](analysis/2026-10-03-canonical-properties-and-location-review.md)
-  — proposed C-series decisions on what "canonical" means, the "most common properties"
-  list, `umm::read` coverage, and GPS in IPTC Location structures (analysis only).
+  — C1–C6 on what "canonical" means, the "most common properties" list, `umm::read`
+  coverage, and GPS in IPTC Location structures, with the review outcome (analysis only).
+- [Casting and the canonical model](analysis/2026-10-03-casting-and-canonical-model-decisions.md)
+  — C7–C17: representation versus cast, removal of `exif.gps.position`, up/down/side
+  casting, the property map, `dumpAll()`/`dumpUnmapped()`, and the generated property
+  reference (design only; open questions remain).
 
 ## Future work
 

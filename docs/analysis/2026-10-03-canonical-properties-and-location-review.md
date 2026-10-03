@@ -1,7 +1,11 @@
 # Canonical properties, "most common properties", and location/GPS review — 2026-10-03
 
-Status: **proposed**. Analysis and design only. Nothing here has been implemented. The
-decisions marked **C*n*** need maintainer sign-off before any session docs are written.
+Status: **reviewed — outcomes recorded in §8**. Analysis and design only. Nothing here has
+been implemented. The maintainer accepted, modified, or superseded each **C*n*** decision;
+§8 records the outcome. The casting design that replaces C2 and C4b/C4c is in the
+follow-up decision record
+[2026-10-03-casting-and-canonical-model-decisions.md](2026-10-03-casting-and-canonical-model-decisions.md).
+Where §1–§6 below disagree with §8 or the follow-up record, the later text wins.
 The notation follows [2026-09-27-plan-review-and-decisions.md](2026-09-27-plan-review-and-decisions.md).
 New findings use the **C** prefix ("canonical").
 
@@ -343,21 +347,26 @@ document.
 
 ## 4. Decision summary
 
-| ID | Decision | Proposed outcome |
-|---|---|---|
-| C1 | Definition of canonical | Canonical = registry id; the guide reference lists all of them |
-| C2 | `exif.gps.position` status | Option 2: curated, cited EXIF-domain registry entry (`gps_coordinate`); option 3 rejected |
-| C3a | "Most common properties" docs | Remove; point to cross-media tables + new location section |
-| C3b | Phase 1 special-case ids in code | Shrink to policy-justified composites; follow-up |
-| C3c | Rating | Re-open: Tier 1 `imageRating` ↔ `workflowRating` (both `xmp:Rating`), pending semantic sign-off |
-| C4a | Photo Location structs | Full `Location` struct incl. GPS on `Iptc4xmpExt:*`, with field aliases + GPS string↔number |
-| C4b | Legacy city/state/country | Reconcile under their own legacy ids; legacy fallback for `locationCreated` needs a decision |
-| C4c | GPS ↔ Location GPS | Separate values, no implicit cross-fill; documented relationship; optional helper later |
-| C4d | Location docs | Document Location GPS fields, `Iptc4xmpExt` / `Iptc4xmpCore`, alongside C4a |
-| C5 | `read` coverage | Reconcile every registry id for the domain; accessor map controls names only |
-| C6 | `unmapped()` semantics | Filter consumed raw keys after C5; fix the docs now |
+The "Outcome" column was added after maintainer review. §8 gives the details.
+
+| ID | Decision | Proposed outcome | Outcome |
+|---|---|---|---|
+| C1 | Definition of canonical | Canonical = registry id; the guide reference lists all of them | **Accepted** |
+| C2 | `exif.gps.position` status | Option 2: curated, cited EXIF-domain registry entry (`gps_coordinate`); option 3 rejected | **Superseded.** The id is removed (pre-release). GPS becomes a representation of Location GPS or a cast source. See C8 in the follow-up record |
+| C3a | "Most common properties" docs | Remove; point to cross-media tables + new location section | **Accepted** |
+| C3b | Phase 1 special-case ids in code | Shrink to policy-justified composites; follow-up | **Accepted.** The target is no id-specific branches; composite codecs become registry-driven |
+| C3c | Rating | Re-open: Tier 1 `imageRating` ↔ `workflowRating` (both `xmp:Rating`), pending semantic sign-off | **Accepted.** Tier 1 `rating` accessor |
+| C4a | Photo Location structs | Full `Location` struct incl. GPS on `Iptc4xmpExt:*`, with field aliases + GPS string↔number | **Accepted.** Prerequisite for casting |
+| C4b | Legacy city/state/country | Reconcile under their own legacy ids; legacy fallback for `locationCreated` needs a decision | **Modified.** Legacy ids own their keys; any link to a Location struct is a *side cast* (C11). The default partner is open: MWG says Location**Shown** (§8.4) |
+| C4c | GPS ↔ Location GPS | Separate values, no implicit cross-fill; documented relationship; optional helper later | **Superseded** by the representation-vs-cast rule (C7) and GPS decision (C8) |
+| C4d | Location docs | Document Location GPS fields, `Iptc4xmpExt` / `Iptc4xmpCore`, alongside C4a | **Accepted**; folded into the generated property reference (C14) |
+| C5 | `read` coverage | Reconcile every registry id for the domain; accessor map controls names only | **Accepted**, without the `exif.gps.position` addition |
+| C6 | `unmapped()` semantics | Filter consumed raw keys after C5; fix the docs now | **Modified.** Replace with `dumpAll()` and `dumpUnmapped()` (C13) |
 
 ## 5. Suggested sequencing (once accepted)
+
+> Superseded by the sequencing in the follow-up decision record (§ "Sequencing").
+> Kept for history.
 
 No session docs are written yet. If the decisions are accepted, a natural order is:
 
@@ -378,6 +387,9 @@ contract changes (`metadata.hpp` comments about rating, GPS, and location; `regi
 if C2 adds a standard to `Registry::standards()`).
 
 ## 6. Open questions for the maintainer
+
+> Answered. Q1: superseded (the GPS id is removed, C8). Q2: yes (C3c). Q3: replaced by
+> the side-cast question in the follow-up record (OQ2). Q4: yes (C5).
 
 1. C2: is a hand-curated, cited, `partial` EXIF registry acceptable under S2
    ("registry-first, never invent definitions"), given there is no machine-readable EXIF TR?
@@ -402,3 +414,105 @@ if C2 adds a standard to `Registry::standards()`).
 - `docs/reconciliation-policy.md`, `docs/analysis/phase-2-video-convenience-accessors.md`,
   `docs/analysis/2026-09-30-table-driven-video-pipeline.md`, `docs/umm-cli-concept.md`,
   `docs/supported-types.md` §3
+
+---
+
+## 8. Review outcome (added after maintainer review)
+
+This section records the discussion after the first draft. It covers a second, independent
+review, the questions raised while comparing the two, and the maintainer's answers. The
+decisions that follow from it are numbered **C7–C17** in
+[2026-10-03-casting-and-canonical-model-decisions.md](2026-10-03-casting-and-canonical-model-decisions.md).
+
+### 8.1 Insights from the alternate review
+
+A second analysis of the same questions exists on branch
+`copilot/analysis-document-canonical-fields-again` (same file name, no decision ids). It
+reaches the same conclusions on C1, C3, and C5. It adds five points this review missed:
+
+| # | Point | Outcome |
+|---|---|---|
+| 1 | `exif.gps.position` is a stable public id with tests and docs. Silently removing it is an API break. | libumm is pre-release, so the id **is removed**. Headers are updated first and `docs/developer/release-notes.md` gets an entry (C8). |
+| 2 | A video can have several shot locations, so one device position cannot map onto "the" location. | List↔single rule: **use the first entry** (C10). |
+| 3 | `GpsCoordinate.gps_time` (UTC from `GPSDateStamp`/`GPSTimeStamp`) has no field in the Location struct and would be lost. | Accepted as a loss. Raw GPS time stays visible in `dumpAll()`/`dumpUnmapped()`. The wider time-field picture is in C16. |
+| 4 | [concept.md](concept.md) "Domain C — EXIF / camera technical metadata" planned EXIF as its own canonical domain. | The maintainer chose to **depart from the original plan explicitly** (C17). |
+| 5 | Round-trip claims for Location GPS must be tested against real backends, not inferred from the standard. | Accepted: "test all the things" (C15). |
+
+This review adds one more point that neither draft made:
+
+- **ExifTool field names are already in the vendored standard.** The IPTC TR source
+  (`registry/sources/iptc-pmd-techreference_2025.1.json`) carries an `etTag` (ExifTool tag
+  name) for structure fields, 99 entries in total, for example `CiAdrCity`. The importer
+  drops them. Today `alias_exiftool_struct_fields` in `src/core/write_sync.cpp:346` is a
+  hand-written list that translates IPTC field names into ExifTool's. Keeping `etTag` in
+  the registry would let the codegen produce that list. This fits the project direction:
+  backend names become **generated data from the standard's own file**, the same as the
+  XMP names already are (S2 registry-first; the codegen contract in
+  `tests/build/test_codegen.py`). Recorded as C14 (part b).
+
+### 8.2 Questions raised and answers
+
+| Q | Question | Answer |
+|---|---|---|
+| Q1 | Where is the line between a *representation* (automatic) and a *cast* (opt-in)? (a) A key is a representation when a standard defines it; anything libumm adds is a cast. (b) Only IPTC/VMH XMP keys are representations; every EXIF/IIM/QuickTime key is a cast. | **(a).** Representation always wins over casting when a standard defines the link. (b) would make every camera JPEG read as empty until upcast, because `dateCreated` would no longer come from `DateTimeOriginal`. See C7 for consequences. |
+| Q2 | Are the date rows right? | Drop `Exif.Image.DateTime` as a `dateCreated` candidate; it is EXIF *ModifyDate*. `xmp:CreateDate` is the *digitized* date. Docs must carry this level of detail, in a more formal API-reference layout (C14). |
+| Q3 | Is a cast a single key or a bundle? | A **cast group**: an atomic bundle such as `capturePosition` (lat, lon, alt, refs) with prioritized sources (C9). |
+| Q4 | What does "empty" and "equal" mean for a cast target? | Field-level emptiness; equality within the reconcile tolerances (1e-5°, 0.5 m). For a list target, use the first entry (C10). |
+| Q5 | Which statuses does a cast report? | can cast, equal, needs force, source empty, target not storable (C9). |
+| Q6 | Where does casting logic live? | In libumm. The CLI wraps it (C12). |
+| Q7 | What happens to `gps()`/`setGps()` and geotag? | Option (a): remove them. `GpsCoordinate` stays as the value type for tracks and casts (C8). |
+| Q8 | Should some casts link two canonical properties? | Yes, called **side casting**. It shares the same engine as up/down (C11). |
+| Q9 | What are casts called in data and code? | "Cast rules" in `registry/casts/*.json`, `CastRule`, "cast group". Curated, cited, marked `partial` (C9). |
+| Q10 | What replaces `unmapped()`? | `dumpAll()` (every raw entry) and `dumpUnmapped()` (only raw entries no canonical property consumed). The CLI uses `dumpall` / `dumpunmapped` (C13). |
+| Q11 | Is C4a (full photo Location struct) a prerequisite for casting? | Yes. |
+
+### 8.3 Resolution of the "other inconsistencies"
+
+1. `docs/reconciliation-policy.md` §`iptc.photo.locationCreated` says write-sync emits
+   "structured LocationCreated when the writer can". The code writes only the legacy fields
+   (`src/core/write_sync.cpp:557-570`). Fix the policy text when C4a lands. If C4a is
+   delayed, fix the text first.
+2. The legacy city/state/country/sublocation fields are canonical in their own right
+   (`cityLegacy`, `provinceOrStateLegacy`, `countryLegacy`, `sublocationLegacy`,
+   `countryCodeLegacy`). They own their keys. Any link from them to a Location struct is a
+   side cast, not a representation (C11). See §8.4 for the default partner.
+3. XMP stores GPS as a string. ExifTool 13.59 confirms the `Location` struct GPS fields are
+   in the `exif` namespace and are written as `DDD,MM.mmmmmmH` strings (`XMP2.pl`
+   `%sLocationDetails`; `XMP.pm` `%latConv` uses `ToDMS`). The canonical value is a decimal
+   number. The codec writes the XMP string form and reads both forms.
+4. IPTC logical field names (`gpsLatitude`, `city`, …) are canonical. Backend names
+   (`GPSLatitude`, `LocationCreatedCity`, …) are derived data, generated from the TR's
+   `XMPid`/`etTag` (C14b).
+
+### 8.4 New finding: MWG treats the legacy fields as Location *Shown*
+
+Decision S4b adopted the Metadata Working Group (MWG) guidance as frozen input and ExifTool's
+MWG module as the compatibility reference. ExifTool 13.59 `lib/Image/ExifTool/MWG.pm` maps
+the legacy fields as follows (composite tags `City`, `State`, `Country`, `Location`):
+
+| MWG composite | IIM | XMP legacy | IPTC Extension |
+|---|---|---|---|
+| City | `IPTC:City` (2:90) | `XMP-photoshop:City` | `XMP-iptcExt:LocationShownCity` |
+| State | `IPTC:Province-State` (2:95) | `XMP-photoshop:State` | `XMP-iptcExt:LocationShownProvinceState` |
+| Country | `IPTC:Country-PrimaryLocationName` (2:101) | `XMP-photoshop:Country` | `XMP-iptcExt:LocationShownCountryName` |
+| Location | `IPTC:Sub-location` (2:92) | `XMP-iptcCore:Location` | `XMP-iptcExt:LocationShownSublocation` |
+
+libumm currently does the opposite. It reads and writes these legacy fields as
+`iptc.photo.locationCreated` (`src/core/reconcile.cpp:1425-1460`,
+`src/core/write_sync.cpp:557-570`). A web-search summary claimed "legacy = created"; the
+actual ExifTool source contradicts it. IPTC itself calls the legacy semantics "blurred".
+This is an open question in the decision record (OQ2).
+
+### 8.5 Clarifications given to the maintainer
+
+- **Multiple locations.** `locationCreated` (photo) and `locationShot` (video) are *lists*
+  of Location structs. An edited video made from several clips can list one shot location
+  per clip, and a photo may list more than one. A camera GPS fix is a single point and can
+  fill only one entry. The rule: target entry `[0]`; create it if the list is empty; on
+  downcast, read entry `[0]`.
+- **"The catch" in Q1.** Under rule (a), whatever a standard defines is a representation.
+  The IPTC overlay (`registry/mappings/iptc-exif-overlay.json`) records IPTC Mapping
+  Guidelines rows linking the Location struct GPS fields to the EXIF GPS IFD tags. So on
+  photos, EXIF GPS is a *representation* of `locationCreated[0].gps*` (pending the
+  Created-vs-Shown wording check). It is not a cast. The maintainer prefers representation
+  over casting, so photo GPS becomes automatic. Video is different: see C8.
