@@ -32,6 +32,9 @@ Documentation is organized by audience.
 - [Decision records](analysis/) — dated, authoritative design decisions (S/M/R/P series),
   including the archived original [concept](analysis/concept.md) and
   [build plan](analysis/build-plan.md).
+- [Canonical properties and location review](analysis/2026-10-03-canonical-properties-and-location-review.md)
+  — proposed C-series decisions on what "canonical" means, the "most common properties"
+  list, `umm::read` coverage, and GPS in IPTC Location structures (analysis only).
 
 ## Future work
 
