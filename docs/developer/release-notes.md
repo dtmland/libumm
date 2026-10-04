@@ -4,6 +4,15 @@ Pre-1.0 (`0.y.z`): the C++ ABI is not stable. See [docs/abi-policy.md](../abi-po
 
 ## Unreleased
 
+### Session 49 — Property map
+
+`umm::describe(property_id)` and `umm::describe(property_id, path)` return
+`Result<PropertyMap>`: definition and representations (L1), cast rules (L2),
+and the cross-media partner with its own L1–L2 (L3). A cross-media name
+(`locationCreated`) expands to both domain ids. File mode fills values,
+consumed base entries, and cast-group statuses identical to
+`umm::cast(..., dry_run)`. Types live in `umm/describe.hpp`.
+
 ### Session 48 — GPS as Location GPS
 
 Removed the Phase 1 well-known id `exif.gps.position`, `Metadata::gps()` /

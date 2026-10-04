@@ -145,14 +145,21 @@ class TestCodegen(unittest.TestCase):
         self.assertEqual(int(match.group(1)), total)
         photo_fields = sum(len(item["fields"]) for item in photo["structs"])
         video_fields = sum(len(item["fields"]) for item in video["structs"])
+        photo_structs = sum(
+            1 for item in photo["properties"] if item.get("struct_type")
+        )
+        video_structs = sum(
+            1 for item in video["properties"] if item.get("struct_type")
+        )
         self.assertEqual(
             header.count('"iptc.photo.'),
-            len(photo["properties"]) + photo_fields,
+            len(photo["properties"]) + photo_fields + photo_structs,
         )
         self.assertEqual(
             header.count('"iptc.video.'),
-            len(video["properties"]) + video_fields,
+            len(video["properties"]) + video_fields + video_structs,
         )
+        self.assertIn("kPropertyStructs", header)
         self.assertIn("iptc.video.dateCreated", header)
         self.assertIn("com.apple.quicktime.creationdate", header)
         self.assertIn("kStructFieldRepresentations", header)
@@ -212,6 +219,26 @@ class TestCodegen(unittest.TestCase):
             self.assertIn("edited-cast-citation", text)
             self.assertIn("kCastGroups", text)
             self.assertIn("kCastRules", text)
+
+    def test_describe_uses_generated_tables_not_hand_written_lists(self) -> None:
+        describe = REPO_ROOT / "src" / "describe.cpp"
+        self.assertTrue(describe.is_file(), "src/describe.cpp")
+        text = describe.read_text(encoding="utf-8")
+        self.assertIn('#include "property_registry.hpp"', text)
+        self.assertIn('#include "cast_rules.hpp"', text)
+        self.assertIn('#include "cross_media_accessors.hpp"', text)
+        self.assertIn("kStructFieldRepresentations", text)
+        self.assertIn("kCastRules", text)
+        self.assertIn("kCrossMediaAccessors", text)
+        self.assertIn("kPropertyStructs", text)
+        self.assertNotRegex(
+            text,
+            r"(xmp_property|iim_dataset|exif_tag)\s*=\s*\"",
+            "describe must not assign hand-written representation tokens",
+        )
+        header = GENERATED_HPP.read_text(encoding="utf-8")
+        self.assertIn("kPropertyStructs", header)
+        self.assertIn("kPropertyStructCount", header)
 
     def test_src_has_no_hand_written_xmp_style_strings(self) -> None:
         src = REPO_ROOT / "src"

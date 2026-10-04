@@ -527,6 +527,27 @@ def collect_exiftool_xmp_tag_aliases(
     return aliases
 
 
+def collect_property_structs(registries: list[dict[str, Any]]) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    for registry in registries:
+        for record in registry.get("properties", []):
+            struct_type = record.get("struct_type") or ""
+            if not struct_type:
+                continue
+            rows.append({"id": record["id"], "struct_name": struct_type})
+    rows.sort(key=lambda item: item["id"])
+    return rows
+
+
+def emit_property_struct_row(row: dict[str, str]) -> str:
+    return (
+        "    {"
+        f" {cpp_string(row['id'])},"
+        f" {cpp_string(row['struct_name'])} "
+        "}"
+    )
+
+
 def emit_struct_field_row(row: dict[str, str]) -> str:
     return "\n".join(
         [
@@ -604,6 +625,7 @@ def generate_header(
     struct_fields: list[dict[str, str]],
     struct_aliases: list[dict[str, str]],
     xmp_tag_aliases: list[dict[str, str]],
+    property_structs: list[dict[str, str]],
 ) -> str:
     rows = [
         emit_property(record, overlay_exif.get(record["id"], ""))
@@ -626,9 +648,14 @@ def generate_header(
         raise CodegenError("no ExifTool struct-field aliases")
     if not xmp_tag_aliases:
         raise CodegenError("no ExifTool XMP tag aliases")
+    if not property_structs:
+        raise CodegenError("no property-struct bindings")
     struct_field_rows = ",\n".join(emit_struct_field_row(row) for row in struct_fields)
     struct_alias_rows = ",\n".join(emit_struct_alias_row(row) for row in struct_aliases)
     xmp_alias_rows = ",\n".join(emit_xmp_tag_alias_row(row) for row in xmp_tag_aliases)
+    property_struct_rows = ",\n".join(
+        emit_property_struct_row(row) for row in property_structs
+    )
     return (
         f"{banner_text}"
         "#pragma once\n"
@@ -662,11 +689,17 @@ def generate_header(
         "  std::string_view et_tag;\n"
         "};\n"
         "\n"
+        "struct PropertyStructDef {\n"
+        "  std::string_view property_id;\n"
+        "  std::string_view struct_name;\n"
+        "};\n"
+        "\n"
         f"inline constexpr std::size_t kPropertyCount = {len(properties)};\n"
         f"inline constexpr std::size_t kStandardCount = {len(standards)};\n"
         f"inline constexpr std::size_t kStructFieldCount = {len(struct_fields)};\n"
         f"inline constexpr std::size_t kExifToolStructFieldAliasCount = {len(struct_aliases)};\n"
         f"inline constexpr std::size_t kExifToolXmpTagAliasCount = {len(xmp_tag_aliases)};\n"
+        f"inline constexpr std::size_t kPropertyStructCount = {len(property_structs)};\n"
         "\n"
         "inline constexpr PropertyDef kProperties[] = {\n"
         f"{body}\n"
@@ -688,12 +721,17 @@ def generate_header(
         f"{xmp_alias_rows}\n"
         "};\n"
         "\n"
+        "inline constexpr PropertyStructDef kPropertyStructs[] = {\n"
+        f"{property_struct_rows}\n"
+        "};\n"
+        "\n"
         "static_assert(std::size(kProperties) == kPropertyCount);\n"
         "static_assert(std::size(kStandards) == kStandardCount);\n"
         "static_assert(std::size(kStructFieldRepresentations) == kStructFieldCount);\n"
         "static_assert(std::size(kExifToolStructFieldAliases) == "
         "kExifToolStructFieldAliasCount);\n"
         "static_assert(std::size(kExifToolXmpTagAliases) == kExifToolXmpTagAliasCount);\n"
+        "static_assert(std::size(kPropertyStructs) == kPropertyStructCount);\n"
         "\n"
         "}  // namespace umm::internal\n"
     )
@@ -1107,6 +1145,7 @@ def generate(
     struct_fields = collect_struct_field_rows(registries, field_overlay)
     struct_aliases = collect_exiftool_struct_aliases(registries)
     xmp_tag_aliases = collect_exiftool_xmp_tag_aliases(registries)
+    property_structs = collect_property_structs(registries)
     banner_text = banner(files, overlay_path, registries, mapping_path)
     header = generate_header(
         banner_text=banner_text,
@@ -1116,6 +1155,7 @@ def generate(
         struct_fields=struct_fields,
         struct_aliases=struct_aliases,
         xmp_tag_aliases=xmp_tag_aliases,
+        property_structs=property_structs,
     )
     source = generate_source(banner_text)
     cross_header = generate_cross_media_header(

@@ -37,6 +37,8 @@ auto report = umm::write("photo.jpg", m);      // atomic, write-synchronized
   keep embedded and sidecar carriers in agreement.
 - `umm::capabilities` reports, per backend / file type / metadata category, what can be read
   or written — the data behind [docs/supported-types.md](../supported-types.md).
+- `umm::describe` returns the property map (representations, casts, cross-media partner);
+  pass a file to fill values and cast statuses. See [Exploring a property](#exploring-a-property).
 
 ## Canonical property names
 
@@ -118,6 +120,30 @@ only read QuickTime GPS still see a written `locationShot` GPS. Pass an empty
 vector to write none.
 
 Cast-rule sources appear in `dumpUnmapped()` with `BaseEntry::cast_source`.
+
+## Exploring a property
+
+`umm::describe` returns the full map for a registry id or a cross-media name:
+definition and representations (L1), cast rules (L2), and the other domain's
+layers (L3). Pass a file to fill values, consumed base entries, and cast-group
+statuses (the same statuses as `umm::cast(..., dry_run)`).
+
+```cpp
+auto map = umm::describe("locationCreated");
+if (map) {
+  for (const auto& property : map->properties) {
+    // photo locationCreated and video locationShot
+    auto with_file = umm::describe(property.layers.id, "photo.jpg");
+  }
+}
+
+auto creator = umm::describe("iptc.photo.creator");
+// creator.properties[0].layers.representations  // XMP, IIM, EXIF
+// creator.properties[0].cross_media->other.id   // iptc.video.creator
+```
+
+The map is built from the generated registry, overlay, cast, and accessor
+tables. A generated property reference (session 50) will render the same data.
 
 ## Cross-media accessors
 

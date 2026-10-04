@@ -37,11 +37,17 @@ struct ExifToolXmpTagAlias {
   std::string_view et_tag;
 };
 
+struct PropertyStructDef {
+  std::string_view property_id;
+  std::string_view struct_name;
+};
+
 inline constexpr std::size_t kPropertyCount = 171;
 inline constexpr std::size_t kStandardCount = 2;
 inline constexpr std::size_t kStructFieldCount = 202;
 inline constexpr std::size_t kExifToolStructFieldAliasCount = 112;
 inline constexpr std::size_t kExifToolXmpTagAliasCount = 4;
+inline constexpr std::size_t kPropertyStructCount = 65;
 
 inline constexpr PropertyDef kProperties[] = {
     {
@@ -4707,10 +4713,79 @@ inline constexpr ExifToolXmpTagAlias kExifToolXmpTagAliases[] = {
     { "Iptc4xmpExt", "RegistryId", "RegistryID" }
 };
 
+inline constexpr PropertyStructDef kPropertyStructs[] = {
+    { "iptc.photo.artworkOrObjectInTheImage", "ArtworkOrObject" },
+    { "iptc.photo.contributor", "EntityWRole" },
+    { "iptc.photo.copyrightOwner", "CopyrightOwner" },
+    { "iptc.photo.creatorsContactInfo", "CreatorContactInfo" },
+    { "iptc.photo.cvTermAboutImage", "CvTerm" },
+    { "iptc.photo.embeddedEncodedRightsExpression", "EmbdEncRightsExpr" },
+    { "iptc.photo.genre", "CvTerm" },
+    { "iptc.photo.imageCreator", "ImageCreator" },
+    { "iptc.photo.imageRegion", "ImageRegion" },
+    { "iptc.photo.imageRegistryEntry", "RegistryEntry" },
+    { "iptc.photo.imageSupplier", "ImageSupplier" },
+    { "iptc.photo.licensor", "Licensor" },
+    { "iptc.photo.linkedEncodedRightsExpression", "LinkedEncRightsExpr" },
+    { "iptc.photo.locationCreated", "Location" },
+    { "iptc.photo.locationShownInTheImage", "Location" },
+    { "iptc.photo.personShownInTheImageWithDetails", "PersonWDetails" },
+    { "iptc.photo.productShownInTheImage", "ProductWGtin" },
+    { "iptc.video.audioCoding", "Entity" },
+    { "iptc.video.contentWarning", "CvTerm" },
+    { "iptc.video.contributor", "EntityWRole" },
+    { "iptc.video.copyrightOwner", "EntityWRole" },
+    { "iptc.video.creator", "EntityWRole" },
+    { "iptc.video.cvTermAboutTheContent", "CvTerm" },
+    { "iptc.video.dataDisplayedOnScreen", "TextWRegionDelimiter" },
+    { "iptc.video.digitalSourceType", "CvTerm" },
+    { "iptc.video.dopesheetLink", "QualifiedLink" },
+    { "iptc.video.editorialDuration", "VideoTime" },
+    { "iptc.video.editorialDurationEnd", "VideoTime" },
+    { "iptc.video.editorialDurationStart", "VideoTime" },
+    { "iptc.video.embeddedEncodedRightsExpression", "EmbdEncRightsExpr" },
+    { "iptc.video.episode", "EpisodeSeason" },
+    { "iptc.video.featuredOrganisation", "Entity" },
+    { "iptc.video.fileDuration", "VideoTime" },
+    { "iptc.video.fileFormat", "Entity" },
+    { "iptc.video.frameSize", "FrameSize" },
+    { "iptc.video.genre", "CvTerm" },
+    { "iptc.video.licensor", "Entity" },
+    { "iptc.video.linkedEncodedRightsExpression", "LinkedEncRightsExpr" },
+    { "iptc.video.locationShot", "Location" },
+    { "iptc.video.locationShown", "Location" },
+    { "iptc.video.metadataAuthority", "Entity" },
+    { "iptc.video.metadataEditor", "Entity" },
+    { "iptc.video.modelReleaseStatus", "CvTerm" },
+    { "iptc.video.objectShown", "Entity" },
+    { "iptc.video.personHeard", "Entity" },
+    { "iptc.video.personShown", "PersonWDetails" },
+    { "iptc.video.planningReference", "EntityWRole" },
+    { "iptc.video.productShown", "ProductWGTIN" },
+    { "iptc.video.propertyReleaseStatus", "CvTerm" },
+    { "iptc.video.publicationEvent", "PublicationEvent" },
+    { "iptc.video.rating", "Rating" },
+    { "iptc.video.recordingDevice", "Device" },
+    { "iptc.video.registryEntry", "RegistryEntry" },
+    { "iptc.video.reviewRating", "Rating" },
+    { "iptc.video.season", "EpisodeSeason" },
+    { "iptc.video.series", "Series" },
+    { "iptc.video.shotType", "Entity" },
+    { "iptc.video.shownEvent", "Entity" },
+    { "iptc.video.snapshotLink", "LinkedImage" },
+    { "iptc.video.supplier", "Entity" },
+    { "iptc.video.temporalCoverage", "TemporalCoverage" },
+    { "iptc.video.timedTextLink", "QualifiedLinkWithLanguage" },
+    { "iptc.video.transcriptLink", "QualifiedLink" },
+    { "iptc.video.videoCoding", "Entity" },
+    { "iptc.video.workflowTag", "CvTerm" }
+};
+
 static_assert(std::size(kProperties) == kPropertyCount);
 static_assert(std::size(kStandards) == kStandardCount);
 static_assert(std::size(kStructFieldRepresentations) == kStructFieldCount);
 static_assert(std::size(kExifToolStructFieldAliases) == kExifToolStructFieldAliasCount);
 static_assert(std::size(kExifToolXmpTagAliases) == kExifToolXmpTagAliasCount);
+static_assert(std::size(kPropertyStructs) == kPropertyStructCount);
 
 }  // namespace umm::internal

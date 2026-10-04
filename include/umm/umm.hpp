@@ -12,6 +12,7 @@
 
 #include "umm/backend.hpp"
 #include "umm/capabilities.hpp"
+#include "umm/describe.hpp"
 #include "umm/metadata.hpp"
 #include "umm/registry.hpp"
 #include "umm/result.hpp"
@@ -193,6 +194,10 @@ struct CastReport {
 // Evaluate or apply casts (C9–C12a). dry_run default does not write.
 Result<CastReport> cast(const std::filesystem::path& media, CastDirection direction,
                         CastOptions options = {});
+
+// Property map (C12b): definition, representations, casts, and cross-media
+// partner. Overload with a path fills values and cast statuses.
+// Declared in umm/describe.hpp.
 
 // GPS track import and matchTrack() are declared in umm/track.hpp
 // (sessions 25–26). Matched positions write through umm::write.

@@ -52,7 +52,7 @@ not aliases of `set`. `umm read` is not an alias of `umm get`: `read` prints the
 | `umm conflicts FILE` | `umm::detectConflict` | List disagreeing properties with each candidate source; `--fail-on-conflict` for scripting. |
 | `umm merge FILE PROP --use BASEKEY\|--value V` | `umm::merge` + `umm::write` | Resolve a conflict by choosing a candidate or supplying an override, then persist. `PROP` is a full property id. |
 | `umm sync FILE` | `umm::synchronize` | Make embedded and sidecar carriers agree; `--direction both\|embedded-to-sidecar\|sidecar-to-embedded`, `--dry-run`. |
-| `umm caps FILE\|TYPE` | `umm::capabilities` | Show per-backend, per-category capability rows for a file or type — the supported-types answer, live. |
+| `umm map PROPERTY [FILE] [--layers representations,casts,cross-media] [--json]` | `umm::describe` | Print the property map (definition, representations, casts, cross-media partner). A cross-media name (`locationCreated`) expands to both domain ids. With `FILE`, fill values and cast-group statuses. |
 | `umm geotag --track T.gpx FILE…` | `umm::importTrack` / `matchTrack` / `umm::write` | Correlate capture times with a GPX/NMEA/KML track and write `locationCreated[0]` GPS (photo) or `locationShot[0]` GPS (video); `--offset` for naive timestamps. Workflow command, not a property accessor. |
 | `umm doctor` | backend availability + discovery | Report which backends are usable, which ExifTool/Perl was found and via which discovery step, and how to fix problems. |
 | `umm setup exiftool` | (tooling, §4.2) | Install ExifTool for the current user via the CLI's native install scripts. |
