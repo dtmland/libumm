@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-project(libumm VERSION 0.1.1 LANGUAGES CXX)
+project(libumm VERSION 0.1.2 LANGUAGES CXX)
 
 # Session 30: header macros are normative; CMake PROJECT_VERSION must match.
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/include/umm/version.hpp" _umm_version_hpp)
