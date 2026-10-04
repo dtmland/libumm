@@ -84,6 +84,9 @@ umm::Value sample_photo_value(const umm::internal::CrossMediaAccessorDef& def) {
     when.second = 5;
     return make_value(when);
   }
+  if (def.photo_datatype == umm::Datatype::real) {
+    return make_value(4.0);
+  }
   if (name == "shownEvent") {
     umm::Structure entity = named_entity(marker);
     entity.emplace("identifiers",
@@ -141,6 +144,9 @@ std::string sample_needle(const umm::internal::CrossMediaAccessorDef& def) {
   if (def.concept_name == std::string_view("dateCreated")) {
     return "2020";
   }
+  if (def.photo_datatype == umm::Datatype::real) {
+    return "4";
+  }
   if (def.concept_name == std::string_view("locationCreated") ||
       def.concept_name == std::string_view("locationShown")) {
     return "City-" + marker_for(def.concept_name);
@@ -178,6 +184,9 @@ bool value_has_text(const umm::Value& value, const std::string& needle) {
   if (const auto* dt = std::get_if<umm::DateTime>(&value.data)) {
     return needle == "2020" && dt->year == 2020;
   }
+  if (const auto* number = std::get_if<double>(&value.data)) {
+    return needle == "4" && *number == 4.0;
+  }
   if (const auto* fields = std::get_if<umm::Structure>(&value.data)) {
     for (const auto& [name, field] : *fields) {
       if (value_has_text(field, needle)) {
@@ -209,6 +218,7 @@ std::optional<umm::PropertyValue> get_named(const umm::Metadata& metadata,
   if (name == "copyrightNotice") return metadata.copyrightNotice();
   if (name == "creditLine") return metadata.creditLine();
   if (name == "dateCreated") return metadata.dateCreated();
+  if (name == "rating") return metadata.rating();
   if (name == "altTextAccessibility") return metadata.altTextAccessibility();
   if (name == "extendedDescriptionAccessibility") {
     return metadata.extendedDescriptionAccessibility();
@@ -271,6 +281,10 @@ umm::Result<void> set_named(umm::Metadata& metadata, std::string_view name,
   if (name == "dateCreated") {
     const auto* when = std::get_if<umm::DateTime>(&value.data);
     return when ? metadata.setDateCreated(*when) : bad_sample(name);
+  }
+  if (name == "rating") {
+    const auto* number = std::get_if<double>(&value.data);
+    return number ? metadata.setRating(*number) : bad_sample(name);
   }
   if (name == "altTextAccessibility") {
     const auto* alt = std::get_if<umm::LangAlt>(&value.data);

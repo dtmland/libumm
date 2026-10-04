@@ -80,6 +80,37 @@ int main() {
 
   {
     const auto result = umm::internal::reconcile(
+        doc({entry("Exif", "Exif.Image.DateTime", "2019:12:31 23:59:59")}),
+        "test");
+    if (!result.ok()) {
+      return fail("modify-date reconcile failed");
+    }
+    if (result.value().dateCreated()) {
+      return fail("Exif.Image.DateTime must not fill dateCreated");
+    }
+  }
+
+  {
+    const auto result = umm::internal::reconcile(
+        doc({entry("Exif", "Exif.Image.DateTimeOriginal",
+                   "2020:01:02 03:04:05")}),
+        "test");
+    if (!result.ok()) {
+      return fail("ifd0 DateTimeOriginal reconcile failed");
+    }
+    const auto date = result.value().dateCreated();
+    if (!date || date->resolution != umm::Resolution::single) {
+      return fail("ifd0 DateTimeOriginal not single");
+    }
+    const auto* dt = as_date(*date);
+    if (!dt || dt->year != 2020 || dt->month != 1 || dt->day != 2 ||
+        dt->hour != 3 || dt->minute != 4 || dt->second != 5) {
+      return fail("ifd0 DateTimeOriginal value");
+    }
+  }
+
+  {
+    const auto result = umm::internal::reconcile(
         doc({entry("Exif", "Exif.Image.Artist", "Agreeing Creator"),
              entry("Iptc", "Iptc.Application2.Byline", "Agreeing Creator"),
              entry("Xmp", "Xmp.dc.creator", "Agreeing Creator"),

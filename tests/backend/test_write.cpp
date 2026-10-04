@@ -1,5 +1,6 @@
 #include "core/atomic_write.hpp"
 #include "core/xmp_codec.hpp"
+#include "generated/property_registry.hpp"
 #include "read_base_checks.hpp"
 #include "umm/umm.hpp"
 
@@ -1077,6 +1078,73 @@ bool id_ends(std::string_view id, std::string_view suffix) {
          id.substr(id.size() - suffix.size()) == suffix;
 }
 
+std::string_view xmp_local_name(std::string_view property) {
+  const auto colon = property.rfind(':');
+  if (colon == std::string_view::npos) {
+    return property;
+  }
+  return property.substr(colon + 1);
+}
+
+std::string sample_struct_field_name(const umm::PropertyDef& def) {
+  const std::string_view local =
+      xmp_local_name(def.representations.xmp_property);
+  std::string first;
+  std::string named;
+  std::string titled;
+  std::string city;
+  std::string cvid;
+  auto consider = [&](std::string_view from, std::string_view to) {
+    if (to.empty()) {
+      return;
+    }
+    if (first.empty()) {
+      first = std::string(to);
+    }
+    if (from == "cvId" || to == "CvId") {
+      cvid = std::string(to);
+    }
+    if (from == "city" || to == "City") {
+      city = std::string(to);
+    }
+    if (from == "title") {
+      titled = std::string(to);
+    }
+    if (from == "name" && to.find("Copyright") == std::string_view::npos &&
+        to.find("Licensor") == std::string_view::npos) {
+      named = std::string(to);
+    }
+  };
+  for (const umm::internal::ExifToolStructFieldAlias& row :
+       umm::internal::kExifToolStructFieldAliases) {
+    if (row.xmp_local == local) {
+      consider(row.from_field, row.to_field);
+    }
+  }
+  for (const umm::internal::StructFieldRepresentation& row :
+       umm::internal::kStructFieldRepresentations) {
+    if (row.struct_name == local) {
+      consider(row.struct_property, row.et_tag);
+    }
+  }
+  if (!named.empty()) {
+    return named;
+  }
+  if (!titled.empty()) {
+    return titled;
+  }
+  if (!city.empty()) {
+    return city;
+  }
+  if (!cvid.empty()) {
+    return cvid;
+  }
+  if (!first.empty()) {
+    return first;
+  }
+  return "Name";
+}
+
 umm::Value sample_video_value(const umm::PropertyDef& def) {
   umm::Value value;
   switch (def.datatype) {
@@ -1094,17 +1162,69 @@ umm::Value sample_video_value(const umm::PropertyDef& def) {
       value.data = when;
       return value;
     }
+    case umm::Datatype::text_list:
+      value.data = std::vector<std::string>{"Shape text"};
+      return value;
+    case umm::Datatype::integer:
+      value.data = id_ends(def.id, "orientation") ? std::int64_t{1}
+                                                  : std::int64_t{42};
+      return value;
+    case umm::Datatype::real:
+      value.data = 4.0;
+      return value;
+    case umm::Datatype::boolean:
+      value.data = true;
+      return value;
     case umm::Datatype::structure:
     case umm::Datatype::structure_list: {
       umm::Structure fields;
-      if (id_ends(def.id, "digitalSourceType") ||
+      if (def.id == "iptc.photo.locationCreated") {
+        fields.emplace("city", umm::Value{std::string("Shape City")});
+      } else if (id_ends(def.id, "digitalSourceType") ||
           id_ends(def.id, "modelReleaseStatus") ||
           id_ends(def.id, "propertyReleaseStatus") ||
           id_ends(def.id, "genre") ||
-          id_ends(def.id, "cvTermAboutTheContent")) {
-        fields.emplace("cvId", umm::Value{std::string("http://example.com/cv/shape")});
+          id_ends(def.id, "cvTermAboutTheContent") ||
+          id_ends(def.id, "cvTermAboutImage") ||
+          id_ends(def.id, "contentWarning") ||
+          id_ends(def.id, "workflowTag")) {
+        fields.emplace("CvId", umm::Value{std::string("http://example.com/cv/shape")});
+      } else if (id_ends(def.id, "dataDisplayedOnScreen")) {
+        fields.emplace("RegionText", umm::Value{std::string("Shape Name")});
+      } else if (id_ends(def.id, "dopesheetLink") ||
+                 id_ends(def.id, "transcriptLink") ||
+                 id_ends(def.id, "snapshotLink")) {
+        fields.emplace("Link", umm::Value{std::string("Shape Name")});
+      } else if (id_ends(def.id, "episode") || id_ends(def.id, "season") ||
+                 id_ends(def.id, "series") || id_ends(def.id, "shotType") ||
+                 id_ends(def.id, "personHeard") ||
+                 id_ends(def.id, "planningReference") ||
+                 id_ends(def.id, "fileFormat") ||
+                 id_ends(def.id, "metadataAuthority") ||
+                 id_ends(def.id, "metadataEditor") ||
+                 id_ends(def.id, "shownEvent") ||
+                 id_ends(def.id, "audioCoding") ||
+                 id_ends(def.id, "videoCoding")) {
+        fields.emplace("Name", umm::Value{std::string("Shape Name")});
+      } else if (id_ends(def.id, "publicationEvent")) {
+        fields.emplace("Name", umm::Value{std::string("Shape Name")});
+      } else if (id_ends(def.id, "temporalCoverage")) {
+        fields.emplace("TempCoverageFrom",
+                       umm::Value{std::string("2020-01-02")});
+      } else if (id_ends(def.id, "recordingDevice")) {
+        fields.emplace("ModelName", umm::Value{std::string("Shape Name")});
+      } else if (id_ends(def.id, "fileDuration")) {
+        fields.emplace("value", umm::Value{std::string("42")});
+      } else if (id_ends(def.id, "frameSize")) {
+        fields.emplace("w", umm::Value{std::string("16")});
+      } else if (def.id == std::string_view("iptc.video.rating") ||
+                 id_ends(def.id, "reviewRating")) {
+        fields.emplace("RatingValue", umm::Value{std::string("Shape Name")});
+      } else if (id_ends(def.id, "objectShown")) {
+        fields.emplace("AOTitle", umm::Value{std::string("Shape Name")});
       } else if (id_ends(def.id, "locationShot") ||
-                 id_ends(def.id, "locationShown")) {
+                 id_ends(def.id, "locationShown") ||
+                 id_ends(def.id, "locationShownInTheImage")) {
         fields.emplace("City", umm::Value{std::string("Shape City")});
       } else if (id_ends(def.id, "personShown")) {
         fields.emplace("PersonName", umm::Value{std::string("Shape Person")});
@@ -1127,7 +1247,8 @@ umm::Value sample_video_value(const umm::PropertyDef& def) {
         fields.emplace("CopyrightOwnerName",
                        umm::Value{std::string("Shape Owner")});
       } else {
-        fields.emplace("Name", umm::Value{std::string("Shape Name")});
+        fields.emplace(sample_struct_field_name(def),
+                       umm::Value{std::string("Shape Name")});
       }
       if (def.datatype == umm::Datatype::structure) {
         value.data = std::move(fields);
@@ -1137,6 +1258,11 @@ umm::Value sample_video_value(const umm::PropertyDef& def) {
       return value;
     }
     default:
+      if (id_ends(def.id, "displayAspectRatio") ||
+          id_ends(def.id, "signalAspectRatio")) {
+        value.data = std::string("1.78");
+        return value;
+      }
       value.data = std::string("Shape text");
       return value;
   }
@@ -1165,6 +1291,15 @@ bool value_has_text(const umm::Value& value, const std::string& needle) {
   if (const auto* dt = std::get_if<umm::DateTime>(&value.data)) {
     return needle == "2020" && dt->year == 2020;
   }
+  if (const auto* number = std::get_if<std::int64_t>(&value.data)) {
+    return needle == std::to_string(*number);
+  }
+  if (const auto* number = std::get_if<double>(&value.data)) {
+    return needle == "4" && *number == 4.0;
+  }
+  if (const auto* flag = std::get_if<bool>(&value.data)) {
+    return needle == (*flag ? "true" : "false");
+  }
   if (const auto* fields = std::get_if<umm::Structure>(&value.data)) {
     for (const auto& [name, field] : *fields) {
       if (value_has_text(field, needle)) {
@@ -1189,14 +1324,43 @@ std::string sample_needle(const umm::PropertyDef& def) {
   if (def.datatype == umm::Datatype::date_time) {
     return "2020";
   }
-  if (id_ends(def.id, "digitalSourceType") ||
-      id_ends(def.id, "modelReleaseStatus") ||
-      id_ends(def.id, "propertyReleaseStatus") ||
-      id_ends(def.id, "genre") ||
-      id_ends(def.id, "cvTermAboutTheContent")) {
+  if (def.datatype == umm::Datatype::integer) {
+    return id_ends(def.id, "orientation") ? "1" : "42";
+  }
+  if (def.datatype == umm::Datatype::real) {
+    return "4";
+  }
+  if (def.datatype == umm::Datatype::boolean) {
+    return "true";
+  }
+  if (id_ends(def.id, "displayAspectRatio") ||
+      id_ends(def.id, "signalAspectRatio")) {
+    return "1.78";
+  }
+  if (id_ends(def.id, "fileDuration")) {
+    return "42";
+  }
+  if (id_ends(def.id, "temporalCoverage")) {
+    return "2020";
+  }
+  if (id_ends(def.id, "frameSize")) {
+    return "16";
+  }
+  if ((def.datatype == umm::Datatype::structure ||
+       def.datatype == umm::Datatype::structure_list) &&
+      (id_ends(def.id, "digitalSourceType") ||
+       id_ends(def.id, "modelReleaseStatus") ||
+       id_ends(def.id, "propertyReleaseStatus") ||
+       id_ends(def.id, "genre") ||
+       id_ends(def.id, "cvTermAboutTheContent") ||
+       id_ends(def.id, "cvTermAboutImage") ||
+       id_ends(def.id, "contentWarning") ||
+       id_ends(def.id, "workflowTag"))) {
     return "example.com/cv/shape";
   }
-  if (id_ends(def.id, "locationShot") || id_ends(def.id, "locationShown")) {
+  if (id_ends(def.id, "locationCreated") || id_ends(def.id, "locationShot") ||
+      id_ends(def.id, "locationShown") ||
+      id_ends(def.id, "locationShownInTheImage")) {
     return "Shape City";
   }
   if (id_ends(def.id, "personShown")) {
@@ -1215,10 +1379,23 @@ std::string sample_needle(const umm::PropertyDef& def) {
   return "Shape text";
 }
 
+bool exiftool_lacks_tag(std::string_view id) {
+  // ExifTool 13.59 has no writable tag for these IPTC Video properties.
+  // Marker-filtered xmpDM duration properties are not a single ExifTool tag.
+  return id == "iptc.video.contentWarning" ||
+         id == "iptc.video.reviewRating" || id == "iptc.video.timedTextLink" ||
+         id == "iptc.video.visualColour" ||
+         id == "iptc.video.editorialDuration" ||
+         id == "iptc.video.editorialDurationEnd" ||
+         id == "iptc.video.editorialDurationStart" ||
+         id == "iptc.video.markers" ||
+         id == "iptc.video.orientation";
+}
+
 int test_video_mapped_container(const char* ext) {
   int index = 0;
   for (std::string_view id : umm::internal::mapped_video_property_ids()) {
-    if (id == "exif.gps.position") {
+    if (id == "exif.gps.position" || exiftool_lacks_tag(id)) {
       continue;
     }
     const auto found = umm::registry().find(id);
@@ -1270,6 +1447,89 @@ int test_video_mapped_roundtrip() {
     return rc;
   }
   return test_video_mapped_container(".mov");
+}
+
+int test_photo_mapped_roundtrip(const std::string& backend) {
+  int index = 0;
+  for (std::string_view id : umm::internal::mapped_photo_property_ids()) {
+    if (id == "exif.gps.position") {
+      continue;
+    }
+    const auto found = umm::registry().find(id);
+    if (!found) {
+      std::fprintf(stderr, "mapped photo missing registry %s\n",
+                   std::string(id).c_str());
+      return 1;
+    }
+    const umm::PropertyDef& def = *found;
+    const std::string name =
+        backend + "-mapped-" + std::to_string(index++) + ".jpg";
+    const auto file = copy_fixture(raw_stem("jpeg", "minimal", ".jpg"), name);
+    umm::Metadata metadata;
+    if (!metadata.set(std::string(def.id), sample_video_value(def)).ok()) {
+      std::fprintf(stderr, "set %s failed\n", std::string(def.id).c_str());
+      return 1;
+    }
+    const auto written = umm::write(file, metadata, opts(backend));
+    if (!written.ok()) {
+      std::fprintf(stderr, "mapped photo write %s (%s): %s (%s)\n",
+                   std::string(def.id).c_str(), backend.c_str(),
+                   written.error().message.c_str(),
+                   written.error().detail.c_str());
+      return 1;
+    }
+    const auto round = umm::read(file, ropts(backend));
+    if (!round.ok()) {
+      std::fprintf(stderr, "mapped photo read %s (%s): %s\n",
+                   std::string(def.id).c_str(), backend.c_str(),
+                   round.error().message.c_str());
+      return 1;
+    }
+    const auto got = round.value().get(std::string(def.id));
+    if (!got || !value_has_text(got->value, sample_needle(def))) {
+      std::fprintf(stderr, "mapped photo mismatch %s on %s\n",
+                   std::string(def.id).c_str(), backend.c_str());
+      return 1;
+    }
+  }
+  return 0;
+}
+
+int test_dng_ifd0_datetimeoriginal(const std::string& backend) {
+  umm::Backend* adapter = umm::BackendManager::instance().get(backend);
+  if (!adapter || !adapter->availability().available) {
+    return 0;
+  }
+  const auto file = copy_fixture(raw_stem("raw", "minimal", ".dng"),
+                                 backend + "-ifd0-dto.dng");
+  umm::BaseChanges changes;
+  umm::BaseEntry entry;
+  entry.key.family = "Exif";
+  entry.key.key = "Exif.Image.DateTimeOriginal";
+  entry.value = "2020:01:02 03:04:05";
+  changes.upserts.push_back(std::move(entry));
+  const auto written = adapter->writeBase(file, changes);
+  if (!written.ok()) {
+    std::fprintf(stderr, "DNG IFD0 writeBase (%s): %s (%s)\n", backend.c_str(),
+                 written.error().message.c_str(),
+                 written.error().detail.c_str());
+    return 1;
+  }
+  const auto round = umm::read(file, ropts(backend));
+  if (!round.ok()) {
+    std::fprintf(stderr, "DNG IFD0 read (%s): %s\n", backend.c_str(),
+                 round.error().message.c_str());
+    return 1;
+  }
+  const auto date = round.value().dateCreated();
+  const auto* dt = date ? std::get_if<umm::DateTime>(&date->value.data)
+                        : nullptr;
+  if (!dt || dt->year != 2020 || dt->month != 1 || dt->day != 2) {
+    std::fprintf(stderr, "DNG IFD0 DateTimeOriginal missing on %s\n",
+                 backend.c_str());
+    return 1;
+  }
+  return 0;
 }
 
 umm::Structure sample_person() {
@@ -1581,7 +1841,10 @@ int check_backend(const std::string& backend,
       rc != 0) {
     return rc;
   }
-  return 0;
+  if (const int rc = test_photo_mapped_roundtrip(backend); rc != 0) {
+    return rc;
+  }
+  return test_dng_ifd0_datetimeoriginal(backend);
 }
 
 }  // namespace

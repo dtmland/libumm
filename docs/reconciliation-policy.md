@@ -55,13 +55,15 @@ No source is dropped: `PropertyValue::sources` lists every base entry that contr
 
 ## Read precedence (default)
 
-Unless a property table says otherwise:
+`umm::read` classifies **every registry id for the file's domain** (C5). Properties
+without a dedicated table below use this default:
 
 **XMP > IPTC IIM > EXIF**
 
 This matches MWG's "XMP is the current specification" reading and ExifTool-MWG
 composites that prefer the XMP encoding when values disagree (S4b). GPS is
-EXIF-native and inverts the last two steps (see below).
+EXIF-native and inverts the last two steps (see below). Video QuickTime scalars
+rank after XMP when a registry overlay names a QuickTime key.
 
 Same-tier means the same metadata family after mapping (XMP vs XMP, IIM vs IIM,
 EXIF vs EXIF). Two unequal XMP encodings of one property are `conflict`.
@@ -142,6 +144,7 @@ Equivalence: trimmed UTF-8. Disagreement: `reconciled`, XMP > IIM.
 | --- | --- | --- |
 | XMP | `Xmp.photoshop.DateCreated` | IPTC-TR `photoshop:DateCreated` |
 | EXIF | `Exif.Photo.DateTimeOriginal` plus companion `Exif.Photo.SubSecTimeOriginal` and `Exif.Photo.OffsetTimeOriginal` when present | IPTC-MG `ExifIFD:DateTimeOriginal+SubSecTimeOriginal+OffsetTimeOriginal` |
+| EXIF | `Exif.Image.DateTimeOriginal` plus companion `Exif.Image.SubSecTimeOriginal` and `Exif.Image.OffsetTimeOriginal` when present | C16/C19: IFD0 copy as DNG writes it; same EXIF family/rank as ExifIFD |
 | IIM | `Iptc.Application2.DateCreated` (`2:55`) plus `Iptc.Application2.TimeCreated` (`2:60`) | IPTC-TR “Date Created + Time Created” |
 | XMP (same-tier) | `Xmp.exif.DateTimeOriginal` | MWG / ExifTool-MWG additional XMP encoding |
 
@@ -167,7 +170,7 @@ conflicted with another absent offset.
   unequal normalized values: `conflict` (unranked).
 
 `Exif.Image.DateTime` / `Exif.Photo.DateTimeDigitized` are **not** Date Created
-(MWG distinguishes ModifyDate / CreateDate). They stay in `Metadata::unmapped()`.
+(MWG distinguishes ModifyDate / CreateDate). They stay in `Metadata::dumpUnmapped()`.
 
 **Write-sync:** write photoshop DateCreated, EXIF DateTimeOriginal (+ subsec +
 offset when known), and IIM DateCreated+TimeCreated. Do not invent an offset.

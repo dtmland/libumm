@@ -324,6 +324,7 @@ int main() {
                     "setCopyrightNotice") ||
         !require_ok(cross.setCreditLine("Credit line"), "setCreditLine") ||
         !require_ok(cross.setDateCreated(created_when), "setDateCreated") ||
+        !require_ok(cross.setRating(4.0), "setRating") ||
         !require_ok(cross.setAltTextAccessibility(alt_text),
                     "setAltTextAccessibility") ||
         !require_ok(cross.setExtendedDescriptionAccessibility(ext_text),
@@ -350,7 +351,7 @@ int main() {
       return 1;
     }
     if (!cross.title() || !cross.description() || !cross.copyrightNotice() ||
-        !cross.creditLine() || !cross.dateCreated() ||
+        !cross.creditLine() || !cross.dateCreated() || !cross.rating() ||
         !cross.altTextAccessibility() ||
         !cross.extendedDescriptionAccessibility() || !cross.rightsUsageTerms() ||
         !cross.sourceSupplyChain() || !cross.dataMining() ||
@@ -384,11 +385,11 @@ int main() {
     return fail("getter without domain did not probe video id");
   }
 
-  umm::Metadata still_photo_only;
-  still_photo_only.setMediaDomain(umm::MediaDomain::video);
-  if (!require_ok(still_photo_only.setRating(3.0), "setRating on video domain") ||
-      !require_id(still_photo_only, "iptc.photo.imageRating",
-                  "rating stays photo")) {
+  umm::Metadata video_rating;
+  video_rating.setMediaDomain(umm::MediaDomain::video);
+  if (!require_ok(video_rating.setRating(3.0), "setRating on video domain") ||
+      !require_id(video_rating, "iptc.video.workflowRating",
+                  "rating writes video id")) {
     return 1;
   }
 

@@ -43,7 +43,7 @@ struct CrossMediaAccessorDef {
   bool deferred;
 };
 
-inline constexpr std::size_t kCrossMediaAccessorCount = 38;
+inline constexpr std::size_t kCrossMediaAccessorCount = 39;
 
 inline constexpr CrossMediaAccessorDef kCrossMediaAccessors[] = {
     {
@@ -113,6 +113,20 @@ inline constexpr CrossMediaAccessorDef kCrossMediaAccessors[] = {
         Datatype::date_time,
         Cardinality::one,
         Datatype::date_time,
+        Cardinality::one,
+        false,
+    },
+    {
+        "rating",
+        {"iptc.photo.imageRating", ""},
+        1,
+        {"iptc.video.workflowRating", ""},
+        1,
+        1,
+        CrossMediaTransposition::passthrough,
+        Datatype::real,
+        Cardinality::one,
+        Datatype::real,
         Cardinality::one,
         false,
     },

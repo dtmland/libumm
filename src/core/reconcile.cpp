@@ -54,8 +54,72 @@ std::string_view trim(std::string_view text) {
 
 std::string trimmed(std::string_view text) { return std::string(trim(text)); }
 
+bool xmp_local_matches(std::string_view entry_key, std::string_view base) {
+  constexpr std::string_view kXmp = "Xmp.";
+  if (entry_key.size() < kXmp.size() || base.size() < kXmp.size() ||
+      entry_key.substr(0, kXmp.size()) != kXmp ||
+      base.substr(0, kXmp.size()) != kXmp) {
+    return false;
+  }
+  const auto entry_dot = entry_key.find('.', kXmp.size());
+  const auto base_dot = base.find('.', kXmp.size());
+  if (entry_dot == std::string_view::npos || base_dot == std::string_view::npos) {
+    return false;
+  }
+  if (entry_key.substr(0, entry_dot) != base.substr(0, base_dot)) {
+    return false;
+  }
+  std::string_view entry_local = entry_key.substr(entry_dot + 1);
+  const std::string_view base_local = base.substr(base_dot + 1);
+  const auto cut = entry_local.find_first_of("[/");
+  const std::size_t local_n =
+      cut == std::string_view::npos ? entry_local.size() : cut;
+  entry_local = entry_local.substr(0, local_n);
+  if (ascii_lower(entry_local) != ascii_lower(base_local)) {
+    return false;
+  }
+  if (cut == std::string_view::npos) {
+    return true;
+  }
+  const char next = entry_key[entry_dot + 1 + local_n];
+  return next == '[' || next == '/';
+}
+
+bool xmp_flattened_field(std::string_view entry_key, std::string_view base) {
+  constexpr std::string_view kXmp = "Xmp.";
+  if (entry_key.size() < kXmp.size() || base.size() < kXmp.size() ||
+      entry_key.substr(0, kXmp.size()) != kXmp ||
+      base.substr(0, kXmp.size()) != kXmp) {
+    return false;
+  }
+  const auto entry_dot = entry_key.find('.', kXmp.size());
+  const auto base_dot = base.find('.', kXmp.size());
+  if (entry_dot == std::string_view::npos || base_dot == std::string_view::npos) {
+    return false;
+  }
+  if (entry_key.substr(0, entry_dot) != base.substr(0, base_dot)) {
+    return false;
+  }
+  std::string_view entry_local = entry_key.substr(entry_dot + 1);
+  const std::string_view base_local = base.substr(base_dot + 1);
+  const auto cut = entry_local.find_first_of("[/");
+  if (cut != std::string_view::npos) {
+    entry_local = entry_local.substr(0, cut);
+  }
+  const std::string entry_l = ascii_lower(entry_local);
+  const std::string base_l = ascii_lower(base_local);
+  if (entry_l.size() <= base_l.size() || entry_l.rfind(base_l, 0) != 0) {
+    return false;
+  }
+  const char next = entry_local[base_local.size()];
+  return next >= 'A' && next <= 'Z';
+}
+
 bool key_belongs(std::string_view entry_key, std::string_view base) {
   if (entry_key == base) {
+    return true;
+  }
+  if (xmp_local_matches(entry_key, base)) {
     return true;
   }
   if (entry_key.size() <= base.size()) {
@@ -134,6 +198,37 @@ bool parse_double(std::string_view text, double& out) {
   } catch (...) {
     return false;
   }
+}
+
+bool parse_i64(std::string_view text, std::int64_t& out) {
+  text = trim(text);
+  if (text.empty()) {
+    return false;
+  }
+  try {
+    std::size_t n = 0;
+    const long long value = std::stoll(std::string(text), &n);
+    if (n != text.size()) {
+      return false;
+    }
+    out = static_cast<std::int64_t>(value);
+    return true;
+  } catch (...) {
+    return false;
+  }
+}
+
+bool parse_bool(std::string_view text, bool& out) {
+  const std::string lower = ascii_lower(trim(text));
+  if (lower == "true" || lower == "1") {
+    out = true;
+    return true;
+  }
+  if (lower == "false" || lower == "0") {
+    out = false;
+    return true;
+  }
+  return false;
 }
 
 bool parse_rational(std::string_view text, double& out) {
@@ -778,14 +873,44 @@ std::string iim_base_key(std::string_view dataset) {
   if (dataset == "2:60") {
     return "Iptc.Application2.TimeCreated";
   }
+  if (dataset == "2:04") {
+    return "Iptc.Application2.ObjectAttribute";
+  }
+  if (dataset == "2:05") {
+    return "Iptc.Application2.ObjectName";
+  }
+  if (dataset == "2:12") {
+    return "Iptc.Application2.Subject";
+  }
+  if (dataset == "2:40") {
+    return "Iptc.Application2.SpecialInstructions";
+  }
+  if (dataset == "2:85") {
+    return "Iptc.Application2.BylineTitle";
+  }
   if (dataset == "2:90") {
     return "Iptc.Application2.City";
+  }
+  if (dataset == "2:92") {
+    return "Iptc.Application2.SubLocation";
   }
   if (dataset == "2:95") {
     return "Iptc.Application2.ProvinceState";
   }
+  if (dataset == "2:100") {
+    return "Iptc.Application2.CountryCode";
+  }
   if (dataset == "2:101") {
     return "Iptc.Application2.CountryName";
+  }
+  if (dataset == "2:103") {
+    return "Iptc.Application2.TransmissionReference";
+  }
+  if (dataset == "2:115") {
+    return "Iptc.Application2.Source";
+  }
+  if (dataset == "2:122") {
+    return "Iptc.Application2.Writer";
   }
   return {};
 }
@@ -795,6 +920,18 @@ std::vector<const BaseEntry*> matching(const BaseDocument& document,
   std::vector<const BaseEntry*> out;
   for (const BaseEntry& entry : document.entries) {
     if (key_belongs(entry.key.key, base)) {
+      out.push_back(&entry);
+    }
+  }
+  return out;
+}
+
+std::vector<const BaseEntry*> matching_struct(const BaseDocument& document,
+                                             std::string_view base) {
+  std::vector<const BaseEntry*> out;
+  for (const BaseEntry& entry : document.entries) {
+    if (key_belongs(entry.key.key, base) ||
+        xmp_flattened_field(entry.key.key, base)) {
       out.push_back(&entry);
     }
   }
@@ -841,6 +978,68 @@ void stamp_container(std::vector<Group>& groups, std::size_t from,
   for (std::size_t i = from; i < groups.size(); ++i) {
     stamp_container(groups[i], container);
   }
+}
+
+std::optional<Group> integer_group(const BaseDocument& document,
+                                  std::string_view backend,
+                                  std::string_view key, std::string family,
+                                  int rank) {
+  const auto text = first_value(document, key);
+  if (!text) {
+    return std::nullopt;
+  }
+  std::int64_t value = 0;
+  if (!parse_i64(*text, value)) {
+    return std::nullopt;
+  }
+  Group group;
+  group.family = std::move(family);
+  group.rank = rank;
+  group.primary_key = std::string(key);
+  add_sources(group.sources, document, backend, key);
+  group.value = make_value(value);
+  return group;
+}
+
+std::optional<Group> real_group(const BaseDocument& document,
+                               std::string_view backend, std::string_view key,
+                               std::string family, int rank) {
+  const auto text = first_value(document, key);
+  if (!text) {
+    return std::nullopt;
+  }
+  double value = 0;
+  if (!parse_double(*text, value)) {
+    return std::nullopt;
+  }
+  Group group;
+  group.family = std::move(family);
+  group.rank = rank;
+  group.primary_key = std::string(key);
+  add_sources(group.sources, document, backend, key);
+  group.value = make_value(value);
+  return group;
+}
+
+std::optional<Group> boolean_group(const BaseDocument& document,
+                                  std::string_view backend,
+                                  std::string_view key, std::string family,
+                                  int rank) {
+  const auto text = first_value(document, key);
+  if (!text) {
+    return std::nullopt;
+  }
+  bool value = false;
+  if (!parse_bool(*text, value)) {
+    return std::nullopt;
+  }
+  Group group;
+  group.family = std::move(family);
+  group.rank = rank;
+  group.primary_key = std::string(key);
+  add_sources(group.sources, document, backend, key);
+  group.value = make_value(value);
+  return group;
 }
 
 bool values_equivalent(std::string_view property_id, const Value& a,
@@ -925,11 +1124,11 @@ bool values_equivalent(std::string_view property_id, const Value& a,
       const auto* lb = std::get_if<std::vector<Structure>>(&b.data);
       return la && lb && *la == *lb;
     }
-  }
-  if (property_id == kRating) {
-    const auto* da = std::get_if<double>(&a.data);
-    const auto* db = std::get_if<double>(&b.data);
-    return da && db && std::fabs(*da - *db) < 1e-9;
+    if (def->datatype == Datatype::real) {
+      const auto* da = std::get_if<double>(&a.data);
+      const auto* db = std::get_if<double>(&b.data);
+      return da && db && std::fabs(*da - *db) < 1e-9;
+    }
   }
   return a == b;
 }
@@ -1248,7 +1447,7 @@ void put_location_field(Structure& fields, std::string_view name,
 std::optional<Group> structured_location(const BaseDocument& document,
                                          std::string_view backend,
                                          std::string_view base) {
-  const auto entries = matching(document, base);
+  const auto entries = matching_struct(document, base);
   if (entries.empty()) {
     return std::nullopt;
   }
@@ -1382,6 +1581,9 @@ void collect_registry_property(std::vector<Group>& groups,
     }
   };
 
+  // Policy § iptc.photo.dateCreated (C16/C19): XMP photoshop, ExifIFD
+  // DateTimeOriginal, IFD0 DateTimeOriginal, IIM date+time. ModifyDate
+  // (Exif.Image.DateTime) is not a candidate.
   if (property_id == kDateCreated) {
     std::string xmp_ps;
     if (!rep.xmp_property.empty()) {
@@ -1416,12 +1618,17 @@ void collect_registry_property(std::vector<Group>& groups,
       push(date_group(document, backend, exif_keys[0], subsec, offset, "exif",
                       1));
     }
+    push(date_group(document, backend, "Exif.Image.DateTimeOriginal",
+                    "Exif.Image.SubSecTimeOriginal",
+                    "Exif.Image.OffsetTimeOriginal", "exif", 1));
     if (!iim_date.empty()) {
       push(date_group(document, backend, iim_date, iim_time, "", "iim", 2));
     }
     return;
   }
 
+  // Policy § iptc.photo.locationCreated: XMP LocationCreated plus legacy
+  // photoshop/IIM city-state-country until session 46.
   if (property_id == kLocation) {
     if (!rep.xmp_property.empty()) {
       push(structured_location(document, backend, xmp_base_key(rep.xmp_property)));
@@ -1468,6 +1675,7 @@ void collect_registry_property(std::vector<Group>& groups,
                                                       : rep.exif_tag.substr(0, plus));
   }
 
+  // Policy § iptc.photo.creator / iptc.photo.keywords: XMP > IIM > EXIF lists.
   if (property_id == kCreator || property_id == kKeywords) {
     if (!xmp.empty()) {
       push(text_list_group(document, backend, xmp, "xmp", 0));
@@ -1480,6 +1688,8 @@ void collect_registry_property(std::vector<Group>& groups,
     }
     return;
   }
+  // Policy § iptc.photo.description / iptc.photo.copyrightNotice: lang-alt
+  // XMP > IIM > EXIF.
   if (property_id == kDescription || property_id == kCopyright) {
     if (!xmp.empty()) {
       push(lang_group(document, backend, xmp, "xmp", 0));
@@ -1492,24 +1702,6 @@ void collect_registry_property(std::vector<Group>& groups,
     }
     return;
   }
-  if (property_id == kRating) {
-    if (!xmp.empty()) {
-      if (const auto text = first_value(document, xmp)) {
-        double rating = 0;
-        if (parse_double(*text, rating)) {
-          Group group;
-          group.family = "xmp";
-          group.rank = 0;
-          group.primary_key = xmp;
-          add_sources(group.sources, document, backend, xmp);
-          group.value = make_value(rating);
-          groups.push_back(std::move(group));
-        }
-      }
-    }
-    return;
-  }
-
   if (def->datatype == Datatype::lang_alt) {
     if (!xmp.empty()) {
       push(lang_group(document, backend, xmp, "xmp", 0));
@@ -1545,6 +1737,54 @@ void collect_registry_property(std::vector<Group>& groups,
       const bool names_as_entities = xmp_base_keys(rep.xmp_property).size() > 1;
       push(video_structure_list_group(document, backend, xmp, "xmp", 0,
                                       names_as_entities));
+    }
+    return;
+  }
+  if (def->datatype == Datatype::integer) {
+    if (!xmp.empty()) {
+      push(integer_group(document, backend, xmp, "xmp", 0));
+    }
+    if (!iim.empty()) {
+      push(integer_group(document, backend, iim, "iim", 1));
+    }
+    if (!exif.empty()) {
+      push(integer_group(document, backend, exif, "exif", 2));
+    }
+    return;
+  }
+  if (def->datatype == Datatype::real) {
+    if (!xmp.empty()) {
+      push(real_group(document, backend, xmp, "xmp", 0));
+    }
+    if (!iim.empty()) {
+      push(real_group(document, backend, iim, "iim", 1));
+    }
+    if (!exif.empty()) {
+      push(real_group(document, backend, exif, "exif", 2));
+    }
+    return;
+  }
+  if (def->datatype == Datatype::boolean) {
+    if (!xmp.empty()) {
+      push(boolean_group(document, backend, xmp, "xmp", 0));
+    }
+    if (!iim.empty()) {
+      push(boolean_group(document, backend, iim, "iim", 1));
+    }
+    if (!exif.empty()) {
+      push(boolean_group(document, backend, exif, "exif", 2));
+    }
+    return;
+  }
+  if (def->datatype == Datatype::date_time) {
+    if (!xmp.empty()) {
+      push(date_group(document, backend, xmp, "", "", "xmp", 0));
+    }
+    if (!iim.empty()) {
+      push(date_group(document, backend, iim, "", "", "iim", 1));
+    }
+    if (!exif.empty()) {
+      push(date_group(document, backend, exif, "", "", "exif", 2));
     }
     return;
   }
@@ -1601,7 +1841,7 @@ std::optional<Group> video_structure_group(const BaseDocument& document,
                                            std::string_view backend,
                                            std::string_view base,
                                            std::string family, int rank) {
-  const auto entries = matching(document, base);
+  const auto entries = matching_struct(document, base);
   if (entries.empty()) {
     return std::nullopt;
   }
@@ -1644,7 +1884,7 @@ std::optional<Group> video_structure_group(const BaseDocument& document,
 std::optional<Group> video_structure_list_group(
     const BaseDocument& document, std::string_view backend,
     std::string_view base, std::string family, int rank, bool names_as_entities) {
-  const auto entries = matching(document, base);
+  const auto entries = matching_struct(document, base);
   if (entries.empty()) {
     return std::nullopt;
   }
@@ -1739,6 +1979,15 @@ void collect_video_generic(std::vector<Group>& groups,
                                         std::move(family), rank,
                                         names_as_entities));
         break;
+      case Datatype::integer:
+        push(integer_group(document, backend, key, std::move(family), rank));
+        break;
+      case Datatype::real:
+        push(real_group(document, backend, key, std::move(family), rank));
+        break;
+      case Datatype::boolean:
+        push(boolean_group(document, backend, key, std::move(family), rank));
+        break;
       default:
         push(text_group(document, backend, key, std::move(family), rank));
         break;
@@ -1750,7 +1999,10 @@ void collect_video_generic(std::vector<Group>& groups,
   const bool qt_scalar = def->datatype == Datatype::lang_alt ||
                          def->datatype == Datatype::text ||
                          def->datatype == Datatype::date_time ||
-                         def->datatype == Datatype::text_list;
+                         def->datatype == Datatype::text_list ||
+                         def->datatype == Datatype::integer ||
+                         def->datatype == Datatype::real ||
+                         def->datatype == Datatype::boolean;
   if (qt_scalar) {
     for (const std::string& key : qt_keys) {
       push_typed(key, "quicktime", 1);
@@ -1774,6 +2026,8 @@ void collect_video_property(std::vector<Group>& groups,
     }
   };
 
+  // Policy § iptc.video.dateCreated: XMP first; movie-header remains rank 2
+  // until session 47.
   if (property_id == kVideoDateCreated) {
     if (!xmp.empty()) {
       push(date_group(document, backend, xmp, "", "", "xmp", 0));

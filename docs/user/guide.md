@@ -1,9 +1,10 @@
 # libumm user guide
 
 libumm gives applications one standards-based API for reading, writing, and synchronizing
-media metadata across photos and video. It does not invent metadata definitions: every
-canonical property comes from an established standard (IPTC Photo Metadata, IPTC Video
-Metadata Hub, EXIF), and the Exiv2 and ExifTool backends do the low-level work.
+media metadata across photos and video. Canonical properties are the IPTC Photo Metadata
+2025.1 and IPTC Video Metadata Hub 1.7 registry ids. EXIF, IPTC IIM, and QuickTime tags
+are **representations** of those properties, not a second set of canonical names. The
+Exiv2 and ExifTool backends do the low-level work.
 
 ## Reading and writing
 
@@ -43,10 +44,11 @@ Properties are addressed by stable registry ids:
 
 - `iptc.photo.*` — IPTC Photo Metadata (Core + Extension)
 - `iptc.video.*` — IPTC Video Metadata Hub
-- `exif.gps.position` — well-known GPS coordinate value (EXIF domain)
+- `exif.gps.position` — well-known GPS coordinate value (EXIF domain) until session 48
 
-The registry (`umm::Registry`) is generated from the vendored IPTC Technical References in
-`registry/`; ids, definitions, and XMP/IIM/EXIF/QuickTime mappings are queryable at runtime.
+`umm::read` reconciles every registry id for the file's domain. The registry
+(`umm::Registry`) is generated from the vendored IPTC Technical References in `registry/`;
+ids, definitions, and XMP/IIM/EXIF/QuickTime mappings are queryable at runtime.
 
 ## The most common properties
 
@@ -63,12 +65,15 @@ for every property):
 | `iptc.photo.dateCreated` | `dateCreated()` / `setDateCreated` | When the scene was captured |
 | `iptc.photo.copyrightNotice` | `copyrightNotice()` / `setCopyrightNotice` | Copyright notice |
 | `iptc.photo.creditLine` | `creditLine()` / `setCreditLine` | Credit line |
-| `iptc.photo.imageRating` | `rating()` / `setRating` | Star rating |
 | `exif.gps.position` | `gps()` / `setGps` | GPS coordinates (latitude/longitude/altitude) |
 | `iptc.photo.locationCreated` | `locationCreated()` / `setLocationCreated` | Named place where the image was created |
 
 GPS coordinates and named place are **separate** properties with different backend support;
 see [docs/supported-types.md §3](../supported-types.md#3-location-metadata-gps-and-named-place).
+
+`dateCreated` is when the scene was captured. Digitized-time (`DateTimeDigitized` /
+CreateDate) and file-modify time (`Exif.Image.DateTime` / ModifyDate) are different
+moments and are not candidates for `dateCreated`.
 
 ## Cross-media accessors
 
@@ -80,9 +85,8 @@ property id. Getters probe `iptc.photo.*` then `iptc.video.*` and do not need
 - `MediaDomain::unknown` (the default) writes the photo id — Phase 1 setter behavior.
 - `MediaDomain::photo` / `MediaDomain::video` select that domain on set.
 - `umm::read` sets the domain from the sniffed file type (JPEG → photo, MP4/MOV → video).
-- Full registry ids stay reachable via `get`/`set`. Photo-only `rating()` (`iptc.photo.imageRating`)
-  is not a cross-media accessor. `gps()` is already cross-media via well-known
-  `exif.gps.position` (not an IPTC registry id).
+- Full registry ids stay reachable via `get`/`set`. `gps()` is already cross-media via
+  well-known `exif.gps.position` (not an IPTC registry id).
 - `objectShown` is **deferred**: ArtworkOrObject ↔ Entity would keep only `title`↔`name`.
 
 ### Domain and transposition
@@ -106,6 +110,7 @@ property id. Getters probe `iptc.photo.*` then `iptc.video.*` and do not need
 | `copyrightNotice` | `iptc.photo.copyrightNotice` | `iptc.video.copyrightNotice` |
 | `creditLine` | `iptc.photo.creditLine` | `iptc.video.creditLine` |
 | `dateCreated` | `iptc.photo.dateCreated` | `iptc.video.dateCreated` |
+| `rating` | `iptc.photo.imageRating` | `iptc.video.workflowRating` |
 | `altTextAccessibility` | `iptc.photo.altTextAccessibility` | `iptc.video.altTextAccessibility` |
 | `extendedDescriptionAccessibility` | `iptc.photo.extendedDescriptionAccessibility` | `iptc.video.extendedDescriptionAccessibility` |
 | `rightsUsageTerms` | `iptc.photo.rightsUsageTerms` | `iptc.video.rightsUsageTerms` |
