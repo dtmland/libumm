@@ -42,6 +42,20 @@ int main() {
       expect_key("ExifIFD:CreateDate", "Exif", "Exif.Photo.DateTimeDigitized") !=
           0 ||
       expect_key("GPS:GPSLatitude", "Exif", "Exif.GPSInfo.GPSLatitude") != 0 ||
+      expect_key("GPSInfo:GPSLatitude", "Exif", "Exif.GPSInfo.GPSLatitude") !=
+          0 ||
+      expect_key("Composite:GPSLatitude", "Exif", "Exif.GPSInfo.GPSLatitude") !=
+          0 ||
+      expect_key("Composite:GPSLongitude", "Exif",
+                 "Exif.GPSInfo.GPSLongitude") != 0 ||
+      expect_key("Composite:GPSAltitude", "Exif", "Exif.GPSInfo.GPSAltitude") !=
+          0 ||
+      expect_key("Composite:GPSLatitudeRef", "Exif",
+                 "Exif.GPSInfo.GPSLatitudeRef") != 0 ||
+      expect_key("Composite:GPSLongitudeRef", "Exif",
+                 "Exif.GPSInfo.GPSLongitudeRef") != 0 ||
+      expect_key("Composite:GPSAltitudeRef", "Exif",
+                 "Exif.GPSInfo.GPSAltitudeRef") != 0 ||
       expect_key("IPTC:By-line", "Iptc", "Iptc.Application2.Byline") != 0 ||
       expect_key("IPTC:Caption-Abstract", "Iptc",
                  "Iptc.Application2.Caption") != 0 ||

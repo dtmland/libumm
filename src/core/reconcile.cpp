@@ -971,6 +971,63 @@ std::optional<std::string> first_value(const BaseDocument& document,
   return std::nullopt;
 }
 
+// GPSLatitude as a JSON array becomes GPSLatitude[1..3] (DMS parts) with no
+// unindexed key. Join those parts so parse_coord sees degrees+minutes+seconds
+// instead of first_value's leading component only.
+std::optional<std::string> gps_coord_text(const BaseDocument& document,
+                                          std::string_view base) {
+  std::optional<std::string> exact;
+  std::vector<std::pair<int, std::string>> indexed;
+  for (const BaseEntry* entry : matching(document, base)) {
+    const std::string value = trimmed(entry->value);
+    if (value.empty()) {
+      continue;
+    }
+    if (entry->key.key == base) {
+      if (!exact) {
+        exact = value;
+      }
+      continue;
+    }
+    if (entry->key.key.size() <= base.size() ||
+        entry->key.key[base.size()] != '[') {
+      continue;
+    }
+    int idx = 0;
+    bool any = false;
+    for (std::size_t i = base.size() + 1; i < entry->key.key.size(); ++i) {
+      const char c = entry->key.key[i];
+      if (c == ']') {
+        break;
+      }
+      if (c < '0' || c > '9') {
+        any = false;
+        break;
+      }
+      any = true;
+      idx = idx * 10 + (c - '0');
+    }
+    if (any) {
+      indexed.emplace_back(idx, value);
+    }
+  }
+  if (exact) {
+    return exact;
+  }
+  if (indexed.empty()) {
+    return std::nullopt;
+  }
+  std::sort(indexed.begin(), indexed.end());
+  std::string joined;
+  for (const auto& part : indexed) {
+    if (!joined.empty()) {
+      joined.push_back(' ');
+    }
+    joined += part.second;
+  }
+  return joined;
+}
+
 void add_sources(std::vector<SourceRef>& sources, const BaseDocument& document,
                  std::string_view backend, std::string_view base) {
   for (const BaseEntry* entry : matching(document, base)) {
@@ -1467,8 +1524,8 @@ std::optional<Group> gps_group(const BaseDocument& document,
                                std::string_view lon_ref, std::string_view alt_key,
                                std::string_view alt_ref, std::string family,
                                int rank) {
-  const auto lat = first_value(document, lat_key);
-  const auto lon = first_value(document, lon_key);
+  const auto lat = gps_coord_text(document, lat_key);
+  const auto lon = gps_coord_text(document, lon_key);
   if (!lat || !lon) {
     return std::nullopt;
   }

@@ -170,13 +170,19 @@ int check_heic_layout(const char* backend) {
   }
   const auto* items = as_structs(meta.get("iptc.photo.locationCreated"));
   if (!items || items->empty()) {
-    return fail("iphone-heic-layout.jpg missing locationCreated GPS");
+    std::fprintf(stderr,
+                 "iphone-heic-layout.jpg %s missing locationCreated GPS\n",
+                 backend);
+    return 1;
   }
   if (!near(struct_number(items->front(), "gpsLatitude"), 23.75188333, 1e-5) ||
       !near(struct_number(items->front(), "gpsLongitude"), -87.10150833,
             1e-5) ||
       !near(struct_number(items->front(), "gpsAltitude"), 12.07893416, 0.5)) {
-    return fail("iphone-heic-layout.jpg locationCreated GPS values");
+    std::fprintf(stderr,
+                 "iphone-heic-layout.jpg %s locationCreated GPS values\n",
+                 backend);
+    return 1;
   }
   const auto unmapped = meta.dumpUnmapped();
   if (!dump_contains(unmapped, "GPSImgDirection") ||

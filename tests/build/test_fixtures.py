@@ -799,6 +799,8 @@ class TestFixtureExifTool(unittest.TestCase):
         self.assertEqual(record.get("ExifIFD:DateTimeOriginal"), "2026:09:01 14:44:19")
         self.assertEqual(str(record.get("ExifIFD:SubSecTimeOriginal")), "685")
         self.assertEqual(record.get("ExifIFD:OffsetTimeOriginal"), "-04:00")
+        self.assertAlmostEqual(float(record.get("GPS:GPSLatitude")), 23.75188333, places=5)
+        self.assertAlmostEqual(float(record.get("GPS:GPSLongitude")), 87.10150833, places=5)
         self.assertTrue(record.get("GPS:GPSImgDirection") is not None)
         self.assertTrue(record.get("GPS:GPSSpeed") is not None)
         self.assertTrue(record.get("GPS:GPSHPositioningError") is not None)

@@ -421,7 +421,9 @@ Result<BaseDocument> ExifToolBackend::readBase(
                         path_to_utf8(media));
     }
 
-    std::string command = "-j\n";
+    // -n (ValueConv): GPSLatitude as decimal degrees, not PrintConv
+    // `23 deg 45' 6.78"` which is lossy at 1e-5° and quotes the seconds.
+    std::string command = "-j\n-n\n";
     command += path_to_utf8(media);
     command += "\n-execute\n";
     Result<std::string> body = execute(command);
