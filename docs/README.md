@@ -19,7 +19,7 @@ Documentation is organized by audience.
 
 - [Implementation history](developer/implementation-history.md) — how libumm was built:
   standing constraints, stage-by-stage summary, conventions.
-- [Phase 2 implementation sessions](implementation/README.md) — planned session documents
+- [Implementation sessions](implementation/README.md) — Phase 2 (36–42, complete) and canonical model and casting (43–51, planned) session documents
   for the cross-media convenience accessor phase (sessions 36–42).
 - [Reconciliation policy](reconciliation-policy.md) — precedence and write-sync rules across
   XMP / IPTC IIM / EXIF / QuickTime (normative; referenced from `src/`).
@@ -32,6 +32,14 @@ Documentation is organized by audience.
 - [Decision records](analysis/) — dated, authoritative design decisions (S/M/R/P series),
   including the archived original [concept](analysis/concept.md) and
   [build plan](analysis/build-plan.md).
+- [Canonical properties and location review](analysis/2026-10-03-canonical-properties-and-location-review.md)
+  — C1–C6 on what "canonical" means, the "most common properties" list, `umm::read`
+  coverage, and GPS in IPTC Location structures, with the review outcome (analysis only).
+- [Casting and the canonical model](analysis/2026-10-03-casting-and-canonical-model-decisions.md)
+  — C7–C19: representation versus cast, removal of `exif.gps.position`, up/down/side
+  casting, the property map, `dumpAll()`/`dumpUnmapped()`, the generated property
+  reference, "base" (not "raw") metadata terminology, real-device evidence, and the
+  proposed sessions 43–51 (accepted design; not implemented).
 
 ## Future work
 

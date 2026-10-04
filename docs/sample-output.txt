@@ -1,0 +1,841 @@
+NOTE: Redacted on 2026-10-04 (decision record OQ-R1). GPS coordinates, serial numbers,
+and unique identifiers are replaced with synthetic values of the same format. The small
+EXIF-versus-XMP GPS differences in android1.jpg are preserved. All other values are as
+ExifTool reported them.
+
+======== ./IMG_3851.MOV
+[ExifTool]      ExifToolVersion                 : 12.76
+[System]        FileName                        : IMG_3851.MOV
+[System]        Directory                       : .
+[System]        FileSize                        : 10 MB
+[System]        FileModifyDate                  : 2026:10:03 22:35:11-06:00
+[System]        FileAccessDate                  : 2026:10:03 22:35:13-06:00
+[System]        FileInodeChangeDate             : 2026:10:03 22:35:12-06:00
+[System]        FilePermissions                 : -rwxrwxrwx
+[File]          FileType                        : MOV
+[File]          FileTypeExtension               : mov
+[File]          MIMEType                        : video/quicktime
+[QuickTime]     MajorBrand                      : Apple QuickTime (.MOV/QT)
+[QuickTime]     MinorVersion                    : 0.0.0
+[QuickTime]     CompatibleBrands                : qt
+[QuickTime]     MediaDataSize                   : 10082535
+[QuickTime]     MediaDataOffset                 : 36
+[QuickTime]     MovieHeaderVersion              : 0
+[QuickTime]     CreateDate                      : 2026:10:04 04:35:02
+[QuickTime]     ModifyDate                      : 2026:10:04 04:35:03
+[QuickTime]     TimeScale                       : 600
+[QuickTime]     Duration                        : 5.30 s
+[QuickTime]     PreferredRate                   : 1
+[QuickTime]     PreferredVolume                 : 100.00%
+[QuickTime]     MatrixStructure                 : 1 0 0 0 1 0 0 0 1
+[QuickTime]     PreviewTime                     : 0 s
+[QuickTime]     PreviewDuration                 : 0 s
+[QuickTime]     PosterTime                      : 0 s
+[QuickTime]     SelectionTime                   : 0 s
+[QuickTime]     SelectionDuration               : 0 s
+[QuickTime]     CurrentTime                     : 0 s
+[QuickTime]     NextTrackID                     : 3
+[QuickTime]     HandlerType                     : Metadata Tags
+[Track1]        TrackHeaderVersion              : 0
+[Track1]        TrackCreateDate                 : 2026:10:04 04:35:02
+[Track1]        TrackModifyDate                 : 2026:10:04 04:35:03
+[Track1]        TrackID                         : 1
+[Track1]        TrackDuration                   : 5.29 s
+[Track1]        TrackLayer                      : 0
+[Track1]        TrackVolume                     : 100.00%
+[Track1]        MatrixStructure                 : 1 0 0 0 1 0 0 0 1
+[Track1]        MediaHeaderVersion              : 0
+[Track1]        MediaCreateDate                 : 2026:10:04 04:35:02
+[Track1]        MediaModifyDate                 : 2026:10:04 04:35:03
+[Track1]        MediaTimeScale                  : 44100
+[Track1]        MediaDuration                   : 5.36 s
+[Track1]        MediaLanguageCode               : und
+[Track1]        HandlerClass                    : Media Handler
+[Track1]        HandlerType                     : Audio Track
+[Track1]        HandlerVendorID                 : Apple
+[Track1]        HandlerDescription              : Core Media Audio
+[Track1]        Balance                         : 0
+[Track1]        HandlerClass                    : Data Handler
+[Track1]        HandlerType                     : Alias Data
+[Track1]        HandlerVendorID                 : Apple
+[Track1]        HandlerDescription              : Core Media Data Handler
+[Track1]        AudioFormat                     : mp4a
+[Track1]        AudioChannels                   : 1
+[Track1]        AudioBitsPerSample              : 16
+[Track1]        AudioSampleRate                 : 44100
+[Track1]        PurchaseFileFormat              : mp4a
+[Track2]        TrackHeaderVersion              : 0
+[Track2]        TrackCreateDate                 : 2026:10:04 04:35:02
+[Track2]        TrackModifyDate                 : 2026:10:04 04:35:03
+[Track2]        TrackID                         : 2
+[Track2]        TrackDuration                   : 5.30 s
+[Track2]        TrackLayer                      : 0
+[Track2]        TrackVolume                     : 0.00%
+[Track2]        MatrixStructure                 : 1 0 0 0 1 0 0 0 1
+[Track2]        ImageWidth                      : 1920
+[Track2]        ImageHeight                     : 1080
+[Track2]        CleanApertureDimensions         : 1920x1080
+[Track2]        ProductionApertureDimensions    : 1920x1080
+[Track2]        EncodedPixelsDimensions         : 1920x1080
+[Track2]        MediaHeaderVersion              : 0
+[Track2]        MediaCreateDate                 : 2026:10:04 04:35:02
+[Track2]        MediaModifyDate                 : 2026:10:04 04:35:03
+[Track2]        MediaTimeScale                  : 600
+[Track2]        MediaDuration                   : 5.30 s
+[Track2]        MediaLanguageCode               : und
+[Track2]        HandlerClass                    : Media Handler
+[Track2]        HandlerType                     : Video Track
+[Track2]        HandlerVendorID                 : Apple
+[Track2]        HandlerDescription              : Core Media Video
+[Track2]        GraphicsMode                    : ditherCopy
+[Track2]        OpColor                         : 32768 32768 32768
+[Track2]        HandlerClass                    : Data Handler
+[Track2]        HandlerType                     : Alias Data
+[Track2]        HandlerVendorID                 : Apple
+[Track2]        HandlerDescription              : Core Media Data Handler
+[Track2]        CompressorID                    : avc1
+[Track2]        SourceImageWidth                : 1920
+[Track2]        SourceImageHeight               : 1080
+[Track2]        XResolution                     : 72
+[Track2]        YResolution                     : 72
+[Track2]        CompressorName                  : H.264
+[Track2]        BitDepth                        : 24
+[Track2]        VideoFrameRate                  : 30
+[Keys]          GPSCoordinates                  : 12 deg 34' 56.78" N, 98 deg 7' 6.54" W, 104.65 m Above Sea Level
+[Keys]          Make                            : Apple
+[Keys]          Model                           : iPhone X
+[Keys]          Software                        : 12.4.1
+[Keys]          CreationDate                    : 2019:09:05 14:23:07-04:00
+[Composite]     ImageSize                       : 1920x1080
+[Composite]     Megapixels                      : 2.1
+[Composite]     AvgBitrate                      : 15.2 Mbps
+[Composite]     GPSAltitude                     : 104.65 m
+[Composite]     GPSAltitudeRef                  : Above Sea Level
+[Composite]     GPSLatitude                     : 12 deg 34' 56.78" N
+[Composite]     GPSLongitude                    : 98 deg 7' 6.54" W
+[Composite]     Rotation                        : 0
+[Composite]     GPSPosition                     : 12 deg 34' 56.78" N, 98 deg 7' 6.54" W
+======== ./IMG_3853.HEIC
+[ExifTool]      ExifToolVersion                 : 12.76
+[System]        FileName                        : IMG_3853.HEIC
+[System]        Directory                       : .
+[System]        FileSize                        : 2.8 MB
+[System]        FileModifyDate                  : 2026:10:03 22:32:39-06:00
+[System]        FileAccessDate                  : 2026:10:03 22:32:40-06:00
+[System]        FileInodeChangeDate             : 2026:10:03 22:32:40-06:00
+[System]        FilePermissions                 : -rwxrwxrwx
+[File]          FileType                        : HEIC
+[File]          FileTypeExtension               : heic
+[File]          MIMEType                        : image/heic
+[File]          ExifByteOrder                   : Big-endian (Motorola, MM)
+[File]          ImageWidth                      : 5712
+[File]          ImageHeight                     : 4284
+[QuickTime]     MajorBrand                      : High Efficiency Image Format HEVC still image (.HEIC)
+[QuickTime]     MinorVersion                    : 0.0.0
+[QuickTime]     CompatibleBrands                : mif1, MiHB, MiHA, heix, MiHE, MiPr, miaf, heic, tmap
+[QuickTime]     HandlerType                     : Picture
+[QuickTime]     ImageSpatialExtent              : 640x896
+[QuickTime]     ImageSpatialExtent              : 5712x4284
+[QuickTime]     Rotation                        : 0
+[QuickTime]     ImagePixelDepth                 : 8 8 8
+[QuickTime]     ImageSpatialExtent              : 1024x768
+[QuickTime]     ImagePixelDepth                 : 10 10 10
+[QuickTime]     AuxiliaryImageType              : tag:apple.com,2023:photo:aux:linearthumbnail
+[QuickTime]     ImageSpatialExtent              : 416x312
+[QuickTime]     ImageSpatialExtent              : 512x512
+[QuickTime]     ImageSpatialExtent              : 4096x3072
+[QuickTime]     AuxiliaryImageType              : tag:apple.com,2023:photo:aux:styledeltamap
+[QuickTime]     ImageSpatialExtent              : 2856x2142
+[QuickTime]     ImagePixelDepth                 : 8
+[QuickTime]     AuxiliaryImageType              : urn:com:apple:photo:2020:aux:hdrgainmap
+[QuickTime]     ImageSpatialExtent              : 2016x1512
+[QuickTime]     AuxiliaryImageType              : urn:com:apple:photo:2018:aux:portraiteffectsmatte
+[QuickTime]     AuxiliaryImageType              : urn:com:apple:photo:2019:aux:semanticskinmatte
+[QuickTime]     AuxiliaryImageType              : urn:com:apple:photo:2020:aux:semanticskymatte
+[QuickTime]     ColorProfiles                   : nclx
+[QuickTime]     ColorPrimaries                  : Unspecified
+[QuickTime]     TransferCharacteristics         : Unspecified
+[QuickTime]     MatrixCoefficients              : Unspecified
+[QuickTime]     VideoFullRangeFlag              : 1
+[QuickTime]     HEVCConfigurationVersion        : 1
+[QuickTime]     GeneralProfileSpace             : Conforming
+[QuickTime]     GeneralTierFlag                 : Main Tier
+[QuickTime]     GeneralProfileIDC               : Main Still Picture
+[QuickTime]     GenProfileCompatibilityFlags    : Main Still Picture, Main 10, Main
+[QuickTime]     ConstraintIndicatorFlags        : 176 0 0 0 0 0
+[QuickTime]     GeneralLevelIDC                 : 63 (level 2.1)
+[QuickTime]     MinSpatialSegmentationIDC       : 0
+[QuickTime]     ParallelismType                 : 0
+[QuickTime]     ChromaFormat                    : 4:2:0
+[QuickTime]     BitDepthLuma                    : 8
+[QuickTime]     BitDepthChroma                  : 8
+[QuickTime]     AverageFrameRate                : 0
+[QuickTime]     ConstantFrameRate               : Unknown
+[QuickTime]     NumTemporalLayers               : 1
+[QuickTime]     TemporalIDNested                : No
+[QuickTime]     HEVCConfigurationVersion        : 1
+[QuickTime]     GeneralProfileSpace             : Conforming
+[QuickTime]     GeneralTierFlag                 : Main Tier
+[QuickTime]     GeneralProfileIDC               : Main 10
+[QuickTime]     GenProfileCompatibilityFlags    : Main 10
+[QuickTime]     ConstraintIndicatorFlags        : 176 0 0 0 0 0
+[QuickTime]     GeneralLevelIDC                 : 93 (level 3.1)
+[QuickTime]     MinSpatialSegmentationIDC       : 0
+[QuickTime]     ParallelismType                 : 0
+[QuickTime]     ChromaFormat                    : 4:2:0
+[QuickTime]     BitDepthLuma                    : 10
+[QuickTime]     BitDepthChroma                  : 10
+[QuickTime]     AverageFrameRate                : 0
+[QuickTime]     ConstantFrameRate               : Unknown
+[QuickTime]     NumTemporalLayers               : 1
+[QuickTime]     TemporalIDNested                : No
+[QuickTime]     HEVCConfigurationVersion        : 1
+[QuickTime]     GeneralProfileSpace             : Conforming
+[QuickTime]     GeneralTierFlag                 : Main Tier
+[QuickTime]     GeneralProfileIDC               : Main Still Picture
+[QuickTime]     GenProfileCompatibilityFlags    : Main Still Picture, Main 10, Main
+[QuickTime]     ConstraintIndicatorFlags        : 176 0 0 0 0 0
+[QuickTime]     GeneralLevelIDC                 : 93 (level 3.1)
+[QuickTime]     MinSpatialSegmentationIDC       : 0
+[QuickTime]     ParallelismType                 : 0
+[QuickTime]     ChromaFormat                    : 4:2:0
+[QuickTime]     BitDepthLuma                    : 8
+[QuickTime]     BitDepthChroma                  : 8
+[QuickTime]     AverageFrameRate                : 0
+[QuickTime]     ConstantFrameRate               : Unknown
+[QuickTime]     NumTemporalLayers               : 1
+[QuickTime]     TemporalIDNested                : No
+[QuickTime]     HEVCConfigurationVersion        : 1
+[QuickTime]     GeneralProfileSpace             : Conforming
+[QuickTime]     GeneralTierFlag                 : Main Tier
+[QuickTime]     GeneralProfileIDC               : Main 10
+[QuickTime]     GenProfileCompatibilityFlags    : Main 10
+[QuickTime]     ConstraintIndicatorFlags        : 176 0 0 0 0 0
+[QuickTime]     GeneralLevelIDC                 : 90 (level 3.0)
+[QuickTime]     MinSpatialSegmentationIDC       : 0
+[QuickTime]     ParallelismType                 : 0
+[QuickTime]     ChromaFormat                    : 4:2:0
+[QuickTime]     BitDepthLuma                    : 10
+[QuickTime]     BitDepthChroma                  : 10
+[QuickTime]     AverageFrameRate                : 0
+[QuickTime]     ConstantFrameRate               : Unknown
+[QuickTime]     NumTemporalLayers               : 1
+[QuickTime]     TemporalIDNested                : No
+[QuickTime]     HEVCConfigurationVersion        : 1
+[QuickTime]     GeneralProfileSpace             : Conforming
+[QuickTime]     GeneralTierFlag                 : Main Tier
+[QuickTime]     GeneralProfileIDC               : Format Range Extensions
+[QuickTime]     GenProfileCompatibilityFlags    : Format Range Extensions
+[QuickTime]     ConstraintIndicatorFlags        : 191 200 0 0 0 0
+[QuickTime]     GeneralLevelIDC                 : 93 (level 3.1)
+[QuickTime]     MinSpatialSegmentationIDC       : 0
+[QuickTime]     ParallelismType                 : 0
+[QuickTime]     ChromaFormat                    : Monochrome
+[QuickTime]     BitDepthLuma                    : 8
+[QuickTime]     BitDepthChroma                  : 8
+[QuickTime]     AverageFrameRate                : 0
+[QuickTime]     ConstantFrameRate               : Unknown
+[QuickTime]     NumTemporalLayers               : 1
+[QuickTime]     TemporalIDNested                : No
+[QuickTime]     HEVCConfigurationVersion        : 1
+[QuickTime]     GeneralProfileSpace             : Conforming
+[QuickTime]     GeneralTierFlag                 : Main Tier
+[QuickTime]     GeneralProfileIDC               : Format Range Extensions
+[QuickTime]     GenProfileCompatibilityFlags    : Format Range Extensions
+[QuickTime]     ConstraintIndicatorFlags        : 191 200 0 0 0 0
+[QuickTime]     GeneralLevelIDC                 : 150 (level 5.0)
+[QuickTime]     MinSpatialSegmentationIDC       : 0
+[QuickTime]     ParallelismType                 : 0
+[QuickTime]     ChromaFormat                    : Monochrome
+[QuickTime]     BitDepthLuma                    : 8
+[QuickTime]     BitDepthChroma                  : 8
+[QuickTime]     AverageFrameRate                : 0
+[QuickTime]     ConstantFrameRate               : Unknown
+[QuickTime]     NumTemporalLayers               : 1
+[QuickTime]     TemporalIDNested                : No
+[QuickTime]     MediaDataSize                   : 2744709
+[QuickTime]     MediaDataOffset                 : 35657
+[Meta]          PrimaryItemReference            : 46
+[Meta]          MetaImageSize                   : 5712x4284 0 1287 4096 3072 0 516 2856 2142 0 0 64 0 0 15 16960 20 23974 15 16960 65535 64848 15 16960 20 23974 15 16960 10 60460 15 16960 0 10 15 16960 0 10 15 16960
+[XMP-x]         XMPToolkit                      : XMP Core 6.0.0
+[XMP-apdi]      AuxiliaryImageSubType           : portraiteffectsmatte
+[XMP-apdi]      NativeFormat                    : 1278226488
+[XMP-apdi]      AuxiliaryImageType              : depth
+[XMP-apdi]      StoredFormat                    : 1278226488
+[XMP-portraitEffectsMatte] PortraitEffectsMatteVersion: 65537
+[XMP-semanticSegmentationMatte] SemanticSegmentationMatteVersion: 65536
+[XMP-semanticSegmentationMatte] SemanticSegmentationMatteVersion: 65536
+[XMP-HDRGainMap] HDRGainMapVersion              : 131072
+[XMP-HDRGainMap] HDRGainMapHeadroom             : 2.522220
+[IFD0]          Make                            : Apple
+[IFD0]          Model                           : iPhone 16 Pro
+[IFD0]          Orientation                     : Horizontal (normal)
+[IFD0]          XResolution                     : 72
+[IFD0]          YResolution                     : 72
+[IFD0]          ResolutionUnit                  : inches
+[IFD0]          Software                        : 26.6
+[IFD0]          ModifyDate                      : 2026:09:01 14:44:19
+[IFD0]          HostComputer                    : iPhone 16 Pro
+[ExifIFD]       ExposureTime                    : 1/8130
+[ExifIFD]       FNumber                         : 1.8
+[ExifIFD]       ExposureProgram                 : Program AE
+[ExifIFD]       ISO                             : 80
+[ExifIFD]       ExifVersion                     : 0232
+[ExifIFD]       DateTimeOriginal                : 2026:09:01 14:44:19
+[ExifIFD]       CreateDate                      : 2026:09:01 14:44:19
+[ExifIFD]       OffsetTime                      : -04:00
+[ExifIFD]       OffsetTimeOriginal              : -04:00
+[ExifIFD]       OffsetTimeDigitized             : -04:00
+[ExifIFD]       ShutterSpeedValue               : 1/8130
+[ExifIFD]       ApertureValue                   : 1.8
+[ExifIFD]       BrightnessValue                 : 10.61350032
+[ExifIFD]       ExposureCompensation            : 0
+[ExifIFD]       MeteringMode                    : Multi-segment
+[ExifIFD]       Flash                           : Off, Did not fire
+[ExifIFD]       FocalLength                     : 6.8 mm
+[ExifIFD]       SubjectArea                     : 2853 2138 3146 1883
+[ExifIFD]       SubSecTimeOriginal              : 685
+[ExifIFD]       SubSecTimeDigitized             : 685
+[ExifIFD]       ColorSpace                      : Uncalibrated
+[ExifIFD]       ExifImageWidth                  : 5712
+[ExifIFD]       ExifImageHeight                 : 4284
+[ExifIFD]       SensingMethod                   : One-chip color area
+[ExifIFD]       SceneType                       : Directly photographed
+[ExifIFD]       ExposureMode                    : Auto
+[ExifIFD]       WhiteBalance                    : Auto
+[ExifIFD]       DigitalZoomRatio                : 1.001402525
+[ExifIFD]       FocalLengthIn35mmFormat         : 24 mm
+[ExifIFD]       LensInfo                        : 2.220000029-15.65999985mm f/1.779999971-2.8
+[ExifIFD]       LensMake                        : Apple
+[ExifIFD]       LensModel                       : iPhone 16 Pro back triple camera 6.765mm f/1.78
+[ExifIFD]       CompositeImage                  : General Composite Image
+[Apple]         MakerNoteVersion                : 16
+[Apple]         RunTimeFlags                    : Valid
+[Apple]         RunTimeValue                    : 12233131269791
+[Apple]         RunTimeScale                    : 1000000000
+[Apple]         RunTimeEpoch                    : 0
+[Apple]         AEStable                        : Yes
+[Apple]         AETarget                        : 197
+[Apple]         AEAverage                       : 195
+[Apple]         AFStable                        : Yes
+[Apple]         AccelerationVector              : -1.030357122 -0.01277142204 0.0590058006
+[Apple]         FocusDistanceRange              : 0.12 - 1.24 m
+[Apple]         OISMode                         : 5
+[Apple]         ContentIdentifier               : 00000000-0000-4000-8000-000000000001
+[Apple]         ImageCaptureType                : Unknown (12)
+[Apple]         LivePhotoVideoIndex             : 8595185700
+[Apple]         HDRHeadroom                     : 1.00999999
+[Apple]         SignalToNoiseRatio              : 65.61946108
+[Apple]         PhotoIdentifier                 : 00000000-0000-4000-8000-000000000002
+[Apple]         FocusPosition                   : 70
+[Apple]         HDRGain                         : 3.195510147
+[Apple]         FrontFacingCamera               : No
+[GPS]           GPSLatitudeRef                  : North
+[GPS]           GPSLatitude                     : 23 deg 45' 6.78"
+[GPS]           GPSLongitudeRef                 : West
+[GPS]           GPSLongitude                    : 87 deg 6' 5.43"
+[GPS]           GPSAltitudeRef                  : Above Sea Level
+[GPS]           GPSAltitude                     : 12.07893416 m
+[GPS]           GPSTimeStamp                    : 18:44:19
+[GPS]           GPSSpeedRef                     : km/h
+[GPS]           GPSSpeed                        : 0.611859844
+[GPS]           GPSImgDirectionRef              : True North
+[GPS]           GPSImgDirection                 : 87.8048401
+[GPS]           GPSDestBearingRef               : True North
+[GPS]           GPSDestBearing                  : 87.8048401
+[GPS]           GPSDateStamp                    : 2026:09:01
+[GPS]           GPSHPositioningError            : 5.150825315 m
+[ICC-header]    ProfileCMMType                  : Apple Computer Inc.
+[ICC-header]    ProfileVersion                  : 4.0.0
+[ICC-header]    ProfileClass                    : Display Device Profile
+[ICC-header]    ColorSpaceData                  : RGB
+[ICC-header]    ProfileConnectionSpace          : XYZ
+[ICC-header]    ProfileDateTime                 : 2022:01:01 00:00:00
+[ICC-header]    ProfileFileSignature            : acsp
+[ICC-header]    PrimaryPlatform                 : Apple Computer Inc.
+[ICC-header]    CMMFlags                        : Not Embedded, Independent
+[ICC-header]    DeviceManufacturer              : Apple Computer Inc.
+[ICC-header]    DeviceModel                     : 
+[ICC-header]    DeviceAttributes                : Reflective, Glossy, Positive, Color
+[ICC-header]    RenderingIntent                 : Perceptual
+[ICC-header]    ConnectionSpaceIlluminant       : 0.9642 1 0.82491
+[ICC-header]    ProfileCreator                  : Apple Computer Inc.
+[ICC-header]    ProfileID                       : 0
+[ICC_Profile]   ProfileDescription              : Display P3
+[ICC_Profile]   ProfileCopyright                : Copyright Apple Inc., 2022
+[ICC_Profile]   MediaWhitePoint                 : 0.96419 1 0.82489
+[ICC_Profile]   RedMatrixColumn                 : 0.51512 0.2412 -0.00105
+[ICC_Profile]   GreenMatrixColumn               : 0.29198 0.69225 0.04189
+[ICC_Profile]   BlueMatrixColumn                : 0.1571 0.06657 0.78407
+[ICC_Profile]   RedTRC                          : (Binary data 32 bytes, use -b option to extract)
+[ICC_Profile]   ChromaticAdaptation             : 1.04788 0.02292 -0.0502 0.02959 0.99048 -0.01706 -0.00923 0.01508 0.75168
+[ICC_Profile]   BlueTRC                         : (Binary data 32 bytes, use -b option to extract)
+[ICC_Profile]   GreenTRC                        : (Binary data 32 bytes, use -b option to extract)
+[ICC-header2]   ProfileCMMType                  : Apple Computer Inc.
+[ICC-header2]   ProfileVersion                  : 4.0.0
+[ICC-header2]   ProfileClass                    : Display Device Profile
+[ICC-header2]   ColorSpaceData                  : RGB
+[ICC-header2]   ProfileConnectionSpace          : XYZ
+[ICC-header2]   ProfileDateTime                 : 2019:01:01 00:00:00
+[ICC-header2]   ProfileFileSignature            : acsp
+[ICC-header2]   PrimaryPlatform                 : Apple Computer Inc.
+[ICC-header2]   CMMFlags                        : Not Embedded, Independent
+[ICC-header2]   DeviceManufacturer              : Apple Computer Inc.
+[ICC-header2]   DeviceModel                     : 
+[ICC-header2]   DeviceAttributes                : Reflective, Glossy, Positive, Color
+[ICC-header2]   RenderingIntent                 : Perceptual
+[ICC-header2]   ConnectionSpaceIlluminant       : 0.9642 1 0.82491
+[ICC-header2]   ProfileCreator                  : Apple Computer Inc.
+[ICC-header2]   ProfileID                       : 5fbfd541cbee4e95e59562c4b432e80f
+[ICC_Profile2]  ProfileDescription              : Display P3 Linear
+[ICC_Profile2]  ProfileCopyright                : Copyright Apple Inc., 2019
+[ICC_Profile2]  MediaWhitePoint                 : 0.9642 1 0.82491
+[ICC_Profile2]  RedMatrixColumn                 : 0.51512 0.2412 -0.00105
+[ICC_Profile2]  GreenMatrixColumn               : 0.29198 0.69225 0.04189
+[ICC_Profile2]  BlueMatrixColumn                : 0.1571 0.06657 0.78407
+[ICC_Profile2]  RedTRC                          : (Binary data 16 bytes, use -b option to extract)
+[ICC_Profile2]  ChromaticAdaptation             : 1.04788 0.02292 -0.0502 0.02959 0.99048 -0.01706 -0.00923 0.01508 0.75168
+[ICC_Profile2]  BlueTRC                         : (Binary data 16 bytes, use -b option to extract)
+[ICC_Profile2]  GreenTRC                        : (Binary data 16 bytes, use -b option to extract)
+[ICC-header3]   ProfileCMMType                  : Apple Computer Inc.
+[ICC-header3]   ProfileVersion                  : 2.1.0
+[ICC-header3]   ProfileClass                    : Display Device Profile
+[ICC-header3]   ColorSpaceData                  : GRAY
+[ICC-header3]   ProfileConnectionSpace          : XYZ
+[ICC-header3]   ProfileDateTime                 : 2016:01:01 00:00:00
+[ICC-header3]   ProfileFileSignature            : acsp
+[ICC-header3]   PrimaryPlatform                 : Apple Computer Inc.
+[ICC-header3]   CMMFlags                        : Not Embedded, Independent
+[ICC-header3]   DeviceManufacturer              : Apple Computer Inc.
+[ICC-header3]   DeviceModel                     : 
+[ICC-header3]   DeviceAttributes                : Reflective, Glossy, Positive, Color
+[ICC-header3]   RenderingIntent                 : Perceptual
+[ICC-header3]   ConnectionSpaceIlluminant       : 0.9642 1 0.82491
+[ICC-header3]   ProfileCreator                  : Apple Computer Inc.
+[ICC-header3]   ProfileID                       : 0
+[ICC_Profile3]  ProfileDescription              : Linear Gray
+[ICC_Profile3]  ProfileCopyright                : Copyright Apple Inc., 2016
+[ICC_Profile3]  MediaWhitePoint                 : 0.9642 1 0.82491
+[ICC_Profile3]  GrayTRC                         : (Binary data 14 bytes, use -b option to extract)
+[ICC-header4]   ProfileCMMType                  : Apple Computer Inc.
+[ICC-header4]   ProfileVersion                  : 4.4.0
+[ICC-header4]   ProfileClass                    : Display Device Profile
+[ICC-header4]   ColorSpaceData                  : RGB
+[ICC-header4]   ProfileConnectionSpace          : XYZ
+[ICC-header4]   ProfileDateTime                 : 2026:09:01 15:57:13
+[ICC-header4]   ProfileFileSignature            : acsp
+[ICC-header4]   PrimaryPlatform                 : Apple Computer Inc.
+[ICC-header4]   CMMFlags                        : Not Embedded, Independent
+[ICC-header4]   DeviceManufacturer              : Apple Computer Inc.
+[ICC-header4]   DeviceModel                     : 
+[ICC-header4]   DeviceAttributes                : Reflective, Glossy, Positive, Color
+[ICC-header4]   RenderingIntent                 : Perceptual
+[ICC-header4]   ConnectionSpaceIlluminant       : 0.9642 1 0.82491
+[ICC-header4]   ProfileCreator                  : Apple Computer Inc.
+[ICC-header4]   ProfileID                       : 0
+[ICC_Profile4]  ProfileDescription              : Display P3 Primaries; PQ (Adaptive Gain Curve 48CCB598C928883F)
+[ICC_Profile4]  ProfileCopyright                : Copyright Apple Inc., 2026
+[ICC_Profile4]  MediaWhitePoint                 : 0.96419 1 0.82489
+[ICC_Profile4]  AToB0                           : (Binary data 19478 bytes, use -b option to extract)
+[ICC_Profile4]  BToA0                           : (Binary data 6412 bytes, use -b option to extract)
+[ICC_Profile4]  ChromaticAdaptation             : 1.04788 0.02292 -0.0502 0.02959 0.99048 -0.01706 -0.00923 0.01508 0.75168
+[Composite]     RunTimeSincePowerUp             : 3:23:53
+[Composite]     Aperture                        : 1.8
+[Composite]     ImageSize                       : 5712x4284
+[Composite]     Megapixels                      : 24.5
+[Composite]     ScaleFactor35efl                : 3.5
+[Composite]     ShutterSpeed                    : 1/8130
+[Composite]     SubSecCreateDate                : 2026:09:01 14:44:19.685-04:00
+[Composite]     SubSecDateTimeOriginal          : 2026:09:01 14:44:19.685-04:00
+[Composite]     SubSecModifyDate                : 2026:09:01 14:44:19-04:00
+[Composite]     GPSAltitude                     : 12 m Above Sea Level
+[Composite]     GPSDateTime                     : 2026:09:01 18:44:19Z
+[Composite]     GPSLatitude                     : 23 deg 45' 6.78" N
+[Composite]     GPSLongitude                    : 87 deg 6' 5.43" W
+[Composite]     CircleOfConfusion               : 0.008 mm
+[Composite]     FOV                             : 73.7 deg
+[Composite]     FocalLength35efl                : 6.8 mm (35 mm equivalent: 24.0 mm)
+[Composite]     GPSPosition                     : 23 deg 45' 6.78" N, 87 deg 6' 5.43" W
+[Composite]     HyperfocalDistance              : 3.04 m
+[Composite]     LightValue                      : 15.0
+[Composite]     LensID                          : iPhone 16 Pro back triple camera 6.765mm f/1.78
+======== ./android1.dng
+[ExifTool]      ExifToolVersion                 : 12.76
+[System]        FileName                        : android1.dng
+[System]        Directory                       : .
+[System]        FileSize                        : 25 MB
+[System]        FileModifyDate                  : 2026:10:03 22:49:25-06:00
+[System]        FileAccessDate                  : 2026:10:03 22:49:55-06:00
+[System]        FileInodeChangeDate             : 2026:10:03 22:49:54-06:00
+[System]        FilePermissions                 : -rwxrwxrwx
+[File]          FileType                        : DNG
+[File]          FileTypeExtension               : dng
+[File]          MIMEType                        : image/x-adobe-dng
+[File]          ExifByteOrder                   : Little-endian (Intel, II)
+[File]          CurrentIPTCDigest               : 0ced2684c9e2c2a115b7365d9d3fa305
+[IFD0]          SubfileType                     : Full-resolution image
+[IFD0]          ImageWidth                      : 4048
+[IFD0]          ImageHeight                     : 3044
+[IFD0]          BitsPerSample                   : 16
+[IFD0]          Compression                     : Uncompressed
+[IFD0]          PhotometricInterpretation       : Color Filter Array
+[IFD0]          Make                            : Google
+[IFD0]          Model                           : Pixel XL
+[IFD0]          StripOffsets                    : (Binary data 26034 bytes, use -b option to extract)
+[IFD0]          Orientation                     : Horizontal (normal)
+[IFD0]          SamplesPerPixel                 : 1
+[IFD0]          RowsPerStrip                    : 1
+[IFD0]          StripByteCounts                 : (Binary data 15219 bytes, use -b option to extract)
+[IFD0]          XResolution                     : 72
+[IFD0]          YResolution                     : 72
+[IFD0]          PlanarConfiguration             : Chunky
+[IFD0]          ResolutionUnit                  : inches
+[IFD0]          Software                        : google/marlin/marlin:7.1/NAE63P/3319494:user/release-keys
+[IFD0]          ModifyDate                      : 2016:10:25 20:47:28
+[IFD0]          CFARepeatPatternDim             : 2 2
+[IFD0]          CFAPattern2                     : 2 1 1 0
+[IFD0]          Copyright                       : 
+[IFD0]          ExposureTime                    : 1/342
+[IFD0]          FNumber                         : 2.0
+[IFD0]          ISO                             : 50
+[IFD0]          DateTimeOriginal                : 2016:10:25 20:47:28
+[IFD0]          FocalLength                     : 4.7 mm
+[IFD0]          TIFF-EPStandardID               : 1 0 0 0
+[IFD0]          DNGVersion                      : 1.4.0.0
+[IFD0]          DNGBackwardVersion              : 1.1.0.0
+[IFD0]          UniqueCameraModel               : Pixel XL-Google-google
+[IFD0]          CFAPlaneColor                   : Red,Green,Blue
+[IFD0]          CFALayout                       : Rectangular
+[IFD0]          BlackLevelRepeatDim             : 2 2
+[IFD0]          BlackLevel                      : 63.75 63.5 63.5 63.75
+[IFD0]          WhiteLevel                      : 1023
+[IFD0]          DefaultScale                    : 1 1
+[IFD0]          DefaultCropOrigin               : 8 8
+[IFD0]          DefaultCropSize                 : 4032 3020
+[IFD0]          ColorMatrix1                    : 0.71875 -0.1953125 -0.0859375 -0.5625 1.3515625 0.1640625 -0.2265625 0.3125 0.546875
+[IFD0]          ColorMatrix2                    : 1.0625 -0.3125 -0.2734375 -0.5625 1.65625 -0.1171875 -0.0546875 0.1953125 0.6015625
+[IFD0]          CameraCalibration1              : 0.984375 0 0 0 1 0 0 0 0.984375
+[IFD0]          CameraCalibration2              : 0.984375 0 0 0 1 0 0 0 0.984375
+[IFD0]          AsShotNeutral                   : 0.453125 1.0078125 0.6640625
+[IFD0]          CalibrationIlluminant1          : D65
+[IFD0]          CalibrationIlluminant2          : Standard Light A
+[IFD0]          ActiveArea                      : 8 0 3044 4048
+[IFD0]          ForwardMatrix1                  : 0.6640625 0.234375 0.0625 0.2578125 0.875 -0.1328125 0.09375 -0.3046875 1.0390625
+[IFD0]          ForwardMatrix2                  : 0.6640625 0.0078125 0.2890625 0.203125 0.6640625 0.140625 -0.0078125 -0.5078125 1.34375
+[IFD0]          OpcodeList2                     : GainMap, GainMap, GainMap, GainMap
+[IFD0]          OpcodeList3                     : 
+[IFD0]          NoiseProfile                    : 0.000118407836 2.002420975e-06 0.000118407836 2.002420975e-06 0.000118407836 2.002420975e-06
+[XMP-x]         XMPToolkit                      : XMP Core 5.1.2
+[XMP-photoshop] DateCreated                     : 2016:10:25 20:47:28
+[XMP-xmp]       CreateDate                      : 2016:10:25 20:47:28
+[XMP-xmp]       Rating                          : 0
+[XMP-photomech] ColorClass                      : 0 (None)
+[XMP-photomech] Tagged                          : Yes
+[XMP-photomech] Prefs                           : Tagged:1, ColorClass:0, Rating:0, FrameNum:-00001
+[XMP-photomech] PMVersion                       : PM5
+[IPTC]          ApplicationRecordVersion        : 3
+[IPTC]          DateCreated                     : 2016:10:25
+[IPTC]          TimeCreated                     : 20:47:28-07:00
+[IPTC]          Prefs                           : Tagged:1, ColorClass:0, Rating:0, FrameNum:-00001
+[Composite]     Aperture                        : 2.0
+[Composite]     CFAPattern                      : [Blue,Green][Green,Red]
+[Composite]     ImageSize                       : 4048x3044
+[Composite]     Megapixels                      : 12.3
+[Composite]     ShutterSpeed                    : 1/342
+[Composite]     DateTimeCreated                 : 2016:10:25 20:47:28-07:00
+[Composite]     FocalLength35efl                : 4.7 mm
+[Composite]     LightValue                      : 11.4
+======== ./android1.jpg
+[ExifTool]      ExifToolVersion                 : 12.76
+[System]        FileName                        : android1.jpg
+[System]        Directory                       : .
+[System]        FileSize                        : 4.5 MB
+[System]        FileModifyDate                  : 2026:10:03 22:49:23-06:00
+[System]        FileAccessDate                  : 2026:10:03 22:49:45-06:00
+[System]        FileInodeChangeDate             : 2026:10:03 22:49:45-06:00
+[System]        FilePermissions                 : -rwxrwxrwx
+[File]          FileType                        : JPEG
+[File]          FileTypeExtension               : jpg
+[File]          MIMEType                        : image/jpeg
+[File]          ExifByteOrder                   : Big-endian (Motorola, MM)
+[File]          CurrentIPTCDigest               : f6aafe3befd3623948e34c140891b8bd
+[File]          ImageWidth                      : 4048
+[File]          ImageHeight                     : 3036
+[File]          EncodingProcess                 : Baseline DCT, Huffman coding
+[File]          BitsPerSample                   : 8
+[File]          ColorComponents                 : 3
+[File]          YCbCrSubSampling                : YCbCr4:2:0 (2 2)
+[IFD0]          Make                            : Google
+[IFD0]          Model                           : Pixel XL
+[IFD0]          XResolution                     : 72
+[IFD0]          YResolution                     : 72
+[IFD0]          ResolutionUnit                  : inches
+[IFD0]          Software                        : marlin-user 7.1 NAE63P 3319494 release-keys
+[IFD0]          ModifyDate                      : 2016:10:25 13:47:28
+[IFD0]          YCbCrPositioning                : Centered
+[ExifIFD]       ExposureTime                    : 1/342
+[ExifIFD]       FNumber                         : 2.0
+[ExifIFD]       ExposureProgram                 : Not Defined
+[ExifIFD]       ISO                             : 50
+[ExifIFD]       ExifVersion                     : 0220
+[ExifIFD]       DateTimeOriginal                : 2016:10:25 13:47:28
+[ExifIFD]       CreateDate                      : 2016:10:25 13:47:28
+[ExifIFD]       ComponentsConfiguration         : Y, Cb, Cr, -
+[ExifIFD]       ShutterSpeedValue               : 1/342
+[ExifIFD]       ApertureValue                   : 2.0
+[ExifIFD]       BrightnessValue                 : 0
+[ExifIFD]       MeteringMode                    : Unknown
+[ExifIFD]       Flash                           : Off, Did not fire
+[ExifIFD]       FocalLength                     : 4.7 mm
+[ExifIFD]       SubSecTime                      : 389696
+[ExifIFD]       SubSecTimeOriginal              : 389696
+[ExifIFD]       SubSecTimeDigitized             : 389696
+[ExifIFD]       FlashpixVersion                 : 0100
+[ExifIFD]       ColorSpace                      : sRGB
+[ExifIFD]       ExifImageWidth                  : 4048
+[ExifIFD]       ExifImageHeight                 : 3036
+[ExifIFD]       SensingMethod                   : Unknown (0)
+[ExifIFD]       SceneType                       : Unknown (0)
+[ExifIFD]       ExposureMode                    : Auto
+[ExifIFD]       WhiteBalance                    : Auto
+[ExifIFD]       FocalLengthIn35mmFormat         : 0 mm
+[ExifIFD]       SceneCaptureType                : Standard
+[InteropIFD]    InteropIndex                    : R98 - DCF basic file (sRGB)
+[InteropIFD]    InteropVersion                  : 0100
+[GPS]           GPSAltitudeRef                  : Above Sea Level
+[GPS]           GPSLatitudeRef                  : North
+[GPS]           GPSLatitude                     : 34 deg 56' 7.89"
+[GPS]           GPSLongitudeRef                 : West
+[GPS]           GPSLongitude                    : 76 deg 5' 4.32"
+[GPS]           GPSAltitudeRef                  : Above Sea Level
+[GPS]           GPSAltitude                     : 0 m
+[GPS]           GPSTimeStamp                    : 20:47:22
+[GPS]           GPSProcessingMethod             : ASCII
+[GPS]           GPSDateStamp                    : 2016:10:25
+[IPTC]          ApplicationRecordVersion        : 3
+[IPTC]          DateCreated                     : 2016:10:25
+[IPTC]          TimeCreated                     : 13:47:28-07:00
+[IPTC]          Prefs                           : Tagged:1, ColorClass:0, Rating:0, FrameNum:-00001
+[Photoshop]     XResolution                     : 200
+[Photoshop]     DisplayedUnitsX                 : inches
+[Photoshop]     YResolution                     : 200
+[Photoshop]     DisplayedUnitsY                 : inches
+[Photoshop]     CopyrightFlag                   : False
+[XMP-x]         XMPToolkit                      : XMP Core 5.1.2
+[XMP-photoshop] DateCreated                     : 2016:10:25 13:47:28.3897
+[XMP-xmp]       CreateDate                      : 2016:10:25 13:47:28.3897
+[XMP-xmp]       Rating                          : 0
+[XMP-exif]      GPSLatitude                     : 34 deg 56' 7.88" N
+[XMP-exif]      GPSLongitude                    : 76 deg 5' 4.29" W
+[XMP-exif]      GPSAltitudeRef                  : Above Sea Level
+[XMP-exif]      GPSAltitude                     : 0 m
+[XMP-exif]      GPSDateTime                     : 2016:10:25 20:47:22Z
+[XMP-photomech] ColorClass                      : 0 (None)
+[XMP-photomech] Tagged                          : Yes
+[XMP-photomech] Prefs                           : Tagged:1, ColorClass:0, Rating:0, FrameNum:-00001
+[XMP-photomech] PMVersion                       : PM5
+[Composite]     Aperture                        : 2.0
+[Composite]     ImageSize                       : 4048x3036
+[Composite]     Megapixels                      : 12.3
+[Composite]     ShutterSpeed                    : 1/342
+[Composite]     SubSecCreateDate                : 2016:10:25 13:47:28.389696
+[Composite]     SubSecDateTimeOriginal          : 2016:10:25 13:47:28.389696
+[Composite]     SubSecModifyDate                : 2016:10:25 13:47:28.389696
+[Composite]     GPSAltitude                     : 0 m Above Sea Level
+[Composite]     GPSDateTime                     : 2016:10:25 20:47:22Z
+[Composite]     GPSLatitude                     : 34 deg 56' 7.89" N
+[Composite]     GPSLongitude                    : 76 deg 5' 4.32" W
+[Composite]     DateTimeCreated                 : 2016:10:25 13:47:28-07:00
+[Composite]     GPSLatitudeRef                  : North
+[Composite]     GPSLongitudeRef                 : West
+[Composite]     FocalLength35efl                : 4.7 mm
+[Composite]     GPSPosition                     : 34 deg 56' 7.89" N, 76 deg 5' 4.32" W
+[Composite]     LightValue                      : 11.4
+======== ./gopro.mp4
+[ExifTool]      ExifToolVersion                 : 12.76
+[System]        FileName                        : gopro.mp4
+[System]        Directory                       : .
+[System]        FileSize                        : 97 MB
+[System]        FileModifyDate                  : 2026:10:03 22:47:10-06:00
+[System]        FileAccessDate                  : 2026:10:03 22:47:42-06:00
+[System]        FileInodeChangeDate             : 2026:10:03 22:47:42-06:00
+[System]        FilePermissions                 : -rwxrwxrwx
+[File]          FileType                        : MP4
+[File]          FileTypeExtension               : mp4
+[File]          MIMEType                        : video/mp4
+[QuickTime]     MajorBrand                      : MP4 Base Media v1 [IS0 14496-12:2003]
+[QuickTime]     MinorVersion                    : 0.2.0
+[QuickTime]     CompatibleBrands                : isom, iso2, avc1, mp41
+[QuickTime]     MovieHeaderVersion              : 0
+[QuickTime]     CreateDate                      : 2016:01:07 20:05:15
+[QuickTime]     ModifyDate                      : 2016:01:07 20:05:15
+[QuickTime]     TimeScale                       : 30000
+[QuickTime]     Duration                        : 0:00:51
+[QuickTime]     PreferredRate                   : 1
+[QuickTime]     PreferredVolume                 : 100.00%
+[QuickTime]     MatrixStructure                 : 1 0 0 0 1 0 0 0 1
+[QuickTime]     PreviewTime                     : 0 s
+[QuickTime]     PreviewDuration                 : 0 s
+[QuickTime]     PosterTime                      : 0 s
+[QuickTime]     SelectionTime                   : 0 s
+[QuickTime]     SelectionDuration               : 0 s
+[QuickTime]     CurrentTime                     : 0 s
+[QuickTime]     NextTrackID                     : 5
+[QuickTime]     MediaDataSize                   : 96820557
+[QuickTime]     MediaDataOffset                 : 147228
+[Track1]        TrackHeaderVersion              : 0
+[Track1]        TrackCreateDate                 : 2016:01:07 20:05:15
+[Track1]        TrackModifyDate                 : 2016:01:07 20:05:15
+[Track1]        TrackID                         : 1
+[Track1]        TrackDuration                   : 0:00:51
+[Track1]        TrackLayer                      : 0
+[Track1]        TrackVolume                     : 0.00%
+[Track1]        MatrixStructure                 : 1 0 0 0 1 0 0 0 1
+[Track1]        ImageWidth                      : 1920
+[Track1]        ImageHeight                     : 1080
+[Track1]        MediaHeaderVersion              : 0
+[Track1]        MediaCreateDate                 : 2016:01:07 20:05:15
+[Track1]        MediaModifyDate                 : 2016:01:07 20:05:15
+[Track1]        MediaTimeScale                  : 30000
+[Track1]        MediaDuration                   : 0:00:51
+[Track1]        HandlerClass                    : Media Handler
+[Track1]        HandlerType                     : Video Track
+[Track1]        HandlerVendorID                 : Apple
+[Track1]        HandlerDescription              : GoPro H.265
+[Track1]        GraphicsMode                    : ditherCopy
+[Track1]        OpColor                         : 32768 32768 32768
+[Track1]        HandlerClass                    : Media Handler
+[Track1]        HandlerType                     : Video Track
+[Track1]        HandlerVendorID                 : Apple
+[Track1]        CompressorID                    : avc1
+[Track1]        SourceImageWidth                : 1920
+[Track1]        SourceImageHeight               : 1080
+[Track1]        XResolution                     : 72
+[Track1]        YResolution                     : 72
+[Track1]        CompressorName                  : Lavc59.37.100 h264_nvenc
+[Track1]        BitDepth                        : 24
+[Track1]        ColorProfiles                   : nclx
+[Track1]        ColorPrimaries                  : BT.709
+[Track1]        TransferCharacteristics         : BT.709
+[Track1]        MatrixCoefficients              : BT.709
+[Track1]        VideoFullRangeFlag              : 1
+[Track1]        BufferSize                      : 1875000
+[Track1]        MaxBitrate                      : 15053176
+[Track1]        AverageBitrate                  : 15053176
+[Track1]        VideoFrameRate                  : 29.97
+[Track1]        TimeCode                        : 3
+[Track2]        TrackHeaderVersion              : 0
+[Track2]        TrackCreateDate                 : 2016:01:07 20:05:15
+[Track2]        TrackModifyDate                 : 2016:01:07 20:05:15
+[Track2]        TrackID                         : 2
+[Track2]        TrackDuration                   : 0:00:51
+[Track2]        TrackLayer                      : 0
+[Track2]        TrackVolume                     : 100.00%
+[Track2]        MatrixStructure                 : 1 0 0 0 1 0 0 0 1
+[Track2]        MediaHeaderVersion              : 0
+[Track2]        MediaCreateDate                 : 2016:01:07 20:05:15
+[Track2]        MediaModifyDate                 : 2016:01:07 20:05:15
+[Track2]        MediaTimeScale                  : 48000
+[Track2]        MediaDuration                   : 0:00:51
+[Track2]        HandlerClass                    : Media Handler
+[Track2]        HandlerType                     : Audio Track
+[Track2]        HandlerVendorID                 : Apple
+[Track2]        HandlerDescription              : GoPro AAC
+[Track2]        Balance                         : 0
+[Track2]        HandlerClass                    : Media Handler
+[Track2]        HandlerType                     : Audio Track
+[Track2]        HandlerVendorID                 : Apple
+[Track2]        AudioFormat                     : mp4a
+[Track2]        AudioChannels                   : 2
+[Track2]        AudioBitsPerSample              : 24
+[Track2]        AudioSampleRate                 : 48000
+[Track3]        TrackHeaderVersion              : 0
+[Track3]        TrackCreateDate                 : 2016:01:07 20:05:15
+[Track3]        TrackModifyDate                 : 2016:01:07 20:05:15
+[Track3]        TrackID                         : 3
+[Track3]        TrackDuration                   : 0:00:51
+[Track3]        TrackLayer                      : 0
+[Track3]        TrackVolume                     : 0.00%
+[Track3]        MatrixStructure                 : 1 0 0 0 1 0 0 1064 1
+[Track3]        ImageWidth                      : 1920
+[Track3]        ImageHeight                     : 16
+[Track3]        MediaHeaderVersion              : 0
+[Track3]        MediaCreateDate                 : 2016:01:07 20:05:15
+[Track3]        MediaModifyDate                 : 2016:01:07 20:05:15
+[Track3]        MediaTimeScale                  : 30000
+[Track3]        MediaDuration                   : 0:00:51
+[Track3]        HandlerClass                    : Media Handler
+[Track3]        HandlerType                     : Time Code
+[Track3]        HandlerVendorID                 : Apple
+[Track3]        GenMediaVersion                 : 0
+[Track3]        GenFlags                        : 0 0 0
+[Track3]        GenGraphicsMode                 : ditherCopy
+[Track3]        GenOpColor                      : 32768 32768 32768
+[Track3]        GenBalance                      : 0
+[Track3]        TextFont                        : Unknown (21)
+[Track3]        TextFace                        : Plain
+[Track3]        TextSize                        : 10
+[Track3]        TextColor                       : 0 0 0
+[Track3]        BackgroundColor                 : 65535 65535 65535
+[Track3]        FontName                        : Courier
+[Track3]        HandlerClass                    : Data Handler
+[Track3]        HandlerType                     : Alias Data
+[Track3]        HandlerVendorID                 : Apple
+[Track3]        OtherFormat                     : tmcd
+[Track3]        PlaybackFrameRate               : 29.97002997
+[Track3]        OtherName                       : 
+[Track4]        TrackHeaderVersion              : 0
+[Track4]        TrackCreateDate                 : 2016:01:07 20:05:15
+[Track4]        TrackModifyDate                 : 2016:01:07 20:05:15
+[Track4]        TrackID                         : 4
+[Track4]        TrackDuration                   : 0:00:51
+[Track4]        TrackLayer                      : 0
+[Track4]        TrackVolume                     : 100.00%
+[Track4]        MatrixStructure                 : 1 0 0 0 1 0 0 0 1
+[Track4]        MediaHeaderVersion              : 0
+[Track4]        MediaCreateDate                 : 2016:01:07 20:05:15
+[Track4]        MediaModifyDate                 : 2016:01:07 20:05:15
+[Track4]        MediaTimeScale                  : 1000
+[Track4]        MediaDuration                   : 0:00:51
+[Track4]        HandlerClass                    : Media Handler
+[Track4]        HandlerType                     : NRT Metadata
+[Track4]        HandlerVendorID                 : Apple
+[Track4]        HandlerDescription              : GoPro MET
+[Track4]        GenMediaVersion                 : 0
+[Track4]        GenFlags                        : 0 0 0
+[Track4]        GenGraphicsMode                 : ditherCopy
+[Track4]        GenOpColor                      : 32768 32768 32768
+[Track4]        GenBalance                      : 0
+[Track4]        MetaFormat                      : gpmd
+[Track4]        Warning                         : [minor] The ExtractEmbedded option may find more tags in the media data
+[UserData]      FirmwareVersion                 : H23.01.01.09.25
+[UserData]      SerialNumberHash                : 00000000000000000000000000000000
+[UserData]      LensSerialNumber                : LSU0000000000000
+[GoPro]         DeviceName                      : Global Settings
+[GoPro]         MetadataVersion                 : 8.2.2
+[GoPro]         FirmwareVersion                 : H23.01.01.09.25
+[GoPro]         CameraSerialNumber              : C0000000000000
+[GoPro]         Model                           : HERO12 Black
+[GoPro]         MediaUniqueID                   : 0000000000000000000000000000000000000000000000000000000000000000
+[GoPro]         AutoRotation                    : Up
+[GoPro]         DigitalZoom                     : No
+[GoPro]         ProTune                         : On
+[GoPro]         WhiteBalance                    : AUTO
+[GoPro]         Sharpness                       : MED
+[GoPro]         ColorMode                       : NATURAL
+[GoPro]         MaximumShutterAngle             : AUTO
+[GoPro]         AutoISOMax                      : 1600
+[GoPro]         AutoISOMin                      : 100
+[GoPro]         ExposureCompensation            : 0.0
+[GoPro]         Rate                            : 
+[GoPro]         SensorReadoutTime               : 26
+[GoPro]         ElectronicImageStabilization    : HS EIS
+[GoPro]         AudioSetting                    : AUTO
+[GoPro]         DeviceName                      : Large FOV
+[GoPro]         FieldOfView                     : Unknown (H)
+[GoPro]         DeviceName                      : Highlights
+[Composite]     ImageSize                       : 1920x1080
+[Composite]     Megapixels                      : 2.1
+[Composite]     AvgBitrate                      : 15.3 Mbps
+[Composite]     Rotation                        : 0
+    5 image files read
