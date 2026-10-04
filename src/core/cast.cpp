@@ -595,7 +595,7 @@ CastCandidate capture_position_up(const Metadata& metadata,
                           "iptc.video.locationShot", source_preview,
                           target_preview, std::move(notes));
   }
-  const auto* list_prop = metadata.get("iptc.video.locationShot");
+  const auto list_prop = metadata.get("iptc.video.locationShot");
   const auto* list =
       list_prop ? std::get_if<std::vector<Structure>>(&list_prop->value.data)
                 : nullptr;
@@ -701,7 +701,7 @@ std::string struct_field_text(const Structure& fields, std::string_view name) {
 
 CastCandidate recording_device_up(const Metadata& metadata,
                                   const CastGroupDef& group) {
-  const auto* existing = metadata.get("iptc.video.recordingDevice");
+  const auto existing = metadata.get("iptc.video.recordingDevice");
   const Structure* have =
       existing ? std::get_if<Structure>(&existing->value.data) : nullptr;
   Structure merged = have ? *have : Structure{};
@@ -745,7 +745,7 @@ CastCandidate recording_device_up(const Metadata& metadata,
                           "iptc.video.recordingDevice", source_preview,
                           target_preview, {"H8 field conflict"});
   }
-  if (have && display_text(make_value(merged)) == display_text(*existing)) {
+  if (have && display_text(make_value(merged)) == display_text(existing->value)) {
     return make_candidate(group, CastStatus::equal, "recordingDevice",
                           "iptc.video.recordingDevice", source_preview,
                           target_preview, {});

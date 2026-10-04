@@ -371,8 +371,12 @@ inline int check_video_unmapped_reads(umm::Backend& backend) {
                  full.error().message.c_str());
     return 1;
   }
-  if (!base_has_key_with_value(full.value(), "QuickTime.Title",
-                              "Agreeing Title") ||
+  if ((!base_has_key_with_value(full.value(), "QuickTime.Title",
+                               "Agreeing Title") &&
+       !base_has_key_with_value(full.value(), "QuickTime.Keys.Title",
+                               "Agreeing Title") &&
+       !base_has_key_with_value(full.value(), "QuickTime.ItemList.Title",
+                               "Agreeing Title")) ||
       !base_has_key_with_value(full.value(), "Xmp.dc.creator",
                               "Agreeing Creator") ||
       !base_has_family(full.value(), "QuickTime") ||
