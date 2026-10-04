@@ -68,12 +68,43 @@ for every property):
 | `exif.gps.position` | `gps()` / `setGps` | GPS coordinates (latitude/longitude/altitude) |
 | `iptc.photo.locationCreated` | `locationCreated()` / `setLocationCreated` | Named place where the image was created |
 
-GPS coordinates and named place are **separate** properties with different backend support;
-see [docs/supported-types.md §3](../supported-types.md#3-location-metadata-gps-and-named-place).
+GPS coordinates and named place are **separate** properties with different backend support
+until session 48; see [docs/supported-types.md §3](../supported-types.md#3-location-metadata-gps-and-named-place)
+and [Location and GPS](#location-and-gps) below.
 
 `dateCreated` is when the scene was captured. Digitized-time (`DateTimeDigitized` /
 CreateDate) and file-modify time (`Exif.Image.DateTime` / ModifyDate) are different
 moments and are not candidates for `dateCreated`.
+
+## Location and GPS
+
+Photo `locationCreated` and `locationShownInTheImage` are full IPTC **Location**
+structures (cardinality many). Field names are the Technical Reference logical names:
+
+`name`, `identifiers`, `sublocation`, `city`, `provinceState`, `countryName`,
+`countryCode`, `worldRegion`, `gpsLatitude`, `gpsLongitude`, `gpsAltitude`,
+`gpsAltitudeRef`.
+
+GPS fields on the struct are numbers (decimal degrees, WGS 84; west/south negative).
+Reads accept XMP `DDD,MM.mmmmmmH`, decimal, and hemisphere-suffixed strings; writes
+use decimal with a hemisphere suffix so brace-encoded structs stay comma-safe.
+Equivalence uses 1e-5° and 0.5 m. `gpsAltitudeRef` is 0 (above WGS 84) or 1
+(below). Camera EXIF GPS stays `exif.gps.position` until session 48; it is not
+copied onto Location Created.
+
+**Created versus Shown.** Location Created is where the camera was.
+Location Shown is what the picture depicts. They are independent lists.
+
+**`Iptc4xmpCore` versus `Iptc4xmpExt`.** These are XMP namespace prefixes, not
+different standards. `Iptc4xmpCore` is IPTC Photo Metadata Core
+(`http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/`). `Iptc4xmpExt` is the Extension
+schema (`http://iptc.org/std/Iptc4xmpExt/2008-02-29/`). Location Created and
+Location Shown live in the Extension namespace.
+
+**Legacy city/state/country.** `iptc.photo.cityLegacy`, `provinceOrStateLegacy`,
+`countryLegacy`, `countryCodeLegacy`, and `sublocationLegacy` are their own
+canonical properties (photoshop/IIM / Core `Location`). They no longer fill or
+write `locationCreated`. A side cast to Location Shown is session 47.
 
 ## Cross-media accessors
 
@@ -154,7 +185,8 @@ property id. Getters probe `iptc.photo.*` then `iptc.video.*` and do not need
 | `featuredOrganisation` | `iptc.photo.nameOfOrganisationFeaturedInTheImage` | `iptc.video.featuredOrganisation` |
 | `supplier` | `iptc.photo.imageSupplier` | `iptc.video.supplier` |
 
-Photo `locationCreated` still writes the Phase 1 named-place path (photoshop/IIM city).
+Photo `locationCreated` / `locationShown` write the Extension Location structs, not
+legacy photoshop/IIM city fields.
 `personShown` uses the WithDetails struct list, not the legacy string-list
 `iptc.photo.personShownInTheImage`.
 

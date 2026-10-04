@@ -156,6 +156,7 @@ int check_backend(const std::string& backend_id, const char* folder,
   const auto date = agree.dateCreated();
   const auto keywords = agree.keywords();
   const auto location = agree.locationCreated();
+  const auto city_legacy = agree.get("iptc.photo.cityLegacy");
   if (!creator || creator->resolution != umm::Resolution::equivalent) {
     return fail_read("full-agreeing creator not equivalent");
   }
@@ -184,8 +185,14 @@ int check_backend(const std::string& backend_id, const char* folder,
   if (!keywords || keywords->resolution != umm::Resolution::equivalent) {
     return fail_read("full-agreeing keywords not equivalent");
   }
-  if (!location || location->resolution != umm::Resolution::equivalent) {
-    return fail_read("full-agreeing location not equivalent");
+  if (location) {
+    return fail_read("full-agreeing must not map legacy city to locationCreated");
+  }
+  const auto* city_text =
+      city_legacy ? std::get_if<std::string>(&city_legacy->value.data) : nullptr;
+  if (!city_legacy || city_legacy->resolution != umm::Resolution::equivalent ||
+      !city_text || *city_text != "Agreeing City") {
+    return fail_read("full-agreeing cityLegacy");
   }
   if (creator->sources.size() < 3 || date->sources.size() < 3) {
     return fail_read("full-agreeing dropped sources");
@@ -242,8 +249,14 @@ int check_backend(const std::string& backend_id, const char* folder,
       std::fabs(coord->longitude + 122.4194) > 1e-4) {
     return fail_read("gps coordinate");
   }
-  if (!gps.value().locationCreated()) {
-    return fail_read("gps missing named place");
+  if (gps.value().locationCreated()) {
+    return fail_read("gps fixture must not map named place to locationCreated");
+  }
+  const auto gps_city = gps.value().get("iptc.photo.cityLegacy");
+  const auto* gps_city_text =
+      gps_city ? std::get_if<std::string>(&gps_city->value.data) : nullptr;
+  if (!gps_city || !gps_city_text || *gps_city_text != "San Francisco") {
+    return fail_read("gps cityLegacy named place");
   }
 
   return check_backend_unicode(backend_id, folder, ext);
@@ -531,6 +544,7 @@ int check_dng_backend(const std::string& backend_id) {
   const auto date = agree.dateCreated();
   const auto keywords = agree.keywords();
   const auto location = agree.locationCreated();
+  const auto city_legacy = agree.get("iptc.photo.cityLegacy");
   if (!creator || creator->resolution != umm::Resolution::equivalent) {
     return fail_read("dng full-agreeing creator not equivalent");
   }
@@ -559,8 +573,14 @@ int check_dng_backend(const std::string& backend_id) {
   if (!keywords || keywords->resolution != umm::Resolution::equivalent) {
     return fail_read("dng full-agreeing keywords not equivalent");
   }
-  if (!location || location->resolution != umm::Resolution::equivalent) {
-    return fail_read("dng full-agreeing location not equivalent");
+  if (location) {
+    return fail_read("dng full-agreeing must not map legacy city to locationCreated");
+  }
+  const auto* city_text =
+      city_legacy ? std::get_if<std::string>(&city_legacy->value.data) : nullptr;
+  if (!city_legacy || city_legacy->resolution != umm::Resolution::equivalent ||
+      !city_text || *city_text != "Agreeing City") {
+    return fail_read("dng full-agreeing cityLegacy");
   }
   if (creator->sources.size() < 3 || date->sources.size() < 3) {
     return fail_read("dng full-agreeing dropped sources");

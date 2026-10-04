@@ -5,7 +5,11 @@
 #include "property_registry.hpp"
 
 #include <cctype>
+#include <cmath>
 #include <cstdint>
+#include <cstdlib>
+#include <iomanip>
+#include <sstream>
 #include <utility>
 
 namespace umm::internal {
@@ -303,6 +307,381 @@ std::optional<Structure> parse_exiftool_braces(std::string_view text) {
   return fields;
 }
 
+bool parse_rational_token(std::string_view token, double& out) {
+  if (token.empty()) {
+    return false;
+  }
+  const auto slash = token.find('/');
+  if (slash == std::string_view::npos) {
+    char* end = nullptr;
+    const std::string text(token);
+    out = std::strtod(text.c_str(), &end);
+    return end != text.c_str() && std::isfinite(out);
+  }
+  double num = 0;
+  double den = 0;
+  if (!parse_rational_token(token.substr(0, slash), num) ||
+      !parse_rational_token(token.substr(slash + 1), den) || den == 0) {
+    return false;
+  }
+  out = num / den;
+  return std::isfinite(out);
+}
+
+char gps_hemi_from_token(std::string_view token) {
+  const std::string lower = ascii_lower(token);
+  if (lower == "n" || lower == "north") {
+    return 'N';
+  }
+  if (lower == "s" || lower == "south") {
+    return 'S';
+  }
+  if (lower == "e" || lower == "east") {
+    return 'E';
+  }
+  if (lower == "w" || lower == "west") {
+    return 'W';
+  }
+  return 0;
+}
+
+char take_gps_hemisphere(std::string& text) {
+  text = trim(text);
+  if (text.empty()) {
+    return 0;
+  }
+  const auto space = text.find_last_of(" \t");
+  if (space != std::string::npos) {
+    if (const char word = gps_hemi_from_token(text.substr(space + 1))) {
+      text.resize(space);
+      text = std::string(trim(text));
+      return word;
+    }
+  }
+  const char last = static_cast<char>(
+      std::toupper(static_cast<unsigned char>(text.back())));
+  if (last == 'N' || last == 'S' || last == 'E' || last == 'W') {
+    if (text.size() == 1 ||
+        (text[text.size() - 2] < 'A' || text[text.size() - 2] > 'z')) {
+      text.pop_back();
+      text = std::string(trim(text));
+      return last;
+    }
+  }
+  return 0;
+}
+
+int gps_hemi_sign(char hemi) {
+  if (hemi == 'S' || hemi == 'W') {
+    return -1;
+  }
+  return 1;
+}
+
+std::optional<double> parse_gps_coord_impl(std::string_view text) {
+  std::string s(trim(text));
+  const char hemi = take_gps_hemisphere(s);
+  if (s.empty()) {
+    return std::nullopt;
+  }
+  std::vector<double> parts;
+  std::string token;
+  auto flush = [&] {
+    if (token.empty()) {
+      return;
+    }
+    double value = 0;
+    if (parse_rational_token(token, value)) {
+      parts.push_back(value);
+    }
+    token.clear();
+  };
+  for (char c : s) {
+    if ((c >= '0' && c <= '9') || c == '.' || c == '/' || c == '-' ||
+        c == '+') {
+      token.push_back(c);
+    } else {
+      flush();
+    }
+  }
+  flush();
+  if (parts.empty()) {
+    return std::nullopt;
+  }
+  double deg = parts[0];
+  if (parts.size() >= 2) {
+    deg += parts[1] / 60.0;
+  }
+  if (parts.size() >= 3) {
+    deg += parts[2] / 3600.0;
+  }
+  if (deg < 0) {
+    return deg;
+  }
+  return deg * static_cast<double>(gps_hemi_sign(hemi));
+}
+
+std::optional<double> as_gps_number(const Value& value) {
+  if (const auto* d = std::get_if<double>(&value.data)) {
+    return *d;
+  }
+  if (const auto* i = std::get_if<std::int64_t>(&value.data)) {
+    return static_cast<double>(*i);
+  }
+  if (const auto* s = std::get_if<std::string>(&value.data)) {
+    return parse_gps_coord_impl(*s);
+  }
+  return std::nullopt;
+}
+
+std::optional<double> as_altitude_number(const Value& value) {
+  if (const auto* d = std::get_if<double>(&value.data)) {
+    return *d;
+  }
+  if (const auto* i = std::get_if<std::int64_t>(&value.data)) {
+    return static_cast<double>(*i);
+  }
+  if (const auto* s = std::get_if<std::string>(&value.data)) {
+    std::string text(trim(*s));
+    if (text.empty()) {
+      return std::nullopt;
+    }
+    const std::string lower = ascii_lower(text);
+    bool below = lower.find("below") != std::string::npos;
+    if (!text.empty() && (text.back() == 'm' || text.back() == 'M')) {
+      text.pop_back();
+      text = std::string(trim(text));
+    }
+    std::string numeric;
+    for (char c : text) {
+      if ((c >= '0' && c <= '9') || c == '.' || c == '-' || c == '+' ||
+          c == '/') {
+        numeric.push_back(c);
+      } else if (!numeric.empty()) {
+        break;
+      }
+    }
+    double meters = 0;
+    if (!parse_rational_token(numeric, meters)) {
+      return std::nullopt;
+    }
+    if (below && meters > 0) {
+      meters = -meters;
+    }
+    return meters;
+  }
+  return std::nullopt;
+}
+
+std::optional<std::int64_t> as_altitude_ref(const Value& value) {
+  if (const auto* i = std::get_if<std::int64_t>(&value.data)) {
+    return *i == 0 ? 0 : 1;
+  }
+  if (const auto* d = std::get_if<double>(&value.data)) {
+    return *d == 0 ? 0 : 1;
+  }
+  if (const auto* s = std::get_if<std::string>(&value.data)) {
+    const std::string lower = ascii_lower(trim(*s));
+    if (lower.empty()) {
+      return std::nullopt;
+    }
+    if (lower == "0" || lower.find("above") != std::string::npos) {
+      return 0;
+    }
+    if (lower == "1" || lower.find("below") != std::string::npos) {
+      return 1;
+    }
+    double n = 0;
+    if (parse_rational_token(lower, n)) {
+      return n == 0 ? 0 : 1;
+    }
+  }
+  return std::nullopt;
+}
+
+std::string_view location_id_suffix(std::string_view id) {
+  const auto dot = id.rfind('.');
+  if (dot == std::string_view::npos) {
+    return id;
+  }
+  return id.substr(dot + 1);
+}
+
+std::string location_canonical_field(std::string_view name) {
+  std::string field(name);
+  const auto colon = field.rfind(':');
+  if (colon != std::string::npos) {
+    field = field.substr(colon + 1);
+  }
+  const std::string lower = ascii_lower(field);
+  constexpr std::string_view kCreated = "locationcreated";
+  constexpr std::string_view kShown = "locationshown";
+  if (lower.size() > kCreated.size() && lower.rfind(kCreated, 0) == 0) {
+    field = field.substr(kCreated.size());
+  } else if (lower.size() > kShown.size() && lower.rfind(kShown, 0) == 0) {
+    field = field.substr(kShown.size());
+  }
+  const std::string key = ascii_lower(field);
+  std::string photo;
+  std::string video;
+  for (const StructFieldRepresentation& row : kStructFieldRepresentations) {
+    if (row.struct_name != "Location") {
+      continue;
+    }
+    const std::string_view suffix = location_id_suffix(row.id);
+    bool match = ascii_lower(row.et_tag) == key || ascii_lower(suffix) == key;
+    if (!match) {
+      const auto ns = row.xmp_property.rfind(':');
+      const std::string_view local =
+          ns == std::string_view::npos ? row.xmp_property
+                                       : row.xmp_property.substr(ns + 1);
+      match = ascii_lower(local) == key;
+    }
+    if (!match) {
+      continue;
+    }
+    if (row.id.rfind("iptc.photo.struct.Location.", 0) == 0 && photo.empty()) {
+      photo = std::string(suffix);
+    } else if (row.id.rfind("iptc.video.struct.Location.", 0) == 0 &&
+               video.empty()) {
+      video = std::string(suffix);
+    }
+  }
+  if (!photo.empty()) {
+    return photo;
+  }
+  if (!video.empty()) {
+    return video;
+  }
+  return std::string(name);
+}
+
+std::string location_et_tag(std::string_view canonical) {
+  const std::string key = ascii_lower(canonical);
+  for (const StructFieldRepresentation& row : kStructFieldRepresentations) {
+    if (row.struct_name != "Location") {
+      continue;
+    }
+    if (row.id.rfind("iptc.photo.struct.Location.", 0) != 0) {
+      continue;
+    }
+    if (ascii_lower(location_id_suffix(row.id)) == key) {
+      return std::string(row.et_tag);
+    }
+  }
+  return std::string(canonical);
+}
+
+Value make_double(double n) {
+  Value value;
+  value.data = n;
+  return value;
+}
+
+Value make_int(std::int64_t n) {
+  Value value;
+  value.data = n;
+  return value;
+}
+
+Value make_text(std::string text) {
+  Value value;
+  value.data = std::move(text);
+  return value;
+}
+
+Structure decode_location_fields(const Structure& fields) {
+  Structure out;
+  for (const auto& [name, value] : fields) {
+    out.insert_or_assign(location_canonical_field(name), value);
+  }
+  if (const auto it = out.find("gpsLatitude"); it != out.end()) {
+    if (const auto n = as_gps_number(it->second)) {
+      it->second = make_double(*n);
+    }
+  }
+  if (const auto it = out.find("gpsLongitude"); it != out.end()) {
+    if (const auto n = as_gps_number(it->second)) {
+      it->second = make_double(*n);
+    }
+  }
+  if (const auto it = out.find("gpsAltitude"); it != out.end()) {
+    if (const auto n = as_altitude_number(it->second)) {
+      it->second = make_double(*n);
+    }
+  }
+  if (const auto it = out.find("gpsAltitudeRef"); it != out.end()) {
+    if (const auto n = as_altitude_ref(it->second)) {
+      it->second = make_int(*n);
+    }
+  }
+  return out;
+}
+
+std::string format_gps_coord_impl(double degrees, bool longitude) {
+  if (!std::isfinite(degrees)) {
+    return {};
+  }
+  const char hemi =
+      longitude ? (degrees < 0 ? 'W' : 'E') : (degrees < 0 ? 'S' : 'N');
+  std::ostringstream oss;
+  oss << std::setprecision(10) << std::fabs(degrees) << hemi;
+  return oss.str();
+}
+
+std::string format_gps_altitude_impl(double meters) {
+  std::ostringstream oss;
+  oss << std::setprecision(15) << meters;
+  return oss.str();
+}
+
+Value encode_location_field(std::string_view canonical, const Value& value) {
+  if (canonical == "gpsLatitude" || canonical == "gpsLongitude") {
+    if (const auto n = as_gps_number(value)) {
+      return make_text(
+          format_gps_coord_impl(*n, canonical == "gpsLongitude"));
+    }
+  }
+  if (canonical == "gpsAltitude") {
+    if (const auto n = as_altitude_number(value)) {
+      return make_text(format_gps_altitude_impl(*n));
+    }
+  }
+  if (canonical == "gpsAltitudeRef") {
+    if (const auto n = as_altitude_ref(value)) {
+      return make_text(std::to_string(*n));
+    }
+  }
+  if (canonical == "identifiers") {
+    if (const auto* list = std::get_if<std::vector<std::string>>(&value.data)) {
+      if (!list->empty()) {
+        return make_text(list->front());
+      }
+    }
+  }
+  return value;
+}
+
+std::string quote_exiftool_value(std::string_view text) {
+  if (text.size() >= 2 && text.front() == '{' && text.back() == '}') {
+    return std::string(text);
+  }
+  bool quote = false;
+  for (char c : text) {
+    if (c == ',' || c == '"' || c == '=') {
+      quote = true;
+      break;
+    }
+  }
+  if (!quote) {
+    return std::string(text);
+  }
+  std::string out = "\"";
+  out += text;
+  out += '"';
+  return out;
+}
+
 std::string qt_suffix_tag(std::string_view suffix) {
   const std::string lower = ascii_lower(suffix);
   if (lower == "title") {
@@ -475,6 +854,18 @@ std::string encode_exiftool_struct(const Structure& fields) {
       text = lang_plain_text(*alt);
     } else if (const auto* nested = std::get_if<Structure>(&field.data)) {
       text = encode_exiftool_struct(*nested);
+    } else if (const auto* i = std::get_if<std::int64_t>(&field.data)) {
+      text = std::to_string(*i);
+    } else if (const auto* d = std::get_if<double>(&field.data)) {
+      std::ostringstream oss;
+      oss << std::setprecision(15) << *d;
+      text = oss.str();
+    } else if (const auto* list =
+                   std::get_if<std::vector<std::string>>(&field.data)) {
+      if (list->empty()) {
+        continue;
+      }
+      text = list->front();
     } else {
       continue;
     }
@@ -487,7 +878,7 @@ std::string encode_exiftool_struct(const Structure& fields) {
     first = false;
     out += name;
     out.push_back('=');
-    out += text;
+    out += quote_exiftool_value(text);
   }
   out.push_back('}');
   return out;
@@ -604,6 +995,44 @@ std::string structure_display_name(const Structure& fields) {
     }
   }
   return {};
+}
+
+bool is_photo_location_id(std::string_view id) {
+  return id == kLocation || id == kLocationShown;
+}
+
+std::optional<double> parse_gps_coord(std::string_view text) {
+  return parse_gps_coord_impl(text);
+}
+
+std::string format_gps_coord(double degrees, bool longitude) {
+  return format_gps_coord_impl(degrees, longitude);
+}
+
+Structure canonicalize_location_struct(const Structure& fields) {
+  return decode_location_fields(fields);
+}
+
+Structure encode_location_struct_fields(const Structure& fields) {
+  Structure out;
+  for (const auto& [name, value] : fields) {
+    const std::string canonical = location_canonical_field(name);
+    out.insert_or_assign(location_et_tag(canonical),
+                         encode_location_field(canonical, value));
+  }
+  return out;
+}
+
+void decode_location_value(Value& value) {
+  if (auto* list = std::get_if<std::vector<Structure>>(&value.data)) {
+    for (Structure& item : *list) {
+      item = decode_location_fields(item);
+    }
+    return;
+  }
+  if (auto* fields = std::get_if<Structure>(&value.data)) {
+    *fields = decode_location_fields(*fields);
+  }
 }
 
 std::vector<std::string_view> mapped_video_property_ids() {

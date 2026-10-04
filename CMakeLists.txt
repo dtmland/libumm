@@ -190,6 +190,14 @@ if(UMM_BUILD_TESTS)
   )
   add_test(NAME test_write_sync COMMAND test_write_sync)
 
+  add_executable(test_gps_codec tests/unit/test_gps_codec.cpp)
+  target_link_libraries(test_gps_codec PRIVATE umm::umm)
+  target_include_directories(test_gps_codec
+    PRIVATE
+      "${CMAKE_CURRENT_SOURCE_DIR}/src"
+  )
+  add_test(NAME test_gps_codec COMMAND test_gps_codec)
+
   add_executable(test_storage_policy tests/unit/test_storage_policy.cpp)
   target_link_libraries(test_storage_policy PRIVATE umm::umm)
   add_test(NAME test_storage_policy COMMAND test_storage_policy)

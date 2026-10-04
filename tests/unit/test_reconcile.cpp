@@ -631,5 +631,85 @@ int main() {
     }
   }
 
+  {
+    const auto result = umm::internal::reconcile(
+        doc({entry("Xmp", "Xmp.Iptc4xmpExt.LocationCreated",
+                   R"({City=Paris,LocationName=Studio,GPSLatitude="37,46.494000N",GPSLongitude="122,25.164000W",GPSAltitude=16.5,GPSAltitudeRef=0,CountryName=France,CountryCode=FR,ProvinceState=IDF,Sublocation=Le Marais,WorldRegion=Europe,LocationId=https://example.com/loc})"),
+             entry("Xmp", "Xmp.Iptc4xmpExt.LocationShown",
+                   R"({City=Lyon,GPSLatitude="45.7640N"})")}),
+        "test");
+    if (!result.ok()) {
+      return fail("photo Location struct reconcile failed");
+    }
+    const auto created = result.value().locationCreated();
+    const auto shown = result.value().locationShown();
+    const auto* created_list =
+        created ? std::get_if<std::vector<umm::Structure>>(&created->value.data)
+                : nullptr;
+    const auto* shown_list =
+        shown ? std::get_if<std::vector<umm::Structure>>(&shown->value.data)
+              : nullptr;
+    if (!created_list || created_list->empty() || !shown_list ||
+        shown_list->empty()) {
+      return fail("photo Location structs missing");
+    }
+    const umm::Structure& loc = created_list->front();
+    auto text = [&](std::string_view name) -> const std::string* {
+      const auto it = loc.find(std::string(name));
+      return it == loc.end() ? nullptr
+                             : std::get_if<std::string>(&it->second.data);
+    };
+    auto number = [&](std::string_view name) -> const double* {
+      const auto it = loc.find(std::string(name));
+      return it == loc.end() ? nullptr : std::get_if<double>(&it->second.data);
+    };
+    if (!text("city") || *text("city") != "Paris" || !text("name") ||
+        *text("name") != "Studio" || !text("countryName") ||
+        *text("countryName") != "France" || !text("countryCode") ||
+        *text("countryCode") != "FR" || !text("provinceState") ||
+        *text("provinceState") != "IDF" || !text("sublocation") ||
+        *text("sublocation") != "Le Marais" || !text("worldRegion") ||
+        *text("worldRegion") != "Europe" || !text("identifiers") ||
+        *text("identifiers") != "https://example.com/loc") {
+      return fail("photo LocationCreated text fields");
+    }
+    if (!number("gpsLatitude") ||
+        std::fabs(*number("gpsLatitude") - 37.7749) > 1e-5 ||
+        !number("gpsLongitude") ||
+        std::fabs(*number("gpsLongitude") + 122.4194) > 1e-5 ||
+        !number("gpsAltitude") ||
+        std::fabs(*number("gpsAltitude") - 16.5) > 0.5) {
+      return fail("photo LocationCreated GPS fields");
+    }
+    const auto shown_city = shown_list->front().find("city");
+    const auto* shown_city_text =
+        shown_city == shown_list->front().end()
+            ? nullptr
+            : std::get_if<std::string>(&shown_city->second.data);
+    if (!shown_city_text || *shown_city_text != "Lyon") {
+      return fail("photo LocationShown city");
+    }
+  }
+
+  {
+    const auto result = umm::internal::reconcile(
+        doc({entry("Xmp", "Xmp.photoshop.City", "Agreeing City"),
+             entry("Iptc", "Iptc.Application2.City", "Agreeing City")}),
+        "test");
+    if (!result.ok()) {
+      return fail("legacy city reconcile failed");
+    }
+    if (result.value().locationCreated() || result.value().locationShown()) {
+      return fail("legacy city must not fill Location structs");
+    }
+    const auto city = result.value().get("iptc.photo.cityLegacy");
+    const auto* city_text =
+        city ? std::get_if<std::string>(&city->value.data) : nullptr;
+    if (!city || city->resolution != umm::Resolution::equivalent || !city_text ||
+        *city_text != "Agreeing City") {
+      return fail("legacy city should reconcile as cityLegacy");
+    }
+  }
+
   return 0;
 }
