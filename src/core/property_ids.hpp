@@ -17,7 +17,6 @@ inline constexpr std::string_view kRating = "iptc.photo.imageRating";
 inline constexpr std::string_view kLocation = "iptc.photo.locationCreated";
 inline constexpr std::string_view kLocationShown =
     "iptc.photo.locationShownInTheImage";
-inline constexpr std::string_view kGps = "exif.gps.position";
 
 inline constexpr std::string_view kVideoTitle = "iptc.video.title";
 inline constexpr std::string_view kVideoDescription = "iptc.video.description";

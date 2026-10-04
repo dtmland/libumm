@@ -717,31 +717,9 @@ bool parse_qt_gps(std::string_view text, GpsCoordinate& gps) {
   return true;
 }
 
-bool gps_equivalent(const GpsCoordinate& a, const GpsCoordinate& b) {
-  if (std::fabs(a.latitude - b.latitude) > kGpsDegEps ||
-      std::fabs(a.longitude - b.longitude) > kGpsDegEps) {
-    return false;
-  }
-  if (a.altitude_meters && b.altitude_meters) {
-    if (std::fabs(*a.altitude_meters - *b.altitude_meters) > kGpsAltEps) {
-      return false;
-    }
-  }
-  if (a.gps_time && b.gps_time &&
-      !datetime_equivalent(*a.gps_time, *b.gps_time)) {
-    return false;
-  }
-  return true;
-}
-
-GpsCoordinate gps_merge(GpsCoordinate a, const GpsCoordinate& b) {
-  if (!a.altitude_meters) {
-    a.altitude_meters = b.altitude_meters;
-  }
-  if (!a.gps_time) {
-    a.gps_time = b.gps_time;
-  }
-  return a;
+bool is_location_property(std::string_view id) {
+  return is_photo_location_id(id) || id == "iptc.video.locationShot" ||
+         id == "iptc.video.locationShown";
 }
 
 LangAlt parse_lang_alt(std::string_view text) {
@@ -1104,11 +1082,6 @@ bool values_equivalent(std::string_view property_id, const Value& a,
     const auto* db = std::get_if<DateTime>(&b.data);
     return da && db && datetime_equivalent(*da, *db);
   }
-  if (property_id == kGps) {
-    const auto* ga = std::get_if<GpsCoordinate>(&a.data);
-    const auto* gb = std::get_if<GpsCoordinate>(&b.data);
-    return ga && gb && gps_equivalent(*ga, *gb);
-  }
   if (property_id == kKeywords || property_id == kVideoKeywords) {
     const auto* la = std::get_if<std::vector<std::string>>(&a.data);
     const auto* lb = std::get_if<std::vector<std::string>>(&b.data);
@@ -1142,7 +1115,7 @@ bool values_equivalent(std::string_view property_id, const Value& a,
     const auto* lb = std::get_if<LangAlt>(&b.data);
     return la && lb && lang_equivalent(*la, *lb);
   }
-  if (is_photo_location_id(property_id)) {
+  if (is_location_property(property_id)) {
     const auto* la = std::get_if<std::vector<Structure>>(&a.data);
     const auto* lb = std::get_if<std::vector<Structure>>(&b.data);
     if (!la || !lb || la->empty() || lb->empty()) {
@@ -1227,14 +1200,7 @@ Value merge_values(std::string_view property_id, Value a, const Value& b) {
       return make_value(datetime_merge(*da, *db));
     }
   }
-  if (property_id == kGps) {
-    const auto* ga = std::get_if<GpsCoordinate>(&a.data);
-    const auto* gb = std::get_if<GpsCoordinate>(&b.data);
-    if (ga && gb) {
-      return make_value(gps_merge(*ga, *gb));
-    }
-  }
-  if (is_photo_location_id(property_id)) {
+  if (is_location_property(property_id)) {
     const auto* la = std::get_if<std::vector<Structure>>(&a.data);
     const auto* lb = std::get_if<std::vector<Structure>>(&b.data);
     if (la && lb && !la->empty() && !lb->empty()) {
@@ -1545,7 +1511,16 @@ std::optional<Group> gps_group(const BaseDocument& document,
   add_sources(group.sources, document, backend, lon_ref);
   add_sources(group.sources, document, backend, alt_key);
   add_sources(group.sources, document, backend, alt_ref);
-  group.value = make_value(gps);
+  Structure fields;
+  fields.emplace("gpsLatitude", make_value(gps.latitude));
+  fields.emplace("gpsLongitude", make_value(gps.longitude));
+  if (gps.altitude_meters) {
+    const double alt = *gps.altitude_meters;
+    fields.emplace("gpsAltitude", make_value(std::fabs(alt)));
+    fields.emplace("gpsAltitudeRef",
+                   make_value(std::int64_t{alt < 0 ? 1 : 0}));
+  }
+  group.value = make_value(std::vector<Structure>{std::move(fields)});
   return group;
 }
 
@@ -1628,6 +1603,29 @@ void collect_registry_property(std::vector<Group>& groups,
     const auto plus = rep.exif_tag.find('+');
     exif = exif_base_key(plus == std::string_view::npos ? rep.exif_tag
                                                       : rep.exif_tag.substr(0, plus));
+  }
+
+  // C8: EXIF GPS IFD and top-level XMP-exif GPS are locationCreated[0]
+  // representations (EXIF > XMP-exif > struct). Struct family is xmp-ext so
+  // it does not same-tier-conflict with XMP-exif GPS.
+  if (property_id == kLocation) {
+    push(gps_group(document, backend, "Exif.GPSInfo.GPSLatitude",
+                   "Exif.GPSInfo.GPSLatitudeRef", "Exif.GPSInfo.GPSLongitude",
+                   "Exif.GPSInfo.GPSLongitudeRef", "Exif.GPSInfo.GPSAltitude",
+                   "Exif.GPSInfo.GPSAltitudeRef", "exif", 0));
+    push(gps_group(document, backend, "Xmp.exif.GPSLatitude",
+                   "Xmp.exif.GPSLatitudeRef", "Xmp.exif.GPSLongitude",
+                   "Xmp.exif.GPSLongitudeRef", "Xmp.exif.GPSAltitude",
+                   "Xmp.exif.GPSAltitudeRef", "xmp", 1));
+    if (!xmp.empty()) {
+      const std::size_t before = groups.size();
+      push(video_structure_list_group(document, backend, xmp, "xmp-ext", 2,
+                                      false));
+      if (groups.size() > before) {
+        decode_location_value(groups.back().value);
+      }
+    }
+    return;
   }
 
   // Policy § iptc.photo.creator / iptc.photo.keywords: XMP > IIM > EXIF lists.
@@ -1757,30 +1755,6 @@ void collect_registry_property(std::vector<Group>& groups,
   if (!exif.empty()) {
     push(text_group(document, backend, exif, "exif", 2));
   }
-}
-
-void collect_gps(std::vector<Group>& groups, const BaseDocument& document,
-                 std::string_view backend, bool video) {
-  auto push = [&](std::optional<Group> group) {
-    if (group) {
-      groups.push_back(std::move(*group));
-    }
-  };
-  if (video) {
-    push(gps_group(document, backend, "Xmp.exif.GPSLatitude",
-                   "Xmp.exif.GPSLatitudeRef", "Xmp.exif.GPSLongitude",
-                   "Xmp.exif.GPSLongitudeRef", "Xmp.exif.GPSAltitude",
-                   "Xmp.exif.GPSAltitudeRef", "xmp", 0));
-    return;
-  }
-  push(gps_group(document, backend, "Exif.GPSInfo.GPSLatitude",
-                 "Exif.GPSInfo.GPSLatitudeRef", "Exif.GPSInfo.GPSLongitude",
-                 "Exif.GPSInfo.GPSLongitudeRef", "Exif.GPSInfo.GPSAltitude",
-                 "Exif.GPSInfo.GPSAltitudeRef", "exif", 0));
-  push(gps_group(document, backend, "Xmp.exif.GPSLatitude",
-                 "Xmp.exif.GPSLatitudeRef", "Xmp.exif.GPSLongitude",
-                 "Xmp.exif.GPSLongitudeRef", "Xmp.exif.GPSAltitude",
-                 "Xmp.exif.GPSAltitudeRef", "xmp", 1));
 }
 
 std::optional<Group> video_structure_group(const BaseDocument& document,
@@ -1949,7 +1923,11 @@ void collect_video_generic(std::vector<Group>& groups,
     }
   };
   if (!xmp_keys.empty()) {
+    const std::size_t before = groups.size();
     push_typed(xmp_keys.front(), "xmp", 0);
+    if (is_location_property(property_id) && groups.size() > before) {
+      decode_location_value(groups.back().value);
+    }
   }
   const bool qt_scalar = def->datatype == Datatype::lang_alt ||
                          def->datatype == Datatype::text ||
@@ -2074,9 +2052,7 @@ void add_document_groups(std::vector<Group>& groups, const BaseDocument& documen
                          std::string_view backend, std::string_view property_id,
                          std::string_view container, bool video) {
   const std::size_t from = groups.size();
-  if (property_id == kGps) {
-    collect_gps(groups, document, backend, video);
-  } else if (video) {
+  if (video) {
     collect_video_property(groups, document, backend, property_id);
   } else {
     collect_registry_property(groups, document, backend, property_id);

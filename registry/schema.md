@@ -168,8 +168,8 @@ Each accessor row:
 `string_list_to_lang_alt`, `lang_alt_to_string`, `names_to_entity_list`,
 `uri_to_cv_term`, `struct_field_subset`, `list_to_single`, `name_uri_to_entity`.
 
-`gps()` is already cross-media via well-known id `exif.gps.position` and is
-omitted: that id is not in the IPTC registries.
+GPS is a field on `locationCreated` / `locationShot`, not a separate accessor
+row. There is no `exif.*` property domain (C17).
 
 ## C++ table (`src/generated/`)
 
@@ -188,9 +188,10 @@ JSON `datatype` + `cardinality` map onto `include/umm/registry.hpp`:
 | `struct` + `one` | `structure` |
 | `struct` + `many` | `structure_list` |
 
-`boolean` is emitted for VMH boolean properties. `rational` and `gps_coordinate`
-remain reserved for later value shapes (session 08). Generated C++ is UTF-8 with
-LF newlines. `.gitattributes` pins `src/generated/**` to LF.
+`boolean` is emitted for VMH boolean properties. `rational` remains reserved
+for later value shapes. `Datatype::gps_coordinate` was removed in session 48
+(Location GPS fields are numbers). Generated C++ is UTF-8 with LF newlines.
+`.gitattributes` pins `src/generated/**` to LF.
 
 `umm::Representations` also carries `quicktime_key` and `ebucore` (empty for
 photo rows). Only XMP and QuickTime mappings are used at runtime in Stage 7;

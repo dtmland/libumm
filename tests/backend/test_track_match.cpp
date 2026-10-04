@@ -2,6 +2,7 @@
 #include "umm/umm.hpp"
 
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <filesystem>
 #include <string>
@@ -63,8 +64,28 @@ int write_gps(const std::filesystem::path& file, const umm::TrackMatch& match,
     return 1;
   }
   umm::Metadata metadata = loaded.value();
-  if (!metadata.setGps(match.position).ok()) {
-    return fail("setGps");
+  std::vector<umm::Structure> items;
+  if (const auto existing = metadata.locationCreated()) {
+    if (const auto* list =
+            std::get_if<std::vector<umm::Structure>>(&existing->value.data)) {
+      items = *list;
+    }
+  }
+  if (items.empty()) {
+    items.emplace_back();
+  }
+  items.front().insert_or_assign("gpsLatitude",
+                                umm::Value{match.position.latitude});
+  items.front().insert_or_assign("gpsLongitude",
+                                umm::Value{match.position.longitude});
+  if (match.position.altitude_meters) {
+    const double alt = *match.position.altitude_meters;
+    items.front().insert_or_assign("gpsAltitude", umm::Value{std::fabs(alt)});
+    items.front().insert_or_assign(
+        "gpsAltitudeRef", umm::Value{std::int64_t{alt < 0 ? 1 : 0}});
+  }
+  if (!metadata.setLocationCreated(std::move(items)).ok()) {
+    return fail("setLocationCreated gps");
   }
   const auto written = umm::write(file, metadata, wopts);
   if (!written.ok()) {
@@ -78,11 +99,22 @@ int write_gps(const std::filesystem::path& file, const umm::TrackMatch& match,
                  round.error().message.c_str());
     return 1;
   }
-  const auto gps = round.value().gps();
-  const auto* coord =
-      gps ? std::get_if<umm::GpsCoordinate>(&gps->value.data) : nullptr;
-  if (!coord || !near(coord->latitude, match.position.latitude) ||
-      !near(coord->longitude, match.position.longitude)) {
+  const auto loc = round.value().locationCreated();
+  const auto* list =
+      loc ? std::get_if<std::vector<umm::Structure>>(&loc->value.data) : nullptr;
+  if (!list || list->empty()) {
+    return fail("gps read-back");
+  }
+  const auto lat = list->front().find("gpsLatitude");
+  const auto lon = list->front().find("gpsLongitude");
+  const auto* lat_n =
+      lat == list->front().end() ? nullptr
+                                 : std::get_if<double>(&lat->second.data);
+  const auto* lon_n =
+      lon == list->front().end() ? nullptr
+                                 : std::get_if<double>(&lon->second.data);
+  if (!lat_n || !lon_n || !near(*lat_n, match.position.latitude) ||
+      !near(*lon_n, match.position.longitude)) {
     return fail("gps read-back");
   }
   return 0;

@@ -5,6 +5,7 @@
 #include "umm/umm.hpp"
 
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <fstream>
 #include <iterator>
@@ -459,11 +460,6 @@ inline umm::Metadata stills_payload() {
   (void)metadata.setCopyrightNotice(copyright);
   (void)metadata.setKeywords({"alpha", "beta"});
   (void)metadata.setRating(4.0);
-  umm::GpsCoordinate gps;
-  gps.latitude = 37.7749;
-  gps.longitude = -122.4194;
-  gps.altitude_meters = 10.0;
-  (void)metadata.setGps(gps);
   umm::Value city;
   city.data = std::string("San Francisco");
   umm::Value state;
@@ -474,6 +470,10 @@ inline umm::Metadata stills_payload() {
   location.emplace("city", std::move(city));
   location.emplace("provinceState", std::move(state));
   location.emplace("countryName", std::move(country));
+  location.emplace("gpsLatitude", umm::Value{37.7749});
+  location.emplace("gpsLongitude", umm::Value{-122.4194});
+  location.emplace("gpsAltitude", umm::Value{10.0});
+  location.emplace("gpsAltitudeRef", umm::Value{std::int64_t{0}});
   (void)metadata.setLocationCreated({std::move(location)});
   return metadata;
 }
@@ -510,11 +510,13 @@ inline umm::Metadata video_payload() {
   umm::Value date;
   date.data = when;
   (void)metadata.set("iptc.video.dateCreated", date);
-  umm::GpsCoordinate gps;
-  gps.latitude = 37.7749;
-  gps.longitude = -122.4194;
-  gps.altitude_meters = 10.0;
-  (void)metadata.setGps(gps);
+  umm::Structure location;
+  location.emplace("gpsLatitude", umm::Value{37.7749});
+  location.emplace("gpsLongitude", umm::Value{-122.4194});
+  location.emplace("gpsAltitude", umm::Value{10.0});
+  location.emplace("gpsAltitudeRef", umm::Value{std::int64_t{0}});
+  (void)metadata.set("iptc.video.locationShot",
+                     umm::Value{std::vector<umm::Structure>{std::move(location)}});
   return metadata;
 }
 

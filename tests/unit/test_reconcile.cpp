@@ -44,6 +44,33 @@ const umm::LangAlt* as_lang(const umm::PropertyValue& property) {
   return std::get_if<umm::LangAlt>(&property.value.data);
 }
 
+const umm::Structure* location0(const umm::PropertyValue& property) {
+  const auto* list =
+      std::get_if<std::vector<umm::Structure>>(&property.value.data);
+  if (!list || list->empty()) {
+    return nullptr;
+  }
+  return &list->front();
+}
+
+bool field_near(const umm::Structure& fields, const char* name, double expected) {
+  const auto it = fields.find(name);
+  if (it == fields.end()) {
+    return false;
+  }
+  const auto* n = std::get_if<double>(&it->second.data);
+  return n && std::fabs(*n - expected) <= 1e-4;
+}
+
+bool dump_has(const umm::Metadata& metadata, std::string_view needle) {
+  for (const umm::BaseEntry& item : metadata.dumpUnmapped()) {
+    if (item.key.key.find(std::string(needle)) != std::string::npos) {
+      return true;
+    }
+  }
+  return false;
+}
+
 }  // namespace
 
 int main() {
@@ -247,19 +274,23 @@ int main() {
              entry("Exif", "Exif.GPSInfo.GPSLongitude", "122.4194"),
              entry("Exif", "Exif.GPSInfo.GPSLongitudeRef", "W"),
              entry("Xmp", "Xmp.exif.GPSLatitude", "37.7749N"),
-             entry("Xmp", "Xmp.exif.GPSLongitude", "122.4194W")}),
+             entry("Xmp", "Xmp.exif.GPSLongitude", "122.4194W"),
+             entry("Exif", "Exif.GPSInfo.GPSImgDirection", "90")}),
         "test");
     if (!result.ok()) {
       return fail("gps reconcile failed");
     }
-    const auto gps = result.value().gps();
-    const auto* coord =
-        gps ? std::get_if<umm::GpsCoordinate>(&gps->value.data) : nullptr;
-    if (!coord || coord->latitude < 37.77 || coord->longitude > -122.41) {
+    const auto loc = result.value().locationCreated();
+    const auto* fields = loc ? location0(*loc) : nullptr;
+    if (!fields || !field_near(*fields, "gpsLatitude", 37.7749) ||
+        !field_near(*fields, "gpsLongitude", -122.4194)) {
       return fail("gps value");
     }
-    if (gps->resolution != umm::Resolution::equivalent) {
+    if (loc->resolution != umm::Resolution::equivalent) {
       return fail("gps not equivalent");
+    }
+    if (!dump_has(result.value(), "GPSImgDirection")) {
+      return fail("GPSImgDirection must stay unmapped");
     }
   }
 
@@ -273,14 +304,42 @@ int main() {
     if (!result.ok()) {
       return fail("rational gps reconcile failed");
     }
-    const auto gps = result.value().gps();
-    const auto* coord =
-        gps ? std::get_if<umm::GpsCoordinate>(&gps->value.data) : nullptr;
-    if (!coord || coord->latitude < 37.77 || coord->longitude > -122.41) {
+    const auto loc = result.value().locationCreated();
+    const auto* fields = loc ? location0(*loc) : nullptr;
+    if (!fields || !field_near(*fields, "gpsLatitude", 37.7749) ||
+        !field_near(*fields, "gpsLongitude", -122.4194)) {
       return fail("rational gps value");
     }
-    if (gps->resolution != umm::Resolution::single) {
+    if (loc->resolution != umm::Resolution::single) {
       return fail("rational gps not single");
+    }
+  }
+
+  {
+    const auto result = umm::internal::reconcile(
+        doc({entry("Exif", "Exif.GPSInfo.GPSLatitude", "37.7749"),
+             entry("Exif", "Exif.GPSInfo.GPSLatitudeRef", "N"),
+             entry("Exif", "Exif.GPSInfo.GPSLongitude", "122.4194"),
+             entry("Exif", "Exif.GPSInfo.GPSLongitudeRef", "W"),
+             entry("Xmp", "Xmp.Iptc4xmpExt.LocationCreated",
+                   R"({"City":"Paris"})")}),
+        "test");
+    if (!result.ok()) {
+      return fail("city+gps merge reconcile failed");
+    }
+    const auto loc = result.value().locationCreated();
+    const auto* fields = loc ? location0(*loc) : nullptr;
+    if (!loc || loc->resolution != umm::Resolution::equivalent || !fields) {
+      return fail("city+gps should merge as equivalent");
+    }
+    const auto city = fields->find("city");
+    const auto* city_text =
+        city == fields->end() ? nullptr
+                              : std::get_if<std::string>(&city->second.data);
+    if (!city_text || *city_text != "Paris" ||
+        !field_near(*fields, "gpsLatitude", 37.7749) ||
+        !field_near(*fields, "gpsLongitude", -122.4194)) {
+      return fail("city+gps merge values");
     }
   }
 
@@ -473,17 +532,13 @@ int main() {
     if (!result.ok()) {
       return fail("video gps reconcile failed");
     }
-    const auto gps = result.value().gps();
-    if (!gps || gps->resolution != umm::Resolution::single) {
-      return fail("video gps should come from XMP only (C7)");
+    if (result.value().get("iptc.video.locationShot") ||
+        result.value().locationCreated()) {
+      return fail("video XMP-exif GPS must not fill locationShot (C8)");
     }
-    const auto* coord = std::get_if<umm::GpsCoordinate>(&gps->value.data);
-    if (!coord || std::fabs(coord->latitude - 10.0) > 1e-4 ||
-        std::fabs(coord->longitude - 10.0) > 1e-4) {
-      return fail("video gps did not prefer XMP over QuickTime cast source");
-    }
-    if (result.value().get("iptc.video.locationShot")) {
-      return fail("QuickTime GPS must not fill locationShot without upcast");
+    if (!dump_has(result.value(), "GPSLatitude") ||
+        !dump_has(result.value(), "location.ISO6709")) {
+      return fail("video GPS keys must stay unmapped without upcast");
     }
   }
   {
@@ -506,8 +561,9 @@ int main() {
     if (!result.ok()) {
       return fail("video gps DMS reconcile failed");
     }
-    if (result.value().gps()) {
-      return fail("UserData GPSCoordinates must not fill gps() (C7)");
+    if (result.value().get("iptc.video.locationShot") ||
+        result.value().locationCreated()) {
+      return fail("UserData GPSCoordinates must not fill locationShot (C7)");
     }
   }
 
@@ -567,7 +623,7 @@ int main() {
     if (!loc_list || loc_list->empty()) {
       return fail("video structure-list shape");
     }
-    const auto city = loc_list->front().find("City");
+    const auto city = loc_list->front().find("city");
     const auto* city_text =
         city == loc_list->front().end()
             ? nullptr

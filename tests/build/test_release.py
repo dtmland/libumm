@@ -150,7 +150,7 @@ class TestReleaseWorkflow(unittest.TestCase):
         self.assertIn('test_video(".mov")', text)
         self.assertIn("matchTrack", text)
         self.assertIn("write_gps", text)
-        self.assertIn("setGps", text)
+        self.assertIn("setLocationCreated", text)
         self.assertIn("umm::write", text)
 
     def test_history_records_release_pipeline(self) -> None:

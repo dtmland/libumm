@@ -1,5 +1,6 @@
 #include "umm/metadata.hpp"
 
+#include <cstdint>
 #include <cstdio>
 #include <optional>
 #include <string>
@@ -181,27 +182,14 @@ int main() {
     return fail("rating round-trip");
   }
 
-  umm::GpsCoordinate gps;
-  gps.latitude = 48.8566;
-  gps.longitude = 2.3522;
-  gps.altitude_meters = 35.0;
-  if (!require_ok(md.setGps(gps), "setGps")) {
-    return 1;
-  }
-  const auto gps_property = md.gps();
-  if (!gps_property) {
-    return fail("gps missing after set");
-  }
-  const auto* position =
-      std::get_if<umm::GpsCoordinate>(&gps_property->value.data);
-  if (!position || *position != gps) {
-    return fail("gps round-trip");
-  }
-
   umm::Structure paris;
   umm::Value city;
   city.data = std::string("Paris");
   paris.emplace("city", city);
+  paris.emplace("gpsLatitude", umm::Value{48.8566});
+  paris.emplace("gpsLongitude", umm::Value{2.3522});
+  paris.emplace("gpsAltitude", umm::Value{35.0});
+  paris.emplace("gpsAltitudeRef", umm::Value{std::int64_t{0}});
   if (!require_ok(md.setLocationCreated({paris}), "setLocationCreated")) {
     return 1;
   }
@@ -215,9 +203,17 @@ int main() {
       locations->front().at("city") != city) {
     return fail("locationCreated round-trip");
   }
+  const auto lat = locations->front().find("gpsLatitude");
+  const auto* lat_n =
+      lat == locations->front().end()
+          ? nullptr
+          : std::get_if<double>(&lat->second.data);
+  if (!lat_n || *lat_n != 48.8566) {
+    return fail("locationCreated gps round-trip");
+  }
 
   const auto ids = md.propertyIds();
-  if (ids.size() != 10) {
+  if (ids.size() != 9) {
     return fail("propertyIds count");
   }
 

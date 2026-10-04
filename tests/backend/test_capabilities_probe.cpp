@@ -1,10 +1,14 @@
 #include "read_base_checks.hpp"
 #include "umm/umm.hpp"
 
+#include <cstdint>
 #include <cstdio>
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <string_view>
+#include <variant>
+#include <vector>
 
 namespace {
 
@@ -327,11 +331,14 @@ int probe_backend(const std::string& backend_id) {
         raw_stem("video", "minimal", ".mp4"), dest,
         std::filesystem::copy_options::overwrite_existing);
     umm::Metadata metadata;
-    umm::GpsCoordinate gps;
-    gps.latitude = 37.7749;
-    gps.longitude = -122.4194;
-    if (!metadata.setGps(gps).ok()) {
-      return fail("probe MP4 setGps");
+    umm::Structure loc;
+    loc.emplace("gpsLatitude", umm::Value{37.7749});
+    loc.emplace("gpsLongitude", umm::Value{-122.4194});
+    if (!metadata
+             .set("iptc.video.locationShot",
+                  umm::Value{std::vector<umm::Structure>{std::move(loc)}})
+             .ok()) {
+      return fail("probe MP4 set locationShot gps");
     }
     umm::WriteOptions options;
     options.backend = "exiftool";
@@ -363,18 +370,26 @@ int probe_backend(const std::string& backend_id) {
     }
     bool saw_gps = false;
     for (const umm::BaseKey& key : written.value().written) {
-      if (key.key.find("GPSLatitude") != std::string::npos) {
+      if (key.key.find("LocationCreated") != std::string::npos ||
+          key.key.find("location.ISO6709") != std::string::npos ||
+          key.key.find("GPSCoordinates") != std::string::npos) {
         saw_gps = true;
       }
     }
     if (!saw_gps) {
-      return fail("probe MP4 write missing XMP GPS");
+      return fail("probe MP4 write missing Location GPS");
     }
     umm::ReadOptions read_options;
     read_options.backend = "exiftool";
     const auto round = umm::read(dest, read_options);
-    if (!round.ok() || !round.value().gps()) {
-      return fail("probe MP4 write vs XMP GPS read-back");
+    const auto loc_prop = round.ok() ? round.value().locationCreated()
+                                     : std::optional<umm::PropertyValue>{};
+    const auto* list =
+        loc_prop ? std::get_if<std::vector<umm::Structure>>(&loc_prop->value.data)
+                 : nullptr;
+    if (!round.ok() || !list || list->empty() ||
+        list->front().find("gpsLatitude") == list->front().end()) {
+      return fail("probe MP4 write vs Location GPS read-back");
     }
   }
 

@@ -42,8 +42,8 @@ Consequences already in the engine:
   video GPS representations; they are the `capturePosition` group.
 - ExifTool Keys / UserData / ItemList stay in the base key
   (`QuickTime.Keys.…`) so those sources are distinguishable.
-- There is no EXIF canonical domain (C17). Camera EXIF GPS remains
-  `exif.gps.position` until session 48.
+- There is no EXIF canonical domain (C17). Camera EXIF GPS is a
+  representation of `locationCreated[0]` GPS on photos.
 
 ## Cast API (C9–C12a)
 

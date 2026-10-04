@@ -53,7 +53,7 @@ not aliases of `set`. `umm read` is not an alias of `umm get`: `read` prints the
 | `umm merge FILE PROP --use BASEKEY\|--value V` | `umm::merge` + `umm::write` | Resolve a conflict by choosing a candidate or supplying an override, then persist. `PROP` is a full property id. |
 | `umm sync FILE` | `umm::synchronize` | Make embedded and sidecar carriers agree; `--direction both\|embedded-to-sidecar\|sidecar-to-embedded`, `--dry-run`. |
 | `umm caps FILE\|TYPE` | `umm::capabilities` | Show per-backend, per-category capability rows for a file or type — the supported-types answer, live. |
-| `umm geotag --track T.gpx FILE…` | `umm::importTrack` / `matchTrack` / `umm::write` | Correlate capture times with a GPX/NMEA/KML track and write `exif.gps.position`; `--offset` for naive timestamps. Workflow command, not a property accessor. |
+| `umm geotag --track T.gpx FILE…` | `umm::importTrack` / `matchTrack` / `umm::write` | Correlate capture times with a GPX/NMEA/KML track and write `locationCreated[0]` GPS (photo) or `locationShot[0]` GPS (video); `--offset` for naive timestamps. Workflow command, not a property accessor. |
 | `umm doctor` | backend availability + discovery | Report which backends are usable, which ExifTool/Perl was found and via which discovery step, and how to fix problems. |
 | `umm setup exiftool` | (tooling, §4.2) | Install ExifTool for the current user via the CLI's native install scripts. |
 | `umm version` | `umm::version()` + `Registry::standards()` | Tool version, libumm version, and the standards/versions implemented. |
@@ -76,8 +76,8 @@ umm set video.mp4 creator="Jane Doe" keywords="nature,landscape" dateCreated="20
 Unknown/default domain writes photo ids. Video files sniffed by `umm::read` set
 `MediaDomain::video`, so the same accessor name stores `iptc.video.*`. Full ids always
 work (`iptc.photo.creator=…` / `iptc.video.creator=…`). `rating` stays photo-only
-(`iptc.photo.imageRating`). `gps` is the well-known `exif.gps.position`. `objectShown`
-is deferred.
+(`iptc.photo.imageRating`). Camera GPS is `locationCreated` / `locationShot`
+struct fields. `objectShown` is deferred.
 
 Convenience accessors (1:1 with the C++ typed API; photo id shown, video id when the
 concept is cross-media):
@@ -96,7 +96,6 @@ concept is cross-media):
 | `shownEvent` | `eventName` + `eventIdentifier` | `iptc.video.shownEvent` |
 | `assetIdentifier` | `iptc.photo.digitalImageGuid` | `iptc.video.videoIdentifier` |
 | `rating` | `iptc.photo.imageRating` | — |
-| `gps` | `exif.gps.position` | `exif.gps.position` |
 
 The remaining Tier 1–3 accessors (`altTextAccessibility`, `personShown`, `supplier`, …)
 follow the same rule; see [docs/user/guide.md](user/guide.md) “Cross-media accessors”.
@@ -113,38 +112,32 @@ umm get video.mp4 iptc.video.creator --json
 
 Photo and video namespaces stay distinct as registry ids. Short accessor names such as
 `creator` resolve through `MediaDomain` (unknown → photo; sniffed video → `iptc.video.*`)
-and transpose where the map says so. Full ids never retarget the other domain. GPS is
-`exif.gps.position` for both photos and video via `gps`.
+and transpose where the map says so. Full ids never retarget the other domain.
+Camera GPS is `locationCreated` GPS on photos and `locationShot` GPS on video
+(QuickTime GPS needs the `capturePosition` upcast).
 
 Discover what is present on a file with `umm read FILE --json` (full dump) or `umm caps FILE`
 (what the backends can store). `umm get` is for known names.
 
 ### 2.4 GPS, timestamps, and geotag
 
-GPS coordinates and capture time are ordinary properties. `umm geotag` is a **workflow** on
+GPS coordinates live on Location structs. `umm geotag` is a **workflow** on
 top of `umm::importTrack` / `matchTrack` / `umm::write`: it matches file capture times to a
-track and then writes `exif.gps.position`. It does not replace `umm set` when the coordinates
-are already known.
+track and then writes `locationCreated[0]` GPS (photo) or `locationShot[0]` GPS
+(video). It does not replace `umm set` when the coordinates are already known.
 
-**Photos: GPS — convenience accessor**
-
-```
-umm get photo.jpg gps
-umm set photo.jpg gps="40.7128,-74.0060"
-```
-
-**Photos: GPS — full property id**
+**Photos: GPS via Location Created**
 
 ```
-umm get photo.jpg exif.gps.position
-umm set photo.jpg exif.gps.position="40.7128,-74.0060"
+umm get photo.jpg locationCreated
+umm set photo.jpg locationCreated --json '[{"gpsLatitude":40.7128,"gpsLongitude":-74.0060}]'
 ```
 
-**Video: GPS (no convenience accessor)**
+**Video: GPS via Location Shot**
 
 ```
-umm set video.mp4 exif.gps.position="40.7128,-74.0060"
-umm get video.mp4 exif.gps.position
+umm set video.mp4 iptc.video.locationShot --json '[{"gpsLatitude":40.7128,"gpsLongitude":-74.0060}]'
+umm get video.mp4 locationCreated
 ```
 
 **Photos: Date Created — convenience accessor**
@@ -170,18 +163,17 @@ umm set video.mp4 iptc.video.dateReleased="2025-01-20T00:00:00Z"
 **Direct GPS write vs. track matching**
 
 ```
-# Known coordinates — set the property (accessor or full id)
-umm set photo.jpg gps="40.7128,-74.0060"
-umm set photo.jpg exif.gps.position="40.7128,-74.0060"
+# Known coordinates — set Location GPS
+umm set photo.jpg locationCreated --json '[{"gpsLatitude":40.7128,"gpsLongitude":-74.0060}]'
 
 # Correlate capture time with a GPX/NMEA/KML track, then persist
 umm geotag --track hike.gpx photo1.jpg photo2.jpg
 umm geotag --track hike.gpx --offset=120 photo.jpg
 umm geotag --track hike.gpx --dry-run photo.jpg
 
-# Video: same workflow; inspect with the full GPS id
+# Video: same workflow; inspect locationCreated (maps to locationShot)
 umm geotag --track video_track.gpx video.mp4
-umm get video.mp4 exif.gps.position
+umm get video.mp4 locationCreated
 ```
 
 `--offset` supplies `MatchOptions::naive_utc_offset_minutes` when the media timestamp has no
@@ -225,10 +217,10 @@ umm set video.mp4 iptc.video.contributor --json '[{"name":"Alice","role":"direct
 
 - `--json` on every inspect command (`read`, `get`, `dumpall`, `dumpunmapped`, `conflicts`, `caps`, `version`,
   and `--dry-run` reports); stable schema documented alongside the tool.
-- Property addressing: convenience accessors (`creator`, `gps`, `keywords`, …) for common
-  photo properties; full ids (`iptc.photo.creator`, `iptc.video.dateCreated`,
-  `exif.gps.position`) for video, explicit control, or properties without an accessor.
-  Discover present values with `umm read FILE --json`.
+- Property addressing: convenience accessors (`creator`, `keywords`,
+  `locationCreated`, …) for common properties; full ids (`iptc.photo.creator`,
+  `iptc.video.dateCreated`) for explicit control or properties without an
+  accessor. Discover present values with `umm read FILE --json`.
 - `--backend exiv2|exiftool` passes through to `ReadOptions/WriteOptions` for verification
   workflows (write with one, read with the other).
 - Batch: file globs, `--recursive`, and non-zero exit summarizing per-file failures. No parallel
@@ -243,7 +235,7 @@ umm set video.mp4 iptc.video.contributor --json '[{"name":"Alice","role":"direct
 ```
 umm set photo.jpg creator="Jane" keywords="hiking" dateCreated="2025-01-15T14:30:00Z"
 umm geotag --track hike.gpx photo.jpg
-umm get photo.jpg creator keywords gps
+umm get photo.jpg creator keywords locationCreated
 ```
 
 **Video workflow (full property ids)**
@@ -252,7 +244,7 @@ umm get photo.jpg creator keywords gps
 umm set video.mp4 iptc.video.creator --json '{"name":"Director","role":"director"}'
 umm set video.mp4 iptc.video.dateCreated="2025-01-15T14:30:00Z"
 umm geotag --track video_track.gpx video.mp4
-umm get video.mp4 iptc.video.creator iptc.video.dateCreated exif.gps.position
+umm get video.mp4 iptc.video.creator iptc.video.dateCreated iptc.video.locationShot
 ```
 
 **Bulk set with capability check**
