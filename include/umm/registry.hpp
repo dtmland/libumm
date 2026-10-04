@@ -36,6 +36,8 @@ struct Representations {
   std::string_view exif_tag;        // e.g. "IFD0:Artist" (TR / IPTC Mapping Guidelines)
   std::string_view quicktime_key;   // e.g. "com.apple.quicktime.creationdate" (VMH)
   std::string_view ebucore;         // e.g. "date/created" (VMH EBUCore path)
+
+  bool operator==(const Representations&) const = default;
 };
 
 // One adopted standard property. Semantics are inherited from the standard
@@ -49,6 +51,8 @@ struct PropertyDef {
   Datatype datatype;
   Cardinality cardinality;
   Representations representations;
+
+  bool operator==(const PropertyDef&) const = default;
 };
 
 class Registry {
