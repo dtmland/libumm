@@ -104,7 +104,38 @@ Location Shown live in the Extension namespace.
 **Legacy city/state/country.** `iptc.photo.cityLegacy`, `provinceOrStateLegacy`,
 `countryLegacy`, `countryCodeLegacy`, and `sublocationLegacy` are their own
 canonical properties (photoshop/IIM / Core `Location`). They no longer fill or
-write `locationCreated`. A side cast to Location Shown is session 47.
+write `locationCreated`. Use `umm::cast(..., CastDirection::side)` group
+`locationShownLegacy` to copy them to or from `locationShownInTheImage[0]`
+(MWG maps those IIM/photoshop fields to Location Shown; both are typically
+filled afterwards, unlike capture GPS).
+
+## Casting
+
+Casts are opt-in links that are **not** representations (C7). Preview with
+`ReadOptions::report_casts` or `umm::cast` (`dry_run` default true). Apply with
+`CastOptions::dry_run = false`. Statuses: `can_cast`, `equal`, `needs_force`
+(requires `force`), `target_not_storable`, `ambiguous`. Empty sources are
+omitted.
+
+**Up** fills a canonical property from a non-canonical base key.
+**Down** writes a non-canonical key from a canonical property.
+**Side** keeps two canonical properties in step.
+
+First groups: video `capturePosition` (QuickTime / EXIF GPS ↔
+`locationShot[0]` GPS), `videoCreated` / `videoModified` (movie-header dates),
+`recordingDevice`; photo `locationShownLegacy`, `personShown`,
+`creatorImageCreator`.
+
+Movie-header `CreateDate` is often UTC-without-offset or simply wrong (re-export
+or unset camera clock). `videoCreated` is **approximate**: listed in previews,
+applied only with `include_approximate`. Keys `CreationDate` remains the
+automatic `dateCreated` representation.
+
+`WriteOptions::downcast` defaults to `capturePosition` on video so players that
+only read QuickTime GPS still see a written `locationShot` GPS. Pass an empty
+vector to write none.
+
+Cast-rule sources appear in `dumpUnmapped()` with `BaseEntry::cast_source`.
 
 ## Cross-media accessors
 

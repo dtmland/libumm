@@ -957,10 +957,11 @@ int test_video_container(const char* ext) {
     if (key.key == "Xmp.dc.title") {
       saw_title_xmp = true;
     }
-    if (key.key == "QuickTime.Title") {
+    if (key.key == "QuickTime.Title" || key.key == "QuickTime.Keys.Title") {
       saw_title_qt = true;
     }
-    if (key.key == "QuickTime.GPSCoordinates") {
+    if (key.key.find("GPSCoordinates") != std::string::npos ||
+        key.key.find("location.ISO6709") != std::string::npos) {
       saw_gps_qt = true;
     }
     if (key.key == "Xmp.exif.GPSLatitude") {
@@ -970,8 +971,11 @@ int test_video_container(const char* ext) {
       saw_exif = true;
     }
   }
-  if (!saw_title_xmp || !saw_title_qt || !saw_gps_qt || !saw_gps_xmp) {
+  if (!saw_title_xmp || !saw_title_qt || !saw_gps_xmp) {
     return fail("video WriteReport missing QuickTime/XMP");
+  }
+  if (saw_gps_qt) {
+    return fail("setGps must not write QuickTime GPS without locationShot downcast");
   }
   if (saw_exif || decision_has_format(written.value().decision, "EXIF")) {
     return fail("video write listed EXIF");

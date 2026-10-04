@@ -1,0 +1,60 @@
+{
+  "id": "capturePosition",
+  "direction": "up",
+  "partial": true,
+  "approximate": false,
+  "one_way": false,
+  "citation": "C7, C19; VMH location.ISO6709; Apple UserData xyz; EXIF GPS IFD is not a video locationShot representation",
+  "source_priority": [
+    "keys_iso6709",
+    "userdata_xyz",
+    "exif_gps"
+  ],
+  "rules": [
+    {
+      "id": "keys_iso6709",
+      "source": {
+        "kind": "base_key",
+        "key": "QuickTime.Keys.location.ISO6709"
+      },
+      "target": {
+        "kind": "property_field",
+        "key": "iptc.video.locationShot",
+        "index": 0,
+        "field": "gpsLatitude"
+      },
+      "heuristic": "H11",
+      "citation": "Apple QuickTime Keys location.ISO6709; H18 role 0 or absent only"
+    },
+    {
+      "id": "userdata_xyz",
+      "source": {
+        "kind": "base_key",
+        "key": "QuickTime.UserData.GPSCoordinates"
+      },
+      "target": {
+        "kind": "property_field",
+        "key": "iptc.video.locationShot",
+        "index": 0,
+        "field": "gpsLatitude"
+      },
+      "heuristic": "H11",
+      "citation": "QuickTime UserData copyright-xyz / GPSCoordinates"
+    },
+    {
+      "id": "exif_gps",
+      "source": {
+        "kind": "base_key",
+        "key": "Exif.GPSInfo.GPSLatitude"
+      },
+      "target": {
+        "kind": "property_field",
+        "key": "iptc.video.locationShot",
+        "index": 0,
+        "field": "gpsLatitude"
+      },
+      "heuristic": "H10",
+      "citation": "EXIF GPS IFD combined with latitude/longitude refs (H10); extra GPS tags remain unmapped (H20)"
+    }
+  ]
+}

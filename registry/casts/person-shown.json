@@ -1,0 +1,44 @@
+{
+  "id": "personShown",
+  "direction": "side",
+  "partial": true,
+  "approximate": false,
+  "one_way": false,
+  "citation": "IPTC PersonInImage names versus PersonInImageWDetails name; H4 union by display value",
+  "source_priority": [
+    "names_to_details",
+    "details_to_names"
+  ],
+  "rules": [
+    {
+      "id": "names_to_details",
+      "source": {
+        "kind": "property",
+        "key": "iptc.photo.personShownInTheImage"
+      },
+      "target": {
+        "kind": "property_field",
+        "key": "iptc.photo.personShownInTheImageWithDetails",
+        "index": -1,
+        "field": "name"
+      },
+      "heuristic": "H4",
+      "citation": "PersonInImage to PersonInImageWDetails name"
+    },
+    {
+      "id": "details_to_names",
+      "source": {
+        "kind": "property_field",
+        "key": "iptc.photo.personShownInTheImageWithDetails",
+        "index": -1,
+        "field": "name"
+      },
+      "target": {
+        "kind": "property",
+        "key": "iptc.photo.personShownInTheImage"
+      },
+      "heuristic": "H4",
+      "citation": "PersonInImageWDetails name to PersonInImage"
+    }
+  ]
+}

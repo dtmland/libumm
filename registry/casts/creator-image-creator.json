@@ -1,0 +1,44 @@
+{
+  "id": "creatorImageCreator",
+  "direction": "side",
+  "partial": true,
+  "approximate": false,
+  "one_way": false,
+  "citation": "dc creator versus PLUS ImageCreator name; H4 union by display value",
+  "source_priority": [
+    "creator_to_image_creator",
+    "image_creator_to_creator"
+  ],
+  "rules": [
+    {
+      "id": "creator_to_image_creator",
+      "source": {
+        "kind": "property",
+        "key": "iptc.photo.creator"
+      },
+      "target": {
+        "kind": "property_field",
+        "key": "iptc.photo.imageCreator",
+        "index": -1,
+        "field": "imageCreatorName"
+      },
+      "heuristic": "H4",
+      "citation": "Creator names to PLUS ImageCreator name"
+    },
+    {
+      "id": "image_creator_to_creator",
+      "source": {
+        "kind": "property_field",
+        "key": "iptc.photo.imageCreator",
+        "index": -1,
+        "field": "imageCreatorName"
+      },
+      "target": {
+        "kind": "property",
+        "key": "iptc.photo.creator"
+      },
+      "heuristic": "H4",
+      "citation": "PLUS ImageCreator name to Creator"
+    }
+  ]
+}

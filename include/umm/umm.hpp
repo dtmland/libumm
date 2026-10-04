@@ -43,12 +43,17 @@ struct ReadOptions {
   // (ErrorCode::io_not_found). StoragePolicy::sidecar_required on write is
   // the matching persistence rule.
   bool sidecar_required{false};
+  // When true, fill Metadata::castCandidates() with up/down/side previews.
+  bool report_casts{false};
 };
 
 struct WriteOptions {
   std::string backend;          // empty = capability-driven choice
   StoragePolicy policy{StoragePolicy::preferred};
   bool dry_run{false};          // compute WriteReport without touching files
+  // Downcast groups to apply on write. nullopt = library defaults
+  // (capturePosition on video). Empty vector = none.
+  std::optional<std::vector<std::string>> downcast;
 };
 
 struct WriteReport {
@@ -140,7 +145,8 @@ Result<Metadata> merge(Metadata metadata, std::string_view property_id,
 // Write canonical metadata through the mapping engine to synchronized
 // representations, with temp-file + atomic-rename safety (decision M3).
 // preferred/embedded_only: writable embedded categories and container GPS
-// from capabilities() (QuickTime GPSCoordinates when container_gps is writable).
+// from capabilities() (video capturePosition downcast writes Keys
+// location.ISO6709 and UserData GPSCoordinates).
 // sidecar_only: XMP sidecar (media bytes unchanged).
 // sidecar_required: sidecar must be written; when embedded writes are also
 // available and sidecar is not recommended, Method::mixed writes both.
@@ -171,6 +177,22 @@ Result<StorageDecision> evaluateStorage(const std::filesystem::path& media,
 // state; the first file is not rolled back.
 Result<SyncReport> synchronize(const std::filesystem::path& media,
                                SyncOptions options = {});
+
+struct CastOptions {
+  bool dry_run{true};
+  bool force{false};
+  bool include_approximate{false};
+  std::vector<std::string> groups;  // empty = all groups for the direction
+};
+
+struct CastReport {
+  std::vector<CastCandidate> candidates;
+  Metadata metadata;
+};
+
+// Evaluate or apply casts (C9–C12a). dry_run default does not write.
+Result<CastReport> cast(const std::filesystem::path& media, CastDirection direction,
+                        CastOptions options = {});
 
 // GPS track import and matchTrack() are declared in umm/track.hpp
 // (sessions 25–26). Matched positions write through umm::write.

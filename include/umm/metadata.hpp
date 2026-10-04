@@ -35,8 +35,35 @@ struct BaseEntry {
   BaseKey key;
   std::string type_hint;  // backend type name, informational
   std::string value;      // textual form; binary blobs base64 (documented per family)
+  // C13: true when a canonical property consumed this entry as a cast source.
+  // dumpUnmapped() still lists it; dumpAll() is unchanged.
+  bool cast_source = false;
 
   bool operator==(const BaseEntry&) const = default;
+};
+
+enum class CastDirection { up, down, side };
+
+enum class CastStatus {
+  can_cast,
+  needs_force,
+  equal,
+  source_empty,
+  target_not_storable,
+  ambiguous,
+};
+
+struct CastCandidate {
+  std::string group;
+  CastDirection direction = CastDirection::up;
+  CastStatus status = CastStatus::source_empty;
+  std::string source_id;
+  std::string target_id;
+  std::string source_preview;
+  std::string target_preview;
+  std::vector<std::string> notes;
+
+  bool operator==(const CastCandidate&) const = default;
 };
 
 class Metadata {
@@ -152,7 +179,7 @@ class Metadata {
   // --- Base metadata (read-side; writes go through backend options) ----------
   // dumpAll(): every base entry the backends read, in source order.
   // dumpUnmapped(): base entries that no canonical property consumed as a
-  // representation (C13). Until session 47 there are no cast sources.
+  // representation (C13). Cast sources remain here with BaseEntry::cast_source.
   const std::vector<BaseEntry>& dumpAll() const;
   const std::vector<BaseEntry>& dumpUnmapped() const;
   std::optional<std::string> dumpValue(const BaseKey& key) const;
@@ -162,6 +189,10 @@ class Metadata {
   // umm::read after reconciliation.
   void recomputeUnmapped();
 
+  // Preview of up/down/side candidates when ReadOptions::report_casts is on.
+  const std::vector<CastCandidate>& castCandidates() const;
+  void assignCastCandidates(std::vector<CastCandidate> candidates);
+
  private:
   std::optional<PropertyValue> getConcept(std::string_view concept_name) const;
   Result<void> setConcept(std::string_view concept_name, Value value);
@@ -169,6 +200,7 @@ class Metadata {
   std::map<std::string, PropertyValue> properties_;
   std::vector<BaseEntry> base_;
   std::vector<BaseEntry> unmapped_;
+  std::vector<CastCandidate> cast_candidates_;
   MediaDomain media_domain_{MediaDomain::unknown};
 };
 

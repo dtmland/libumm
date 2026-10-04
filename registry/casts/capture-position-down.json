@@ -1,0 +1,28 @@
+{
+  "id": "capturePosition",
+  "direction": "down",
+  "partial": true,
+  "approximate": false,
+  "one_way": false,
+  "citation": "C7, C12a; default WriteOptions downcast on video",
+  "source_priority": [
+    "location_shot_gps"
+  ],
+  "rules": [
+    {
+      "id": "location_shot_gps",
+      "source": {
+        "kind": "property_field",
+        "key": "iptc.video.locationShot",
+        "index": 0,
+        "field": "gpsLatitude"
+      },
+      "target": {
+        "kind": "base_key",
+        "key": "QuickTime.Keys.location.ISO6709"
+      },
+      "heuristic": "H1",
+      "citation": "First locationShot GPS (H1) to Keys location.ISO6709 and UserData GPSCoordinates"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "id": "videoModified",
+  "direction": "up",
+  "partial": false,
+  "approximate": false,
+  "one_way": true,
+  "citation": "C7; movie-header ModifyDate is not a dateModified representation",
+  "source_priority": [
+    "movie_header_modify"
+  ],
+  "rules": [
+    {
+      "id": "movie_header_modify",
+      "source": {
+        "kind": "base_key",
+        "key": "QuickTime.ModifyDate"
+      },
+      "target": {
+        "kind": "property",
+        "key": "iptc.video.dateModified"
+      },
+      "heuristic": "H12",
+      "citation": "Movie-header ModifyDate; never invent a UTC offset (H12)"
+    }
+  ]
+}

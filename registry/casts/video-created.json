@@ -1,0 +1,26 @@
+{
+  "id": "videoCreated",
+  "direction": "up",
+  "partial": false,
+  "approximate": true,
+  "one_way": true,
+  "citation": "C7, C19, H12; movie-header CreateDate is not a dateCreated representation; QuickTime spec UTC vs camera local time",
+  "source_priority": [
+    "movie_header_create"
+  ],
+  "rules": [
+    {
+      "id": "movie_header_create",
+      "source": {
+        "kind": "base_key",
+        "key": "QuickTime.CreateDate"
+      },
+      "target": {
+        "kind": "property",
+        "key": "iptc.video.dateCreated"
+      },
+      "heuristic": "H12",
+      "citation": "Movie-header CreateDate; never invent a UTC offset (H12)"
+    }
+  ]
+}

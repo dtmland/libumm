@@ -28,6 +28,8 @@ These rules were applied throughout and still govern changes:
   download (Tier B) (M6).
 - **Write safety:** temp file + atomic rename / `ReplaceFileW` (M3).
 - **Base vs RAW (C18):** file-stored metadata is base metadata (`BaseKey` / `BaseEntry`). Unmapped means not consumed as a representation (`dumpUnmapped()`). RAW means camera image formats only.
+- **Representation versus cast (C7):** a base key is a representation only when IPTC TR, VMH, Mapping Guidelines, MWG, or the XMP of those EXIF tags defines the link. Other links are opt-in casts (`registry/casts/`, `umm::cast`). Movie-header `CreateDate` and QuickTime GPS are casts, not `dateCreated` / GPS representations.
+- **No EXIF canonical domain (C17):** there is no `exif.*` property domain besides the temporary well-known `exif.gps.position` until session 48.
 - End-user ExifTool acquisition is system-native `sh` + PowerShell scripts under
   `tools/get-exiftool/`, not Python (P3, P9).
 
@@ -65,8 +67,10 @@ These rules were applied throughout and still govern changes:
 ## Where the details live
 
 - Design decisions and reviews: [docs/analysis/](../analysis/) (dated records; decision IDs
-  S1–S4, M1–M7, R1–R8, P1–P9). The original concept and build plans are archived there as
+  S1–S4, M1–M7, R1–R8, P1–P9, C1–C19). The original concept and build plans are archived there as
   [concept.md](../analysis/concept.md) and [build-plan.md](../analysis/build-plan.md).
+  Casting and the layer model: [canonical-model.md](canonical-model.md) and
+  [2026-10-03-casting-and-canonical-model-decisions.md](../analysis/2026-10-03-casting-and-canonical-model-decisions.md).
 - Reconciliation policy: [docs/reconciliation-policy.md](../reconciliation-policy.md)
 - Versioning/ABI policy: [docs/abi-policy.md](../abi-policy.md)
 - Test media strategy: [docs/test-media-plan.md](../test-media-plan.md)

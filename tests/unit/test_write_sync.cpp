@@ -158,28 +158,30 @@ int main() {
   }
   const umm::BaseChanges vchanges = umm::internal::write_sync(video);
   if (!has_value(vchanges, "Xmp.dc.title", "Video Title") ||
-      !has_value(vchanges, "QuickTime.Title", "Video Title") ||
+      !has_value(vchanges, "QuickTime.Keys.Title", "Video Title") ||
       !has_value(vchanges, "Xmp.dc.description", "Video description") ||
-      !has_value(vchanges, "QuickTime.Description", "Video description") ||
+      !has_value(vchanges, "QuickTime.Keys.Description", "Video description") ||
       !has_value(vchanges, "Xmp.dc.creator", "Video Creator") ||
-      !has_value(vchanges, "QuickTime.Artist", "Video Creator") ||
+      !has_value(vchanges, "QuickTime.ItemList.Artist", "Video Creator") ||
       !has_value(vchanges, "Xmp.dc.rights", "Video copyright") ||
-      !has_value(vchanges, "QuickTime.Copyright", "Video copyright") ||
+      !has_value(vchanges, "QuickTime.Keys.Copyright", "Video copyright") ||
       !has_value(vchanges, "Xmp.dc.subject", "alpha") ||
       !has_value(vchanges, "Xmp.dc.subject", "beta") ||
-      !has_value(vchanges, "QuickTime.Keywords", "alpha, beta") ||
+      !has_value(vchanges, "QuickTime.Keys.Keywords", "alpha, beta") ||
       !has_value(vchanges, "Xmp.photoshop.DateCreated",
                  "2020-01-02T03:04:05") ||
-      !has_value(vchanges, "QuickTime.CreationDate", "2020-01-02T03:04:05") ||
-      !has_value(vchanges, "QuickTime.GPSCoordinates", "37.7749") ||
+      !has_value(vchanges, "QuickTime.Keys.CreationDate",
+                 "2020-01-02T03:04:05") ||
       !has_value(vchanges, "Xmp.exif.GPSLatitude", "37.7749") ||
       !has_value(vchanges, "Xmp.photoshop.Credit", "Video credit") ||
       !has_value(vchanges, "Xmp.Iptc4xmpExt.Headline", "Video headline") ||
       !has_value(vchanges, "Xmp.Iptc4xmpExt.LocationCreated", "Paris")) {
     return fail("video write-sync");
   }
-  if (count_key(vchanges, "QuickTime.GPSCoordinates") != 1) {
-    return fail("video GPSCoordinates count");
+  if (count_key(vchanges, "QuickTime.GPSCoordinates") != 0 ||
+      count_key(vchanges, "QuickTime.Keys.GPSCoordinates") != 0 ||
+      count_key(vchanges, "QuickTime.Keys.location.ISO6709") != 0) {
+    return fail("setGps must not write QuickTime GPS (C7 downcast)");
   }
 
   umm::Metadata photo_location;

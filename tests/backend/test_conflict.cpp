@@ -245,8 +245,17 @@ int check_video() {
   if (date->candidates.size() < 2) {
     return fail("video date missing candidates");
   }
-  const auto qt =
-      umm::merge(report.value().metadata, *date, "QuickTime.CreationDate");
+  std::string qt_key;
+  for (const umm::ConflictCandidate& candidate : date->candidates) {
+    if (candidate.primary_key.find("CreationDate") != std::string::npos) {
+      qt_key = candidate.primary_key;
+      break;
+    }
+  }
+  if (qt_key.empty()) {
+    return fail("video date missing CreationDate candidate");
+  }
+  const auto qt = umm::merge(report.value().metadata, *date, qt_key);
   if (!qt.ok()) {
     return fail("video merge QuickTime");
   }

@@ -20,6 +20,7 @@ answered from the data alone.
 | `registry/iptc-video/iptc-video.json` | VMH importer output (generated-but-committed) |
 | `registry/mappings/iptc-exif-overlay.json` | Curated EXIF mappings from the IPTC Mapping Guidelines (session 07; `partial: true` until Stage 6) |
 | `registry/mappings/cross-media-accessors.json` | Hand-curated Phase 2 accessor map (session 37); photo+video ids, tier, transposition |
+| `registry/casts/` | Hand-curated cast groups (session 47); not IPTC-imported |
 | `tools/registry/import_iptc.py` | Stdlib-only IPTC Photo importer |
 | `tools/registry/import_vmh.py` | Stdlib-only IPTC Video Metadata Hub importer |
 | `tools/registry/generate_cpp.py` | Stdlib-only C++ table generator |
@@ -69,6 +70,26 @@ Matches concept.md §20.
 object key is not used as the id so names like Creator become
 `iptc.photo.creator`. Video properties use the same derivation under
 `iptc.video.` (see Domain rule).
+
+## Cast groups (`registry/casts/*.json`)
+
+Curated L2 links (C7, C9). One group object per file. Regenerating
+`src/generated/cast_rules.hpp` must be byte-identical.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `id` | string | Group id (`capturePosition`, `videoCreated`, …) |
+| `direction` | string | `up`, `down`, or `side` |
+| `partial` | bool | Curated / incomplete |
+| `approximate` | bool | Apply only with `CastOptions::include_approximate` |
+| `one_way` | bool | No reverse group |
+| `citation` | string | Why this is a cast |
+| `source_priority` | string[] | Rule ids in evaluation order |
+| `rules` | array | Member rules |
+
+Each rule has `id`, `source`, `target`, `heuristic` (`H1`–`H21`), and
+`citation`. Endpoints are `{kind, key, field?, index?}` with `kind`
+`base_key`, `property`, or `property_field`.
 
 ## Representations
 

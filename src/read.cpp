@@ -1,5 +1,6 @@
 #include "umm/umm.hpp"
 
+#include "core/cast.hpp"
 #include "core/media_domain.hpp"
 #include "core/read_internal.hpp"
 #include "core/reconcile.hpp"
@@ -134,6 +135,23 @@ Result<Metadata> read(const std::filesystem::path& media, ReadOptions options) {
   if (metadata.ok()) {
     Metadata value = std::move(metadata).value();
     value.setMediaDomain(internal::media_domain_from_file_type(asset.file_type));
+    internal::flag_cast_sources(value);
+    if (options.report_casts) {
+      std::optional<Capabilities> caps;
+      if (const auto discovered = capabilities(media); discovered.ok()) {
+        caps = discovered.value();
+      }
+      const Capabilities* caps_ptr = caps ? &*caps : nullptr;
+      CastOptions preview;
+      std::vector<CastCandidate> candidates;
+      for (CastDirection direction :
+           {CastDirection::up, CastDirection::down, CastDirection::side}) {
+        auto part = internal::evaluate_casts(value, direction, preview,
+                                             asset.file_type, caps_ptr);
+        candidates.insert(candidates.end(), part.begin(), part.end());
+      }
+      value.assignCastCandidates(std::move(candidates));
+    }
     metadata = std::move(value);
   }
   return finish_read(std::move(metadata), options, asset.backend_id);

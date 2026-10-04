@@ -4,6 +4,19 @@ Pre-1.0 (`0.y.z`): the C++ ABI is not stable. See [docs/abi-policy.md](../abi-po
 
 ## Unreleased
 
+### Session 47 — Cast engine
+
+`umm::cast` evaluates or applies the first rule set (`registry/casts/`).
+`ReadOptions::report_casts` fills `Metadata::castCandidates()`.
+`WriteOptions::downcast` defaults to `capturePosition` on video.
+
+Movie-header-only videos no longer get `dateCreated` from `QuickTime.CreateDate`
+(C7). Enable `report_casts` to see the `videoCreated` candidate; apply with
+`include_approximate`. QuickTime GPS is no longer read or write-synced as
+`exif.gps.position`; upcast/downcast `capturePosition` instead. QuickTime Keys,
+UserData, and ItemList stay in the base key (`QuickTime.Keys.CreationDate`,
+`QuickTime.UserData.GPSCoordinates`, …).
+
 ### Session 46 — Full photo Location structs
 
 Photo `locationCreated` and `locationShownInTheImage` are full IPTC Location

@@ -603,8 +603,24 @@ int check_video_backend() {
   }
   if (minimal.value().get("iptc.video.title") ||
       minimal.value().get("iptc.video.creator") ||
+      minimal.value().get("iptc.video.dateCreated") ||
       minimal.value().creator()) {
     return fail_read("video minimal should have no descriptive properties");
+  }
+  umm::ReadOptions report = options;
+  report.report_casts = true;
+  const auto preview = umm::read(raw_stem("video", "minimal", ".mp4"), report);
+  if (!preview.ok()) {
+    return fail_read("video minimal report_casts read failed");
+  }
+  int video_created = 0;
+  for (const umm::CastCandidate& candidate : preview.value().castCandidates()) {
+    if (candidate.group == "videoCreated") {
+      ++video_created;
+    }
+  }
+  if (video_created != 1) {
+    return fail_read("movie-header MP4 should preview one videoCreated candidate");
   }
 
   const auto full = umm::read(raw_stem("video", "full", ".mp4"), options);
@@ -672,7 +688,7 @@ int check_video_backend() {
     return fail_read("video full dumpAll missing dateCreated key");
   }
   if (video_dump_has(full.value().dumpUnmapped(), "photoshop.DateCreated") ||
-      video_dump_has(full.value().dumpUnmapped(), "QuickTime.CreationDate")) {
+      video_dump_has(full.value().dumpUnmapped(), "CreationDate")) {
     return fail_read("video full dumpUnmapped still has dateCreated key");
   }
   if (full.value().dumpAll().size() < full.value().dumpUnmapped().size()) {

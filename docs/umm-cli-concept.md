@@ -42,7 +42,8 @@ not aliases of `set`. `umm read` is not an alias of `umm get`: `read` prints the
 
 | Command | Backing libumm API | Sketch |
 |---|---|---|
-| `umm read FILE…` | `umm::read` | Print canonical metadata (human table by default, `--json` for machine output) with provenance (`--sources`) and resolution states. |
+| `umm read FILE…` | `umm::read` | Print canonical metadata (human table by default, `--json` for machine output) with provenance (`--sources`) and resolution states. `--report-casts` lists `castCandidates()` without applying them. |
+| `umm cast FILE up\|down\|side` | `umm::cast` | Preview (default) or apply (`--apply`) a cast direction. `--group`, `--force`, `--include-approximate`. Dry-run prints statuses; apply persists through `umm::write`. |
 | `umm get FILE PROPERTY…` | `umm::read` | Print one or more property values by convenience accessor (`creator`) or full id (`iptc.photo.creator`); exit non-zero if absent. |
 | `umm set FILE ASSIGN…` | `umm::write` | Write canonical properties through the policy engine (`creator="Jane"` or `iptc.photo.creator="Jane"`; structs use `--json`). `--policy embedded\|sidecar\|sidecar-required\|preferred`, `--dry-run` prints the `WriteReport`. |
 | `umm rm FILE PROP…` | `umm::write` | Clear properties across all synchronized representations (accessor or full id). |

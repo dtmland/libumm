@@ -1,0 +1,92 @@
+{
+  "id": "locationShownLegacy",
+  "direction": "side",
+  "partial": false,
+  "approximate": false,
+  "one_way": false,
+  "citation": "C11; MWG photoshop/IIM city-state-country are Location Shown, not Location Created; set afterwards",
+  "source_priority": [
+    "city",
+    "province",
+    "country",
+    "country_code",
+    "sublocation"
+  ],
+  "rules": [
+    {
+      "id": "city",
+      "source": {
+        "kind": "property",
+        "key": "iptc.photo.cityLegacy"
+      },
+      "target": {
+        "kind": "property_field",
+        "key": "iptc.photo.locationShownInTheImage",
+        "index": 0,
+        "field": "city"
+      },
+      "heuristic": "H3",
+      "citation": "photoshop City / IIM 2:90; H14 IIM 32-character limit on reverse"
+    },
+    {
+      "id": "province",
+      "source": {
+        "kind": "property",
+        "key": "iptc.photo.provinceOrStateLegacy"
+      },
+      "target": {
+        "kind": "property_field",
+        "key": "iptc.photo.locationShownInTheImage",
+        "index": 0,
+        "field": "provinceState"
+      },
+      "heuristic": "H3",
+      "citation": "photoshop State / IIM Province-State"
+    },
+    {
+      "id": "country",
+      "source": {
+        "kind": "property",
+        "key": "iptc.photo.countryLegacy"
+      },
+      "target": {
+        "kind": "property_field",
+        "key": "iptc.photo.locationShownInTheImage",
+        "index": 0,
+        "field": "countryName"
+      },
+      "heuristic": "H3",
+      "citation": "photoshop Country / IIM Country-PrimaryLocationName; H14 64-character limit on reverse"
+    },
+    {
+      "id": "country_code",
+      "source": {
+        "kind": "property",
+        "key": "iptc.photo.countryCodeLegacy"
+      },
+      "target": {
+        "kind": "property_field",
+        "key": "iptc.photo.locationShownInTheImage",
+        "index": 0,
+        "field": "countryCode"
+      },
+      "heuristic": "H3",
+      "citation": "photoshop CountryCode / IIM Country-PrimaryLocationCode"
+    },
+    {
+      "id": "sublocation",
+      "source": {
+        "kind": "property",
+        "key": "iptc.photo.sublocationLegacy"
+      },
+      "target": {
+        "kind": "property_field",
+        "key": "iptc.photo.locationShownInTheImage",
+        "index": 0,
+        "field": "sublocation"
+      },
+      "heuristic": "H3",
+      "citation": "IPTC Sublocation / IIM 2:92"
+    }
+  ]
+}
