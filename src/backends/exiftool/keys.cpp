@@ -128,9 +128,24 @@ std::optional<BaseKey> map_exiftool_tag(std::string_view json_key) {
     group = json_key.substr(0, colon);
     tag = json_key.substr(colon + 1);
   }
+  const std::string group_compact = strip_hyphens_spaces(group);
 
-  if (group == "File" || group == "ExifTool" || group == "Composite" ||
-      group == "System") {
+  if (group == "File" || group == "ExifTool" || group == "System") {
+    return std::nullopt;
+  }
+  // Composite is derived, not stored. Keep GPS lat/lon/alt when -G1 JSON
+  // drops the GPS IFD copy as a duplicate of Composite (Windows exe).
+  if (group_compact == "Composite") {
+    const std::string compact = strip_hyphens_spaces(tag);
+    if (compact == "GPSLatitude" || compact == "GPSLatitudeRef" ||
+        compact == "GPSLongitude" || compact == "GPSLongitudeRef" ||
+        compact == "GPSAltitude" || compact == "GPSAltitudeRef" ||
+        compact == "GPSPosition") {
+      BaseKey mapped;
+      mapped.family = "Exif";
+      mapped.key = "Exif.GPSInfo." + compact;
+      return mapped;
+    }
     return std::nullopt;
   }
   if (tag == "Error" || tag == "Warning") {
@@ -197,9 +212,10 @@ std::optional<BaseKey> map_exiftool_tag(std::string_view json_key) {
     key.key = "Exif.Photo." + rename_exif(group, tag);
     return key;
   }
-  if (group == "GPS") {
+  if (group_compact == "GPS" || group_compact == "GPSInfo" ||
+      group_compact == "GPSIFD") {
     key.family = "Exif";
-    key.key = "Exif.GPSInfo." + std::string(tag);
+    key.key = "Exif.GPSInfo." + strip_hyphens_spaces(tag);
     return key;
   }
   if (group == "InteropIFD") {

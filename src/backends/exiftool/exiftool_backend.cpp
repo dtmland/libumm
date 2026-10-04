@@ -330,6 +330,9 @@ Result<void> ExifToolBackend::ensure_process() {
 
   auto process = std::make_unique<ChildProcess>();
   SpawnCommand command = make_spawn_command(native_exe_, perl_, script_);
+  // Do not put -b in common_args: it is appended after each command, so it
+  // would re-enable binary after a JSON read's --binary- and some Perl
+  // builds then omit EXIF GPS from -j (Win/mac CI).
   command.argv.insert(command.argv.end(), {
       "-charset",
       "utf8",
@@ -342,7 +345,6 @@ Result<void> ExifToolBackend::ensure_process() {
       "-common_args",
       "-G1",
       "-struct",
-      "-b",
       "-charset",
       "IPTC=UTF8",
   });
@@ -421,7 +423,12 @@ Result<BaseDocument> ExifToolBackend::readBase(
                         path_to_utf8(media));
     }
 
-    std::string command = "-j\n";
+    // -n ValueConv (decimal GPS); -a keep GPS: and Composite copies;
+    // -s short tag names so JSON is GPSLatitude, not "GPS Latitude".
+    // --binary- cancels stay_open common_args -b. Do not use -b-: ExifTool
+    // treats that as a binary extract and JSON collapses to SourceFile only.
+    // fixtures_exiftool uses -j -G1 -a -s -n without -b and sees GPS.
+    std::string command = "-j\n-n\n-a\n-s\n--binary-\n";
     command += path_to_utf8(media);
     command += "\n-execute\n";
     Result<std::string> body = execute(command);

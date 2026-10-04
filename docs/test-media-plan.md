@@ -79,6 +79,20 @@ Each later format increment (TIFF, PNG, WebP, RAW, video) adds its own subdirect
 same pattern; the per-type location capabilities in
 [supported-types.md](supported-types.md) drive which location fixtures each type gets.
 
+### 2.4 Real-device layouts (C19, OQ-R1)
+
+Session 51 adds tiny generator-produced copies of the *tag layouts* in
+[docs/sample-output.txt](sample-output.txt). GPS coordinates, serials, and unique ids are
+synthetic (same format as the redacted sample). Original camera files are never committed.
+
+| Fixture | Layout |
+|---|---|
+| `video/iphone-style.mov` | Keys `GPSCoordinates` with altitude, Keys `CreationDate` with offset, Keys Make/Model, movie-header `CreateDate` years later |
+| `jpeg/iphone-heic-layout.jpg` | iPhone HEIC EXIF on JPEG (HEIC container remains Tier B `heic-quicktime`): DateTimeOriginal + sub-seconds + offset; GPS IFD with ImgDirection, Speed, HPositioningError |
+| `raw/pixel-style.dng` | IFD0 DateTimeOriginal; IIM TimeCreated with an offset |
+| `jpeg/pixel-style.jpg` | EXIF GPS and top-level `exif:GPS*` within 1e-5°; photoshop DateCreated 4-digit fraction versus EXIF 6-digit sub-seconds; `xmp:CreateDate` present |
+| `video/gopro-style.mp4` | No Keys, no XMP, movie-header date only; GoPro gpmd Model/serial are not synthesizable |
+
 ### 2.3 Repo hygiene rules
 
 - No fixture over **100 KB** without a written justification in this file.

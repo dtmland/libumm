@@ -10,7 +10,7 @@ Each committed media file is generator-produced (decision **M6**); track files a
 
 - `jpeg/makernote.jpg` is not synthesizable (decision M6). Closed by Tier B sample `jpeg-makernote` in `tests/corpus/manifest.json` (session 27); never committed.
 - Proprietary RAW (RAF/RW2/SR2-class) is not synthesizable small (decision M6). Closed by Tier B sample `raw-panasonic-rw2` in `tests/corpus/manifest.json` (session 27); never committed.
-- HEIC/HEIF stills are not synthesizable with the pinned ffmpeg (no heif muxer). Closed by Tier B sample `heic-quicktime` in `tests/corpus/manifest.json` (session 35); never committed.
+- HEIC/HEIF stills are not synthesizable with the pinned ffmpeg (no heif muxer). Closed by Tier B sample `heic-quicktime` in `tests/corpus/manifest.json` (session 35); never committed. Session 51 reproduces the iPhone HEIC EXIF layout on `jpeg/iphone-heic-layout.jpg`.
 - CR3 is not synthesizable small (decision M6). Closed by Tier B sample `raw-canon-cr3` in `tests/corpus/manifest.json` (session 35); never committed.
 - JPEG XL is not generated in Tier A (libjxl not pinned). Closed by Tier B sample `jxl-codestream` in `tests/corpus/manifest.json` (session 35); never committed.
 
@@ -302,6 +302,41 @@ Each committed media file is generator-produced (decision **M6**); track files a
 - **Size:** 4581 bytes
 - **Purpose:** XMP-only video shapes (text, lang-alt, uri, structure) for session 38
 - **Command:** `ffmpeg -y -hide_banner -loglevel error -f lavfi -i color=c=gray:s=16x16:r=10 -t 0.1 -an -c:v mpeg4 -q:v 12 -movflags +faststart video/xmp-shapes.mp4 && exiftool -overwrite_original -all= video/xmp-shapes.mp4 && exiftool -overwrite_original -XMP-photoshop:Credit=Shape Credit -XMP-iptcExt:Headline=Shape Headline -XMP-iptcCore:AltTextAccessibility=Shape alt text -XMP-plus:DataMining=http://example.com/data-mining -XMP-dc:identifier=shape-id-1 -XMP-iptcExt:LocationCreated={City=Shape City,CountryName=Shape Country} video/xmp-shapes.mp4`
+
+### `video/iphone-style.mov`
+
+- **SHA-256:** `65ab5ab77ff42e468733009a8e0e7bb726efdf2773892c5722befb815cb53879`
+- **Size:** 1184 bytes
+- **Purpose:** C19 iPhone-style MOV: Keys GPSCoordinates with altitude, Keys CreationDate with offset, Keys Make/Model, movie-header CreateDate years later
+- **Command:** `ffmpeg -y -hide_banner -loglevel error -f lavfi -i color=c=gray:s=16x16:r=10 -t 0.1 -an -c:v mpeg4 -q:v 12 -f mov video/iphone-style.mov && exiftool -overwrite_original -all= video/iphone-style.mov && exiftool -overwrite_original -Keys:CreationDate=2019:09:05 14:23:07-04:00 -Keys:Make=Apple -Keys:Model=iPhone X -Keys:GPSCoordinates=12.58243889, -98.11848333, 104.65 -QuickTime:CreateDate=2026:10:04 04:35:02 -QuickTime:ModifyDate=2026:10:04 04:35:03 video/iphone-style.mov`
+
+### `jpeg/iphone-heic-layout.jpg`
+
+- **SHA-256:** `58bb855da482c385d1a9635547aa9a83f6ef213eabc14cf6ec26b41d568896bc`
+- **Size:** 641 bytes
+- **Purpose:** C19 iPhone HEIC EXIF layout on JPEG (HEIC container is Tier B): DateTimeOriginal + sub-seconds + offset; GPS IFD with ImgDirection, Speed, HPositioningError
+- **Command:** `exiftool -overwrite_original -all= jpeg/iphone-heic-layout.jpg && exiftool -overwrite_original -EXIF:Make=Apple -EXIF:Model=iPhone 16 Pro -EXIF:LensModel=iPhone 16 Pro back triple camera 6.765mm f/1.78 -EXIF:DateTimeOriginal=2026:09:01 14:44:19 -EXIF:SubSecTimeOriginal=685 -EXIF:OffsetTimeOriginal=-04:00 -EXIF:GPSLatitude=23.75188333 -EXIF:GPSLatitudeRef=N -EXIF:GPSLongitude=87.10150833 -EXIF:GPSLongitudeRef=W -EXIF:GPSAltitude=12.07893416 -EXIF:GPSAltitudeRef=Above Sea Level -EXIF:GPSImgDirection=87.8048401 -EXIF:GPSImgDirectionRef=True North -EXIF:GPSSpeed=0.611859844 -EXIF:GPSSpeedRef=km/h -EXIF:GPSHPositioningError=5.150825315 jpeg/iphone-heic-layout.jpg`
+
+### `raw/pixel-style.dng`
+
+- **SHA-256:** `d2e30357589774a0cfd619ce96195165d761addece84a64c999aef2a033c891c`
+- **Size:** 538 bytes
+- **Purpose:** C19 Pixel-style DNG: IFD0 DateTimeOriginal and IIM TimeCreated with an offset
+- **Command:** `exiftool -overwrite_original -all= raw/pixel-style.dng && exiftool -overwrite_original -EXIF:DNGVersion=1.4.0.0 -IFD0:DateTimeOriginal=2016:10:25 20:47:28 -IPTC:CodedCharacterSet=UTF8 -IPTC:DateCreated=2016:10:25 -IPTC:TimeCreated=20:47:28-07:00 raw/pixel-style.dng`
+
+### `jpeg/pixel-style.jpg`
+
+- **SHA-256:** `ea8edc2f446fbb1f772a12c15652edb08af9e30fabbeb217371e1f9adc39d4eb`
+- **Size:** 3761 bytes
+- **Purpose:** C19 Pixel-style JPEG: EXIF GPS and top-level exif:GPS* differing within tolerance; photoshop:DateCreated 4-digit fraction versus EXIF 6-digit sub-seconds
+- **Command:** `exiftool -overwrite_original -all= jpeg/pixel-style.jpg && exiftool -overwrite_original -EXIF:DateTimeOriginal=2016:10:25 13:47:28 -EXIF:SubSecTimeOriginal=389696 -EXIF:GPSLatitude=34.935525 -EXIF:GPSLatitudeRef=N -EXIF:GPSLongitude=76.08453333 -EXIF:GPSLongitudeRef=W -EXIF:GPSAltitude=0 -EXIF:GPSAltitudeRef=Above Sea Level -XMP-exif:GPSLatitude=34,56.131333N -XMP-exif:GPSLongitude=76,5.0715W -XMP-exif:GPSAltitude=0 -XMP-exif:GPSAltitudeRef=0 -XMP-photoshop:DateCreated=2016:10:25 13:47:28.3897 -XMP-xmp:CreateDate=2016:10:25 13:47:28.3897 jpeg/pixel-style.jpg`
+
+### `video/gopro-style.mp4`
+
+- **SHA-256:** `bba48f79f588a3228f345595b15b88489cfd051b089adb3c5d4c60d089f3e231`
+- **Size:** 828 bytes
+- **Purpose:** C19 GoPro-style MP4: no Keys, no XMP, wrong movie-header date, GoPro Model and serial when writable
+- **Command:** `ffmpeg -y -hide_banner -loglevel error -f lavfi -i color=c=gray:s=16x16:r=10 -t 0.1 -an -c:v mpeg4 -q:v 12 -movflags +faststart video/gopro-style.mp4 && exiftool -overwrite_original -all= video/gopro-style.mp4 && exiftool -overwrite_original -QuickTime:CreateDate=2016:01:07 20:05:15 -QuickTime:ModifyDate=2016:01:07 20:05:15 video/gopro-style.mp4 && exiftool -overwrite_original -GoPro:Model=HERO12 Black -GoPro:CameraSerialNumber=C0000000000000 -UserData:LensSerialNumber=LSU0000000000000 video/gopro-style.mp4`
 
 ### `tracks/straight.gpx`
 

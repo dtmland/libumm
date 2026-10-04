@@ -971,6 +971,72 @@ std::optional<std::string> first_value(const BaseDocument& document,
   return std::nullopt;
 }
 
+// GPSLatitude as a JSON array becomes GPSLatitude[1..3] (DMS parts) with no
+// unindexed key. Join those parts so parse_coord sees degrees+minutes+seconds
+// instead of first_value's leading component only.
+std::optional<std::string> gps_coord_text(const BaseDocument& document,
+                                          std::string_view base) {
+  std::vector<std::string> exact;
+  std::vector<std::pair<int, std::string>> indexed;
+  for (const BaseEntry* entry : matching(document, base)) {
+    const std::string value = trimmed(entry->value);
+    if (value.empty()) {
+      continue;
+    }
+    if (entry->key.key == base) {
+      exact.push_back(value);
+      continue;
+    }
+    if (entry->key.key.size() <= base.size() ||
+        entry->key.key[base.size()] != '[') {
+      continue;
+    }
+    int idx = 0;
+    bool any = false;
+    for (std::size_t i = base.size() + 1; i < entry->key.key.size(); ++i) {
+      const char c = entry->key.key[i];
+      if (c == ']') {
+        break;
+      }
+      if (c < '0' || c > '9') {
+        any = false;
+        break;
+      }
+      any = true;
+      idx = idx * 10 + (c - '0');
+    }
+    if (any) {
+      indexed.emplace_back(idx, value);
+    }
+  }
+  auto usable = [](const std::string& text) {
+    double dummy = 0;
+    return parse_coord(text, false, dummy);
+  };
+  for (const std::string& text : exact) {
+    if (usable(text)) {
+      return text;
+    }
+  }
+  if (!indexed.empty()) {
+    std::sort(indexed.begin(), indexed.end());
+    std::string joined;
+    for (const auto& part : indexed) {
+      if (!joined.empty()) {
+        joined.push_back(' ');
+      }
+      joined += part.second;
+    }
+    if (usable(joined)) {
+      return joined;
+    }
+  }
+  if (!exact.empty()) {
+    return exact.front();
+  }
+  return std::nullopt;
+}
+
 void add_sources(std::vector<SourceRef>& sources, const BaseDocument& document,
                  std::string_view backend, std::string_view base) {
   for (const BaseEntry* entry : matching(document, base)) {
@@ -1467,35 +1533,44 @@ std::optional<Group> gps_group(const BaseDocument& document,
                                std::string_view lon_ref, std::string_view alt_key,
                                std::string_view alt_ref, std::string family,
                                int rank) {
-  const auto lat = first_value(document, lat_key);
-  const auto lon = first_value(document, lon_key);
-  if (!lat || !lon) {
-    return std::nullopt;
-  }
+  const auto lat = gps_coord_text(document, lat_key);
+  const auto lon = gps_coord_text(document, lon_key);
   GpsCoordinate gps;
-  std::string lat_text = *lat;
-  std::string lon_text = *lon;
-  char lat_h = take_hemisphere(lat_text);
-  char lon_h = take_hemisphere(lon_text);
-  if (!lat_h) {
-    if (const auto ref = first_value(document, lat_ref)) {
-      lat_h = hemi_from_token(*ref);
+  bool parsed = false;
+  if (lat && lon) {
+    std::string lat_text = *lat;
+    std::string lon_text = *lon;
+    char lat_h = take_hemisphere(lat_text);
+    char lon_h = take_hemisphere(lon_text);
+    if (!lat_h) {
+      if (const auto ref = first_value(document, lat_ref)) {
+        lat_h = hemi_from_token(*ref);
+      }
+    }
+    if (!lon_h) {
+      if (const auto ref = first_value(document, lon_ref)) {
+        lon_h = hemi_from_token(*ref);
+      }
+    }
+    if (parse_coord(lat_text, false, gps.latitude) &&
+        parse_coord(lon_text, true, gps.longitude)) {
+      if (gps.latitude >= 0) {
+        gps.latitude *= static_cast<double>(hemi_sign(lat_h));
+      }
+      if (gps.longitude >= 0) {
+        gps.longitude *= static_cast<double>(hemi_sign(lon_h));
+      }
+      parsed = true;
     }
   }
-  if (!lon_h) {
-    if (const auto ref = first_value(document, lon_ref)) {
-      lon_h = hemi_from_token(*ref);
+  if (!parsed) {
+    if (lat_key != "Exif.GPSInfo.GPSLatitude") {
+      return std::nullopt;
     }
-  }
-  if (!parse_coord(lat_text, false, gps.latitude) ||
-      !parse_coord(lon_text, true, gps.longitude)) {
-    return std::nullopt;
-  }
-  if (gps.latitude >= 0) {
-    gps.latitude *= static_cast<double>(hemi_sign(lat_h));
-  }
-  if (gps.longitude >= 0) {
-    gps.longitude *= static_cast<double>(hemi_sign(lon_h));
+    const auto pos = first_value(document, "Exif.GPSInfo.GPSPosition");
+    if (!pos || !parse_qt_gps(*pos, gps)) {
+      return std::nullopt;
+    }
   }
   if (const auto alt = first_value(document, alt_key)) {
     parse_altitude(*alt, first_value(document, alt_ref).value_or(""),
@@ -1511,6 +1586,9 @@ std::optional<Group> gps_group(const BaseDocument& document,
   add_sources(group.sources, document, backend, lon_ref);
   add_sources(group.sources, document, backend, alt_key);
   add_sources(group.sources, document, backend, alt_ref);
+  if (lat_key == "Exif.GPSInfo.GPSLatitude") {
+    add_sources(group.sources, document, backend, "Exif.GPSInfo.GPSPosition");
+  }
   Structure fields;
   fields.emplace("gpsLatitude", make_value(gps.latitude));
   fields.emplace("gpsLongitude", make_value(gps.longitude));

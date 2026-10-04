@@ -79,6 +79,56 @@
       "read_backend": "",
       "kind": "capability",
       "reason": "ExifTool 13.59 does not persist IPTC-IIM in HEIC/HEIF/AVIF/CR3/JXL (IPTC writes leave the file unchanged). Capability rows list iptc as none; write-sync omits IPTC-IIM."
+    },
+    {
+      "id": "heic-container-tier-b",
+      "file_types": [
+        "HEIC",
+        "HEIF"
+      ],
+      "category": "",
+      "property_id": "",
+      "write_backend": "",
+      "read_backend": "",
+      "kind": "capability",
+      "reason": "C19 iPhone HEIC container is not synthesizable with pinned ffmpeg (no heif muxer). Session 51 reproduces the EXIF tag layout on jpeg/iphone-heic-layout.jpg; the HEIC file remains Tier B sample heic-quicktime."
+    },
+    {
+      "id": "gopro-gpmd-not-synthesizable",
+      "file_types": [
+        "MP4"
+      ],
+      "category": "",
+      "property_id": "iptc.video.recordingDevice",
+      "write_backend": "exiftool",
+      "read_backend": "exiftool",
+      "kind": "capability",
+      "reason": "GoPro Model and CameraSerialNumber live in the gpmd timed-metadata track on real HERO files. ExifTool does not persist -GoPro:Model= on a synthetic MP4; video/gopro-style.mp4 keeps movie-header dates and UserData LensSerialNumber only. recordingDevice upcast from GoPro tags is unit-tested with assignBase."
+    },
+    {
+      "id": "h21-gps-time-deferred",
+      "file_types": [
+        "DNG",
+        "JPEG"
+      ],
+      "category": "",
+      "property_id": "iptc.photo.dateCreated",
+      "write_backend": "",
+      "read_backend": "",
+      "kind": "representation",
+      "reason": "C19 Pixel DNG IIM TimeCreated offset versus GPS time is a capture-time sanity check (H21), deferred. datetime_equivalent treats a missing EXIF offset as compatible with the IIM offset."
+    },
+    {
+      "id": "pixel-datecreated-fraction-digits",
+      "file_types": [
+        "JPEG"
+      ],
+      "category": "xmp",
+      "property_id": "iptc.photo.dateCreated",
+      "write_backend": "",
+      "read_backend": "",
+      "kind": "representation",
+      "reason": "C19 Pixel JPEG photoshop:DateCreated 4-digit fraction versus EXIF SubSecTimeOriginal 6 digits is not equivalent under datetime_equivalent (zero-padded nanoseconds). H12 shorter-precision compare is not implemented; XMP wins when they disagree. xmp:CreateDate remains unused for dateCreated (C16)."
     }
   ]
 }

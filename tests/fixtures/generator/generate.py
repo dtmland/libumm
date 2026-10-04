@@ -46,6 +46,28 @@ DATE_SIDECAR = "2021:02:02T00:00:00"
 GPS_LAT = "37.7749"
 GPS_LON = "122.4194"
 
+# C19 / docs/sample-output.txt synthetic layouts (OQ-R1 redaction preserved).
+IPHONE_KEYS_DATE = "2019:09:05 14:23:07-04:00"
+IPHONE_MOVIE_DATE = "2026:10:04 04:35:02"
+IPHONE_MOVIE_MODIFY = "2026:10:04 04:35:03"
+IPHONE_GPS = "12.58243889, -98.11848333, 104.65"
+HEIC_DTO = "2026:09:01 14:44:19"
+HEIC_SUBSEC = "685"
+HEIC_OFFSET = "-04:00"
+HEIC_GPS_LAT = "23.75188333"
+HEIC_GPS_LON = "87.10150833"
+PIXEL_IFD0_DTO = "2016:10:25 20:47:28"
+PIXEL_IIM_DATE = "2016:10:25"
+PIXEL_IIM_TIME = "20:47:28-07:00"
+PIXEL_JPEG_DTO = "2016:10:25 13:47:28"
+PIXEL_JPEG_SUBSEC = "389696"
+PIXEL_PS_DATE = "2016:10:25 13:47:28.3897"
+PIXEL_EXIF_LAT = "34.935525"
+PIXEL_EXIF_LON = "76.08453333"
+PIXEL_XMP_LAT = "34,56.131333N"
+PIXEL_XMP_LON = "76,5.0715W"
+GOPRO_MOVIE_DATE = "2016:01:07 20:05:15"
+
 # Truncated JPEG keeps SOI + APP0 so it is recognizably JPEG-but-corrupt.
 TRUNCATE_BYTES = 64
 
@@ -128,6 +150,29 @@ PURPOSES = {
     ),
     "video/xmp-shapes.mp4": (
         "XMP-only video shapes (text, lang-alt, uri, structure) for session 38"
+    ),
+    "video/iphone-style.mov": (
+        "C19 iPhone-style MOV: Keys GPSCoordinates with altitude, Keys "
+        "CreationDate with offset, Keys Make/Model, movie-header CreateDate "
+        "years later"
+    ),
+    "jpeg/iphone-heic-layout.jpg": (
+        "C19 iPhone HEIC EXIF layout on JPEG (HEIC container is Tier B): "
+        "DateTimeOriginal + sub-seconds + offset; GPS IFD with ImgDirection, "
+        "Speed, HPositioningError"
+    ),
+    "raw/pixel-style.dng": (
+        "C19 Pixel-style DNG: IFD0 DateTimeOriginal and IIM TimeCreated with "
+        "an offset"
+    ),
+    "jpeg/pixel-style.jpg": (
+        "C19 Pixel-style JPEG: EXIF GPS and top-level exif:GPS* differing "
+        "within tolerance; photoshop:DateCreated 4-digit fraction versus EXIF "
+        "6-digit sub-seconds"
+    ),
+    "video/gopro-style.mp4": (
+        "C19 GoPro-style MP4: no Keys, no XMP, wrong movie-header date, GoPro "
+        "Model and serial when writable"
     ),
     "tracks/straight.gpx": "Straight-line GPX 1.1 track (three timed trkpt samples)",
     "tracks/nmea.nmea": "NMEA RMC+GGA log matching tracks/straight.gpx",
@@ -541,6 +586,16 @@ def write_tags(tool: ExifTool, dest: Path, tags: list[tuple[str, str]]) -> list[
     args.append(str(dest))
     tool.run(args)
     return args
+
+
+def try_write_tags(
+    tool: ExifTool, dest: Path, tags: list[tuple[str, str]]
+) -> list[str] | None:
+    """Write tags, returning None when the backend cannot store them."""
+    try:
+        return write_tags(tool, dest, tags)
+    except GeneratorError:
+        return None
 
 
 def export_xmp(tool: ExifTool, source: Path, dest: Path) -> list[str]:
@@ -1390,6 +1445,113 @@ def generate(
         ),
     )
 
+    add(
+        "video/iphone-style.mov",
+        make_video(
+            tool,
+            ffmpeg,
+            output_dir / "video/iphone-style.mov",
+            [
+                ("Keys:CreationDate", IPHONE_KEYS_DATE),
+                ("Keys:Make", "Apple"),
+                ("Keys:Model", "iPhone X"),
+                ("Keys:GPSCoordinates", IPHONE_GPS),
+                ("QuickTime:CreateDate", IPHONE_MOVIE_DATE),
+                ("QuickTime:ModifyDate", IPHONE_MOVIE_MODIFY),
+            ],
+            "mov",
+        ),
+    )
+    add(
+        "jpeg/iphone-heic-layout.jpg",
+        make_jpeg(
+            tool,
+            base,
+            output_dir / "jpeg/iphone-heic-layout.jpg",
+            [
+                ("EXIF:Make", "Apple"),
+                ("EXIF:Model", "iPhone 16 Pro"),
+                ("EXIF:LensModel", "iPhone 16 Pro back triple camera 6.765mm f/1.78"),
+                ("EXIF:DateTimeOriginal", HEIC_DTO),
+                ("EXIF:SubSecTimeOriginal", HEIC_SUBSEC),
+                ("EXIF:OffsetTimeOriginal", HEIC_OFFSET),
+                ("EXIF:GPSLatitude", HEIC_GPS_LAT),
+                ("EXIF:GPSLatitudeRef", "N"),
+                ("EXIF:GPSLongitude", HEIC_GPS_LON),
+                ("EXIF:GPSLongitudeRef", "W"),
+                ("EXIF:GPSAltitude", "12.07893416"),
+                ("EXIF:GPSAltitudeRef", "Above Sea Level"),
+                ("EXIF:GPSImgDirection", "87.8048401"),
+                ("EXIF:GPSImgDirectionRef", "True North"),
+                ("EXIF:GPSSpeed", "0.611859844"),
+                ("EXIF:GPSSpeedRef", "km/h"),
+                ("EXIF:GPSHPositioningError", "5.150825315"),
+            ],
+        ),
+    )
+    add(
+        "raw/pixel-style.dng",
+        make_image(
+            tool,
+            tiff_base,
+            output_dir / "raw/pixel-style.dng",
+            [
+                ("EXIF:DNGVersion", "1.4.0.0"),
+                ("IFD0:DateTimeOriginal", PIXEL_IFD0_DTO),
+                ("IPTC:CodedCharacterSet", "UTF8"),
+                ("IPTC:DateCreated", PIXEL_IIM_DATE),
+                ("IPTC:TimeCreated", PIXEL_IIM_TIME),
+            ],
+        ),
+    )
+    add(
+        "jpeg/pixel-style.jpg",
+        make_jpeg(
+            tool,
+            base,
+            output_dir / "jpeg/pixel-style.jpg",
+            [
+                ("EXIF:DateTimeOriginal", PIXEL_JPEG_DTO),
+                ("EXIF:SubSecTimeOriginal", PIXEL_JPEG_SUBSEC),
+                ("EXIF:GPSLatitude", PIXEL_EXIF_LAT),
+                ("EXIF:GPSLatitudeRef", "N"),
+                ("EXIF:GPSLongitude", PIXEL_EXIF_LON),
+                ("EXIF:GPSLongitudeRef", "W"),
+                ("EXIF:GPSAltitude", "0"),
+                ("EXIF:GPSAltitudeRef", "Above Sea Level"),
+                ("XMP-exif:GPSLatitude", PIXEL_XMP_LAT),
+                ("XMP-exif:GPSLongitude", PIXEL_XMP_LON),
+                ("XMP-exif:GPSAltitude", "0"),
+                ("XMP-exif:GPSAltitudeRef", "0"),
+                ("XMP-photoshop:DateCreated", PIXEL_PS_DATE),
+                ("XMP-xmp:CreateDate", PIXEL_PS_DATE),
+            ],
+        ),
+    )
+    gopro_path = output_dir / "video/gopro-style.mp4"
+    gopro_commands = make_video(
+        tool,
+        ffmpeg,
+        gopro_path,
+        [
+            ("QuickTime:CreateDate", GOPRO_MOVIE_DATE),
+            ("QuickTime:ModifyDate", GOPRO_MOVIE_DATE),
+        ],
+        "mp4",
+    )
+    gopro_extra = try_write_tags(
+        tool,
+        gopro_path,
+        [
+            ("GoPro:Model", "HERO12 Black"),
+            ("GoPro:CameraSerialNumber", "C0000000000000"),
+            ("UserData:LensSerialNumber", "LSU0000000000000"),
+        ],
+    )
+    if gopro_extra:
+        gopro_commands.append(logical_command(rel_args(gopro_extra, output_dir)))
+    add("video/gopro-style.mp4", gopro_commands)
+
     copy_hand_authored_tracks(output_dir)
     for relpath in TRACK_FILES:
         add(relpath, ["hand-authored (session 25; test-media-plan §4)"])
@@ -1406,7 +1568,9 @@ def generate(
             "`tests/corpus/manifest.json` (session 27); never committed.",
             "HEIC/HEIF stills are not synthesizable with the pinned ffmpeg "
             "(no heif muxer). Closed by Tier B sample `heic-quicktime` in "
-            "`tests/corpus/manifest.json` (session 35); never committed.",
+            "`tests/corpus/manifest.json` (session 35); never committed. "
+            "Session 51 reproduces the iPhone HEIC EXIF layout on "
+            "`jpeg/iphone-heic-layout.jpg`.",
             "CR3 is not synthesizable small (decision M6). Closed by Tier B "
             "sample `raw-canon-cr3` in `tests/corpus/manifest.json` (session 35); "
             "never committed.",

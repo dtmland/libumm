@@ -503,6 +503,8 @@ behavior or API change, and tests every representation and cast rule it touches 
 | 50 | Generated property reference (`docs/user/properties/`) with byte-for-byte contract test; user-guide restructure | C14a, C3a | 48, 49 |
 | 51 | Verification: real-device layout fixtures from C19, backend matrix for every representation and cast rule, audit of doc claims against tests | C15 | 48 |
 
+Sessions 43–51 are complete.
+
 ### 5.2 Documentation each session must update
 
 The user, sysadmin, and developer docs describe shipped behavior, so they change in the

@@ -862,5 +862,94 @@ int main() {
     }
   }
 
+  {
+    const auto result = umm::internal::reconcile(
+        doc({entry("Exif", "Exif.GPSInfo.GPSLatitude[1]", "23"),
+             entry("Exif", "Exif.GPSInfo.GPSLatitude[2]", "45"),
+             entry("Exif", "Exif.GPSInfo.GPSLatitude[3]", "6.78"),
+             entry("Exif", "Exif.GPSInfo.GPSLatitudeRef", "N"),
+             entry("Exif", "Exif.GPSInfo.GPSLongitude[1]", "87"),
+             entry("Exif", "Exif.GPSInfo.GPSLongitude[2]", "6"),
+             entry("Exif", "Exif.GPSInfo.GPSLongitude[3]", "5.43"),
+             entry("Exif", "Exif.GPSInfo.GPSLongitudeRef", "W"),
+             entry("Exif", "Exif.GPSInfo.GPSAltitude", "12.07893416"),
+             entry("Exif", "Exif.GPSInfo.GPSAltitudeRef", "0")}),
+        "test");
+    if (!result.ok()) {
+      return fail("indexed EXIF GPS DMS reconcile failed");
+    }
+    const auto created = result.value().locationCreated();
+    const auto* loc = created ? location0(*created) : nullptr;
+    if (!loc) {
+      return fail("indexed EXIF GPS DMS missing locationCreated");
+    }
+    if (!field_near(*loc, "gpsLatitude", 23.75188333) ||
+        !field_near(*loc, "gpsLongitude", -87.10150833) ||
+        !field_near(*loc, "gpsAltitude", 12.07893416)) {
+      return fail("indexed EXIF GPS DMS values");
+    }
+  }
+
+  {
+    const auto result = umm::internal::reconcile(
+        doc({entry("Exif", "Exif.GPSInfo.GPSPosition",
+                   "23.75188333 -87.10150833")}),
+        "test");
+    if (!result.ok()) {
+      return fail("Composite GPSPosition reconcile failed");
+    }
+    const auto created = result.value().locationCreated();
+    const auto* loc = created ? location0(*created) : nullptr;
+    if (!loc) {
+      return fail("Composite GPSPosition missing locationCreated");
+    }
+    if (!field_near(*loc, "gpsLatitude", 23.75188333) ||
+        !field_near(*loc, "gpsLongitude", -87.10150833)) {
+      return fail("Composite GPSPosition values");
+    }
+  }
+
+  {
+    const auto result = umm::internal::reconcile(
+        doc({entry("Exif", "Exif.GPSInfo.GPSLatitude", "not-a-coord"),
+             entry("Exif", "Exif.GPSInfo.GPSLongitude", "not-a-coord"),
+             entry("Exif", "Exif.GPSInfo.GPSLatitude", "23.75188333"),
+             entry("Exif", "Exif.GPSInfo.GPSLongitude", "-87.10150833")}),
+        "test");
+    if (!result.ok()) {
+      return fail("second GPSLatitude copy reconcile failed");
+    }
+    const auto created = result.value().locationCreated();
+    const auto* loc = created ? location0(*created) : nullptr;
+    if (!loc) {
+      return fail("second GPSLatitude copy missing locationCreated");
+    }
+    if (!field_near(*loc, "gpsLatitude", 23.75188333) ||
+        !field_near(*loc, "gpsLongitude", -87.10150833)) {
+      return fail("second GPSLatitude copy values");
+    }
+  }
+
+  {
+    const auto result = umm::internal::reconcile(
+        doc({entry("Exif", "Exif.GPSInfo.GPSLatitude", "not-a-coord"),
+             entry("Exif", "Exif.GPSInfo.GPSLongitude", "not-a-coord"),
+             entry("Exif", "Exif.GPSInfo.GPSPosition",
+                   "23.75188333 -87.10150833")}),
+        "test");
+    if (!result.ok()) {
+      return fail("unparseable GPS IFD GPSPosition fallback failed");
+    }
+    const auto created = result.value().locationCreated();
+    const auto* loc = created ? location0(*created) : nullptr;
+    if (!loc) {
+      return fail("unparseable GPS IFD GPSPosition missing locationCreated");
+    }
+    if (!field_near(*loc, "gpsLatitude", 23.75188333) ||
+        !field_near(*loc, "gpsLongitude", -87.10150833)) {
+      return fail("unparseable GPS IFD GPSPosition values");
+    }
+  }
+
   return 0;
 }
