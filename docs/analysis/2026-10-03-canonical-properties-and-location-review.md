@@ -1,6 +1,6 @@
 # Canonical properties, "most common properties", and location/GPS review — 2026-10-03
 
-Status: **reviewed — outcomes recorded in §8**. Analysis and design only. Nothing here has
+Status: **reviewed — outcomes recorded in §8; follow-up questions answered 2026-10-04**. Metadata as stored in the file is called *base* metadata here (C18). Analysis and design only. Nothing here has
 been implemented. The maintainer accepted, modified, or superseded each **C*n*** decision;
 §8 records the outcome. The casting design that replaces C2 and C4b/C4c is in the
 follow-up decision record
@@ -34,7 +34,7 @@ checked offline are marked **(verify)**.
 | Are EXIF properties "embedded inside" IPTC properties? | **Partly true.** In most cases EXIF appears in libumm only as an alternative *representation* (another place the same value is stored) of an IPTC property. Examples: `IFD0:Artist` for `iptc.photo.creator`, and `DateTimeOriginal` for `iptc.photo.dateCreated`. Separately, the IPTC `Location` structure literally nests the EXIF XMP fields `exif:GPSLatitude`, `exif:GPSLongitude`, `exif:GPSAltitude` (and `exif:GPSAltitudeRef` on photo). So EXIF GPS does live inside IPTC location properties. |
 | Is "most common properties" a code concept? | **Not by that name, but the set is real in code.** It matches the hand-written Phase 1 id list in `src/core/property_ids.hpp`, which is labeled "Canonical Phase 1 property ids", plus `title`. Those ids still have **hand-written special-case read and write paths** that bypass the table-driven engine. Your theory is right: the list is the original Phase 1 accessor set from before cross-media accessors. |
 | Why does `read` return `exif.gps.position`? | `umm::read` reconciles exactly this set: the ids in the cross-media accessor map, plus `iptc.photo.imageRating` (photo only), plus `exif.gps.position`. GPS is added by hand. It is a reconciled value, **not** an unmapped entry. It only looks unmapped because it has no registry entry and doesn't appear in the full property reference. |
-| Does `read` return every canonical property? | **No.** On photos it reconciles 40 of the 66 photo ids. On video it reconciles 38 of the 105 video ids. Every other id in the "Full property reference" can be **written** with `set()` but never comes back from `read` as a property. It appears only as raw entries in `unmapped()`. |
+| Does `read` return every canonical property? | **No.** On photos it reconciles 40 of the 66 photo ids. On video it reconciles 38 of the 105 video ids. Every other id in the "Full property reference" can be **written** with `set()` but never comes back from `read` as a property. It appears only as base entries in `unmapped()`. |
 | Do `locationCreated` / `locationShot` hold GPS? | **Yes, per the standards.** Both use the IPTC `Location` structure, which has GPS latitude, longitude, and altitude fields (plus altitude reference on photo). The registry imports these fields. **But the photo pipeline drops them.** Reading photo `locationCreated` keeps only `city` / `provinceState` / `countryName`. Writing it emits only the legacy Photoshop and IIM city, state, and country fields. Coordinates passed to `setLocationCreated` on a photo are silently lost. |
 | What is `Iptc4xmpExt`? | Not a different or older standard. It is the **XMP namespace prefix for the IPTC Photo Metadata *Extension* schema** (`http://iptc.org/std/Iptc4xmpExt/2008-02-29/`; `Iptc4xmpCore` is the Core schema). libumm already uses it: `iptc.photo.locationCreated` is stored in XMP as `Iptc4xmpExt:LocationCreated`, and so is `iptc.video.locationShot`. |
 | Is the search result's `Iptc4xmpExt:LocationCreated/Iptc4xmpExt:GPSLatitude` correct? | **The structure is right; the field namespace is wrong.** Both standards put the GPS fields in the **EXIF** namespace inside the structure: `Iptc4xmpExt:LocationCreated/exif:GPSLatitude`. The `Iptc4xmpExt:GPSLatitude` form probably comes from tools that show struct fields under the `XMP-iptcExt` group (ExifTool shows them as `LocationCreatedGPSLatitude`) **(verify)**. Video Metadata Hub does reuse the photo Extension namespace, so `Iptc4xmpExt:LocationCreated` (not `LocationShot`) is the correct XMP property for VMH Location Shot. |
@@ -123,7 +123,7 @@ Of the 11 rows, 9 are cross-media accessors. The other two are:
 
 ### 2.3 What `umm::read` returns, and why
 
-`internal::reconcile` stores **every raw entry** with `assignUnmapped`, then reconciles
+`internal::reconcile` stores **every base entry** with `assignUnmapped`, then reconciles
 these lists (`src/core/reconcile.cpp:1897-1921`):
 
 - **photo:** every non-deferred photo id in the cross-media map, plus
@@ -152,9 +152,9 @@ This creates two asymmetries:
    `sync_video_generic` (`src/core/write_sync.cpp:638-641`). A following `read` does not
    return `iptc.photo.instructions`.
 2. `Metadata::unmapped()` is documented as "every unmapped entry a read found"
-   (`docs/user/guide.md:380-382`), but it actually holds **all** raw entries, mapped and
+   (`docs/user/guide.md:380-382`), but it actually holds **all** base entries, mapped and
    unmapped (`src/core/reconcile.cpp:1905`, `src/metadata.cpp:653-655`). This may be why
-   `exif.gps.position` *looked* unmapped: its raw `Exif.GPSInfo.*` keys also appear in
+   `exif.gps.position` *looked* unmapped: its base `Exif.GPSInfo.*` keys also appear in
    `unmapped()`.
 
 Note on "the read command": the `umm` CLI is still a concept
@@ -199,7 +199,7 @@ Other inconsistencies:
 
 - `docs/reconciliation-policy.md:230-232` says write-sync emits "structured LocationCreated
   when the writer can". **The code never does this on photo.**
-- Photo `locationCreated` writes the **same raw keys** as three other canonical ids:
+- Photo `locationCreated` writes the **same base keys** as three other canonical ids:
   `iptc.photo.cityLegacy` (`photoshop:City` / IIM 2:90), `provinceOrStateLegacy`, and
   `countryLegacy`. Setting both a legacy id and `locationCreated` yields two writers for one
   key.
@@ -323,7 +323,7 @@ does not read back.
   to the C3b list. The accessor map then decides **only** which ids get short names. It
   no longer decides what `read` returns.
 - **On "should read return only canonical fields, with emphasis on cross-media
-  accessors?"** `umm::read` already returns only canonical ids as properties. Raw data
+  accessors?"** `umm::read` already returns only canonical ids as properties. Base data
   stays separate in `unmapped()`. Keep that split. Proposed emphasis lives in
   *presentation* only. When built, the CLI's `umm read` would print every reconciled
   property and show the accessor name next to ids that have one (`creator  iptc.photo.creator`),
@@ -332,13 +332,13 @@ does not read back.
   "write metadata once, use it everywhere", and `umm get` already covers name-based
   lookup.
 
-### Finding C6 — `unmapped()` holds all raw entries, not just unmapped ones
+### Finding C6 — `unmapped()` holds all base entries, not just unmapped ones
 
-The guide and header describe `unmapped()` as unmapped-only. In the code it is the full raw
+The guide and header describe `unmapped()` as unmapped-only. In the code it is the full base
 document.
 
-- **C6 — Options:** (1) filter out raw keys that any reconciled group consumed; or (2) keep
-  the full dump and rename/redocument it as the raw view. Proposed: **(1)** once C5 lands,
+- **C6 — Options:** (1) filter out base keys that any reconciled group consumed; or (2) keep
+  the full dump and rename/redocument it as the base view. Proposed: **(1)** once C5 lands,
   because then "consumed" is well defined for every registry id. Until then, at minimum fix
   the guide wording. This is an observable behavior change, so it needs a
   `docs/developer/release-notes.md` entry.
@@ -357,11 +357,11 @@ The "Outcome" column was added after maintainer review. §8 gives the details.
 | C3b | Phase 1 special-case ids in code | Shrink to policy-justified composites; follow-up | **Accepted.** The target is no id-specific branches; composite codecs become registry-driven |
 | C3c | Rating | Re-open: Tier 1 `imageRating` ↔ `workflowRating` (both `xmp:Rating`), pending semantic sign-off | **Accepted.** Tier 1 `rating` accessor |
 | C4a | Photo Location structs | Full `Location` struct incl. GPS on `Iptc4xmpExt:*`, with field aliases + GPS string↔number | **Accepted.** Prerequisite for casting |
-| C4b | Legacy city/state/country | Reconcile under their own legacy ids; legacy fallback for `locationCreated` needs a decision | **Modified.** Legacy ids own their keys; any link to a Location struct is a *side cast* (C11). The default partner is open: MWG says Location**Shown** (§8.4) |
+| C4b | Legacy city/state/country | Reconcile under their own legacy ids; legacy fallback for `locationCreated` needs a decision | **Modified.** Legacy ids own their keys; any link to a Location struct is a *side cast* (C11). The partner is Location**Shown**, following MWG (§8.4; decided as OQ2 in the follow-up record) |
 | C4c | GPS ↔ Location GPS | Separate values, no implicit cross-fill; documented relationship; optional helper later | **Superseded** by the representation-vs-cast rule (C7) and GPS decision (C8) |
 | C4d | Location docs | Document Location GPS fields, `Iptc4xmpExt` / `Iptc4xmpCore`, alongside C4a | **Accepted**; folded into the generated property reference (C14) |
 | C5 | `read` coverage | Reconcile every registry id for the domain; accessor map controls names only | **Accepted**, without the `exif.gps.position` addition |
-| C6 | `unmapped()` semantics | Filter consumed raw keys after C5; fix the docs now | **Modified.** Replace with `dumpAll()` and `dumpUnmapped()` (C13) |
+| C6 | `unmapped()` semantics | Filter consumed base keys after C5; fix the docs now | **Modified.** Replace with `dumpAll()` and `dumpUnmapped()` (C13); the backend vocabulary becomes `Base*` and "raw" is not used (C18) |
 
 ## 5. Suggested sequencing (once accepted)
 
@@ -434,7 +434,7 @@ reaches the same conclusions on C1, C3, and C5. It adds five points this review 
 |---|---|---|
 | 1 | `exif.gps.position` is a stable public id with tests and docs. Silently removing it is an API break. | libumm is pre-release, so the id **is removed**. Headers are updated first and `docs/developer/release-notes.md` gets an entry (C8). |
 | 2 | A video can have several shot locations, so one device position cannot map onto "the" location. | List↔single rule: **use the first entry** (C10). |
-| 3 | `GpsCoordinate.gps_time` (UTC from `GPSDateStamp`/`GPSTimeStamp`) has no field in the Location struct and would be lost. | Accepted as a loss. Raw GPS time stays visible in `dumpAll()`/`dumpUnmapped()`. The wider time-field picture is in C16. |
+| 3 | `GpsCoordinate.gps_time` (UTC from `GPSDateStamp`/`GPSTimeStamp`) has no field in the Location struct and would be lost. | Accepted as a loss. Base GPS time stays visible in `dumpAll()`/`dumpUnmapped()`. The wider time-field picture is in C16. |
 | 4 | [concept.md](concept.md) "Domain C — EXIF / camera technical metadata" planned EXIF as its own canonical domain. | The maintainer chose to **depart from the original plan explicitly** (C17). |
 | 5 | Round-trip claims for Location GPS must be tested against real backends, not inferred from the standard. | Accepted: "test all the things" (C15). |
 
@@ -463,7 +463,7 @@ This review adds one more point that neither draft made:
 | Q7 | What happens to `gps()`/`setGps()` and geotag? | Option (a): remove them. `GpsCoordinate` stays as the value type for tracks and casts (C8). |
 | Q8 | Should some casts link two canonical properties? | Yes, called **side casting**. It shares the same engine as up/down (C11). |
 | Q9 | What are casts called in data and code? | "Cast rules" in `registry/casts/*.json`, `CastRule`, "cast group". Curated, cited, marked `partial` (C9). |
-| Q10 | What replaces `unmapped()`? | `dumpAll()` (every raw entry) and `dumpUnmapped()` (only raw entries no canonical property consumed). The CLI uses `dumpall` / `dumpunmapped` (C13). |
+| Q10 | What replaces `unmapped()`? | `dumpAll()` (every base entry) and `dumpUnmapped()` (only base entries no canonical property consumed). The CLI uses `dumpall` / `dumpunmapped` (C13). |
 | Q11 | Is C4a (full photo Location struct) a prerequisite for casting? | Yes. |
 
 ### 8.3 Resolution of the "other inconsistencies"
@@ -501,7 +501,7 @@ libumm currently does the opposite. It reads and writes these legacy fields as
 `iptc.photo.locationCreated` (`src/core/reconcile.cpp:1425-1460`,
 `src/core/write_sync.cpp:557-570`). A web-search summary claimed "legacy = created"; the
 actual ExifTool source contradicts it. IPTC itself calls the legacy semantics "blurred".
-This is an open question in the decision record (OQ2).
+The maintainer decided this on 2026-10-04: Location Shown (decision record OQ2, C11).
 
 ### 8.5 Clarifications given to the maintainer
 
