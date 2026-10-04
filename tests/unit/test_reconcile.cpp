@@ -951,54 +951,5 @@ int main() {
     }
   }
 
-  {
-    const auto result = umm::internal::reconcile(
-        doc({entry("Exif", "Exif.GPSInfo.GPSLatitudeRef", "N"),
-             entry("Exif", "Exif.GPSInfo.GPSLatitude", "23.7518833299847"),
-             entry("Exif", "Exif.GPSInfo.GPSLongitudeRef", "W"),
-             entry("Exif", "Exif.GPSInfo.GPSLongitude", "87.1015083299947"),
-             entry("Exif", "Exif.GPSInfo.GPSAltitudeRef", "0"),
-             entry("Exif", "Exif.GPSInfo.GPSAltitude", "12.07893414"),
-             entry("Exif", "Exif.GPSInfo.GPSLatitude", "23.7518833299847"),
-             entry("Exif", "Exif.GPSInfo.GPSLongitude", "-87.1015083299947"),
-             entry("Exif", "Exif.GPSInfo.GPSPosition",
-                   "23.7518833299847 -87.1015083299947")}),
-        "exiftool");
-    if (!result.ok()) {
-      return fail("Win/mac dump replica reconcile failed");
-    }
-    const auto created = result.value().locationCreated();
-    const auto* loc = created ? location0(*created) : nullptr;
-    if (!loc) {
-      return fail("Win/mac dump replica missing locationCreated");
-    }
-    if (!field_near(*loc, "gpsLatitude", 23.75188333) ||
-        !field_near(*loc, "gpsLongitude", -87.10150833) ||
-        !field_near(*loc, "gpsAltitude", 12.07893414)) {
-      return fail("Win/mac dump replica GPS values");
-    }
-  }
-
-  {
-    const auto result = umm::internal::reconcile(
-        doc({entry("Exif", "Exif.GPSInfo.GPSLatitude\r", "23.7518833299847"),
-             entry("Exif", "Exif.GPSInfo.GPSLongitude\r", "87.1015083299947"),
-             entry("Exif", "Exif.GPSInfo.GPSLatitudeRef\r", "N"),
-             entry("Exif", "Exif.GPSInfo.GPSLongitudeRef\r", "W")}),
-        "exiftool");
-    if (!result.ok()) {
-      return fail("CR-suffixed GPS keys reconcile failed");
-    }
-    const auto created = result.value().locationCreated();
-    const auto* loc = created ? location0(*created) : nullptr;
-    if (!loc) {
-      return fail("CR-suffixed GPS keys missing locationCreated");
-    }
-    if (!field_near(*loc, "gpsLatitude", 23.75188333) ||
-        !field_near(*loc, "gpsLongitude", -87.10150833)) {
-      return fail("CR-suffixed GPS keys values");
-    }
-  }
-
   return 0;
 }

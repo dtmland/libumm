@@ -57,6 +57,7 @@ umm::Backend* available(const char* id) {
   return backend;
 }
 
+// The optional must outlive the returned pointer (get() returns by value).
 const umm::DateTime* as_dt(const std::optional<umm::PropertyValue>& value) {
   return value ? std::get_if<umm::DateTime>(&value->value.data) : nullptr;
 }
@@ -157,7 +158,8 @@ int check_heic_layout(const char* backend) {
     return 1;
   }
   const umm::Metadata& meta = read.value();
-  const umm::DateTime* dt = as_dt(meta.get("iptc.photo.dateCreated"));
+  const auto date = meta.get("iptc.photo.dateCreated");
+  const umm::DateTime* dt = as_dt(date);
   if (!dt || dt->year != 2026 || dt->month != 9 || dt->day != 1 ||
       dt->hour != 14 || dt->minute != 44 || dt->second != 19) {
     return fail("iphone-heic-layout.jpg dateCreated clock");
@@ -168,33 +170,16 @@ int check_heic_layout(const char* backend) {
   if (!dt->subsecond_ns || *dt->subsecond_ns != 685000000) {
     return fail("iphone-heic-layout.jpg dateCreated sub-seconds");
   }
-  const auto* items = as_structs(meta.get("iptc.photo.locationCreated"));
-  if (!items || items->empty()) {
-    items = as_structs(meta.locationCreated());
-  }
+  const auto loc = meta.get("iptc.photo.locationCreated");
+  const auto* items = as_structs(loc);
   if (!items || items->empty()) {
     std::fprintf(stderr,
                  "iphone-heic-layout.jpg %s missing locationCreated GPS\n",
                  backend);
-    for (const std::string& id : meta.propertyIds()) {
-      std::fprintf(stderr, "  property %s\n", id.c_str());
-    }
-    auto dump_bytes = [](const char* label, std::string_view text) {
-      std::fprintf(stderr, "  %s len=%zu ", label, text.size());
-      for (unsigned char c : text) {
-        std::fprintf(stderr, "%02x", c);
-      }
-      std::fprintf(stderr, "\n");
-    };
     for (const umm::BaseEntry& item : meta.dumpAll()) {
       if (item.key.key.find("GPS") != std::string::npos) {
         std::fprintf(stderr, "  %s=%s\n", item.key.key.c_str(),
                      item.value.c_str());
-        if (item.key.key.find("GPSLatitude") != std::string::npos &&
-            item.key.key.find("Ref") == std::string::npos) {
-          dump_bytes("key", item.key.key);
-          dump_bytes("val", item.value);
-        }
       }
     }
     return 1;
@@ -204,16 +189,8 @@ int check_heic_layout(const char* backend) {
             1e-5) ||
       !near(struct_number(items->front(), "gpsAltitude"), 12.07893416, 0.5)) {
     std::fprintf(stderr,
-                 "iphone-heic-layout.jpg %s locationCreated GPS values lat=%g lon=%g alt=%g fields=%zu\n",
-                 backend, struct_number(items->front(), "gpsLatitude"),
-                 struct_number(items->front(), "gpsLongitude"),
-                 struct_number(items->front(), "gpsAltitude"),
-                 items->front().size());
-    for (const auto& [name, value] : items->front()) {
-      std::fprintf(stderr, "  field %s index=%zu valueless=%d\n", name.c_str(),
-                   value.data.index(),
-                   value.data.valueless_by_exception() ? 1 : 0);
-    }
+                 "iphone-heic-layout.jpg %s locationCreated GPS values\n",
+                 backend);
     return 1;
   }
   const auto unmapped = meta.dumpUnmapped();
@@ -238,8 +215,8 @@ int check_pixel_dng(const char* backend) {
                  read.error().message.c_str());
     return 1;
   }
-  const umm::DateTime* dt =
-      as_dt(read.value().get("iptc.photo.dateCreated"));
+  const auto date = read.value().get("iptc.photo.dateCreated");
+  const umm::DateTime* dt = as_dt(date);
   if (!dt || dt->year != 2016 || dt->month != 10 || dt->day != 25 ||
       dt->hour != 20 || dt->minute != 47 || dt->second != 28) {
     return fail("pixel-style.dng IFD0 DateTimeOriginal");
@@ -371,13 +348,13 @@ int write_canonical_jpeg(const char* backend) {
   if (!dump_contains(all, "GPSLatitude")) {
     return fail("write locationCreated GPS did not persist GPSLatitude");
   }
-  const umm::DateTime* dt =
-      as_dt(round.value().get("iptc.photo.dateCreated"));
+  const auto date = round.value().get("iptc.photo.dateCreated");
+  const umm::DateTime* dt = as_dt(date);
   if (!dt || dt->year != 2021 || dt->month != 4 || dt->day != 5) {
     return fail("read-back dateCreated");
   }
-  const auto* items =
-      as_structs(round.value().get("iptc.photo.locationCreated"));
+  const auto location = round.value().get("iptc.photo.locationCreated");
+  const auto* items = as_structs(location);
   if (!items || items->empty() ||
       !near(struct_number(items->front(), "gpsLatitude"), 41.25, 1e-5)) {
     return fail("read-back locationCreated GPS");
@@ -409,8 +386,9 @@ int cast_side_jpeg(const char* backend) {
                  applied.error().message.c_str());
     return 1;
   }
-  const auto* items = as_structs(
-      applied.value().metadata.get("iptc.photo.locationShownInTheImage"));
+  const auto shown =
+      applied.value().metadata.get("iptc.photo.locationShownInTheImage");
+  const auto* items = as_structs(shown);
   if (!items || items->empty()) {
     return fail("locationShownLegacy apply empty");
   }
@@ -448,13 +426,15 @@ int cast_person_and_creator(const char* backend) {
                  applied.error().message.c_str());
     return 1;
   }
-  const auto* people = as_structs(
-      applied.value().metadata.get("iptc.photo.personShownInTheImageWithDetails"));
+  const auto people_value = applied.value().metadata.get(
+      "iptc.photo.personShownInTheImageWithDetails");
+  const auto* people = as_structs(people_value);
   if (!people || people->empty()) {
     return fail("personShown side apply");
   }
-  const auto* creators =
-      as_structs(applied.value().metadata.get("iptc.photo.imageCreator"));
+  const auto creators_value =
+      applied.value().metadata.get("iptc.photo.imageCreator");
+  const auto* creators = as_structs(creators_value);
   if (!creators || creators->empty()) {
     return fail("creatorImageCreator side apply");
   }
@@ -484,8 +464,9 @@ int video_casts() {
                  applied.error().message.c_str());
     return 1;
   }
-  const auto* shot =
-      as_structs(applied.value().metadata.get("iptc.video.locationShot"));
+  const auto shot_value =
+      applied.value().metadata.get("iptc.video.locationShot");
+  const auto* shot = as_structs(shot_value);
   if (!shot || shot->empty() ||
       !near(struct_number(shot->front(), "gpsLatitude"), 12.58243889, 1e-5) ||
       !near(struct_number(shot->front(), "gpsLongitude"), -98.11848333,
@@ -546,8 +527,9 @@ int video_casts() {
                  gopro_applied.error().message.c_str());
     return 1;
   }
-  const umm::DateTime* created =
-      as_dt(gopro_applied.value().metadata.get("iptc.video.dateCreated"));
+  const auto created_value =
+      gopro_applied.value().metadata.get("iptc.video.dateCreated");
+  const umm::DateTime* created = as_dt(created_value);
   if (!created || created->year != 2016 || created->month != 1 ||
       created->day != 7) {
     return fail("videoCreated approximate apply");
