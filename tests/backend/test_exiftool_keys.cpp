@@ -84,30 +84,30 @@ int main() {
     return 1;
   }
 
-  const auto artist = umm::internal::exiftool_tag_for_unmapped_key("Exif.Image.Artist");
+  const auto artist = umm::internal::exiftool_tag_for_base_key("Exif.Image.Artist");
   const auto byline =
-      umm::internal::exiftool_tag_for_unmapped_key("Iptc.Application2.Byline");
+      umm::internal::exiftool_tag_for_base_key("Iptc.Application2.Byline");
   const auto creator =
-      umm::internal::exiftool_tag_for_unmapped_key("Xmp.dc.creator[1]");
+      umm::internal::exiftool_tag_for_base_key("Xmp.dc.creator[1]");
   const auto title =
-      umm::internal::exiftool_tag_for_unmapped_key("QuickTime.Title");
+      umm::internal::exiftool_tag_for_base_key("QuickTime.Title");
   const auto qt_artist =
-      umm::internal::exiftool_tag_for_unmapped_key("QuickTime.Artist");
+      umm::internal::exiftool_tag_for_base_key("QuickTime.Artist");
   const auto created =
-      umm::internal::exiftool_tag_for_unmapped_key("QuickTime.CreationDate");
+      umm::internal::exiftool_tag_for_base_key("QuickTime.CreationDate");
   const auto gps =
-      umm::internal::exiftool_tag_for_unmapped_key("QuickTime.GPSCoordinates");
-  const auto loc = umm::internal::exiftool_tag_for_unmapped_key(
+      umm::internal::exiftool_tag_for_base_key("QuickTime.GPSCoordinates");
+  const auto loc = umm::internal::exiftool_tag_for_base_key(
       "Xmp.Iptc4xmpExt.LocationCreated");
-  const auto alt = umm::internal::exiftool_tag_for_unmapped_key(
+  const auto alt = umm::internal::exiftool_tag_for_base_key(
       "Xmp.Iptc4xmpCore.AltTextAccessibility");
-  const auto event = umm::internal::exiftool_tag_for_unmapped_key(
+  const auto event = umm::internal::exiftool_tag_for_base_key(
       "Xmp.Iptc4xmpExt.EventExt");
-  const auto registry = umm::internal::exiftool_tag_for_unmapped_key(
+  const auto registry = umm::internal::exiftool_tag_for_base_key(
       "Xmp.Iptc4xmpExt.RegistryId");
-  const auto event_id = umm::internal::exiftool_tag_for_unmapped_key(
+  const auto event_id = umm::internal::exiftool_tag_for_base_key(
       "Xmp.Iptc4xmpExt.EventId");
-  const auto guid = umm::internal::exiftool_tag_for_unmapped_key(
+  const auto guid = umm::internal::exiftool_tag_for_base_key(
       "Xmp.Iptc4xmpExt.DigImageGUID");
   if (!artist || *artist != "IFD0:Artist" || !byline ||
       *byline != "IPTC:By-line" || !creator || *creator != "XMP-dc:Creator" ||

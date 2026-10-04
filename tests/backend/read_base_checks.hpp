@@ -75,7 +75,7 @@ inline std::filesystem::path raw_unicode_filename() {
          std::filesystem::path(std::u8string(kName));
 }
 
-inline bool unmapped_only_family(const umm::UnmappedDocument& document,
+inline bool base_only_family(const umm::BaseDocument& document,
                             std::string_view family) {
   if (document.entries.empty()) {
     return false;
@@ -88,7 +88,7 @@ inline bool unmapped_only_family(const umm::UnmappedDocument& document,
   return true;
 }
 
-inline bool unmapped_has_family(const umm::UnmappedDocument& document,
+inline bool base_has_family(const umm::BaseDocument& document,
                            std::string_view family) {
   for (const auto& entry : document.entries) {
     if (entry.key.family == family) {
@@ -98,7 +98,7 @@ inline bool unmapped_has_family(const umm::UnmappedDocument& document,
   return false;
 }
 
-inline std::optional<std::string> unmapped_value_of(const umm::UnmappedDocument& document,
+inline std::optional<std::string> base_value_of(const umm::BaseDocument& document,
                                                std::string_view key) {
   for (const auto& entry : document.entries) {
     if (entry.key.key == key) {
@@ -108,7 +108,7 @@ inline std::optional<std::string> unmapped_value_of(const umm::UnmappedDocument&
   return std::nullopt;
 }
 
-inline bool unmapped_has_key_with_value(const umm::UnmappedDocument& document,
+inline bool base_has_key_with_value(const umm::BaseDocument& document,
                                    std::string_view key,
                                    std::string_view expected) {
   for (const auto& entry : document.entries) {
@@ -122,62 +122,62 @@ inline bool unmapped_has_key_with_value(const umm::UnmappedDocument& document,
   return false;
 }
 
-// Shared still-fixture expectations for Exiv2 and ExifTool readUnmapped.
-inline int check_still_unmapped_reads(umm::Backend& backend, const char* backend_id,
+// Shared still-fixture expectations for Exiv2 and ExifTool readBase.
+inline int check_still_base_reads(umm::Backend& backend, const char* backend_id,
                                  const char* folder, const char* ext) {
   const auto exif_only =
-      backend.readUnmapped(raw_stem(folder, "exif-only", ext));
+      backend.readBase(raw_stem(folder, "exif-only", ext));
   if (!exif_only.ok()) {
     std::fprintf(stderr, "%s/exif-only%s read failed: %s\n", folder, ext,
                  exif_only.error().message.c_str());
     return 1;
   }
-  if (!unmapped_only_family(exif_only.value(), "Exif")) {
+  if (!base_only_family(exif_only.value(), "Exif")) {
     return raw_fail("exif-only produced non-Exif keys");
   }
-  if (!unmapped_has_key_with_value(exif_only.value(), "Exif.Image.Artist",
+  if (!base_has_key_with_value(exif_only.value(), "Exif.Image.Artist",
                               "EXIF Artist")) {
     return raw_fail("exif-only missing Exif.Image.Artist");
   }
 
   const auto agreeing =
-      backend.readUnmapped(raw_stem(folder, "full-agreeing", ext));
+      backend.readBase(raw_stem(folder, "full-agreeing", ext));
   if (!agreeing.ok()) {
     std::fprintf(stderr, "%s/full-agreeing%s read failed: %s\n", folder, ext,
                  agreeing.error().message.c_str());
     return 1;
   }
-  if (!unmapped_has_family(agreeing.value(), "Exif") ||
-      !unmapped_has_family(agreeing.value(), "Iptc") ||
-      !unmapped_has_family(agreeing.value(), "Xmp")) {
+  if (!base_has_family(agreeing.value(), "Exif") ||
+      !base_has_family(agreeing.value(), "Iptc") ||
+      !base_has_family(agreeing.value(), "Xmp")) {
     return raw_fail("full-agreeing missing a metadata family");
   }
-  if (!unmapped_has_key_with_value(agreeing.value(), "Exif.Image.Artist",
+  if (!base_has_key_with_value(agreeing.value(), "Exif.Image.Artist",
                               "Agreeing Creator") ||
-      !unmapped_has_key_with_value(agreeing.value(), "Iptc.Application2.Byline",
+      !base_has_key_with_value(agreeing.value(), "Iptc.Application2.Byline",
                               "Agreeing Creator") ||
-      !unmapped_has_key_with_value(agreeing.value(), "Xmp.dc.creator",
+      !base_has_key_with_value(agreeing.value(), "Xmp.dc.creator",
                               "Agreeing Creator")) {
     return raw_fail("full-agreeing missing creator in all families");
   }
-  if (!unmapped_has_key_with_value(agreeing.value(), "Exif.Photo.DateTimeOriginal",
+  if (!base_has_key_with_value(agreeing.value(), "Exif.Photo.DateTimeOriginal",
                               "2020:01:02 03:04:05") ||
-      !unmapped_value_of(agreeing.value(), "Iptc.Application2.DateCreated")) {
+      !base_value_of(agreeing.value(), "Iptc.Application2.DateCreated")) {
     return raw_fail("full-agreeing missing expected dates");
   }
 
-  const auto gps = backend.readUnmapped(raw_stem(folder, "gps", ext));
+  const auto gps = backend.readBase(raw_stem(folder, "gps", ext));
   if (!gps.ok()) {
     std::fprintf(stderr, "%s/gps%s read failed: %s\n", folder, ext,
                  gps.error().message.c_str());
     return 1;
   }
-  if (!unmapped_value_of(gps.value(), "Exif.GPSInfo.GPSLatitude") ||
-      !unmapped_value_of(gps.value(), "Exif.GPSInfo.GPSLongitude")) {
+  if (!base_value_of(gps.value(), "Exif.GPSInfo.GPSLatitude") ||
+      !base_value_of(gps.value(), "Exif.GPSInfo.GPSLongitude")) {
     return raw_fail("gps missing EXIF GPS coordinates");
   }
 
-  const auto unicode = backend.readUnmapped(raw_stem(folder, "unicode", ext));
+  const auto unicode = backend.readBase(raw_stem(folder, "unicode", ext));
   if (!unicode.ok()) {
     std::fprintf(stderr, "%s/unicode%s read failed: %s\n", folder, ext,
                  unicode.error().message.c_str());
@@ -191,21 +191,21 @@ inline int check_still_unmapped_reads(umm::Backend& backend, const char* backend
       0xA5, 0xE6, 0x9C, 0xAC, 0xE8, 0xAA, 0x9E, 0};
   const std::string jurgen = raw_from_u8(kJurgen);
   const std::string cafe = raw_from_u8(kCafe);
-  if (!unmapped_has_key_with_value(unicode.value(), "Iptc.Application2.Byline",
+  if (!base_has_key_with_value(unicode.value(), "Iptc.Application2.Byline",
                               jurgen) ||
-      !unmapped_has_key_with_value(unicode.value(), "Xmp.dc.creator", jurgen) ||
-      !unmapped_has_key_with_value(unicode.value(), "Iptc.Application2.Caption",
+      !base_has_key_with_value(unicode.value(), "Xmp.dc.creator", jurgen) ||
+      !base_has_key_with_value(unicode.value(), "Iptc.Application2.Caption",
                               cafe) ||
-      !unmapped_has_key_with_value(unicode.value(), "Xmp.dc.description", cafe)) {
+      !base_has_key_with_value(unicode.value(), "Xmp.dc.description", cafe)) {
     return raw_fail("unicode values did not match UTF-8 expectations");
   }
   return 0;
 }
 
-// Shared JPEG fixture expectations for Exiv2 and ExifTool readUnmapped (session 11).
+// Shared JPEG fixture expectations for Exiv2 and ExifTool readBase (session 11).
 inline int check_jpeg_unmapped_reads(umm::Backend& backend,
                                 const char* backend_id) {
-  if (const int rc = check_still_unmapped_reads(backend, backend_id, "jpeg", ".jpg");
+  if (const int rc = check_still_base_reads(backend, backend_id, "jpeg", ".jpg");
       rc != 0) {
     return rc;
   }
@@ -213,18 +213,18 @@ inline int check_jpeg_unmapped_reads(umm::Backend& backend,
       'J', 0xC3, 0xBC, 'r', 'g', 'e', 'n', ' ', 'M', 0xC3, 0xBC, 'l', 'l',
       'e', 'r', 0};
   const std::string jurgen = raw_from_u8(kJurgen);
-  const auto unicode_path = backend.readUnmapped(raw_unicode_filename());
+  const auto unicode_path = backend.readBase(raw_unicode_filename());
   if (!unicode_path.ok()) {
     std::fprintf(stderr, "unicode filename read failed: %s\n",
                  unicode_path.error().message.c_str());
     return 1;
   }
-  if (!unmapped_has_key_with_value(unicode_path.value(), "Xmp.dc.creator", jurgen)) {
+  if (!base_has_key_with_value(unicode_path.value(), "Xmp.dc.creator", jurgen)) {
     return raw_fail("unicode filename fixture did not match UTF-8 creator");
   }
 
   const auto truncated =
-      backend.readUnmapped(raw_fixtures_dir() / "corrupt" / "truncated.jpg");
+      backend.readBase(raw_fixtures_dir() / "corrupt" / "truncated.jpg");
   if (truncated.ok()) {
     return raw_fail("truncated.jpg unexpectedly succeeded");
   }
@@ -243,55 +243,55 @@ inline int check_jpeg_unmapped_reads(umm::Backend& backend,
 }
 
 inline int check_tiff_unmapped_reads(umm::Backend& backend, const char* backend_id) {
-  return check_still_unmapped_reads(backend, backend_id, "tiff", ".tif");
+  return check_still_base_reads(backend, backend_id, "tiff", ".tif");
 }
 
 inline int check_png_unmapped_reads(umm::Backend& backend, const char* backend_id) {
-  const auto xmp_only = backend.readUnmapped(raw_stem("png", "xmp-only", ".png"));
+  const auto xmp_only = backend.readBase(raw_stem("png", "xmp-only", ".png"));
   if (!xmp_only.ok()) {
     std::fprintf(stderr, "png/xmp-only.png read failed: %s\n",
                  xmp_only.error().message.c_str());
     return 1;
   }
-  if (!unmapped_has_key_with_value(xmp_only.value(), "Xmp.dc.creator",
+  if (!base_has_key_with_value(xmp_only.value(), "Xmp.dc.creator",
                               "XMP Creator") ||
-      unmapped_has_family(xmp_only.value(), "Exif") ||
-      unmapped_has_family(xmp_only.value(), "Iptc")) {
+      base_has_family(xmp_only.value(), "Exif") ||
+      base_has_family(xmp_only.value(), "Iptc")) {
     return raw_fail("png xmp-only missing XMP creator");
   }
 
   const auto agreeing =
-      backend.readUnmapped(raw_stem("png", "full-agreeing", ".png"));
+      backend.readBase(raw_stem("png", "full-agreeing", ".png"));
   if (!agreeing.ok()) {
     std::fprintf(stderr, "png/full-agreeing.png read failed: %s\n",
                  agreeing.error().message.c_str());
     return 1;
   }
-  if (!unmapped_has_family(agreeing.value(), "Iptc") ||
-      !unmapped_has_family(agreeing.value(), "Xmp")) {
+  if (!base_has_family(agreeing.value(), "Iptc") ||
+      !base_has_family(agreeing.value(), "Xmp")) {
     return raw_fail("png full-agreeing missing IPTC/XMP");
   }
-  if (unmapped_has_family(agreeing.value(), "Exif")) {
+  if (base_has_family(agreeing.value(), "Exif")) {
     return raw_fail("png full-agreeing unexpectedly has EXIF");
   }
-  if (!unmapped_has_key_with_value(agreeing.value(), "Iptc.Application2.Byline",
+  if (!base_has_key_with_value(agreeing.value(), "Iptc.Application2.Byline",
                               "Agreeing Creator") ||
-      !unmapped_has_key_with_value(agreeing.value(), "Xmp.dc.creator",
+      !base_has_key_with_value(agreeing.value(), "Xmp.dc.creator",
                               "Agreeing Creator")) {
     return raw_fail("png full-agreeing missing creator");
   }
 
-  const auto gps = backend.readUnmapped(raw_stem("png", "gps", ".png"));
+  const auto gps = backend.readBase(raw_stem("png", "gps", ".png"));
   if (!gps.ok()) {
     std::fprintf(stderr, "png/gps.png read failed: %s\n",
                  gps.error().message.c_str());
     return 1;
   }
   const bool xmp_gps =
-      unmapped_value_of(gps.value(), "Xmp.exif.GPSLatitude").has_value() ||
-      unmapped_has_key_with_value(gps.value(), "Xmp.exif.GPSLatitude", "37");
+      base_value_of(gps.value(), "Xmp.exif.GPSLatitude").has_value() ||
+      base_has_key_with_value(gps.value(), "Xmp.exif.GPSLatitude", "37");
   const bool exif_gps =
-      unmapped_value_of(gps.value(), "Exif.GPSInfo.GPSLatitude").has_value();
+      base_value_of(gps.value(), "Exif.GPSInfo.GPSLatitude").has_value();
   if (!xmp_gps) {
     return raw_fail("png gps missing XMP GPS");
   }
@@ -304,22 +304,22 @@ inline int check_png_unmapped_reads(umm::Backend& backend, const char* backend_i
 inline int check_dng_unmapped_reads(umm::Backend& backend, const char* backend_id) {
   (void)backend_id;
   const auto agreeing =
-      backend.readUnmapped(raw_stem("raw", "full-agreeing", ".dng"));
+      backend.readBase(raw_stem("raw", "full-agreeing", ".dng"));
   if (!agreeing.ok()) {
     std::fprintf(stderr, "raw/full-agreeing.dng read failed: %s\n",
                  agreeing.error().message.c_str());
     return 1;
   }
-  if (!unmapped_has_family(agreeing.value(), "Exif") ||
-      !unmapped_has_family(agreeing.value(), "Iptc") ||
-      !unmapped_has_family(agreeing.value(), "Xmp")) {
+  if (!base_has_family(agreeing.value(), "Exif") ||
+      !base_has_family(agreeing.value(), "Iptc") ||
+      !base_has_family(agreeing.value(), "Xmp")) {
     return raw_fail("dng full-agreeing missing a metadata family");
   }
-  if (!unmapped_has_key_with_value(agreeing.value(), "Exif.Image.Artist",
+  if (!base_has_key_with_value(agreeing.value(), "Exif.Image.Artist",
                               "Agreeing Creator") ||
-      !unmapped_has_key_with_value(agreeing.value(), "Iptc.Application2.Byline",
+      !base_has_key_with_value(agreeing.value(), "Iptc.Application2.Byline",
                               "Agreeing Creator") ||
-      !unmapped_has_key_with_value(agreeing.value(), "Xmp.dc.creator",
+      !base_has_key_with_value(agreeing.value(), "Xmp.dc.creator",
                               "Agreeing Creator")) {
     return raw_fail("dng full-agreeing missing creator in all families");
   }
@@ -328,36 +328,36 @@ inline int check_dng_unmapped_reads(umm::Backend& backend, const char* backend_i
 
 inline int check_webp_unmapped_reads(umm::Backend& backend, const char* backend_id) {
   (void)backend_id;
-  const auto xmp_only = backend.readUnmapped(raw_stem("webp", "xmp-only", ".webp"));
+  const auto xmp_only = backend.readBase(raw_stem("webp", "xmp-only", ".webp"));
   if (!xmp_only.ok()) {
     std::fprintf(stderr, "webp/xmp-only.webp read failed: %s\n",
                  xmp_only.error().message.c_str());
     return 1;
   }
-  if (!unmapped_has_key_with_value(xmp_only.value(), "Xmp.dc.creator",
+  if (!base_has_key_with_value(xmp_only.value(), "Xmp.dc.creator",
                               "XMP Creator") ||
-      unmapped_has_family(xmp_only.value(), "Exif") ||
-      unmapped_has_family(xmp_only.value(), "Iptc")) {
+      base_has_family(xmp_only.value(), "Exif") ||
+      base_has_family(xmp_only.value(), "Iptc")) {
     return raw_fail("webp xmp-only missing XMP creator");
   }
 
   const auto agreeing =
-      backend.readUnmapped(raw_stem("webp", "full-agreeing", ".webp"));
+      backend.readBase(raw_stem("webp", "full-agreeing", ".webp"));
   if (!agreeing.ok()) {
     std::fprintf(stderr, "webp/full-agreeing.webp read failed: %s\n",
                  agreeing.error().message.c_str());
     return 1;
   }
-  if (!unmapped_has_family(agreeing.value(), "Exif") ||
-      !unmapped_has_family(agreeing.value(), "Xmp")) {
+  if (!base_has_family(agreeing.value(), "Exif") ||
+      !base_has_family(agreeing.value(), "Xmp")) {
     return raw_fail("webp full-agreeing missing EXIF/XMP");
   }
-  if (unmapped_has_family(agreeing.value(), "Iptc")) {
+  if (base_has_family(agreeing.value(), "Iptc")) {
     return raw_fail("webp full-agreeing unexpectedly has IPTC");
   }
-  if (!unmapped_has_key_with_value(agreeing.value(), "Exif.Image.Artist",
+  if (!base_has_key_with_value(agreeing.value(), "Exif.Image.Artist",
                               "Agreeing Creator") ||
-      !unmapped_has_key_with_value(agreeing.value(), "Xmp.dc.creator",
+      !base_has_key_with_value(agreeing.value(), "Xmp.dc.creator",
                               "Agreeing Creator")) {
     return raw_fail("webp full-agreeing missing creator");
   }
@@ -365,30 +365,30 @@ inline int check_webp_unmapped_reads(umm::Backend& backend, const char* backend_
 }
 
 inline int check_video_unmapped_reads(umm::Backend& backend) {
-  const auto full = backend.readUnmapped(raw_stem("video", "full", ".mp4"));
+  const auto full = backend.readBase(raw_stem("video", "full", ".mp4"));
   if (!full.ok()) {
     std::fprintf(stderr, "video/full.mp4 read failed: %s\n",
                  full.error().message.c_str());
     return 1;
   }
-  if (!unmapped_has_key_with_value(full.value(), "QuickTime.Title",
+  if (!base_has_key_with_value(full.value(), "QuickTime.Title",
                               "Agreeing Title") ||
-      !unmapped_has_key_with_value(full.value(), "Xmp.dc.creator",
+      !base_has_key_with_value(full.value(), "Xmp.dc.creator",
                               "Agreeing Creator") ||
-      !unmapped_has_family(full.value(), "QuickTime") ||
-      !unmapped_has_family(full.value(), "Xmp")) {
+      !base_has_family(full.value(), "QuickTime") ||
+      !base_has_family(full.value(), "Xmp")) {
     return raw_fail("video full.mp4 missing mapped QuickTime/XMP");
   }
-  const auto gps = backend.readUnmapped(raw_stem("video", "gps", ".mp4"));
+  const auto gps = backend.readBase(raw_stem("video", "gps", ".mp4"));
   if (!gps.ok()) {
     std::fprintf(stderr, "video/gps.mp4 read failed: %s\n",
                  gps.error().message.c_str());
     return 1;
   }
-  if (!unmapped_value_of(gps.value(), "QuickTime.GPSCoordinates")) {
+  if (!base_value_of(gps.value(), "QuickTime.GPSCoordinates")) {
     return raw_fail("video gps missing QuickTime.GPSCoordinates");
   }
-  const auto mov = backend.readUnmapped(raw_stem("video", "minimal", ".mov"));
+  const auto mov = backend.readBase(raw_stem("video", "minimal", ".mov"));
   if (!mov.ok()) {
     std::fprintf(stderr, "video/minimal.mov read failed: %s\n",
                  mov.error().message.c_str());

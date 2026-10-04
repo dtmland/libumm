@@ -46,9 +46,10 @@ not aliases of `set`. `umm read` is not an alias of `umm get`: `read` prints the
 | `umm get FILE PROPERTY…` | `umm::read` | Print one or more property values by convenience accessor (`creator`) or full id (`iptc.photo.creator`); exit non-zero if absent. |
 | `umm set FILE ASSIGN…` | `umm::write` | Write canonical properties through the policy engine (`creator="Jane"` or `iptc.photo.creator="Jane"`; structs use `--json`). `--policy embedded\|sidecar\|sidecar-required\|preferred`, `--dry-run` prints the `WriteReport`. |
 | `umm rm FILE PROP…` | `umm::write` | Clear properties across all synchronized representations (accessor or full id). |
-| `umm unmapped FILE` | `Metadata::unmapped()` | Dump every unmapped entry (family, key, value) — libumm's escape hatch, read-only. |
+| `umm dumpall FILE` | `Metadata::dumpAll()` | Dump every base entry (family, key, value) in source order — read-only. |
+| `umm dumpunmapped FILE` | `Metadata::dumpUnmapped()` | Dump base entries that no canonical property consumed — read-only. |
 | `umm conflicts FILE` | `umm::detectConflict` | List disagreeing properties with each candidate source; `--fail-on-conflict` for scripting. |
-| `umm merge FILE PROP --use RAWKEY\|--value V` | `umm::merge` + `umm::write` | Resolve a conflict by choosing a candidate or supplying an override, then persist. `PROP` is a full property id. |
+| `umm merge FILE PROP --use BASEKEY\|--value V` | `umm::merge` + `umm::write` | Resolve a conflict by choosing a candidate or supplying an override, then persist. `PROP` is a full property id. |
 | `umm sync FILE` | `umm::synchronize` | Make embedded and sidecar carriers agree; `--direction both\|embedded-to-sidecar\|sidecar-to-embedded`, `--dry-run`. |
 | `umm caps FILE\|TYPE` | `umm::capabilities` | Show per-backend, per-category capability rows for a file or type — the supported-types answer, live. |
 | `umm geotag --track T.gpx FILE…` | `umm::importTrack` / `matchTrack` / `umm::write` | Correlate capture times with a GPX/NMEA/KML track and write `exif.gps.position`; `--offset` for naive timestamps. Workflow command, not a property accessor. |
@@ -221,7 +222,7 @@ umm set video.mp4 iptc.video.contributor --json '[{"name":"Alice","role":"direct
 
 ### 2.6 Cross-cutting behavior
 
-- `--json` on every inspect command (`read`, `get`, `unmapped`, `conflicts`, `caps`, `version`,
+- `--json` on every inspect command (`read`, `get`, `dumpall`, `dumpunmapped`, `conflicts`, `caps`, `version`,
   and `--dry-run` reports); stable schema documented alongside the tool.
 - Property addressing: convenience accessors (`creator`, `gps`, `keywords`, …) for common
   photo properties; full ids (`iptc.photo.creator`, `iptc.video.dateCreated`,
@@ -378,7 +379,7 @@ setup scripts are system-native (`.bat`/PowerShell and POSIX `sh`), never a Pyth
 ## 6. Non-goals (v1)
 
 - No metadata semantics outside libumm's registry; no ad-hoc tag names on the command line
-  (unmapped *display* is supported via `umm unmapped`; unmapped *write* is absent, as in libumm).
+  (base *display* is supported via `umm dumpall` / `umm dumpunmapped`; writing new base keys is absent, as in libumm).
 - No thumbnailing, transcoding, or image processing.
 - No long-running daemon; the `-stay_open` ExifTool process is managed inside libumm per
   invocation batch.

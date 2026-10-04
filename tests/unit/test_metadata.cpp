@@ -58,17 +58,18 @@ int main() {
   }
   md.setMediaDomain(umm::MediaDomain::unknown);
 
-  if (md.creator() || !md.propertyIds().empty() || !md.unmapped().empty() ||
-      md.unmapped(umm::UnmappedKey{"Exif", "Exif.Image.Artist"})) {
+  if (md.creator() || !md.propertyIds().empty() || !md.dumpAll().empty() ||
+      md.dumpValue(umm::BaseKey{"Exif", "Exif.Image.Artist"})) {
     return fail("empty metadata is not empty");
   }
 
-  const umm::UnmappedEntry entry{{"Exif", "Exif.Nikon3.LensType"}, "String", "42"};
-  md.assignUnmapped({entry});
-  if (md.unmapped() != std::vector<umm::UnmappedEntry>{entry} ||
-      md.unmapped(entry.key) != entry.value ||
-      md.unmapped(umm::UnmappedKey{"Xmp", entry.key.key})) {
-    return fail("unmapped metadata access");
+  const umm::BaseEntry entry{{"Exif", "Exif.Nikon3.LensType"}, "String", "42"};
+  md.assignBase({entry});
+  if (md.dumpAll() != std::vector<umm::BaseEntry>{entry} ||
+      md.dumpUnmapped() != md.dumpAll() ||
+      md.dumpValue(entry.key) != entry.value ||
+      md.dumpValue(umm::BaseKey{"Xmp", entry.key.key})) {
+    return fail("base metadata access");
   }
 
   if (!require_ok(md.setCreator({"Alice", "Bob"}), "setCreator")) {

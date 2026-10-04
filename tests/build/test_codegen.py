@@ -127,10 +127,22 @@ class TestCodegen(unittest.TestCase):
         self.assertIsNotNone(match)
         total = len(photo["properties"]) + len(video["properties"])
         self.assertEqual(int(match.group(1)), total)
-        self.assertEqual(header.count('"iptc.photo.'), len(photo["properties"]))
-        self.assertEqual(header.count('"iptc.video.'), len(video["properties"]))
+        photo_fields = sum(len(item["fields"]) for item in photo["structs"])
+        video_fields = sum(len(item["fields"]) for item in video["structs"])
+        self.assertEqual(
+            header.count('"iptc.photo.'),
+            len(photo["properties"]) + photo_fields,
+        )
+        self.assertEqual(
+            header.count('"iptc.video.'),
+            len(video["properties"]) + video_fields,
+        )
         self.assertIn("iptc.video.dateCreated", header)
         self.assertIn("com.apple.quicktime.creationdate", header)
+        self.assertIn("kStructFieldRepresentations", header)
+        self.assertIn("kExifToolStructFieldAliases", header)
+        self.assertIn("PersonName", header)
+        self.assertIn("locationCreated", header)
 
     def test_editing_registry_changes_generated_entry(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -199,6 +211,14 @@ class TestCodegen(unittest.TestCase):
         self.assertIn("iptc.photo.dateCreated", ids)
         self.assertIn("iptc.photo.copyrightNotice", ids)
         self.assertTrue(any("gpsLatitude" in item for item in ids))
+        gps_rows = [
+            item
+            for item in overlay["mappings"]
+            if "struct.Location.gps" in item["id"]
+        ]
+        self.assertTrue(gps_rows)
+        for row in gps_rows:
+            self.assertEqual(row["struct_property"], "locationCreated")
 
     def test_overlay_conflict_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -217,6 +237,24 @@ class TestCodegen(unittest.TestCase):
             )
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("EXIF conflict", result.stderr)
+
+    def test_overlay_struct_field_requires_qualifier(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            overlay_path = Path(tmp) / "overlay.json"
+            overlay = json.loads(OVERLAY.read_text(encoding="utf-8"))
+            for mapping in overlay["mappings"]:
+                if mapping["id"] == "iptc.photo.struct.Location.gpsLatitude":
+                    mapping.pop("struct_property", None)
+            overlay_path.write_text(
+                json.dumps(overlay, indent=2, ensure_ascii=False) + "\n",
+                encoding="utf-8",
+                newline="\n",
+            )
+            result = run_generator(
+                [REGISTRY_DIR, VIDEO_REGISTRY_DIR], overlay_path, Path(tmp) / "out"
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("struct_property", result.stderr)
 
     def test_cross_media_rows_resolve_against_registries(self) -> None:
         photo = json.loads(REGISTRY_JSON.read_text(encoding="utf-8"))

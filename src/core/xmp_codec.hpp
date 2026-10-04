@@ -10,14 +10,14 @@
 
 namespace umm::internal {
 
-// Registry `xmp_property` token(s) -> Exiv2-syntax raw key(s). Multi-token
+// Registry `xmp_property` token(s) -> Exiv2-syntax base key(s). Multi-token
 // properties (space-separated) become one key each.
-std::string xmp_raw_key(std::string_view property);
-std::vector<std::string> xmp_raw_keys(std::string_view property);
+std::string xmp_base_key(std::string_view property);
+std::vector<std::string> xmp_base_keys(std::string_view property);
 
 // Registry QuickTime key text -> QuickTime.* vocabulary. Prose / unknown
 // tokens are skipped; only com.apple.quicktime.* keys are mapped.
-std::vector<std::string> quicktime_raw_keys(std::string_view registry_key);
+std::vector<std::string> quicktime_base_keys(std::string_view registry_key);
 
 std::string lang_plain_text(const LangAlt& alt);
 std::string format_xmp_datetime(const DateTime& dt);

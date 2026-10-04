@@ -16,9 +16,9 @@ int fail(const char* message) {
   return 1;
 }
 
-umm::UnmappedEntry entry(std::string family, std::string key, std::string value,
+umm::BaseEntry entry(std::string family, std::string key, std::string value,
                     std::string type_hint = {}) {
-  umm::UnmappedEntry out;
+  umm::BaseEntry out;
   out.key.family = std::move(family);
   out.key.key = std::move(key);
   out.type_hint = std::move(type_hint);
@@ -26,8 +26,8 @@ umm::UnmappedEntry entry(std::string family, std::string key, std::string value,
   return out;
 }
 
-umm::UnmappedDocument doc(std::initializer_list<umm::UnmappedEntry> entries) {
-  umm::UnmappedDocument document;
+umm::BaseDocument doc(std::initializer_list<umm::BaseEntry> entries) {
+  umm::BaseDocument document;
   document.entries = entries;
   return document;
 }
@@ -293,13 +293,13 @@ int main() {
   }
 
   {
-    umm::UnmappedDocument raw;
+    umm::BaseDocument raw;
     raw.entries.push_back(
         entry("Exif", "Exif.Image.Artist", "EXIF Artist"));
     umm::Metadata metadata;
-    metadata.assignUnmapped(raw.entries);
-    if (!metadata.unmapped(umm::UnmappedKey{"Exif", "Exif.Image.Artist"})) {
-      return fail("assignUnmapped");
+    metadata.assignBase(raw.entries);
+    if (!metadata.dumpValue(umm::BaseKey{"Exif", "Exif.Image.Artist"})) {
+      return fail("assignBase");
     }
   }
 
@@ -562,6 +562,41 @@ int main() {
     if (!name_lang || name_lang->count("x-default") == 0 ||
         name_lang->at("x-default") != "Shape Org") {
       return fail("video featuredOrganisation name");
+    }
+  }
+
+  {
+    const auto result = umm::internal::reconcile(
+        doc({entry("Exif", "Exif.Photo.DateTimeOriginal",
+                   "2020:01:02 03:04:05"),
+             entry("Exif", "Exif.Image.Make", "VendorCam"),
+             entry("Xmp", "Xmp.libummtest.UnknownWidget", "vendor-widget")}),
+        "test");
+    if (!result.ok()) {
+      return fail("dumpUnmapped reconcile failed");
+    }
+    const auto& all = result.value().dumpAll();
+    const auto& unmapped = result.value().dumpUnmapped();
+    if (all.size() != 3 || all[0].key.key != "Exif.Photo.DateTimeOriginal" ||
+        all[1].key.key != "Exif.Image.Make" ||
+        all[2].key.key != "Xmp.libummtest.UnknownWidget") {
+      return fail("dumpAll source order");
+    }
+    auto has_key = [](const std::vector<umm::BaseEntry>& entries,
+                      std::string_view key) {
+      for (const umm::BaseEntry& item : entries) {
+        if (item.key.key == key) {
+          return true;
+        }
+      }
+      return false;
+    };
+    if (has_key(unmapped, "Exif.Photo.DateTimeOriginal")) {
+      return fail("dumpUnmapped still has dateCreated key");
+    }
+    if (!has_key(unmapped, "Exif.Image.Make") ||
+        !has_key(unmapped, "Xmp.libummtest.UnknownWidget")) {
+      return fail("dumpUnmapped missing unknown keys");
     }
   }
 

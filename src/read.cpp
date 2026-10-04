@@ -35,9 +35,9 @@ Backend* select_backend(const std::filesystem::path& media,
   return manager.firstAvailable();
 }
 
-void keep_xmp_entries(UnmappedDocument& document) {
-  std::vector<UnmappedEntry> xmp;
-  for (UnmappedEntry& entry : document.entries) {
+void keep_xmp_entries(BaseDocument& document) {
+  std::vector<BaseEntry> xmp;
+  for (BaseEntry& entry : document.entries) {
     if (entry.key.family == "Xmp" || entry.key.key.rfind("Xmp.", 0) == 0) {
       xmp.push_back(std::move(entry));
     }
@@ -79,7 +79,7 @@ Result<LoadedRead> load_read(const std::filesystem::path& media,
                        backend->id());
   }
 
-  Result<UnmappedDocument> document = backend->readUnmapped(media);
+  Result<BaseDocument> document = backend->readBase(media);
   if (!document.ok()) {
     return document.error();
   }
@@ -105,7 +105,7 @@ Result<LoadedRead> load_read(const std::filesystem::path& media,
 
   if (options.merge_sidecar) {
     if (sidecar_path) {
-      Result<UnmappedDocument> sidecar_document = backend->readUnmapped(*sidecar_path);
+      Result<BaseDocument> sidecar_document = backend->readBase(*sidecar_path);
       if (!sidecar_document.ok()) {
         return sidecar_document.error();
       }

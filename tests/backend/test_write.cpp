@@ -1,6 +1,6 @@
 #include "core/atomic_write.hpp"
 #include "core/xmp_codec.hpp"
-#include "read_unmapped_checks.hpp"
+#include "read_base_checks.hpp"
 #include "umm/umm.hpp"
 
 #include <cmath>
@@ -385,13 +385,13 @@ int test_unknown(const std::string& backend) {
   if (!raw) {
     return fail("unknown-tags missing backend");
   }
-  const auto before = raw->readUnmapped(file);
+  const auto before = raw->readBase(file);
   if (!before.ok()) {
     return fail("unknown-tags read before write");
   }
   const auto widget =
-      unmapped_value_of(before.value(), "Xmp.libummtest.UnknownWidget");
-  const auto exif = unmapped_value_of(before.value(), "Exif.Image.LibummUnknownExif");
+      base_value_of(before.value(), "Xmp.libummtest.UnknownWidget");
+  const auto exif = base_value_of(before.value(), "Exif.Image.LibummUnknownExif");
   umm::Metadata metadata;
   if (!metadata.setHeadline("unrelated").ok()) {
     return fail("setHeadline unrelated");
@@ -403,15 +403,15 @@ int test_unknown(const std::string& backend) {
                  written.error().detail.c_str());
     return 1;
   }
-  const auto after = raw->readUnmapped(file);
+  const auto after = raw->readBase(file);
   if (!after.ok()) {
     return fail("unknown-tags read after write");
   }
-  if (widget && unmapped_value_of(after.value(), "Xmp.libummtest.UnknownWidget") !=
+  if (widget && base_value_of(after.value(), "Xmp.libummtest.UnknownWidget") !=
                     widget) {
     return fail("unknown XMP tag was altered");
   }
-  if (exif && unmapped_value_of(after.value(), "Exif.Image.LibummUnknownExif") !=
+  if (exif && base_value_of(after.value(), "Exif.Image.LibummUnknownExif") !=
                   exif) {
     return fail("unknown EXIF tag was altered");
   }
@@ -438,11 +438,11 @@ int test_unknown(const std::string& backend) {
 #endif
   if (have_makernote) {
     const auto mn = copy_fixture(makernote, backend + "-makernote.jpg");
-    const auto mn_before = raw->readUnmapped(mn);
+    const auto mn_before = raw->readBase(mn);
     if (!mn_before.ok()) {
       return fail("makernote read before write");
     }
-    std::vector<umm::UnmappedEntry> maker_entries;
+    std::vector<umm::BaseEntry> maker_entries;
     for (const auto& entry : mn_before.value().entries) {
       if (entry.key.key.find("MakerNote") != std::string::npos ||
           entry.key.key.find("Canon") != std::string::npos) {
@@ -463,12 +463,12 @@ int test_unknown(const std::string& backend) {
                    mn_written.error().detail.c_str());
       return fail("makernote write failed");
     }
-    const auto mn_after = raw->readUnmapped(mn);
+    const auto mn_after = raw->readBase(mn);
     if (!mn_after.ok()) {
       return fail("makernote read after write");
     }
     for (const auto& entry : maker_entries) {
-      const auto later = unmapped_value_of(mn_after.value(), entry.key.key);
+      const auto later = base_value_of(mn_after.value(), entry.key.key);
       if (!later || *later != entry.value) {
         std::fprintf(stderr, "MakerNote key altered: %s\n",
                      entry.key.key.c_str());
@@ -610,7 +610,7 @@ int test_roundtrip(const std::string& backend,
   bool saw_xmp = false;
   bool saw_iim = false;
   bool saw_exif = false;
-  for (const umm::UnmappedKey& key : written.value().written) {
+  for (const umm::BaseKey& key : written.value().written) {
     if (key.key == "Xmp.dc.description") {
       saw_xmp = true;
     }
@@ -677,7 +677,7 @@ int test_png_gps_write(const std::string& backend) {
   }
   bool saw_xmp = false;
   bool saw_exif = false;
-  for (const umm::UnmappedKey& key : written.value().written) {
+  for (const umm::BaseKey& key : written.value().written) {
     if (key.key == "Xmp.exif.GPSLatitude") {
       saw_xmp = true;
     }
@@ -717,7 +717,7 @@ int test_webp_no_iptc_write(const std::string& backend) {
   bool saw_xmp = false;
   bool saw_exif = false;
   bool saw_iptc = false;
-  for (const umm::UnmappedKey& key : written.value().written) {
+  for (const umm::BaseKey& key : written.value().written) {
     if (key.family == "Xmp") {
       saw_xmp = true;
     }
@@ -819,7 +819,7 @@ int test_avif_exiftool_embedded() {
   }
   bool saw_xmp = false;
   bool saw_exif = false;
-  for (const umm::UnmappedKey& key : written.value().written) {
+  for (const umm::BaseKey& key : written.value().written) {
     if (key.family == "Xmp") {
       saw_xmp = true;
     }
@@ -830,7 +830,7 @@ int test_avif_exiftool_embedded() {
   if (!saw_xmp || !saw_exif) {
     return fail("avif embedded write dropped XMP or EXIF");
   }
-  for (const umm::UnmappedKey& key : written.value().written) {
+  for (const umm::BaseKey& key : written.value().written) {
     if (key.family == "Iptc") {
       return fail("avif embedded write listed IPTC");
     }
@@ -952,7 +952,7 @@ int test_video_container(const char* ext) {
   bool saw_gps_qt = false;
   bool saw_gps_xmp = false;
   bool saw_exif = false;
-  for (const umm::UnmappedKey& key : written.value().written) {
+  for (const umm::BaseKey& key : written.value().written) {
     if (key.key == "Xmp.dc.title") {
       saw_title_xmp = true;
     }

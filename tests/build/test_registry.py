@@ -152,7 +152,9 @@ class TestRegistry(unittest.TestCase):
             else:
                 self.assertIsNone(record["struct_type"])
             representations = record["representations"]
-            self.assertEqual(set(representations), {"xmp", "iptc_iim", "exif"})
+            self.assertEqual(
+                set(representations), {"xmp", "iptc_iim", "exif", "exiftool"}
+            )
             ids.append(record["id"])
             self.assertTrue(record["id"].startswith("iptc.photo."))
         self.assertEqual(len(ids), len(set(ids)))
@@ -214,6 +216,12 @@ class TestRegistry(unittest.TestCase):
         self.assertIn("city", field_names)
         self.assertIn("gpsLatitude", field_names)
         self.assertNotIn("AltLang", structs)
+        person = structs["PersonWDetails"]
+        name_field = next(
+            field for field in person["fields"] if field["id"].endswith(".name")
+        )
+        self.assertEqual(name_field["et_tag"], "PersonName")
+        self.assertEqual(name_field["representations"]["exiftool"]["tag"], "PersonName")
 
     def test_importer_fails_on_unknown_datatype(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

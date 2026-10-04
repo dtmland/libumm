@@ -1,4 +1,4 @@
-#include "read_unmapped_checks.hpp"
+#include "read_base_checks.hpp"
 #include "umm/umm.hpp"
 
 #include <optional>
@@ -42,7 +42,7 @@ const umm::DateTime* as_date(const umm::PropertyValue& property) {
 
 bool has_source(const umm::PropertyValue& property, std::string_view key) {
   for (const umm::SourceRef& source : property.sources) {
-    if (source.raw_key == key) {
+    if (source.base_key == key) {
       return true;
     }
   }
@@ -198,7 +198,7 @@ int check_sidecar(const std::string& backend) {
   for (const auto& candidate : creator->candidates) {
     for (const auto& source : candidate.sources) {
       if (source.container == "sidecar") {
-        sidecar_key = source.raw_key;
+        sidecar_key = source.base_key;
       }
     }
   }

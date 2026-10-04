@@ -21,21 +21,22 @@ namespace umm {
 // Phase 1 setter semantics (accessors resolve to `iptc.photo.*`).
 enum class MediaDomain { photo, video, unknown };
 
-// Unmapped metadata escape hatch (concept.md §18): standardized metadata gets standardized
-// semantics; everything else remains accessible without a fake definition.
-struct UnmappedKey {
+// Base metadata (C13, C18): entries as stored in a file, before mapping to
+// canonical properties. Standardized metadata gets standardized semantics;
+// everything else remains accessible without a fake definition.
+struct BaseKey {
   std::string family;  // "Exif" | "Iptc" | "Xmp" | "QuickTime"
   std::string key;     // e.g. "Exif.Nikon3.LensType", "Xmp.vendor.SomeProperty"
 
-  bool operator==(const UnmappedKey&) const = default;
+  bool operator==(const BaseKey&) const = default;
 };
 
-struct UnmappedEntry {
-  UnmappedKey key;
+struct BaseEntry {
+  BaseKey key;
   std::string type_hint;  // backend type name, informational
   std::string value;      // textual form; binary blobs base64 (documented per family)
 
-  bool operator==(const UnmappedEntry&) const = default;
+  bool operator==(const BaseEntry&) const = default;
 };
 
 class Metadata {
@@ -145,18 +146,26 @@ class Metadata {
   // Properties whose resolution == Resolution::conflict (never hidden).
   std::vector<std::string> conflictedPropertyIds() const;
 
-  // --- Unmapped access (read-side; writes go through backend options) --------
-  const std::vector<UnmappedEntry>& unmapped() const;
-  std::optional<std::string> unmapped(const UnmappedKey& key) const;
-  // Filled by umm::read from the backend UnmappedDocument. Not a write API.
-  void assignUnmapped(std::vector<UnmappedEntry> entries);
+  // --- Base metadata (read-side; writes go through backend options) ----------
+  // dumpAll(): every base entry the backends read, in source order.
+  // dumpUnmapped(): base entries that no canonical property consumed as a
+  // representation (C13). Until session 47 there are no cast sources.
+  const std::vector<BaseEntry>& dumpAll() const;
+  const std::vector<BaseEntry>& dumpUnmapped() const;
+  std::optional<std::string> dumpValue(const BaseKey& key) const;
+  // Filled by umm::read from the backend BaseDocument. Not a write API.
+  void assignBase(std::vector<BaseEntry> entries);
+  // Recompute dumpUnmapped() from dumpAll() vs property sources. Called by
+  // umm::read after reconciliation.
+  void recomputeUnmapped();
 
  private:
   std::optional<PropertyValue> getConcept(std::string_view concept_name) const;
   Result<void> setConcept(std::string_view concept_name, Value value);
 
   std::map<std::string, PropertyValue> properties_;
-  std::vector<UnmappedEntry> unmapped_;
+  std::vector<BaseEntry> base_;
+  std::vector<BaseEntry> unmapped_;
   MediaDomain media_domain_{MediaDomain::unknown};
 };
 

@@ -6,7 +6,7 @@
 //  - Exiv2 is in-process; ExifTool is an out-of-process adapter using
 //    `-stay_open` batch mode with JSON output. Same contract for both.
 //  - Backend types (Exiv2 classes, ExifTool JSON) never leak through this
-//    interface; the neutral unmapped vocabulary below is the boundary.
+//    interface; the neutral base-metadata vocabulary below is the boundary.
 //
 // Thread-safety: each Backend instance is single-threaded. Callers must not
 // share an instance across threads. BackendManager may pool instances later;
@@ -26,7 +26,7 @@
 // into the Exiv2-syntax vocabulary. Phase 1 tags have an explicit table
 // (IFD0:Artist -> Exif.Image.Artist, IPTC:By-line -> Iptc.Application2.Byline,
 // XMP-dc:Creator -> Xmp.dc.creator, GPS:* -> Exif.GPSInfo.*, mapped
-// QuickTime/Keys/ItemList/UserData tags -> QuickTime.<Tag>, ...). Unmapped
+// QuickTime/Keys/ItemList/UserData tags -> QuickTime.<Tag>, ...). Other
 // XMP-ns:Tag keys become Xmp.ns.Tag; anything else is kept as the
 // adapter-specific key ExifTool.<Group1>.<Tag>. File/ExifTool/Composite
 // groups are omitted (not stored metadata).
@@ -43,7 +43,7 @@
 #include <string_view>
 #include <vector>
 
-#include "umm/metadata.hpp"  // UnmappedKey, UnmappedEntry
+#include "umm/metadata.hpp"  // BaseKey, BaseEntry
 #include "umm/result.hpp"
 
 namespace umm {
@@ -69,19 +69,19 @@ struct BackendAvailability {
   std::string reason;   // human-readable absence reason when unavailable
 };
 
-// Unmapped document: what a backend read, before mapping/reconciliation.
+// Base document: what a backend read, before mapping/reconciliation.
 // Key naming follows Exiv2 key syntax ("Exif.Image.Artist",
 // "Iptc.Application2.City", "Xmp.dc.creator") as the neutral vocabulary;
 // the ExifTool adapter translates its Group1:Tag names into it.
-struct UnmappedDocument {
-  std::vector<UnmappedEntry> entries;  // source order preserved
+struct BaseDocument {
+  std::vector<BaseEntry> entries;  // source order preserved
 };
 
-// Changes expressed in unmapped vocabulary, produced by the write-sync layer from
+// Changes expressed in base vocabulary, produced by the write-sync layer from
 // the reconciliation policy (docs/reconciliation-policy.md).
-struct UnmappedChanges {
-  std::vector<UnmappedEntry> upserts;
-  std::vector<UnmappedKey> removals;
+struct BaseChanges {
+  std::vector<BaseEntry> upserts;
+  std::vector<BaseKey> removals;
 };
 
 class Backend {
@@ -91,14 +91,14 @@ class Backend {
   virtual std::string id() const = 0;  // "exiv2" | "exiftool"
   virtual BackendAvailability availability() const = 0;
 
-  // Read every unmapped entry the backend can see. Errors map to umm::Error;
+  // Read every base entry the backend can see. Errors map to umm::Error;
   // backend exceptions/diagnostics never escape (decision M1).
-  virtual Result<UnmappedDocument> readUnmapped(const std::filesystem::path& media) = 0;
+  virtual Result<BaseDocument> readBase(const std::filesystem::path& media) = 0;
 
   // Write via temp-file + atomic rename, owned by core (decision M3.3);
   // the backend writes to the temp path it is handed (a working copy).
-  virtual Result<void> writeUnmapped(const std::filesystem::path& media,
-                                     const UnmappedChanges& changes) = 0;
+  virtual Result<void> writeBase(const std::filesystem::path& media,
+                                 const BaseChanges& changes) = 0;
 
   // Per-type capability query from registry/capabilities/ (session 15).
   // media_type is a container name such as "JPEG" or "XMP".

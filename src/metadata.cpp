@@ -639,10 +639,46 @@ std::vector<std::string> Metadata::conflictedPropertyIds() const {
   return ids;
 }
 
-const std::vector<UnmappedEntry>& Metadata::unmapped() const { return unmapped_; }
+namespace {
 
-std::optional<std::string> Metadata::unmapped(const UnmappedKey& key) const {
-  for (const UnmappedEntry& entry : unmapped_) {
+bool key_belongs(std::string_view entry_key, std::string_view base) {
+  if (entry_key == base) {
+    return true;
+  }
+  if (entry_key.size() <= base.size()) {
+    return false;
+  }
+  if (entry_key.substr(0, base.size()) != base) {
+    return false;
+  }
+  const char next = entry_key[base.size()];
+  return next == '[' || next == '/';
+}
+
+bool entry_consumed(const std::map<std::string, PropertyValue>& properties,
+                    const BaseEntry& entry) {
+  for (const auto& [id, property] : properties) {
+    (void)id;
+    for (const SourceRef& ref : property.sources) {
+      if (entry.key.key == ref.base_key ||
+          key_belongs(entry.key.key, ref.base_key)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+}  // namespace
+
+const std::vector<BaseEntry>& Metadata::dumpAll() const { return base_; }
+
+const std::vector<BaseEntry>& Metadata::dumpUnmapped() const {
+  return unmapped_;
+}
+
+std::optional<std::string> Metadata::dumpValue(const BaseKey& key) const {
+  for (const BaseEntry& entry : base_) {
     if (entry.key == key) {
       return entry.value;
     }
@@ -650,8 +686,18 @@ std::optional<std::string> Metadata::unmapped(const UnmappedKey& key) const {
   return std::nullopt;
 }
 
-void Metadata::assignUnmapped(std::vector<UnmappedEntry> entries) {
-  unmapped_ = std::move(entries);
+void Metadata::assignBase(std::vector<BaseEntry> entries) {
+  base_ = std::move(entries);
+  unmapped_ = base_;
+}
+
+void Metadata::recomputeUnmapped() {
+  unmapped_.clear();
+  for (const BaseEntry& entry : base_) {
+    if (!entry_consumed(properties_, entry)) {
+      unmapped_.push_back(entry);
+    }
+  }
 }
 
 }  // namespace umm

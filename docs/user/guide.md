@@ -372,22 +372,31 @@ source of truth for definitions, cardinality, and standard mappings; use
 | `iptc.video.videoProfile` | Video Profile | string |
 | `iptc.video.videoStreamsCount` | Video Streams Count | number |
 
-## Unmapped metadata (the escape hatch)
+## Base metadata
+
+Entries as stored in a file are **base metadata** (a base key plus a base entry). Canonical
+properties consume some of those entries as representations. An **unmapped** entry is one
+that no canonical property consumed. RAW means camera image formats only, not this
+vocabulary.
 
 Not everything in a file maps to a canonical property — vendor MakerNotes, custom XMP
 namespaces, niche container tags. libumm never invents a fake definition for these. Instead:
 
-- `Metadata::unmapped()` returns every unmapped entry a read found, as
+- `Metadata::dumpAll()` returns every base entry a read found, in source order, as
   `{family, key, value}` — for example `{"Exif", "Exif.Nikon3.LensType", …}` or
   `{"Xmp", "Xmp.vendor.SomeProperty", …}`. Values are textual; binary blobs are base64.
-- `Metadata::unmapped(key)` looks up a single entry.
-- Writes preserve unmapped data: `umm::write` mutates only the representations of the
+- `Metadata::dumpUnmapped()` returns only the base entries that no canonical property
+  consumed. Until more ids are reconciled, this view still includes keys of properties
+  that are not mapped yet.
+- `Metadata::dumpValue(key)` looks up a single base entry.
+- Writes preserve other base data: `umm::write` mutates only the representations of the
   properties you set and reports every representation it touched in
   `WriteReport::written`.
-- Writing *new* unmapped keys through libumm is intentionally not supported. If a property
+- Writing *new* base keys through libumm is intentionally not supported. If a property
   matters to your application, the right path is a registry mapping (it may already exist in
   a newer IPTC release), or use a backend tool such as ExifTool directly for one-off
-  vendor-specific writes — libumm will still read the result and report it as unmapped.
+  vendor-specific writes — libumm will still read the result and report it via
+  `dumpAll()` / `dumpUnmapped()`.
 
 ## When a property will not write
 

@@ -83,7 +83,9 @@ ENVELOPE_KEYS = (
 
 COUNTS_KEYS = ("properties", "core", "extension", "structs")
 SOURCE_KEYS = ("document", "version", "url", "retrieval_date")
-REPR_KEYS = ("xmp", "iptc_iim", "exif")
+REPR_KEYS = ("xmp", "iptc_iim", "exif", "exiftool")
+
+FIELD_EXTRA_KEYS = ("et_tag",)
 
 
 class ImportError_(RuntimeError):
@@ -213,12 +215,30 @@ def exif_representation(record: dict[str, Any]) -> dict[str, str] | None:
     return {"tag": str(tag)}
 
 
+def exiftool_tag_name(record: dict[str, Any]) -> str | None:
+    tag = record.get("etTag") or record.get("etXMP")
+    if not tag:
+        return None
+    name = str(tag)
+    if ":" in name:
+        name = name.rsplit(":", 1)[-1]
+    return name or None
+
+
+def exiftool_representation(record: dict[str, Any]) -> dict[str, str] | None:
+    name = exiftool_tag_name(record)
+    if not name:
+        return None
+    return {"tag": name}
+
+
 def representations(record: dict[str, Any]) -> dict[str, Any]:
     return ordered(
         {
             "xmp": xmp_representation(record.get("XMPid")),
             "iptc_iim": iim_representation(record),
             "exif": exif_representation(record),
+            "exiftool": exiftool_representation(record),
         },
         REPR_KEYS,
     )
@@ -264,11 +284,13 @@ def convert_member(
         "source": source,
     }
     if not require_schema:
+        payload["et_tag"] = exiftool_tag_name(record)
         # Struct fields still record schema when the TR provides ipmdschema.
         if not schema_value:
             payload.pop("schema")
-            keys = tuple(key for key in PROPERTY_KEYS if key != "schema")
+            keys = tuple(key for key in PROPERTY_KEYS if key != "schema") + FIELD_EXTRA_KEYS
             return ordered(payload, keys)
+        return ordered(payload, PROPERTY_KEYS + FIELD_EXTRA_KEYS)
     return ordered(payload, PROPERTY_KEYS)
 
 
