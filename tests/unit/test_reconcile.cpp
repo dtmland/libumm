@@ -623,7 +623,7 @@ int main() {
     if (!loc_list || loc_list->empty()) {
       return fail("video structure-list shape");
     }
-    const auto city = loc_list->front().find("City");
+    const auto city = loc_list->front().find("city");
     const auto* city_text =
         city == loc_list->front().end()
             ? nullptr
