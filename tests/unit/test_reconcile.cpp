@@ -693,6 +693,49 @@ int main() {
 
   {
     const auto result = umm::internal::reconcile(
+        doc({entry("Xmp", "Xmp.Iptc4xmpExt.LocationCreated",
+                   "{City=Paris,CountryName=France}"),
+             entry("Xmp", "Xmp.Iptc4xmpExt.LocationCreatedGPSLatitude",
+                   "37 deg 46' 29.64\" N"),
+             entry("Xmp", "Xmp.Iptc4xmpExt.LocationCreatedGPSLongitude",
+                   "122 deg 25' 9.84\" W")}),
+        "test");
+    if (!result.ok()) {
+      return fail("flattened Location GPS reconcile failed");
+    }
+    const auto created = result.value().locationCreated();
+    const auto* created_list =
+        created ? std::get_if<std::vector<umm::Structure>>(&created->value.data)
+                : nullptr;
+    if (!created_list || created_list->empty()) {
+      return fail("flattened Location GPS missing struct");
+    }
+    const umm::Structure& loc = created_list->front();
+    const auto lat = loc.find("gpsLatitude");
+    const auto lon = loc.find("gpsLongitude");
+    const auto city = loc.find("city");
+    const auto* lat_n =
+        lat == loc.end() ? nullptr : std::get_if<double>(&lat->second.data);
+    const auto* lon_n =
+        lon == loc.end() ? nullptr : std::get_if<double>(&lon->second.data);
+    const auto* city_text =
+        city == loc.end() ? nullptr : std::get_if<std::string>(&city->second.data);
+    if (!city_text || *city_text != "Paris" || !lat_n ||
+        std::fabs(*lat_n - 37.7749) > 1e-4 || !lon_n ||
+        std::fabs(*lon_n + 122.4194) > 1e-4) {
+      return fail("flattened Location GPS not merged");
+    }
+    const auto unmapped = result.value().dumpUnmapped();
+    for (const umm::BaseEntry& item : unmapped) {
+      if (item.key.key == "Xmp.Iptc4xmpExt.LocationCreatedGPSLatitude" ||
+          item.key.key == "Xmp.Iptc4xmpExt.LocationCreatedGPSLongitude") {
+        return fail("flattened Location GPS stayed unmapped");
+      }
+    }
+  }
+
+  {
+    const auto result = umm::internal::reconcile(
         doc({entry("Xmp", "Xmp.photoshop.City", "Agreeing City"),
              entry("Iptc", "Iptc.Application2.City", "Agreeing City")}),
         "test");

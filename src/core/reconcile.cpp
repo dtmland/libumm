@@ -959,6 +959,17 @@ void add_sources(std::vector<SourceRef>& sources, const BaseDocument& document,
   }
 }
 
+void add_struct_sources(std::vector<SourceRef>& sources,
+                        const BaseDocument& document, std::string_view backend,
+                        std::string_view base) {
+  for (const BaseEntry* entry : matching_struct(document, base)) {
+    SourceRef ref;
+    ref.base_key = entry->key.key;
+    ref.backend = std::string(backend);
+    sources.push_back(std::move(ref));
+  }
+}
+
 struct Group {
   std::string family;
   int rank{0};
@@ -1780,7 +1791,7 @@ std::optional<Group> video_structure_group(const BaseDocument& document,
   group.family = std::move(family);
   group.rank = rank;
   group.primary_key = std::string(base);
-  add_sources(group.sources, document, backend, base);
+  add_struct_sources(group.sources, document, backend, base);
   group.value = make_value(std::move(fields));
   return group;
 }
@@ -1830,8 +1841,17 @@ std::optional<Group> video_structure_list_group(
       flattened.insert_or_assign(name, make_value(text));
     }
   }
-  if (items.empty() && !flattened.empty()) {
-    items.push_back(std::move(flattened));
+  if (!flattened.empty()) {
+    if (items.empty()) {
+      items.push_back(std::move(flattened));
+    } else {
+      // ExifTool JSON without -struct emits a parent brace/JSON struct plus
+      // flattened field tags (LocationCreatedGPSLatitude). Merge those into
+      // the first bag item; otherwise GPS lat/lon are dropped.
+      for (auto& [name, value] : flattened) {
+        items.front().insert_or_assign(name, std::move(value));
+      }
+    }
   }
   if (items.empty()) {
     return std::nullopt;
@@ -1840,7 +1860,7 @@ std::optional<Group> video_structure_list_group(
   group.family = std::move(family);
   group.rank = rank;
   group.primary_key = std::string(base);
-  add_sources(group.sources, document, backend, base);
+  add_struct_sources(group.sources, document, backend, base);
   group.value = make_value(std::move(items));
   return group;
 }

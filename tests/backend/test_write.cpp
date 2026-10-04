@@ -1840,7 +1840,25 @@ int test_photo_location_structs(const std::string& backend, const char* folder,
     }
     return false;
   };
-  if (!text("name", "Studio") || !text("identifiers", "https://example.com/loc") ||
+  auto identifiers = [&]() {
+    const auto it = got.find("identifiers");
+    if (it == got.end()) {
+      return false;
+    }
+    if (const auto* value = std::get_if<std::string>(&it->second.data)) {
+      return *value == "https://example.com/loc";
+    }
+    if (const auto* list =
+            std::get_if<std::vector<std::string>>(&it->second.data)) {
+      for (const std::string& item : *list) {
+        if (item == "https://example.com/loc") {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+  if (!text("name", "Studio") || !identifiers() ||
       !text("sublocation", "Le Marais") || !text("city", "Paris") ||
       !text("provinceState", "IDF") || !text("countryName", "France") ||
       !text("countryCode", "FR") || !text("worldRegion", "Europe") ||
@@ -1850,6 +1868,14 @@ int test_photo_location_structs(const std::string& backend, const char* folder,
     std::fprintf(stderr, "locationCreated round-trip fields (%s %s): %s\n",
                  backend.c_str(), folder,
                  created->value.toString().c_str());
+    for (const umm::BaseEntry& item : round.value().dumpAll()) {
+      if (item.key.key.find("Location") != std::string::npos ||
+          item.key.key.find("GPS") != std::string::npos ||
+          item.key.key.find("Gps") != std::string::npos) {
+        std::fprintf(stderr, "  base %s = %s\n", item.key.key.c_str(),
+                     item.value.c_str());
+      }
+    }
     return 1;
   }
   const auto shown_city = shown_list->front().find("city");

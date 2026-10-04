@@ -372,7 +372,11 @@ std::string_view exiftool_assign_operator(std::string_view tag,
   if (tag.find("DigitalSourceType") != std::string_view::npos) {
     return "#=";
   }
-  if (value.find("://") != std::string_view::npos) {
+  // URI-like scalar values skip PrintConv. Brace/JSON structs that merely
+  // contain a URL (LocationId) must keep "=" so GPS PrintConv still runs;
+  // "#=" drops LocationCreated GPSLatitude/GPSLongitude.
+  if (value.find("://") != std::string_view::npos &&
+      (value.empty() || (value.front() != '{' && value.front() != '['))) {
     return "#=";
   }
   // PrintConv on *Type / *Mode / *Status (audioChannelType, bitRateMode)

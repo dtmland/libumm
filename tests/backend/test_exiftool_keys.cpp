@@ -137,6 +137,10 @@ int main() {
       umm::internal::exiftool_assign_operator(
           "XMP-iptcExt:DigitalSourceType",
           "http://example.com/cv/trained") != "#=" ||
+      umm::internal::exiftool_assign_operator(
+          "XMP-iptcExt:LocationCreated",
+          "{City=Paris,GPSLatitude=37.7749N,"
+          "LocationId=https://example.com/loc}") != "=" ||
       umm::internal::exiftool_assign_operator("IFD0:Artist", "Alice") != "=") {
     std::fprintf(stderr, "ExifTool assign operator selection failed\n");
     return 1;
