@@ -38,7 +38,7 @@ ships (decision record §5.2); docs are not edited ahead of the code.
 | [47](47-cast-engine.md) | Cast engine and first rule set | 46 | complete |
 | [48](48-gps-as-location.md) | GPS as Location GPS; remove `exif.gps.position` | 47 | complete |
 | [49](49-property-map.md) | Property map (`umm::describe`) | 47 | complete |
-| [50](50-generated-property-reference.md) | Generated property reference | 48, 49 | planned |
+| [50](50-generated-property-reference.md) | Generated property reference | 48, 49 | complete |
 | [51](51-casting-verification.md) | Verification with real-device layouts | 48 (after 50) | planned |
 
 ## Standing constraints (inherited from sessions 01–35)

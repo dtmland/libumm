@@ -77,6 +77,9 @@ TEST_CAPABILITIES_PROBE = (
 CAPABILITIES_GENERATOR = (
     REPO_ROOT / "tools" / "registry" / "generate_supported_types.py"
 )
+PROPERTY_REF_GENERATOR = (
+    REPO_ROOT / "tools" / "registry" / "generate_property_reference.py"
+)
 CAPABILITIES_DIR = REPO_ROOT / "registry" / "capabilities"
 PUBLIC_INCLUDE = REPO_ROOT / "include"
 
@@ -144,6 +147,7 @@ class TestLayout(unittest.TestCase):
             TEST_CAPABILITIES,
             TEST_CAPABILITIES_PROBE,
             CAPABILITIES_GENERATOR,
+            PROPERTY_REF_GENERATOR,
             CAPABILITIES_DIR / "schema.md",
             CAPABILITIES_DIR / "exiv2.json",
             CAPABILITIES_DIR / "exiftool.json",

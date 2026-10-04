@@ -1,6 +1,6 @@
-# Generated property registry (session 07) and capability tables (session 15).
-# Committed sources are compiled so builds stay offline; optional custom
-# targets regenerate them.
+# Generated property registry (session 07), capability tables (session 15),
+# and property reference docs (session 50). Committed sources are compiled so
+# builds stay offline; optional custom targets regenerate them.
 
 include_guard(GLOBAL)
 
@@ -19,6 +19,8 @@ set(UMM_CAPABILITIES_GENERATOR "${CMAKE_CURRENT_SOURCE_DIR}/tools/registry/gener
 set(UMM_CAPABILITIES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/registry/capabilities")
 set(UMM_CAPABILITIES_GENERATED_HPP "${UMM_REGISTRY_GENERATED_DIR}/capabilities_data.hpp")
 set(UMM_SUPPORTED_TYPES_MD "${CMAKE_CURRENT_SOURCE_DIR}/docs/supported-types.md")
+set(UMM_PROPERTY_REF_GENERATOR "${CMAKE_CURRENT_SOURCE_DIR}/tools/registry/generate_property_reference.py")
+set(UMM_PROPERTY_REF_DIR "${CMAKE_CURRENT_SOURCE_DIR}/docs/user/properties")
 
 if(NOT EXISTS "${UMM_REGISTRY_GENERATED_CPP}" OR NOT EXISTS "${UMM_REGISTRY_GENERATED_HPP}"
    OR NOT EXISTS "${UMM_REGISTRY_CROSS_MEDIA_HPP}" OR NOT EXISTS "${UMM_CAST_RULES_HPP}")
@@ -31,6 +33,12 @@ if(NOT EXISTS "${UMM_CAPABILITIES_GENERATED_HPP}")
   message(FATAL_ERROR
     "Committed capability tables missing: ${UMM_CAPABILITIES_GENERATED_HPP}. "
     "Run: python3 tools/registry/generate_supported_types.py")
+endif()
+
+if(NOT EXISTS "${UMM_PROPERTY_REF_DIR}/README.md")
+  message(FATAL_ERROR
+    "Committed property reference missing under ${UMM_PROPERTY_REF_DIR}. "
+    "Run: python3 tools/registry/generate_property_reference.py")
 endif()
 
 file(GLOB UMM_REGISTRY_JSON CONFIGURE_DEPENDS
@@ -85,5 +93,31 @@ if(Python3_Interpreter_FOUND)
   )
   add_custom_target(umm_capabilities_codegen
     DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/umm_capabilities_codegen.stamp"
+  )
+
+  add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/umm_property_reference_codegen.stamp"
+    COMMAND "${Python3_EXECUTABLE}" "${UMM_PROPERTY_REF_GENERATOR}"
+            --registry-dir "${UMM_REGISTRY_DIR}"
+            --registry-dir "${UMM_REGISTRY_VIDEO_DIR}"
+            --overlay "${UMM_REGISTRY_OVERLAY}"
+            --cross-media "${UMM_REGISTRY_CROSS_MEDIA}"
+            --casts-dir "${UMM_CASTS_DIR}"
+            --output-dir "${UMM_PROPERTY_REF_DIR}"
+    COMMAND "${CMAKE_COMMAND}" -E touch
+            "${CMAKE_CURRENT_BINARY_DIR}/umm_property_reference_codegen.stamp"
+    DEPENDS
+      "${UMM_PROPERTY_REF_GENERATOR}"
+      "${UMM_REGISTRY_GENERATOR}"
+      "${UMM_REGISTRY_OVERLAY}"
+      "${UMM_REGISTRY_CROSS_MEDIA}"
+      ${UMM_REGISTRY_JSON}
+      ${UMM_CASTS_JSON}
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    COMMENT "Regenerate docs/user/properties"
+    VERBATIM
+  )
+  add_custom_target(umm_property_reference_codegen
+    DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/umm_property_reference_codegen.stamp"
   )
 endif()

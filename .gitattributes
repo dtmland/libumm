@@ -11,6 +11,8 @@ registry/sources/**/*.html text eol=lf
 src/generated/** text eol=lf
 # Generated supported-types.md is compared byte-for-byte with the generator.
 docs/supported-types.md text eol=lf
+# Generated property reference is compared byte-for-byte with the generator.
+docs/user/properties/**/*.md text eol=lf
 
 # Fixture stills must stay binary so Windows checkouts do not alter bytes.
 tests/fixtures/**/*.jpg binary

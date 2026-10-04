@@ -6,6 +6,8 @@ Documentation is organized by audience.
 
 - [User guide](user/guide.md) — reading/writing metadata, canonical properties,
   Location/GPS, and how to handle unmapped metadata.
+- [Property reference](user/properties/README.md) — generated API-style pages for every
+  canonical property, representation, cast rule, and cross-media accessor (C14a).
 - [Backend file-type coverage](supported-types.md) — what each backend can read/write per
   file type, including location metadata. **Generated** from `registry/capabilities/`.
 

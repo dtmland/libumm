@@ -58,9 +58,9 @@ These rules were applied throughout and still govern changes:
   (headers are normative), then implemented.
 - Offline Python `unittest` contract tests in `tests/build/` guard pins, workflows,
   generated files (byte-for-byte), fixtures, and release packaging without network access.
-- Generated artifacts (`src/generated/`, `docs/supported-types.md`, registry JSON) are
-  committed and pinned to LF via `.gitattributes` so Windows checkouts stay byte-identical
-  to the generators.
+- Generated artifacts (`src/generated/`, `docs/supported-types.md`,
+  `docs/user/properties/`, registry JSON) are committed and pinned to LF via
+  `.gitattributes` so Windows checkouts stay byte-identical to the generators.
 - A contract test forbids hand-written `ns:prop` XMP-style strings in `src/` outside
   `src/generated/` — all property naming flows from the registry.
 
