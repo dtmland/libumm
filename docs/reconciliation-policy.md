@@ -15,13 +15,13 @@ and provenance shapes are those in `include/umm/provenance.hpp` (concept.md §15
 | Tag | Document | Role |
 | --- | --- | --- |
 | IPTC-MG | [IPTC Photo Metadata Mapping Guidelines](https://www.iptc.org/std/photometadata/documentation/mappingguidelines/) 2025.1 | Which EXIF / IIM / XMP tags represent the same IPTC property. |
-| IPTC-TR | IPTC Photo Metadata Technical Reference 2025.1 (`registry/iptc-photo/iptc-photo.json`) | Datatype, cardinality, and representation fields used to group raw keys. |
+| IPTC-TR | IPTC Photo Metadata Technical Reference 2025.1 (`registry/iptc-photo/iptc-photo.json`) | Datatype, cardinality, and representation fields used to group base keys. |
 | MWG | Metadata Working Group *Guidelines for Handling Image Metadata* 2.0 (2010) | Frozen historical input (decision **S4b**). Defunct; not a living authority. |
 | ExifTool-MWG | ExifTool `MWG` composite tags | Compatibility reference for MWG read precedence (decision **S4b**). Not invoked as a backend. |
 | M3 | Analysis decision M3 | UTF-8 values; no charset guessing on read. |
 
 libumm does not invent property semantics. Grouping starts from registry
-representations. Extra raw keys listed below are only the well-known companion
+representations. Extra base keys listed below are only the well-known companion
 tags the standards already treat as one value (EXIF sub-second/offset, IIM time,
 legacy named-place IIM/photoshop fields).
 
@@ -33,20 +33,20 @@ After grouping and normalization, each present canonical property is classified:
 | --- | --- |
 | `single` | Exactly one source group held a parseable value. |
 | `equivalent` | Two or more groups agree after normalization. The stored value is the **most complete** agreed form (union of present components that do not disagree). `preferred_source` is empty. |
-| `reconciled` | Groups disagree; this policy selects a winner. `value` is the winner; `preferred_source` is that group's primary raw key; **every** contributing raw origin remains in `sources`. |
+| `reconciled` | Groups disagree; this policy selects a winner. `value` is the winner; `preferred_source` is that group's primary base key; **every** contributing base origin remains in `sources`. |
 | `conflict` | Groups disagree and this policy refuses to auto-resolve (unranked same-tier disagreement). `value` is still the first group in document order so applications have a candidate; `preferred_source` is that group's primary key. |
 
 `Metadata::conflictedPropertyIds()` lists `conflict` only. `ReadOptions::conflicts_as_errors`
 turns any `conflict` into `ErrorCode::conflict_unresolved`; `reconciled` is not an error.
 
-No source is dropped: `PropertyValue::sources` lists every raw entry that contributed.
+No source is dropped: `PropertyValue::sources` lists every base entry that contributed.
 
 ## Normalization (all properties)
 
 - Compare UTF-8 text after trimming leading/trailing ASCII whitespace. IIM
   `CodedCharacterSet` is not a semantic property; backends already emit UTF-8
   (M3). A missing charset marker does not change equivalence.
-- Indexed raw keys (`Xmp.dc.creator[1]`, `Iptc.Application2.Keywords[2]`) belong
+- Indexed base keys (`Xmp.dc.creator[1]`, `Iptc.Application2.Keywords[2]`) belong
   to the same group as the unindexed key. An XMP Bag/Seq container whose
   `type_hint` is `XmpBag`/`XmpSeq` (Exiv2 joins items with `", "`) is not itself
   a list item; use indexed children, or those joined components, instead.
@@ -69,13 +69,13 @@ Cross-family disagreement is `reconciled` using the precedence row.
 
 ## Phase 1 properties
 
-Raw keys below are the Exiv2-syntax vocabulary (`Exif.*` / `Iptc.*` / `Xmp.*`).
+Base keys below are the Exiv2-syntax vocabulary (`Exif.*` / `Iptc.*` / `Xmp.*`).
 Registry `exif_tag` / `xmp_property` / `iim_dataset` fields are translated into
 that vocabulary at read time (session 07 tables + IPTC-MG overlay).
 
 ### `iptc.photo.creator` (text list)
 
-| Family | Raw keys | Origin |
+| Family | Base keys | Origin |
 | --- | --- | --- |
 | XMP | `Xmp.dc.creator` (seq) | IPTC-TR `dc:creator` |
 | IIM | `Iptc.Application2.Byline` (repeatable) | IPTC-TR `2:80` |
@@ -91,7 +91,7 @@ that vocabulary at read time (session 07 tables + IPTC-MG overlay).
 
 ### `iptc.photo.description` (lang-alt)
 
-| Family | Raw keys | Origin |
+| Family | Base keys | Origin |
 | --- | --- | --- |
 | XMP | `Xmp.dc.description` | IPTC-TR `dc:description` |
 | IIM | `Iptc.Application2.Caption` | IPTC-TR `2:120` |
@@ -106,7 +106,7 @@ that vocabulary at read time (session 07 tables + IPTC-MG overlay).
 
 ### `iptc.photo.copyrightNotice` (lang-alt)
 
-| Family | Raw keys | Origin |
+| Family | Base keys | Origin |
 | --- | --- | --- |
 | XMP | `Xmp.dc.rights` | IPTC-TR `dc:rights` |
 | IIM | `Iptc.Application2.Copyright` | IPTC-TR `2:116` |
@@ -117,7 +117,7 @@ Same normalization, precedence, classification, and write-sync as description
 
 ### `iptc.photo.headline` (text)
 
-| Family | Raw keys | Origin |
+| Family | Base keys | Origin |
 | --- | --- | --- |
 | XMP | `Xmp.photoshop.Headline` | IPTC-TR `photoshop:Headline` |
 | IIM | `Iptc.Application2.Headline` | IPTC-TR `2:105` |
@@ -128,7 +128,7 @@ Equivalence: trimmed UTF-8. Disagreement: `reconciled`, XMP > IIM.
 
 ### `iptc.photo.creditLine` (text)
 
-| Family | Raw keys | Origin |
+| Family | Base keys | Origin |
 | --- | --- | --- |
 | XMP | `Xmp.photoshop.Credit` | IPTC-TR `photoshop:Credit` |
 | IIM | `Iptc.Application2.Credit` | IPTC-TR `2:110` |
@@ -138,7 +138,7 @@ Equivalence: trimmed UTF-8. Disagreement: `reconciled`, XMP > IIM.
 
 ### `iptc.photo.dateCreated` (date-time) — heart of Phase 1
 
-| Family | Raw keys | Origin |
+| Family | Base keys | Origin |
 | --- | --- | --- |
 | XMP | `Xmp.photoshop.DateCreated` | IPTC-TR `photoshop:DateCreated` |
 | EXIF | `Exif.Photo.DateTimeOriginal` plus companion `Exif.Photo.SubSecTimeOriginal` and `Exif.Photo.OffsetTimeOriginal` when present | IPTC-MG `ExifIFD:DateTimeOriginal+SubSecTimeOriginal+OffsetTimeOriginal` |
@@ -174,7 +174,7 @@ offset when known), and IIM DateCreated+TimeCreated. Do not invent an offset.
 
 ### `iptc.photo.keywords` (text list)
 
-| Family | Raw keys | Origin |
+| Family | Base keys | Origin |
 | --- | --- | --- |
 | XMP | `Xmp.dc.subject` | IPTC-TR `dc:subject` |
 | IIM | `Iptc.Application2.Keywords` | IPTC-TR `2:25` |
@@ -187,18 +187,18 @@ offset when known), and IIM DateCreated+TimeCreated. Do not invent an offset.
 
 ### `iptc.photo.imageRating` (real)
 
-| Family | Raw keys | Origin |
+| Family | Base keys | Origin |
 | --- | --- | --- |
 | XMP | `Xmp.xmp.Rating` | IPTC-TR `xmp:Rating` |
 
-Single representation in Phase 1. Other rating tags remain raw.
+Single representation in Phase 1. Other rating tags remain unmapped.
 **Write-sync:** `Xmp.xmp.Rating` only.
 
 ### `exif.gps.position` (GPS coordinate)
 
 Well-known Phase 1 id until an EXIF-domain registry exists (session 08).
 
-| Family | Raw keys | Origin |
+| Family | Base keys | Origin |
 | --- | --- | --- |
 | EXIF | `Exif.GPSInfo.GPSLatitude` + `GPSLatitudeRef` + `GPSLongitude` + `GPSLongitudeRef`; optional `GPSAltitude` + `GPSAltitudeRef`; optional GPS date/time | IPTC-MG GPS tags; EXIF 2.32 GPS IFD |
 | XMP | `Xmp.exif.GPSLatitude` / `GPSLongitude` / optional `GPSAltitude` | IPTC-MG / EXIF XMP |
@@ -214,7 +214,7 @@ Well-known Phase 1 id until an EXIF-domain registry exists (session 08).
 
 ### `iptc.photo.locationCreated` (structure list)
 
-| Family | Raw keys | Origin |
+| Family | Base keys | Origin |
 | --- | --- | --- |
 | XMP structured | `Xmp.Iptc4xmpExt.LocationCreated` | IPTC-TR Extension LocationCreated |
 | XMP legacy | `Xmp.photoshop.City` / `State` / `Country` | IPTC-MG legacy Photoshop mapping |
@@ -290,7 +290,7 @@ and real `com.apple.quicktime.*` keys). See
 
 Phase-1 specials stay behavior-identical:
 
-| Family | Raw keys |
+| Family | Base keys |
 | --- | --- |
 | XMP | Registry `xmp_property` (plus `Xmp.dc.creator` names flattened to EntityWRole `name`) |
 | QuickTime | `QuickTime.Title`, `Description`, `Artist`/`Author`/`Director` (creator names), `Copyright`, `Keywords`, `CreationDate` |
@@ -310,7 +310,7 @@ only, as for stills.
 
 ### `exif.gps.position` on video
 
-| Family | Raw keys |
+| Family | Base keys |
 | --- | --- |
 | QuickTime | `QuickTime.GPSCoordinates` (`lat lon [alt]`, comma or whitespace; ISO 6709 accepted when decimal) |
 | XMP | `Xmp.exif.GPSLatitude` / `GPSLongitude` / optional altitude |
@@ -341,7 +341,7 @@ case-insensitive filesystems the OS resolves the name. A path that is itself
 
 `ReadOptions::merge_sidecar` (default true) reads the paired sidecar when it
 exists and feeds it to reconciliation as an additional source. Sidecar files
-are XMP carriers: only `Xmp.*` raw entries are used even if a backend also
+are XMP carriers: only `Xmp.*` base entries are used even if a backend also
 projects EXIF/IIM copies. `false` reads embedded metadata only. A missing
 sidecar is not an error unless `ReadOptions::sidecar_required` is true, in
 which case the read fails with `ErrorCode::io_not_found`. A sidecar that
@@ -415,9 +415,9 @@ second reconciliation engine. The report contains:
   picked a winner, e.g. XMP vs IIM vs EXIF on `full-conflicting`, or XMP vs
   QuickTime on `video/conflicting.mp4`). `single` and `equivalent` are omitted.
 
-Each entry lists every group's parsed `Value` with its `SourceRef`s (`raw_key`,
+Each entry lists every group's parsed `Value` with its `SourceRef`s (`base_key`,
 `backend`, `container`) and grouping `family`, plus the policy's
-`preferred_source` (the winning group's primary raw key). Same-family embedded
+`preferred_source` (the winning group's primary base key). Same-family embedded
 disagreement, embedded-vs-sidecar disagreement, and video container-vs-XMP
 disagreement share this one enumeration path.
 
@@ -428,7 +428,7 @@ the call succeeds.
 
 `merge(metadata, entry, source, container = {})` resolves one disagreed
 property by choosing a candidate already listed in `entry`. `source` matches a
-`SourceRef::raw_key` on that entry. When the same raw key exists in more than
+`SourceRef::base_key` on that entry. When the same base key exists in more than
 one candidate (embedded XMP vs sidecar XMP), `container` must be `"embedded"`
 or `"sidecar"`. The property's `value` becomes that candidate's value;
 `resolution` becomes `reconciled`; `preferred_source` is `source`. **Every**
@@ -437,7 +437,7 @@ never dropped. This does not write files (session 24).
 
 `merge(metadata, property_id, value)` is a user-supplied override. `resolution`
 becomes `reconciled`; `preferred_source` is **empty** (empty means user-supplied,
-not a raw key); existing sources are retained. This is the documented equivalent
+not a base key); existing sources are retained. This is the documented equivalent
 of a preferred-source choice when the application supplies a new value.
 
 `Metadata::set(property_id, Value)` still replaces provenance with

@@ -565,5 +565,40 @@ int main() {
     }
   }
 
+  {
+    const auto result = umm::internal::reconcile(
+        doc({entry("Exif", "Exif.Photo.DateTimeOriginal",
+                   "2020:01:02 03:04:05"),
+             entry("Exif", "Exif.Image.Make", "VendorCam"),
+             entry("Xmp", "Xmp.libummtest.UnknownWidget", "vendor-widget")}),
+        "test");
+    if (!result.ok()) {
+      return fail("dumpUnmapped reconcile failed");
+    }
+    const auto& all = result.value().dumpAll();
+    const auto& unmapped = result.value().dumpUnmapped();
+    if (all.size() != 3 || all[0].key.key != "Exif.Photo.DateTimeOriginal" ||
+        all[1].key.key != "Exif.Image.Make" ||
+        all[2].key.key != "Xmp.libummtest.UnknownWidget") {
+      return fail("dumpAll source order");
+    }
+    auto has_key = [](const std::vector<umm::BaseEntry>& entries,
+                      std::string_view key) {
+      for (const umm::BaseEntry& item : entries) {
+        if (item.key.key == key) {
+          return true;
+        }
+      }
+      return false;
+    };
+    if (has_key(unmapped, "Exif.Photo.DateTimeOriginal")) {
+      return fail("dumpUnmapped still has dateCreated key");
+    }
+    if (!has_key(unmapped, "Exif.Image.Make") ||
+        !has_key(unmapped, "Xmp.libummtest.UnknownWidget")) {
+      return fail("dumpUnmapped missing unknown keys");
+    }
+  }
+
   return 0;
 }

@@ -1,5 +1,7 @@
 #include "exiftool/keys.hpp"
 
+#include "property_registry.hpp"
+
 #include <string>
 
 namespace umm::internal {
@@ -137,14 +139,17 @@ std::optional<BaseKey> map_exiftool_tag(std::string_view json_key) {
     }
     if (ns == "iptcExt") {
       ns = "Iptc4xmpExt";
+      // ShownEvent is ExifTool's iptcExt tag for XMP EventExt; it is not in
+      // the IPTC Photo Metadata Technical Reference.
       if (name == "ShownEvent") {
         name = "EventExt";
-      } else if (name == "RegistryID") {
-        name = "RegistryId";
-      } else if (name == "EventID") {
-        name = "EventId";
-      } else if (name == "DigitalImageGUID") {
-        name = "DigImageGUID";
+      } else {
+        for (const ExifToolXmpTagAlias& row : kExifToolXmpTagAliases) {
+          if (row.et_tag == name) {
+            name = std::string(row.xmp_local);
+            break;
+          }
+        }
       }
     } else if (ns == "iptcCore") {
       ns = "Iptc4xmpCore";
@@ -332,14 +337,17 @@ std::optional<std::string> exiftool_tag_for_base_key(std::string_view base_key) 
       tag = capitalize_dc(tag);
     }
     if (ns == "iptcExt") {
+      // ShownEvent is ExifTool's iptcExt tag for XMP EventExt; it is not in
+      // the IPTC Photo Metadata Technical Reference.
       if (tag == "EventExt") {
         tag = "ShownEvent";
-      } else if (tag == "RegistryId") {
-        tag = "RegistryID";
-      } else if (tag == "EventId") {
-        tag = "EventID";
-      } else if (tag == "DigImageGUID") {
-        tag = "DigitalImageGUID";
+      } else {
+        for (const ExifToolXmpTagAlias& row : kExifToolXmpTagAliases) {
+          if (row.xmp_local == tag) {
+            tag = std::string(row.et_tag);
+            break;
+          }
+        }
       }
     }
     return "XMP-" + ns + ":" + tag;

@@ -15,6 +15,7 @@
 - libumm does not define new metadata standards; it integrates established standards and implementations. Prefer compatibility with IPTC, XMP, EXIF, and media-container metadata conventions over inventing one-off representations.
 - Keep metadata semantics, reconciliation policy, and backend behavior aligned with the project decisions in `docs/analysis/` and `docs/reconciliation-policy.md`.
 - Docs are organized by audience: `docs/user/`, `docs/sysadmin/`, `docs/developer/`; `docs/README.md` is the index.
+- Call metadata entries as stored in a file **base metadata** (base key / base entry), never "raw". **Unmapped** means only a base entry that no canonical property consumed as a representation. **RAW** means camera image formats only (`tests/fixtures/raw/`, DNG/CR3, and similar). Do not rename `raw_fail` / `raw_jpeg` test helpers, C++ raw string literals, `raw.githubusercontent.com` URLs, or tooling variables holding undecoded JSON (C18).
 
 ## Implementation workflow
 

@@ -1911,12 +1911,14 @@ Result<Metadata> reconcile(const BaseDocument& document,
       reconcile_property(metadata, document, sidecar, backend_id, id, true,
                          disagreements);
     }
+    metadata.recomputeUnmapped();
     return metadata;
   }
   for (std::string_view id : mapped_photo_property_ids()) {
     reconcile_property(metadata, document, sidecar, backend_id, id, false,
                        disagreements);
   }
+  metadata.recomputeUnmapped();
   return metadata;
 }
 

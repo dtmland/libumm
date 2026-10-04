@@ -66,6 +66,7 @@ int main() {
   const umm::BaseEntry entry{{"Exif", "Exif.Nikon3.LensType"}, "String", "42"};
   md.assignBase({entry});
   if (md.dumpAll() != std::vector<umm::BaseEntry>{entry} ||
+      md.dumpUnmapped() != md.dumpAll() ||
       md.dumpValue(entry.key) != entry.value ||
       md.dumpValue(umm::BaseKey{"Xmp", entry.key.key})) {
     return fail("base metadata access");

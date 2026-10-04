@@ -27,6 +27,7 @@ These rules were applied throughout and still govern changes:
 - **Fixtures:** generated, tiny, in-repo (Tier A); third-party media only by checksummed
   download (Tier B) (M6).
 - **Write safety:** temp file + atomic rename / `ReplaceFileW` (M3).
+- **Base vs RAW (C18):** file-stored metadata is base metadata (`BaseKey` / `BaseEntry`). Unmapped means not consumed as a representation (`dumpUnmapped()`). RAW means camera image formats only.
 - End-user ExifTool acquisition is system-native `sh` + PowerShell scripts under
   `tools/get-exiftool/`, not Python (P3, P9).
 

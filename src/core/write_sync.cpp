@@ -11,6 +11,7 @@
 
 #include "core/property_ids.hpp"
 #include "core/xmp_codec.hpp"
+#include "property_registry.hpp"
 #include "umm/registry.hpp"
 
 namespace umm::internal {
@@ -334,7 +335,6 @@ void sync_gps(BaseChanges& changes, const Value& value) {
   add(changes, "QuickTime", "QuickTime.GPSCoordinates", std::move(qt));
 }
 
-// ExifTool PersonDetails/ProductDetails reject IPTC logical field `name`.
 std::string_view xmp_local_name(std::string_view property) {
   const auto colon = property.rfind(':');
   if (colon == std::string_view::npos) {
@@ -346,42 +346,24 @@ std::string_view xmp_local_name(std::string_view property) {
 Structure alias_exiftool_struct_fields(std::string_view xmp_property,
                                        const Structure& fields) {
   const std::string_view local = xmp_local_name(xmp_property);
-  std::string_view from;
-  std::string_view to;
-  if (local == "PersonInImageWDetails") {
-    from = "name";
-    to = "PersonName";
-  } else if (local == "ProductInImage") {
-    from = "name";
-    to = "ProductName";
-  } else if (local == "CopyrightOwner") {
-    from = "name";
-    to = "CopyrightOwnerName";
-  } else if (local == "Licensor") {
-    from = "name";
-    to = "LicensorName";
-  } else if (local == "ImageSupplier") {
-    from = "name";
-    to = "ImageSupplierName";
-  } else {
-    return fields;
-  }
-  if (fields.find(std::string(to)) != fields.end()) {
-    return fields;
-  }
-  const auto it = fields.find(std::string(from));
-  if (it == fields.end()) {
-    return fields;
-  }
   Structure out;
+  bool changed = false;
   for (const auto& [name, value] : fields) {
-    if (name == from) {
-      out.emplace(std::string(to), value);
+    std::string_view mapped = name;
+    for (const ExifToolStructFieldAlias& row : kExifToolStructFieldAliases) {
+      if (row.xmp_local == local && row.from_field == name) {
+        mapped = row.to_field;
+        break;
+      }
+    }
+    if (mapped != name && fields.find(std::string(mapped)) == fields.end()) {
+      out.emplace(std::string(mapped), value);
+      changed = true;
     } else {
       out.emplace(name, value);
     }
   }
-  return out;
+  return changed ? out : fields;
 }
 
 std::string structure_lang_or_text(const Structure& fields,

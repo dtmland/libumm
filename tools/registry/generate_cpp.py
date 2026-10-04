@@ -30,6 +30,7 @@ OVERLAY_SOURCE_KEYS = (
     "note",
 )
 OVERLAY_MAPPING_KEYS = ("id", "exif_tag")
+OVERLAY_MAPPING_OPTIONAL = ("struct_property",)
 OVERLAY_KEYS = ("partial", "source", "mappings")
 
 CROSS_MEDIA_KEYS = ("document", "version", "source", "accessors")
@@ -153,14 +154,31 @@ def load_overlay(path: Path) -> dict[str, Any]:
         raise CodegenError(f"{path}: mappings must be a non-empty array")
     normalized: list[dict[str, str]] = []
     ids: list[str] = []
+    allowed = OVERLAY_MAPPING_KEYS + OVERLAY_MAPPING_OPTIONAL
     for index, item in enumerate(mappings):
         if not isinstance(item, dict):
             raise CodegenError(f"{path}: mappings[{index}] must be an object")
-        mapping = ordered(item, OVERLAY_MAPPING_KEYS, path=f"{path} mappings[{index}]")
+        unknown = [key for key in item if key not in allowed]
+        if unknown:
+            raise CodegenError(
+                f"{path} mappings[{index}]: unexpected keys {unknown} "
+                f"(allowed {list(allowed)})"
+            )
+        missing = [key for key in OVERLAY_MAPPING_KEYS if key not in item]
+        if missing:
+            raise CodegenError(f"{path} mappings[{index}]: missing keys {missing}")
+        mapping = {key: item[key] for key in OVERLAY_MAPPING_KEYS}
         if not mapping["id"] or not mapping["exif_tag"]:
             raise CodegenError(f"{path}: mappings[{index}] has empty id or exif_tag")
+        struct_property = item.get("struct_property")
+        if struct_property is not None:
+            if not isinstance(struct_property, str) or not struct_property:
+                raise CodegenError(
+                    f"{path}: mappings[{index}] struct_property must be a non-empty string"
+                )
+            mapping["struct_property"] = struct_property
         ids.append(mapping["id"])
-        normalized.append({"id": mapping["id"], "exif_tag": mapping["exif_tag"]})
+        normalized.append(mapping)
     if len(ids) != len(set(ids)):
         raise CodegenError(f"{path}: duplicate overlay mapping ids")
     if ids != sorted(ids):
@@ -174,19 +192,38 @@ def apply_overlay(
     known_ids: dict[str, str],
     overlay: dict[str, Any],
     overlay_path: Path,
-) -> dict[str, str]:
+) -> tuple[dict[str, str], dict[str, dict[str, str]]]:
     by_id = {record["id"]: record for record in properties}
     merged: dict[str, str] = {}
+    field_overlay: dict[str, dict[str, str]] = {}
     for mapping in overlay["mappings"]:
         property_id = mapping["id"]
         kind = known_ids.get(property_id)
         if kind is None:
             raise CodegenError(f"{overlay_path}: unknown id {property_id!r}")
         tag = mapping["exif_tag"]
+        struct_property = mapping.get("struct_property")
         if kind != "property":
-            # Struct-field GPS tags are recorded for Stage 4/6; they are not
-            # top-level PropertyDef rows.
+            if not struct_property:
+                raise CodegenError(
+                    f"{overlay_path}: {property_id} is a struct field and requires "
+                    "struct_property"
+                )
+            if struct_property != "locationCreated":
+                raise CodegenError(
+                    f"{overlay_path}: {property_id} struct_property "
+                    f"{struct_property!r} is not locationCreated"
+                )
+            field_overlay[property_id] = {
+                "exif_tag": tag,
+                "struct_property": struct_property,
+            }
             continue
+        if struct_property:
+            raise CodegenError(
+                f"{overlay_path}: {property_id} is a property; struct_property is "
+                "only valid on struct fields"
+            )
         existing = by_id[property_id]["representations"].get("exif")
         existing_tag = existing["tag"] if isinstance(existing, dict) else None
         if existing_tag and existing_tag != tag:
@@ -195,7 +232,7 @@ def apply_overlay(
                 f"TR {existing_tag!r} vs overlay {tag!r}"
             )
         merged[property_id] = tag
-    return merged
+    return merged, field_overlay
 
 
 def load_cross_media(path: Path, properties_by_id: dict[str, dict[str, Any]]) -> dict[str, Any]:
@@ -357,6 +394,157 @@ def banner(
     return "\n".join(lines) + "\n\n"
 
 
+def xmp_local_name(property_name: str) -> str:
+    if ":" in property_name:
+        return property_name.split(":", 1)[1]
+    return property_name
+
+
+def collect_struct_field_rows(
+    registries: list[dict[str, Any]],
+    field_overlay: dict[str, dict[str, str]],
+) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    for registry in registries:
+        for struct in registry.get("structs", []):
+            for field in struct.get("fields", []):
+                field_id = field["id"]
+                overlay = field_overlay.get(field_id, {})
+                xmp = field.get("representations", {}).get("xmp") or {}
+                exiftool = field.get("representations", {}).get("exiftool") or {}
+                et_tag = field.get("et_tag") or exiftool.get("tag") or ""
+                rows.append(
+                    {
+                        "id": field_id,
+                        "struct_name": struct.get("name") or "",
+                        "struct_property": overlay.get("struct_property") or "",
+                        "xmp_property": xmp.get("property") or "",
+                        "et_tag": et_tag,
+                        "exif_tag": overlay.get("exif_tag") or "",
+                    }
+                )
+    rows.sort(key=lambda item: item["id"])
+    return rows
+
+
+def collect_exiftool_struct_aliases(
+    registries: list[dict[str, Any]],
+) -> list[dict[str, str]]:
+    structs: dict[str, list[dict[str, Any]]] = {}
+    properties: list[dict[str, Any]] = []
+    for registry in registries:
+        for struct in registry.get("structs", []):
+            structs[struct["name"]] = struct.get("fields", [])
+        properties.extend(registry.get("properties", []))
+    aliases: list[dict[str, str]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for record in properties:
+        struct_type = record.get("struct_type")
+        if not struct_type or struct_type not in structs:
+            continue
+        xmp = (record.get("representations") or {}).get("xmp") or {}
+        local = xmp_local_name(xmp.get("property") or "")
+        if not local:
+            continue
+        for field in structs[struct_type]:
+            exiftool = (field.get("representations") or {}).get("exiftool") or {}
+            et_tag = field.get("et_tag") or exiftool.get("tag") or ""
+            if not et_tag:
+                continue
+            from_field = field["id"].rsplit(".", 1)[-1]
+            pairs = [(from_field, et_tag)]
+            if (
+                from_field != "name"
+                and from_field.lower().endswith("name")
+                and et_tag.endswith("Name")
+            ):
+                pairs.append(("name", et_tag))
+            for src, dst in pairs:
+                if src == dst:
+                    continue
+                key = (local, src, dst)
+                if key in seen:
+                    continue
+                seen.add(key)
+                aliases.append(
+                    {
+                        "xmp_local": local,
+                        "from_field": src,
+                        "to_field": dst,
+                    }
+                )
+    aliases.sort(
+        key=lambda item: (item["xmp_local"], item["from_field"], item["to_field"])
+    )
+    return aliases
+
+
+def collect_exiftool_xmp_tag_aliases(
+    registries: list[dict[str, Any]],
+) -> list[dict[str, str]]:
+    aliases: list[dict[str, str]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for registry in registries:
+        for record in registry.get("properties", []):
+            xmp = (record.get("representations") or {}).get("xmp") or {}
+            exiftool = (record.get("representations") or {}).get("exiftool") or {}
+            xmp_prop = xmp.get("property") or ""
+            et_tag = exiftool.get("tag") or ""
+            if ":" not in xmp_prop or not et_tag:
+                continue
+            prefix, local = xmp_prop.split(":", 1)
+            if prefix != "Iptc4xmpExt" or local == et_tag:
+                continue
+            key = (prefix, local, et_tag)
+            if key in seen:
+                continue
+            seen.add(key)
+            aliases.append(
+                {
+                    "xmp_ns": prefix,
+                    "xmp_local": local,
+                    "et_tag": et_tag,
+                }
+            )
+    aliases.sort(key=lambda item: (item["xmp_ns"], item["xmp_local"], item["et_tag"]))
+    return aliases
+
+
+def emit_struct_field_row(row: dict[str, str]) -> str:
+    return "\n".join(
+        [
+            "    {",
+            f"        {cpp_string(row['id'])},",
+            f"        {cpp_string(row['struct_name'])},",
+            f"        {cpp_string(row['struct_property'])},",
+            f"        {cpp_string(row['xmp_property'])},",
+            f"        {cpp_string(row['et_tag'])},",
+            f"        {cpp_string(row['exif_tag'])},",
+            "    }",
+        ]
+    )
+
+
+def emit_struct_alias_row(row: dict[str, str]) -> str:
+    return (
+        "    {"
+        f" {cpp_string(row['xmp_local'])},"
+        f" {cpp_string(row['from_field'])},"
+        f" {cpp_string(row['to_field'])} "
+        "}"
+    )
+
+
+def emit_xmp_tag_alias_row(row: dict[str, str]) -> str:
+    return (
+        "    {"
+        f" {cpp_string(row['xmp_ns'])},"
+        f" {cpp_string(row['xmp_local'])},"
+        f" {cpp_string(row['et_tag'])} "
+        "}"
+    )
+
+
 def emit_property(record: dict[str, Any], exif_tag: str) -> str:
     xmp_ns = representation_field(record, "xmp", "namespace")
     xmp_prop = representation_field(record, "xmp", "property")
@@ -396,6 +584,9 @@ def generate_header(
     properties: list[dict[str, Any]],
     overlay_exif: dict[str, str],
     standards: list[dict[str, str]],
+    struct_fields: list[dict[str, str]],
+    struct_aliases: list[dict[str, str]],
+    xmp_tag_aliases: list[dict[str, str]],
 ) -> str:
     rows = [
         emit_property(record, overlay_exif.get(record["id"], ""))
@@ -412,6 +603,15 @@ def generate_header(
             "    }"
         )
     standards_body = ",\n".join(standard_rows)
+    struct_field_rows = ",\n".join(emit_struct_field_row(row) for row in struct_fields)
+    if not struct_field_rows:
+        struct_field_rows = "    {}"
+    struct_alias_rows = ",\n".join(emit_struct_alias_row(row) for row in struct_aliases)
+    if not struct_alias_rows:
+        struct_alias_rows = "    {}"
+    xmp_alias_rows = ",\n".join(emit_xmp_tag_alias_row(row) for row in xmp_tag_aliases)
+    if not xmp_alias_rows:
+        xmp_alias_rows = "    {}"
     return (
         f"{banner_text}"
         "#pragma once\n"
@@ -420,11 +620,36 @@ def generate_header(
         "\n"
         "#include <cstddef>\n"
         "#include <iterator>\n"
+        "#include <string_view>\n"
         "\n"
         "namespace umm::internal {\n"
         "\n"
+        "struct StructFieldRepresentation {\n"
+        "  std::string_view id;\n"
+        "  std::string_view struct_name;\n"
+        "  std::string_view struct_property;\n"
+        "  std::string_view xmp_property;\n"
+        "  std::string_view et_tag;\n"
+        "  std::string_view exif_tag;\n"
+        "};\n"
+        "\n"
+        "struct ExifToolStructFieldAlias {\n"
+        "  std::string_view xmp_local;\n"
+        "  std::string_view from_field;\n"
+        "  std::string_view to_field;\n"
+        "};\n"
+        "\n"
+        "struct ExifToolXmpTagAlias {\n"
+        "  std::string_view xmp_ns;\n"
+        "  std::string_view xmp_local;\n"
+        "  std::string_view et_tag;\n"
+        "};\n"
+        "\n"
         f"inline constexpr std::size_t kPropertyCount = {len(properties)};\n"
         f"inline constexpr std::size_t kStandardCount = {len(standards)};\n"
+        f"inline constexpr std::size_t kStructFieldCount = {len(struct_fields)};\n"
+        f"inline constexpr std::size_t kExifToolStructFieldAliasCount = {len(struct_aliases)};\n"
+        f"inline constexpr std::size_t kExifToolXmpTagAliasCount = {len(xmp_tag_aliases)};\n"
         "\n"
         "inline constexpr PropertyDef kProperties[] = {\n"
         f"{body}\n"
@@ -434,8 +659,24 @@ def generate_header(
         f"{standards_body}\n"
         "};\n"
         "\n"
+        "inline constexpr StructFieldRepresentation kStructFieldRepresentations[] = {\n"
+        f"{struct_field_rows}\n"
+        "};\n"
+        "\n"
+        "inline constexpr ExifToolStructFieldAlias kExifToolStructFieldAliases[] = {\n"
+        f"{struct_alias_rows}\n"
+        "};\n"
+        "\n"
+        "inline constexpr ExifToolXmpTagAlias kExifToolXmpTagAliases[] = {\n"
+        f"{xmp_alias_rows}\n"
+        "};\n"
+        "\n"
         "static_assert(std::size(kProperties) == kPropertyCount);\n"
         "static_assert(std::size(kStandards) == kStandardCount);\n"
+        "static_assert(std::size(kStructFieldRepresentations) == kStructFieldCount);\n"
+        "static_assert(std::size(kExifToolStructFieldAliases) == "
+        "kExifToolStructFieldAliasCount);\n"
+        "static_assert(std::size(kExifToolXmpTagAliases) == kExifToolXmpTagAliasCount);\n"
         "\n"
         "}  // namespace umm::internal\n"
     )
@@ -612,18 +853,26 @@ def generate(
             }
         )
 
-    overlay_exif = apply_overlay(properties, known_ids, overlay, overlay_path)
+    overlay_exif, field_overlay = apply_overlay(
+        properties, known_ids, overlay, overlay_path
+    )
     mapping_path = cross_media_path or DEFAULT_CROSS_MEDIA
     properties_by_id = {record["id"]: record for record in properties}
     cross_media = load_cross_media(mapping_path, properties_by_id)
 
     properties.sort(key=lambda item: item["id"])
+    struct_fields = collect_struct_field_rows(registries, field_overlay)
+    struct_aliases = collect_exiftool_struct_aliases(registries)
+    xmp_tag_aliases = collect_exiftool_xmp_tag_aliases(registries)
     banner_text = banner(files, overlay_path, registries, mapping_path)
     header = generate_header(
         banner_text=banner_text,
         properties=properties,
         overlay_exif=overlay_exif,
         standards=standards,
+        struct_fields=struct_fields,
+        struct_aliases=struct_aliases,
+        xmp_tag_aliases=xmp_tag_aliases,
     )
     source = generate_source(banner_text)
     cross_header = generate_cross_media_header(

@@ -575,6 +575,8 @@ Structure structure_from_uri(std::string_view uri) {
 }
 
 std::string structure_display_name(const Structure& fields) {
+  // Lookup order covers IPTC logical field `name` and TR etTag names
+  // (PersonName, ProductName, PLUS *Name). Encoding aliases are generated.
   static constexpr std::string_view kKeys[] = {
       "name",
       "Name",

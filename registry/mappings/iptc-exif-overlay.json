@@ -26,19 +26,23 @@
     },
     {
       "id": "iptc.photo.struct.Location.gpsAltitude",
-      "exif_tag": "GPS:GPSAltitude"
+      "exif_tag": "GPS:GPSAltitude",
+      "struct_property": "locationCreated"
     },
     {
       "id": "iptc.photo.struct.Location.gpsAltitudeRef",
-      "exif_tag": "GPS:GPSAltitudeRef"
+      "exif_tag": "GPS:GPSAltitudeRef",
+      "struct_property": "locationCreated"
     },
     {
       "id": "iptc.photo.struct.Location.gpsLatitude",
-      "exif_tag": "GPS:GPSLatitude+GPS:GPSLatitudeRef"
+      "exif_tag": "GPS:GPSLatitude+GPS:GPSLatitudeRef",
+      "struct_property": "locationCreated"
     },
     {
       "id": "iptc.photo.struct.Location.gpsLongitude",
-      "exif_tag": "GPS:GPSLongitude+GPS:GPSLongitudeRef"
+      "exif_tag": "GPS:GPSLongitude+GPS:GPSLongitudeRef",
+      "struct_property": "locationCreated"
     }
   ]
 }

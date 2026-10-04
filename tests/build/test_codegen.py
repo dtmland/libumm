@@ -127,10 +127,22 @@ class TestCodegen(unittest.TestCase):
         self.assertIsNotNone(match)
         total = len(photo["properties"]) + len(video["properties"])
         self.assertEqual(int(match.group(1)), total)
-        self.assertEqual(header.count('"iptc.photo.'), len(photo["properties"]))
-        self.assertEqual(header.count('"iptc.video.'), len(video["properties"]))
+        photo_fields = sum(len(item["fields"]) for item in photo["structs"])
+        video_fields = sum(len(item["fields"]) for item in video["structs"])
+        self.assertEqual(
+            header.count('"iptc.photo.'),
+            len(photo["properties"]) + photo_fields,
+        )
+        self.assertEqual(
+            header.count('"iptc.video.'),
+            len(video["properties"]) + video_fields,
+        )
         self.assertIn("iptc.video.dateCreated", header)
         self.assertIn("com.apple.quicktime.creationdate", header)
+        self.assertIn("kStructFieldRepresentations", header)
+        self.assertIn("kExifToolStructFieldAliases", header)
+        self.assertIn("PersonName", header)
+        self.assertIn("locationCreated", header)
 
     def test_editing_registry_changes_generated_entry(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -199,6 +211,14 @@ class TestCodegen(unittest.TestCase):
         self.assertIn("iptc.photo.dateCreated", ids)
         self.assertIn("iptc.photo.copyrightNotice", ids)
         self.assertTrue(any("gpsLatitude" in item for item in ids))
+        gps_rows = [
+            item
+            for item in overlay["mappings"]
+            if "struct.Location.gps" in item["id"]
+        ]
+        self.assertTrue(gps_rows)
+        for row in gps_rows:
+            self.assertEqual(row["struct_property"], "locationCreated")
 
     def test_overlay_conflict_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

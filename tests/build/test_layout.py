@@ -55,7 +55,7 @@ EXIV2_SMOKE = REPO_ROOT / "tests" / "backend" / "test_exiv2_smoke.cpp"
 EXIV2_READ = REPO_ROOT / "tests" / "backend" / "test_exiv2_read.cpp"
 EXIFTOOL_READ = REPO_ROOT / "tests" / "backend" / "test_exiftool_read.cpp"
 EXIFTOOL_KEYS = REPO_ROOT / "tests" / "backend" / "test_exiftool_keys.cpp"
-READ_UNMAPPED_CHECKS = REPO_ROOT / "tests" / "backend" / "read_unmapped_checks.hpp"
+READ_BASE_CHECKS = REPO_ROOT / "tests" / "backend" / "read_base_checks.hpp"
 EXIFTOOL_BACKEND = (
     REPO_ROOT / "src" / "backends" / "exiftool" / "exiftool_backend.cpp"
 )
@@ -128,7 +128,7 @@ class TestLayout(unittest.TestCase):
             EXIV2_READ,
             EXIFTOOL_READ,
             EXIFTOOL_KEYS,
-            READ_UNMAPPED_CHECKS,
+            READ_BASE_CHECKS,
             EXIFTOOL_BACKEND,
             RECONCILE_POLICY,
             RECONCILE_CPP,

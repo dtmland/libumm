@@ -60,7 +60,7 @@ Matches concept.md §20.
 | `datatype` | string | Closed vocabulary below |
 | `cardinality` | string | `one` or `many` |
 | `struct_type` | string or null | TR structure name when `datatype` is `struct` |
-| `representations` | object | XMP / IPTC IIM / EXIF (null when absent) |
+| `representations` | object | XMP / IPTC IIM / EXIF / ExifTool (null when absent) |
 | `mapping_notes` | string | IPTC user notes; empty when the TR has none |
 | `source` | object | Same shape as envelope `source` |
 
@@ -77,12 +77,17 @@ object key is not used as the id so names like Creator become
 | `xmp` | object or null | `namespace` (URI) + `property` (prefixed name, e.g. `dc:creator`) |
 | `iptc_iim` | object or null | `dataset` (e.g. `2:80`); `name` when the TR provides `IIMname` |
 | `exif` | object or null | `tag` from the TR (`etEXIF`, else `EXIFid`) |
+| `exiftool` | object or null | Photo: `tag` from TR `etXMP` (properties) or `etTag` (struct fields), local name only |
 | `quicktime` | object or null | VMH only: `key` from the Apple QuickTime mapping (e.g. `com.apple.quicktime.creationdate`) |
 | `ebucore` | object or null | VMH only: `path` from the EBUCore mapping (e.g. `date/created`) |
 
-Photo records omit `quicktime` and `ebucore`. Video records include them (null
-when the mapping artifact has no value) and keep `iptc_iim` / `exif` null —
-VMH does not define IIM or EXIF representations.
+Photo records omit `quicktime` and `ebucore` and include `exiftool`. Video records include
+`quicktime` / `ebucore` (null when the mapping artifact has no value) and keep
+`iptc_iim` / `exif` / `exiftool` null — VMH does not define IIM, EXIF, or ExifTool
+`etTag` names.
+
+Struct fields additionally store `et_tag` (TR `etTag`, e.g. `PersonName`) beside
+`representations` so codegen can emit ExifTool struct-field aliases (C14b).
 
 XMP namespace URIs are the established IPTC/Adobe/PLUS namespaces already used
 by the Photo Metadata Standard. The importer fails closed on an unknown XMP
@@ -100,10 +105,12 @@ with a TR tag. The overlay is marked `partial: true` until Stage 6 completes it.
 | --- | --- | --- |
 | `partial` | boolean | `true` while the overlay is a Stage 4 subset |
 | `source` | object | Mapping Guidelines document, version, URL, retrieval date, note |
-| `mappings` | array | Sorted by `id`; each entry is `id` + `exif_tag` |
+| `mappings` | array | Sorted by `id`; each entry is `id` + `exif_tag`, plus `struct_property` on struct-field rows |
 
 `id` is a registry property id or struct-field id. Overlay tags use the same
 ExifTool-style names as the Technical Reference (`IFD0:Artist`, `GPS:GPSLatitude`).
+Struct-field GPS rows require `struct_property` (currently `locationCreated`) so
+the overlay says which Location property they belong to (C8).
 
 ## Cross-media accessor map (`registry/mappings/cross-media-accessors.json`)
 

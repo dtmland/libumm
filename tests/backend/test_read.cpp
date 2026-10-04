@@ -1,4 +1,4 @@
-#include "read_unmapped_checks.hpp"
+#include "read_base_checks.hpp"
 #include "umm/umm.hpp"
 
 #include <cmath>
@@ -78,6 +78,37 @@ int check_backend(const std::string& backend_id, const char* folder,
   }
   if (!exif_date || exif_date->resolution != umm::Resolution::single) {
     return fail_read("exif-only date not single");
+  }
+  auto dump_has = [](const std::vector<umm::BaseEntry>& entries,
+                     std::string_view needle) {
+    for (const umm::BaseEntry& item : entries) {
+      if (item.key.key.find(std::string(needle)) != std::string::npos) {
+        return true;
+      }
+    }
+    return false;
+  };
+  if (!dump_has(exif_only.value().dumpAll(), "DateTimeOriginal")) {
+    return fail_read("exif-only dumpAll missing DateTimeOriginal");
+  }
+  if (dump_has(exif_only.value().dumpUnmapped(), "DateTimeOriginal")) {
+    return fail_read("exif-only dumpUnmapped still has DateTimeOriginal");
+  }
+  if (std::string(folder) == "jpeg") {
+    const auto unknown =
+        umm::read(raw_stem(folder, "unknown-tags", ext), options);
+    if (!unknown.ok()) {
+      std::fprintf(stderr, "unknown-tags read failed: %s\n",
+                   unknown.error().message.c_str());
+      return 1;
+    }
+    if (!dump_has(unknown.value().dumpAll(), "UnknownWidget") ||
+        !dump_has(unknown.value().dumpUnmapped(), "UnknownWidget")) {
+      return fail_read("unknown-tags dumpUnmapped missing vendor XMP");
+    }
+    if (!dump_has(unknown.value().dumpUnmapped(), "LibummUnknownExif")) {
+      return fail_read("unknown-tags dumpUnmapped missing vendor EXIF");
+    }
   }
 
   const auto iptc_only =
@@ -603,6 +634,26 @@ int check_video_backend() {
   }
   if (!full.value().creator()) {
     return fail_read("video full creator accessor");
+  }
+  auto video_dump_has = [](const std::vector<umm::BaseEntry>& entries,
+                           std::string_view needle) {
+    for (const umm::BaseEntry& item : entries) {
+      if (item.key.key.find(std::string(needle)) != std::string::npos) {
+        return true;
+      }
+    }
+    return false;
+  };
+  if (!video_dump_has(full.value().dumpAll(), "DateCreated") &&
+      !video_dump_has(full.value().dumpAll(), "CreationDate")) {
+    return fail_read("video full dumpAll missing dateCreated key");
+  }
+  if (video_dump_has(full.value().dumpUnmapped(), "photoshop.DateCreated") ||
+      video_dump_has(full.value().dumpUnmapped(), "QuickTime.CreationDate")) {
+    return fail_read("video full dumpUnmapped still has dateCreated key");
+  }
+  if (full.value().dumpAll().size() < full.value().dumpUnmapped().size()) {
+    return fail_read("video full dumpAll smaller than dumpUnmapped");
   }
 
   const auto gps = umm::read(raw_stem("video", "gps", ".mp4"), options);
