@@ -19,7 +19,7 @@ Documentation is organized by audience.
 
 - [Implementation history](developer/implementation-history.md) — how libumm was built:
   standing constraints, stage-by-stage summary, conventions.
-- [Phase 2 implementation sessions](implementation/README.md) — planned session documents
+- [Implementation sessions](implementation/README.md) — Phase 2 (36–42, complete) and canonical model and casting (43–51, planned) session documents
   for the cross-media convenience accessor phase (sessions 36–42).
 - [Reconciliation policy](reconciliation-policy.md) — precedence and write-sync rules across
   XMP / IPTC IIM / EXIF / QuickTime (normative; referenced from `src/`).

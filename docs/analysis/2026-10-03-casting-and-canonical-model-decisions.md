@@ -421,7 +421,7 @@ properties, are **base metadata**. One entry is a **base entry**; its address is
   `writeUnmapped` → `readBase` / `writeBase`, `Metadata::assignUnmapped` → `assignBase`,
   `SourceRef::raw_key` → `base_key`. Internal helpers follow (`xmp_raw_key` →
   `xmp_base_key`, and so on). Release-notes entry required.
-- Unrelated technical meanings are untouched: RAW formats, the `tests/corpus/raw/` folder,
+- Unrelated technical meanings are untouched: RAW formats, the `tests/fixtures/raw/` folder,
   `raw.githubusercontent.com` URLs, C++ raw string literals, and tooling variables that hold
   undecoded JSON.
 - **Prevention.** Add the rule to `.github/copilot-instructions.md` (repository conventions)
@@ -486,6 +486,7 @@ Photo GPS has no down cast: EXIF GPS is a representation and is written automati
 
 ### 5.1 Proposed sessions
 
+Session docs are written: [docs/implementation/](../implementation/README.md) 43–51.
 Session numbering continues after 42. Each session updates the `include/umm/` headers first
 when the public contract changes, adds a `docs/developer/release-notes.md` entry for every
 behavior or API change, and tests every representation and cast rule it touches (C15).
