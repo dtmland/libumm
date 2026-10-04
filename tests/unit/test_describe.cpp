@@ -126,7 +126,7 @@ int main() {
     return fail("creator side cast");
   }
   if (!creator_desc.cross_media || creator_desc.cross_media->accessor != "creator" ||
-      creator_desc.cross_media->tier != 1 ||
+      creator_desc.cross_media->tier != 2 ||
       creator_desc.cross_media->other.id != "iptc.video.creator") {
     return fail("creator L3");
   }
