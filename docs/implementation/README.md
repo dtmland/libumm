@@ -31,9 +31,9 @@ ships (decision record §5.2); docs are not edited ahead of the code.
 
 | Session | Title | Depends on | Progress |
 |---|---|---|---|
-| [43](43-base-terminology-and-dump-views.md) | Base-metadata terminology and dump views | — (parallel with 45) | planned |
+| [43](43-base-terminology-and-dump-views.md) | Base-metadata terminology and dump views | — (parallel with 45) | complete |
 | [44](44-full-read-coverage.md) | Read coverage for every registry id | 43 | planned |
-| [45](45-struct-field-names-codegen.md) | Struct-field backend names from the registry | — (parallel with 43) | planned |
+| [45](45-struct-field-names-codegen.md) | Struct-field backend names from the registry | — (parallel with 43) | complete |
 | [46](46-photo-location-structs.md) | Full photo Location structs | 44, 45 | planned |
 | [47](47-cast-engine.md) | Cast engine and first rule set | 46 | planned |
 | [48](48-gps-as-location.md) | GPS as Location GPS; remove `exif.gps.position` | 47 | planned |

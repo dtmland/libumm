@@ -430,49 +430,48 @@ def collect_struct_field_rows(
 def collect_exiftool_struct_aliases(
     registries: list[dict[str, Any]],
 ) -> list[dict[str, str]]:
-    structs: dict[str, list[dict[str, Any]]] = {}
-    properties: list[dict[str, Any]] = []
-    for registry in registries:
-        for struct in registry.get("structs", []):
-            structs[struct["name"]] = struct.get("fields", [])
-        properties.extend(registry.get("properties", []))
     aliases: list[dict[str, str]] = []
     seen: set[tuple[str, str, str]] = set()
-    for record in properties:
-        struct_type = record.get("struct_type")
-        if not struct_type or struct_type not in structs:
-            continue
-        xmp = (record.get("representations") or {}).get("xmp") or {}
-        local = xmp_local_name(xmp.get("property") or "")
-        if not local:
-            continue
-        for field in structs[struct_type]:
-            exiftool = (field.get("representations") or {}).get("exiftool") or {}
-            et_tag = field.get("et_tag") or exiftool.get("tag") or ""
-            if not et_tag:
+    for registry in registries:
+        structs = {
+            struct["name"]: struct.get("fields", [])
+            for struct in registry.get("structs", [])
+        }
+        for record in registry.get("properties", []):
+            struct_type = record.get("struct_type")
+            if not struct_type or struct_type not in structs:
                 continue
-            from_field = field["id"].rsplit(".", 1)[-1]
-            pairs = [(from_field, et_tag)]
-            if (
-                from_field != "name"
-                and from_field.lower().endswith("name")
-                and et_tag.endswith("Name")
-            ):
-                pairs.append(("name", et_tag))
-            for src, dst in pairs:
-                if src == dst:
+            xmp = (record.get("representations") or {}).get("xmp") or {}
+            local = xmp_local_name(xmp.get("property") or "")
+            if not local:
+                continue
+            for field in structs[struct_type]:
+                exiftool = (field.get("representations") or {}).get("exiftool") or {}
+                et_tag = field.get("et_tag") or exiftool.get("tag") or ""
+                if not et_tag:
                     continue
-                key = (local, src, dst)
-                if key in seen:
-                    continue
-                seen.add(key)
-                aliases.append(
-                    {
-                        "xmp_local": local,
-                        "from_field": src,
-                        "to_field": dst,
-                    }
-                )
+                from_field = field["id"].rsplit(".", 1)[-1]
+                pairs = [(from_field, et_tag)]
+                if (
+                    from_field != "name"
+                    and from_field.lower().endswith("name")
+                    and et_tag.endswith("Name")
+                ):
+                    pairs.append(("name", et_tag))
+                for src, dst in pairs:
+                    if src == dst:
+                        continue
+                    key = (local, src, dst)
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    aliases.append(
+                        {
+                            "xmp_local": local,
+                            "from_field": src,
+                            "to_field": dst,
+                        }
+                    )
     aliases.sort(
         key=lambda item: (item["xmp_local"], item["from_field"], item["to_field"])
     )
@@ -603,15 +602,15 @@ def generate_header(
             "    }"
         )
     standards_body = ",\n".join(standard_rows)
+    if not struct_fields:
+        raise CodegenError("no struct-field representation rows")
+    if not struct_aliases:
+        raise CodegenError("no ExifTool struct-field aliases")
+    if not xmp_tag_aliases:
+        raise CodegenError("no ExifTool XMP tag aliases")
     struct_field_rows = ",\n".join(emit_struct_field_row(row) for row in struct_fields)
-    if not struct_field_rows:
-        struct_field_rows = "    {}"
     struct_alias_rows = ",\n".join(emit_struct_alias_row(row) for row in struct_aliases)
-    if not struct_alias_rows:
-        struct_alias_rows = "    {}"
     xmp_alias_rows = ",\n".join(emit_xmp_tag_alias_row(row) for row in xmp_tag_aliases)
-    if not xmp_alias_rows:
-        xmp_alias_rows = "    {}"
     return (
         f"{banner_text}"
         "#pragma once\n"

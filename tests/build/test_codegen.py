@@ -238,6 +238,24 @@ class TestCodegen(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("EXIF conflict", result.stderr)
 
+    def test_overlay_struct_field_requires_qualifier(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            overlay_path = Path(tmp) / "overlay.json"
+            overlay = json.loads(OVERLAY.read_text(encoding="utf-8"))
+            for mapping in overlay["mappings"]:
+                if mapping["id"] == "iptc.photo.struct.Location.gpsLatitude":
+                    mapping.pop("struct_property", None)
+            overlay_path.write_text(
+                json.dumps(overlay, indent=2, ensure_ascii=False) + "\n",
+                encoding="utf-8",
+                newline="\n",
+            )
+            result = run_generator(
+                [REGISTRY_DIR, VIDEO_REGISTRY_DIR], overlay_path, Path(tmp) / "out"
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("struct_property", result.stderr)
+
     def test_cross_media_rows_resolve_against_registries(self) -> None:
         photo = json.loads(REGISTRY_JSON.read_text(encoding="utf-8"))
         video = json.loads(VIDEO_REGISTRY_JSON.read_text(encoding="utf-8"))

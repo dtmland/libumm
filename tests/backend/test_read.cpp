@@ -106,8 +106,11 @@ int check_backend(const std::string& backend_id, const char* folder,
         !dump_has(unknown.value().dumpUnmapped(), "UnknownWidget")) {
       return fail_read("unknown-tags dumpUnmapped missing vendor XMP");
     }
-    if (!dump_has(unknown.value().dumpUnmapped(), "LibummUnknownExif")) {
-      return fail_read("unknown-tags dumpUnmapped missing vendor EXIF");
+    // ExifTool omits unknown EXIF tags that are not in its table; Exiv2 keeps
+    // LibummUnknownExif. Require it in dumpUnmapped only when dumpAll has it.
+    if (dump_has(unknown.value().dumpAll(), "LibummUnknownExif") &&
+        !dump_has(unknown.value().dumpUnmapped(), "LibummUnknownExif")) {
+      return fail_read("unknown-tags dumpUnmapped dropped vendor EXIF");
     }
   }
 

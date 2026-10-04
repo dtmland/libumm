@@ -24,6 +24,13 @@ reconcile: entries whose base key was not consumed as a representation. Until se
 adds more ids, keys of properties that are not reconciled yet remain in `dumpUnmapped()`.
 This is a pre-1.0 source break; rebuild consumers.
 
+### Session 45 — Struct-field backend names
+
+Photo registry struct fields keep TR `etTag` (`et_tag` plus `representations.exiftool`).
+The EXIF overlay GPS rows now name `struct_property: locationCreated`. ExifTool
+struct-field and iptcExt XMP tag aliases are generated from those names; ShownEvent
+stays a cited hand-written exception because it is not in the Technical Reference.
+
 ### Session 36 — `Metadata` layout
 
 `umm::Metadata` gained a `MediaDomain` member (`photo` / `video` / `unknown`) with
