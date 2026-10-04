@@ -56,6 +56,9 @@ int main() {
                  "Exif.GPSInfo.GPSLongitudeRef") != 0 ||
       expect_key("Composite:GPSAltitudeRef", "Exif",
                  "Exif.GPSInfo.GPSAltitudeRef") != 0 ||
+      expect_key("Composite:GPSPosition", "Exif", "Exif.GPSInfo.GPSPosition") !=
+          0 ||
+      expect_key("GPS:GPS Latitude", "Exif", "Exif.GPSInfo.GPSLatitude") != 0 ||
       expect_key("IPTC:By-line", "Iptc", "Iptc.Application2.Byline") != 0 ||
       expect_key("IPTC:Caption-Abstract", "Iptc",
                  "Iptc.Application2.Caption") != 0 ||
@@ -99,7 +102,7 @@ int main() {
   }
   if (expect_skip("SourceFile") != 0 || expect_skip("File:FileName") != 0 ||
       expect_skip("ExifTool:ExifToolVersion") != 0 ||
-      expect_skip("Composite:GPSPosition") != 0 || expect_skip("Error") != 0) {
+      expect_skip("Composite:GPSDateTime") != 0 || expect_skip("Error") != 0) {
     return 1;
   }
 

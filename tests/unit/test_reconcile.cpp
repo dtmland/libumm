@@ -890,5 +890,24 @@ int main() {
     }
   }
 
+  {
+    const auto result = umm::internal::reconcile(
+        doc({entry("Exif", "Exif.GPSInfo.GPSPosition",
+                   "23.75188333 -87.10150833")}),
+        "test");
+    if (!result.ok()) {
+      return fail("Composite GPSPosition reconcile failed");
+    }
+    const auto created = result.value().locationCreated();
+    const auto* loc = created ? location0(*created) : nullptr;
+    if (!loc) {
+      return fail("Composite GPSPosition missing locationCreated");
+    }
+    if (!field_near(*loc, "gpsLatitude", 23.75188333) ||
+        !field_near(*loc, "gpsLongitude", -87.10150833)) {
+      return fail("Composite GPSPosition values");
+    }
+  }
+
   return 0;
 }
