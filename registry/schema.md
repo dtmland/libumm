@@ -27,6 +27,7 @@ answered from the data alone.
 | `src/generated/` | Committed generated `property_registry.hpp` / `.cpp` |
 | `registry/capabilities/` | File-type capability tables (session 15; decision M2) |
 | `tools/registry/generate_supported_types.py` | Regenerates `supported-types.md` and `src/generated/capabilities_data.hpp` |
+| `tools/registry/generate_property_reference.py` | Regenerates `docs/user/properties/` from the same data as `umm::describe` (C14a) |
 
 Output JSON is UTF-8, LF newlines, 2-space indent, a trailing newline, and
 stable key/array ordering. Re-running the importer must be byte-identical.

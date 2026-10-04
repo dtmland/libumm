@@ -64,7 +64,9 @@ build options, ExifTool discovery, and redistribution licensing.
 
 Organized by audience in [docs/](docs/README.md):
 
-- **Users:** [user guide](docs/user/guide.md), [file-type coverage](docs/supported-types.md)
+- **Users:** [user guide](docs/user/guide.md),
+  [property reference](docs/user/properties/README.md),
+  [file-type coverage](docs/supported-types.md)
 - **Sysadmins:** [install and deployment](docs/sysadmin/install.md),
   [release checklist](docs/release-checklist.md)
 - **Developers:** [implementation history](docs/developer/implementation-history.md),
