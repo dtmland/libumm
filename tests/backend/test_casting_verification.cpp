@@ -173,6 +173,12 @@ int check_heic_layout(const char* backend) {
     std::fprintf(stderr,
                  "iphone-heic-layout.jpg %s missing locationCreated GPS\n",
                  backend);
+    for (const umm::BaseEntry& item : meta.dumpAll()) {
+      if (item.key.key.find("GPS") != std::string::npos) {
+        std::fprintf(stderr, "  %s=%s\n", item.key.key.c_str(),
+                     item.value.c_str());
+      }
+    }
     return 1;
   }
   if (!near(struct_number(items->front(), "gpsLatitude"), 23.75188333, 1e-5) ||

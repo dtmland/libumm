@@ -59,6 +59,8 @@ int main() {
       expect_key("Composite:GPSPosition", "Exif", "Exif.GPSInfo.GPSPosition") !=
           0 ||
       expect_key("GPS:GPS Latitude", "Exif", "Exif.GPSInfo.GPSLatitude") != 0 ||
+      expect_key("GPS Info:GPS Latitude", "Exif",
+                 "Exif.GPSInfo.GPSLatitude") != 0 ||
       expect_key("IPTC:By-line", "Iptc", "Iptc.Application2.Byline") != 0 ||
       expect_key("IPTC:Caption-Abstract", "Iptc",
                  "Iptc.Application2.Caption") != 0 ||

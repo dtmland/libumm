@@ -909,5 +909,47 @@ int main() {
     }
   }
 
+  {
+    const auto result = umm::internal::reconcile(
+        doc({entry("Exif", "Exif.GPSInfo.GPSLatitude", "not-a-coord"),
+             entry("Exif", "Exif.GPSInfo.GPSLongitude", "not-a-coord"),
+             entry("Exif", "Exif.GPSInfo.GPSLatitude", "23.75188333"),
+             entry("Exif", "Exif.GPSInfo.GPSLongitude", "-87.10150833")}),
+        "test");
+    if (!result.ok()) {
+      return fail("second GPSLatitude copy reconcile failed");
+    }
+    const auto created = result.value().locationCreated();
+    const auto* loc = created ? location0(*created) : nullptr;
+    if (!loc) {
+      return fail("second GPSLatitude copy missing locationCreated");
+    }
+    if (!field_near(*loc, "gpsLatitude", 23.75188333) ||
+        !field_near(*loc, "gpsLongitude", -87.10150833)) {
+      return fail("second GPSLatitude copy values");
+    }
+  }
+
+  {
+    const auto result = umm::internal::reconcile(
+        doc({entry("Exif", "Exif.GPSInfo.GPSLatitude", "not-a-coord"),
+             entry("Exif", "Exif.GPSInfo.GPSLongitude", "not-a-coord"),
+             entry("Exif", "Exif.GPSInfo.GPSPosition",
+                   "23.75188333 -87.10150833")}),
+        "test");
+    if (!result.ok()) {
+      return fail("unparseable GPS IFD GPSPosition fallback failed");
+    }
+    const auto created = result.value().locationCreated();
+    const auto* loc = created ? location0(*created) : nullptr;
+    if (!loc) {
+      return fail("unparseable GPS IFD GPSPosition missing locationCreated");
+    }
+    if (!field_near(*loc, "gpsLatitude", 23.75188333) ||
+        !field_near(*loc, "gpsLongitude", -87.10150833)) {
+      return fail("unparseable GPS IFD GPSPosition values");
+    }
+  }
+
   return 0;
 }
