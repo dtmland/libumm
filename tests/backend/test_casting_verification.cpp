@@ -170,13 +170,31 @@ int check_heic_layout(const char* backend) {
   }
   const auto* items = as_structs(meta.get("iptc.photo.locationCreated"));
   if (!items || items->empty()) {
+    items = as_structs(meta.locationCreated());
+  }
+  if (!items || items->empty()) {
     std::fprintf(stderr,
                  "iphone-heic-layout.jpg %s missing locationCreated GPS\n",
                  backend);
+    for (const std::string& id : meta.propertyIds()) {
+      std::fprintf(stderr, "  property %s\n", id.c_str());
+    }
+    auto dump_bytes = [](const char* label, std::string_view text) {
+      std::fprintf(stderr, "  %s len=%zu ", label, text.size());
+      for (unsigned char c : text) {
+        std::fprintf(stderr, "%02x", c);
+      }
+      std::fprintf(stderr, "\n");
+    };
     for (const umm::BaseEntry& item : meta.dumpAll()) {
       if (item.key.key.find("GPS") != std::string::npos) {
         std::fprintf(stderr, "  %s=%s\n", item.key.key.c_str(),
                      item.value.c_str());
+        if (item.key.key.find("GPSLatitude") != std::string::npos &&
+            item.key.key.find("Ref") == std::string::npos) {
+          dump_bytes("key", item.key.key);
+          dump_bytes("val", item.value);
+        }
       }
     }
     return 1;
@@ -186,8 +204,16 @@ int check_heic_layout(const char* backend) {
             1e-5) ||
       !near(struct_number(items->front(), "gpsAltitude"), 12.07893416, 0.5)) {
     std::fprintf(stderr,
-                 "iphone-heic-layout.jpg %s locationCreated GPS values\n",
-                 backend);
+                 "iphone-heic-layout.jpg %s locationCreated GPS values lat=%g lon=%g alt=%g fields=%zu\n",
+                 backend, struct_number(items->front(), "gpsLatitude"),
+                 struct_number(items->front(), "gpsLongitude"),
+                 struct_number(items->front(), "gpsAltitude"),
+                 items->front().size());
+    for (const auto& [name, value] : items->front()) {
+      std::fprintf(stderr, "  field %s index=%zu valueless=%d\n", name.c_str(),
+                   value.data.index(),
+                   value.data.valueless_by_exception() ? 1 : 0);
+    }
     return 1;
   }
   const auto unmapped = meta.dumpUnmapped();
