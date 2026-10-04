@@ -343,7 +343,7 @@ std::string qt_suffix_tag(std::string_view suffix) {
 
 }  // namespace
 
-std::string xmp_raw_key(std::string_view property) {
+std::string xmp_base_key(std::string_view property) {
   const auto colon = property.find(':');
   if (colon == std::string_view::npos) {
     return "Xmp." + std::string(property);
@@ -356,18 +356,18 @@ std::string xmp_raw_key(std::string_view property) {
   return "Xmp." + ns + "." + name;
 }
 
-std::vector<std::string> xmp_raw_keys(std::string_view property) {
+std::vector<std::string> xmp_base_keys(std::string_view property) {
   std::vector<std::string> out;
   for (const std::string& token : split_ws(property)) {
     if (token.find(':') == std::string::npos && token.find('.') == std::string::npos) {
       continue;
     }
-    out.push_back(xmp_raw_key(token));
+    out.push_back(xmp_base_key(token));
   }
   return out;
 }
 
-std::vector<std::string> quicktime_raw_keys(std::string_view registry_key) {
+std::vector<std::string> quicktime_base_keys(std::string_view registry_key) {
   const std::string_view text = trim(registry_key);
   if (text.empty()) {
     return {};

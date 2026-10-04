@@ -9,13 +9,13 @@
 namespace umm::internal {
 
 // Translate an ExifTool -G1 JSON field (Group1:Tag) into the Exiv2-syntax
-// raw vocabulary. nullopt means the field is not stored metadata (File,
+// base vocabulary. nullopt means the field is not stored metadata (File,
 // ExifTool, Composite, SourceFile, Error/Warning).
-std::optional<UnmappedKey> map_exiftool_tag(std::string_view json_key);
+std::optional<BaseKey> map_exiftool_tag(std::string_view json_key);
 
 // Inverse of map_exiftool_tag for write commands. Indexed/struct suffixes
-// are stripped. nullopt means the raw key cannot be expressed as a tag.
-std::optional<std::string> exiftool_tag_for_unmapped_key(std::string_view raw_key);
+// are stripped. nullopt means the base key cannot be expressed as a tag.
+std::optional<std::string> exiftool_tag_for_base_key(std::string_view base_key);
 
 // ExifTool assignment operator for a write. PLUS CV tags and URI-like XMP
 // values (DigitalSourceType) need "#=" so print conversion does not reject

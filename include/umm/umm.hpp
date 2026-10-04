@@ -53,7 +53,7 @@ struct WriteOptions {
 
 struct WriteReport {
   StorageDecision decision;
-  std::vector<UnmappedKey> written;  // every unmapped representation updated (write-sync)
+  std::vector<BaseKey> written;  // every base representation updated (write-sync)
 };
 
 // detectConflict() result: full read plus every disagreed property (session 23).
@@ -82,7 +82,7 @@ struct SyncOptions {
 // One carrier actually targeted by synchronize() (or mixed umm::write).
 struct SyncCarrierReport {
   std::string container;  // "embedded" | "sidecar"
-  std::vector<UnmappedKey> written;
+  std::vector<BaseKey> written;
 };
 
 struct SyncReport {
@@ -123,7 +123,7 @@ Result<ConflictReport> detectConflict(const std::filesystem::path& media,
                                       ReadOptions options = {});
 
 // Resolve a disagreed property by choosing a candidate listed in `entry`
-// (match SourceRef::raw_key). When the same raw_key appears in more than one
+// (match SourceRef::base_key). When the same base key appears in more than one
 // candidate (embedded vs sidecar XMP), pass `container` ("embedded" or
 // "sidecar"). Resulting Metadata is `reconciled` with preferred_source set;
 // every existing source is retained.
@@ -132,7 +132,7 @@ Result<Metadata> merge(Metadata metadata, const ConflictEntry& entry,
                        std::string_view container = {});
 
 // User-supplied override. Resolution becomes `reconciled`; preferred_source
-// is empty (not a raw key); sources are retained. Unlike set(), provenance
+// is empty (not a base key); sources are retained. Unlike set(), provenance
 // is not discarded.
 Result<Metadata> merge(Metadata metadata, std::string_view property_id,
                        Value value);

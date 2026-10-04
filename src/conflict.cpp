@@ -12,7 +12,7 @@ bool candidate_has_source(const ConflictCandidate& candidate,
     return true;
   }
   for (const SourceRef& ref : candidate.sources) {
-    if (ref.raw_key == source &&
+    if (ref.base_key == source &&
         (container.empty() || ref.container == container)) {
       return true;
     }

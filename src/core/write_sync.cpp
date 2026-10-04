@@ -16,12 +16,12 @@
 namespace umm::internal {
 namespace {
 
-void add(UnmappedChanges& changes, std::string family, std::string key,
+void add(BaseChanges& changes, std::string family, std::string key,
          std::string value, std::string type_hint = {}) {
   if (value.empty()) {
     return;
   }
-  UnmappedEntry entry;
+  BaseEntry entry;
   entry.key.family = std::move(family);
   entry.key.key = std::move(key);
   entry.type_hint = std::move(type_hint);
@@ -235,7 +235,7 @@ std::string structure_text(const Structure& fields, std::string_view name) {
   return {};
 }
 
-void sync_creator(UnmappedChanges& changes, const Value& value) {
+void sync_creator(BaseChanges& changes, const Value& value) {
   const auto* names = std::get_if<std::vector<std::string>>(&value.data);
   if (!names || names->empty()) {
     return;
@@ -247,7 +247,7 @@ void sync_creator(UnmappedChanges& changes, const Value& value) {
   add(changes, "Exif", "Exif.Image.Artist", join_names(*names, "; "));
 }
 
-void sync_lang(UnmappedChanges& changes, const Value& value, std::string_view xmp,
+void sync_lang(BaseChanges& changes, const Value& value, std::string_view xmp,
                std::string_view iim, std::string_view exif) {
   const auto* alt = std::get_if<LangAlt>(&value.data);
   if (!alt) {
@@ -262,7 +262,7 @@ void sync_lang(UnmappedChanges& changes, const Value& value, std::string_view xm
   add(changes, "Exif", std::string(exif), plain);
 }
 
-void sync_text_pair(UnmappedChanges& changes, const Value& value, std::string_view xmp,
+void sync_text_pair(BaseChanges& changes, const Value& value, std::string_view xmp,
                     std::string_view iim) {
   const auto* text = std::get_if<std::string>(&value.data);
   if (!text) {
@@ -272,7 +272,7 @@ void sync_text_pair(UnmappedChanges& changes, const Value& value, std::string_vi
   add(changes, "Iptc", std::string(iim), *text);
 }
 
-void sync_keywords(UnmappedChanges& changes, const Value& value) {
+void sync_keywords(BaseChanges& changes, const Value& value) {
   const auto* words = std::get_if<std::vector<std::string>>(&value.data);
   if (!words || words->empty()) {
     return;
@@ -283,7 +283,7 @@ void sync_keywords(UnmappedChanges& changes, const Value& value) {
   }
 }
 
-void sync_date(UnmappedChanges& changes, const Value& value) {
+void sync_date(BaseChanges& changes, const Value& value) {
   const auto* dt = std::get_if<DateTime>(&value.data);
   if (!dt) {
     return;
@@ -296,7 +296,7 @@ void sync_date(UnmappedChanges& changes, const Value& value) {
   add(changes, "Iptc", "Iptc.Application2.TimeCreated", format_iim_time(*dt));
 }
 
-void sync_rating(UnmappedChanges& changes, const Value& value) {
+void sync_rating(BaseChanges& changes, const Value& value) {
   const auto* rating = std::get_if<double>(&value.data);
   if (!rating) {
     return;
@@ -304,7 +304,7 @@ void sync_rating(UnmappedChanges& changes, const Value& value) {
   add(changes, "Xmp", "Xmp.xmp.Rating", format_real(*rating));
 }
 
-void sync_gps(UnmappedChanges& changes, const Value& value) {
+void sync_gps(BaseChanges& changes, const Value& value) {
   const auto* gps = std::get_if<GpsCoordinate>(&value.data);
   if (!gps) {
     return;
@@ -399,14 +399,14 @@ std::string structure_lang_or_text(const Structure& fields,
   return {};
 }
 
-void sync_video_generic(UnmappedChanges& changes, std::string_view property_id,
+void sync_video_generic(BaseChanges& changes, std::string_view property_id,
                         const Value& value) {
   const auto def = registry().find(property_id);
   if (!def) {
     return;
   }
-  const auto xmp_keys = xmp_raw_keys(def->representations.xmp_property);
-  const auto qt_keys = quicktime_raw_keys(def->representations.quicktime_key);
+  const auto xmp_keys = xmp_base_keys(def->representations.xmp_property);
+  const auto qt_keys = quicktime_base_keys(def->representations.quicktime_key);
   if (xmp_keys.empty()) {
     return;
   }
@@ -491,7 +491,7 @@ void sync_video_generic(UnmappedChanges& changes, std::string_view property_id,
   }
 }
 
-void sync_video_creator(UnmappedChanges& changes, const Value& value) {
+void sync_video_creator(BaseChanges& changes, const Value& value) {
   const auto* list = std::get_if<std::vector<Structure>>(&value.data);
   if (!list || list->empty()) {
     return;
@@ -515,7 +515,7 @@ void sync_video_creator(UnmappedChanges& changes, const Value& value) {
   add(changes, "QuickTime", "QuickTime.Artist", join_names(names, "; "));
 }
 
-void sync_video_keywords(UnmappedChanges& changes, const Value& value) {
+void sync_video_keywords(BaseChanges& changes, const Value& value) {
   const auto* alt = std::get_if<LangAlt>(&value.data);
   if (!alt) {
     return;
@@ -544,7 +544,7 @@ void sync_video_keywords(UnmappedChanges& changes, const Value& value) {
   }
 }
 
-void sync_video_date(UnmappedChanges& changes, const Value& value) {
+void sync_video_date(BaseChanges& changes, const Value& value) {
   const auto* dt = std::get_if<DateTime>(&value.data);
   if (!dt) {
     return;
@@ -554,7 +554,7 @@ void sync_video_date(UnmappedChanges& changes, const Value& value) {
   add(changes, "QuickTime", "QuickTime.CreationDate", iso);
 }
 
-void sync_location(UnmappedChanges& changes, const Value& value) {
+void sync_location(BaseChanges& changes, const Value& value) {
   const auto* list = std::get_if<std::vector<Structure>>(&value.data);
   if (!list || list->empty()) {
     return;
@@ -571,8 +571,8 @@ void sync_location(UnmappedChanges& changes, const Value& value) {
   add(changes, "Iptc", "Iptc.Application2.CountryName", country);
 }
 
-bool writes_iptc_application(const UnmappedChanges& changes) {
-  for (const UnmappedEntry& entry : changes.upserts) {
+bool writes_iptc_application(const BaseChanges& changes) {
+  for (const BaseEntry& entry : changes.upserts) {
     if (entry.key.key.rfind("Iptc.Application2.", 0) == 0) {
       return true;
     }
@@ -582,15 +582,15 @@ bool writes_iptc_application(const UnmappedChanges& changes) {
 
 }  // namespace
 
-UnmappedChanges write_sync_xmp(const Metadata& metadata) {
-  UnmappedChanges all = write_sync(metadata);
-  UnmappedChanges xmp;
-  for (UnmappedEntry& entry : all.upserts) {
+BaseChanges write_sync_xmp(const Metadata& metadata) {
+  BaseChanges all = write_sync(metadata);
+  BaseChanges xmp;
+  for (BaseEntry& entry : all.upserts) {
     if (entry.key.family == "Xmp" || entry.key.key.rfind("Xmp.", 0) == 0) {
       xmp.upserts.push_back(std::move(entry));
     }
   }
-  for (UnmappedKey& key : all.removals) {
+  for (BaseKey& key : all.removals) {
     if (key.family == "Xmp" || key.key.rfind("Xmp.", 0) == 0) {
       xmp.removals.push_back(std::move(key));
     }
@@ -598,8 +598,8 @@ UnmappedChanges write_sync_xmp(const Metadata& metadata) {
   return xmp;
 }
 
-UnmappedChanges write_sync(const Metadata& metadata) {
-  UnmappedChanges changes;
+BaseChanges write_sync(const Metadata& metadata) {
+  BaseChanges changes;
   for (const std::string& id : metadata.propertyIds()) {
     const auto property = metadata.get(id);
     if (!property) {

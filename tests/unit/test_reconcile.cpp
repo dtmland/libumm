@@ -16,9 +16,9 @@ int fail(const char* message) {
   return 1;
 }
 
-umm::UnmappedEntry entry(std::string family, std::string key, std::string value,
+umm::BaseEntry entry(std::string family, std::string key, std::string value,
                     std::string type_hint = {}) {
-  umm::UnmappedEntry out;
+  umm::BaseEntry out;
   out.key.family = std::move(family);
   out.key.key = std::move(key);
   out.type_hint = std::move(type_hint);
@@ -26,8 +26,8 @@ umm::UnmappedEntry entry(std::string family, std::string key, std::string value,
   return out;
 }
 
-umm::UnmappedDocument doc(std::initializer_list<umm::UnmappedEntry> entries) {
-  umm::UnmappedDocument document;
+umm::BaseDocument doc(std::initializer_list<umm::BaseEntry> entries) {
+  umm::BaseDocument document;
   document.entries = entries;
   return document;
 }
@@ -293,13 +293,13 @@ int main() {
   }
 
   {
-    umm::UnmappedDocument raw;
+    umm::BaseDocument raw;
     raw.entries.push_back(
         entry("Exif", "Exif.Image.Artist", "EXIF Artist"));
     umm::Metadata metadata;
-    metadata.assignUnmapped(raw.entries);
-    if (!metadata.unmapped(umm::UnmappedKey{"Exif", "Exif.Image.Artist"})) {
-      return fail("assignUnmapped");
+    metadata.assignBase(raw.entries);
+    if (!metadata.dumpValue(umm::BaseKey{"Exif", "Exif.Image.Artist"})) {
+      return fail("assignBase");
     }
   }
 

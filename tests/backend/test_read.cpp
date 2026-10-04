@@ -286,10 +286,10 @@ int check_png_backend(const std::string& backend_id) {
   bool saw_xmp = false;
   bool saw_exif = false;
   for (const umm::SourceRef& source : gps_value->sources) {
-    if (source.raw_key.find("Xmp.") == 0) {
+    if (source.base_key.find("Xmp.") == 0) {
       saw_xmp = true;
     }
-    if (source.raw_key.find("Exif.") == 0) {
+    if (source.base_key.find("Exif.") == 0) {
       saw_exif = true;
     }
   }
@@ -350,7 +350,7 @@ int check_webp_backend(const std::string& backend_id) {
     return fail_read("webp full-agreeing dropped EXIF/XMP sources");
   }
   for (const umm::SourceRef& source : creator->sources) {
-    if (source.raw_key.find("Iptc.") == 0) {
+    if (source.base_key.find("Iptc.") == 0) {
       return fail_read("webp creator should not have IPTC provenance");
     }
   }

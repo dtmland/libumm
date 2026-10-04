@@ -639,10 +639,10 @@ std::vector<std::string> Metadata::conflictedPropertyIds() const {
   return ids;
 }
 
-const std::vector<UnmappedEntry>& Metadata::unmapped() const { return unmapped_; }
+const std::vector<BaseEntry>& Metadata::dumpAll() const { return unmapped_; }
 
-std::optional<std::string> Metadata::unmapped(const UnmappedKey& key) const {
-  for (const UnmappedEntry& entry : unmapped_) {
+std::optional<std::string> Metadata::dumpValue(const BaseKey& key) const {
+  for (const BaseEntry& entry : unmapped_) {
     if (entry.key == key) {
       return entry.value;
     }
@@ -650,7 +650,7 @@ std::optional<std::string> Metadata::unmapped(const UnmappedKey& key) const {
   return std::nullopt;
 }
 
-void Metadata::assignUnmapped(std::vector<UnmappedEntry> entries) {
+void Metadata::assignBase(std::vector<BaseEntry> entries) {
   unmapped_ = std::move(entries);
 }
 

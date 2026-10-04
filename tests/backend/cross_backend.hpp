@@ -276,7 +276,7 @@ inline std::vector<std::string> source_families(
     const umm::PropertyValue& property) {
   std::vector<std::string> families;
   for (const umm::SourceRef& source : property.sources) {
-    const std::string family = family_of_key(source.raw_key);
+    const std::string family = family_of_key(source.base_key);
     if (family.empty()) {
       continue;
     }
@@ -575,7 +575,7 @@ inline bool families_cover(const umm::WriteReport& report,
                            const umm::Metadata& actual,
                            const umm::BackendCapability& reader) {
   std::vector<std::string> expected;
-  for (const umm::UnmappedKey& key : report.written) {
+  for (const umm::BaseKey& key : report.written) {
     const std::string family = family_of_key(key.key);
     if (family.empty() || !reader_sees_family(reader, family)) {
       continue;

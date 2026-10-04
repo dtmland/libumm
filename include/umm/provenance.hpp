@@ -10,9 +10,9 @@
 
 namespace umm {
 
-// A raw metadata origin, e.g. "Exif.Image.DateTime" read by backend "exiv2".
+// A base-metadata origin, e.g. "Exif.Image.DateTime" read by backend "exiv2".
 struct SourceRef {
-  std::string raw_key;     // neutral raw vocabulary (Exiv2 key syntax; see backend.hpp)
+  std::string base_key;    // neutral base vocabulary (Exiv2 key syntax; see backend.hpp)
   std::string backend;     // backend id that produced it
   std::string container;   // "embedded" | "sidecar" (docs/reconciliation-policy.md)
 
@@ -31,9 +31,9 @@ enum class Resolution {
 // (decision S4a) and are implemented in the core engine, not here.
 struct PropertyValue {
   Value value;                     // canonical value (for `conflict`: the preferred candidate)
-  std::vector<SourceRef> sources;  // every raw origin, never silently dropped
+  std::vector<SourceRef> sources;  // every base origin, never silently dropped
   Resolution resolution{Resolution::single};
-  std::string preferred_source;  // raw_key of the winning source when reconciled/conflict
+  std::string preferred_source;  // base key of the winning source when reconciled/conflict
 
   bool operator==(const PropertyValue&) const = default;
 };
@@ -41,9 +41,9 @@ struct PropertyValue {
 // One group's parsed value for a disagreed property (session 23).
 struct ConflictCandidate {
   Value value;
-  std::vector<SourceRef> sources;  // family lives on raw_key; container is embedded|sidecar
+  std::vector<SourceRef> sources;  // family lives on base_key; container is embedded|sidecar
   std::string family;              // grouping family ("xmp", "iim", "exif", "quicktime", ...)
-  std::string primary_key;         // group's primary raw_key (policy preferred_source)
+  std::string primary_key;         // group's primary base key (policy preferred_source)
 
   bool operator==(const ConflictCandidate&) const = default;
 };
@@ -53,7 +53,7 @@ struct ConflictCandidate {
 struct ConflictEntry {
   std::string property_id;
   std::vector<ConflictCandidate> candidates;
-  std::string preferred_source;  // policy winner's primary raw_key
+  std::string preferred_source;  // policy winner's primary base key
   Resolution resolution{Resolution::conflict};
 
   bool operator==(const ConflictEntry&) const = default;

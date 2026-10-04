@@ -85,7 +85,7 @@ int main() {
     return raw_fail("expected ExifTool process to spawn during fixture reads");
   }
   for (int i = 0; i < 100; ++i) {
-    const auto read = backend->readUnmapped(raw_jpeg("exif-only.jpg"));
+    const auto read = backend->readBase(raw_jpeg("exif-only.jpg"));
     if (!read.ok()) {
       std::fprintf(stderr, "reuse read %d failed: %s\n", i,
                    read.error().message.c_str());
@@ -100,7 +100,7 @@ int main() {
   }
 
   adapter->killChildForTest();
-  const auto after_kill = backend->readUnmapped(raw_jpeg("exif-only.jpg"));
+  const auto after_kill = backend->readBase(raw_jpeg("exif-only.jpg"));
   if (!after_kill.ok()) {
     std::fprintf(stderr, "read after kill failed: %s\n",
                  after_kill.error().message.c_str());
@@ -119,7 +119,7 @@ int main() {
   timeout_config.exiftool_script = hang;
   timeout_config.command_timeout = std::chrono::milliseconds{1500};
   manager.configureExifTool(timeout_config);
-  const auto timed_out = backend->readUnmapped(raw_jpeg("exif-only.jpg"));
+  const auto timed_out = backend->readBase(raw_jpeg("exif-only.jpg"));
   std::error_code ec;
   std::filesystem::remove(hang, ec);
   if (timed_out.ok()) {

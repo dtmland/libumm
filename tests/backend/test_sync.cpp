@@ -69,7 +69,7 @@ std::string sidecar_source_key(const umm::ConflictEntry& entry) {
   for (const umm::ConflictCandidate& candidate : entry.candidates) {
     for (const umm::SourceRef& source : candidate.sources) {
       if (source.container == "sidecar") {
-        return source.raw_key;
+        return source.base_key;
       }
     }
   }

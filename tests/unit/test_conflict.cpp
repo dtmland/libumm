@@ -15,16 +15,16 @@ int fail(const char* message) {
   return 1;
 }
 
-umm::UnmappedEntry entry(std::string family, std::string key, std::string value) {
-  umm::UnmappedEntry out;
+umm::BaseEntry entry(std::string family, std::string key, std::string value) {
+  umm::BaseEntry out;
   out.key.family = std::move(family);
   out.key.key = std::move(key);
   out.value = std::move(value);
   return out;
 }
 
-umm::UnmappedDocument doc(std::initializer_list<umm::UnmappedEntry> entries) {
-  umm::UnmappedDocument document;
+umm::BaseDocument doc(std::initializer_list<umm::BaseEntry> entries) {
+  umm::BaseDocument document;
   document.entries = entries;
   return document;
 }
@@ -41,7 +41,7 @@ const umm::ConflictEntry* find_entry(const std::vector<umm::ConflictEntry>& entr
 
 bool has_source(const umm::PropertyValue& property, std::string_view key) {
   for (const umm::SourceRef& source : property.sources) {
-    if (source.raw_key == key) {
+    if (source.base_key == key) {
       return true;
     }
   }
