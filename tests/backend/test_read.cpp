@@ -37,6 +37,24 @@ const umm::LangAlt* as_lang(const umm::PropertyValue& property) {
 int check_backend_unicode(const std::string& backend_id, const char* folder,
                           const char* ext);
 
+bool location_gps_is(const umm::Metadata& metadata, double lat, double lon) {
+  const auto loc = metadata.locationCreated();
+  const auto* list =
+      loc ? std::get_if<std::vector<umm::Structure>>(&loc->value.data) : nullptr;
+  if (!list || list->empty()) {
+    return false;
+  }
+  const auto la = list->front().find("gpsLatitude");
+  const auto lo = list->front().find("gpsLongitude");
+  if (la == list->front().end() || lo == list->front().end()) {
+    return false;
+  }
+  const auto* lat_n = std::get_if<double>(&la->second.data);
+  const auto* lon_n = std::get_if<double>(&lo->second.data);
+  return lat_n && lon_n && std::fabs(*lat_n - lat) <= 1e-4 &&
+         std::fabs(*lon_n - lon) <= 1e-4;
+}
+
 bool has_x_default(const umm::LangAlt& alt, std::string_view expected) {
   const auto it = alt.find("x-default");
   if (it == alt.end()) {
@@ -241,15 +259,15 @@ int check_backend(const std::string& backend_id, const char* folder,
     std::fprintf(stderr, "gps read failed: %s\n", gps.error().message.c_str());
     return 1;
   }
-  const auto gps_value = gps.value().gps();
-  const auto* coord =
-      gps_value ? std::get_if<umm::GpsCoordinate>(&gps_value->value.data)
-                : nullptr;
-  if (!coord || std::fabs(coord->latitude - 37.7749) > 1e-4 ||
-      std::fabs(coord->longitude + 122.4194) > 1e-4) {
+  if (!location_gps_is(gps.value(), 37.7749, -122.4194)) {
     return fail_read("gps coordinate");
   }
-  if (gps.value().locationCreated()) {
+  const auto created = gps.value().locationCreated();
+  const auto* created_list =
+      created ? std::get_if<std::vector<umm::Structure>>(&created->value.data)
+              : nullptr;
+  if (created_list && !created_list->empty() &&
+      created_list->front().contains("city")) {
     return fail_read("gps fixture must not map named place to locationCreated");
   }
   const auto gps_city = gps.value().get("iptc.photo.cityLegacy");
@@ -322,14 +340,10 @@ int check_png_backend(const std::string& backend_id) {
                  gps.error().message.c_str());
     return 1;
   }
-  const auto gps_value = gps.value().gps();
-  const auto* coord =
-      gps_value ? std::get_if<umm::GpsCoordinate>(&gps_value->value.data)
-                : nullptr;
-  if (!coord || std::fabs(coord->latitude - 37.7749) > 1e-4 ||
-      std::fabs(coord->longitude + 122.4194) > 1e-4) {
+  if (!location_gps_is(gps.value(), 37.7749, -122.4194)) {
     return fail_read("png gps coordinate");
   }
+  const auto gps_value = gps.value().locationCreated();
   bool saw_xmp = false;
   bool saw_exif = false;
   for (const umm::SourceRef& source : gps_value->sources) {
@@ -505,12 +519,7 @@ int check_avif_backend(const std::string& backend_id) {
                  gps.error().message.c_str());
     return 1;
   }
-  const auto gps_value = gps.value().gps();
-  const auto* coord =
-      gps_value ? std::get_if<umm::GpsCoordinate>(&gps_value->value.data)
-                : nullptr;
-  if (!coord || std::fabs(coord->latitude - 37.7749) > 1e-4 ||
-      std::fabs(coord->longitude + 122.4194) > 1e-4) {
+  if (!location_gps_is(gps.value(), 37.7749, -122.4194)) {
     return fail_read("avif gps coordinate");
   }
   return 0;
@@ -701,13 +710,9 @@ int check_video_backend() {
                  gps.error().message.c_str());
     return 1;
   }
-  const auto gps_value = gps.value().gps();
-  const auto* coord =
-      gps_value ? std::get_if<umm::GpsCoordinate>(&gps_value->value.data)
-                : nullptr;
-  if (!coord || std::fabs(coord->latitude - 37.7749) > 1e-4 ||
-      std::fabs(coord->longitude + 122.4194) > 1e-4) {
-    return fail_read("video gps coordinate");
+  if (gps.value().locationCreated() ||
+      gps.value().get("iptc.video.locationShot")) {
+    return fail_read("video gps fixture must not fill locationShot from XMP-exif");
   }
 
   const auto conflicting =

@@ -21,7 +21,6 @@ enum class Datatype {
   boolean,
   rational,
   date_time,
-  gps_coordinate,
   structure,
   structure_list,
 };

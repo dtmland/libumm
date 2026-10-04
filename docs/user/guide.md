@@ -44,33 +44,12 @@ Properties are addressed by stable registry ids:
 
 - `iptc.photo.*` — IPTC Photo Metadata (Core + Extension)
 - `iptc.video.*` — IPTC Video Metadata Hub
-- `exif.gps.position` — well-known GPS coordinate value (EXIF domain) until session 48
 
 `umm::read` reconciles every registry id for the file's domain. The registry
 (`umm::Registry`) is generated from the vendored IPTC Technical References in `registry/`;
 ids, definitions, and XMP/IIM/EXIF/QuickTime mappings are queryable at runtime.
-
-## The most common properties
-
-These have typed convenience accessors on `umm::Metadata` (generic `get`/`set` by id works
-for every property):
-
-| Property id | Accessor | Meaning |
-|---|---|---|
-| `iptc.photo.creator` | `creator()` / `setCreator` | Who made the image |
-| `iptc.photo.title` | `get`/`set` | Shorthand reference / title |
-| `iptc.photo.headline` | `headline()` / `setHeadline` | Brief synopsis |
-| `iptc.photo.description` | `description()` / `setDescription` | Caption / description |
-| `iptc.photo.keywords` | `keywords()` / `setKeywords` | Keywords |
-| `iptc.photo.dateCreated` | `dateCreated()` / `setDateCreated` | When the scene was captured |
-| `iptc.photo.copyrightNotice` | `copyrightNotice()` / `setCopyrightNotice` | Copyright notice |
-| `iptc.photo.creditLine` | `creditLine()` / `setCreditLine` | Credit line |
-| `exif.gps.position` | `gps()` / `setGps` | GPS coordinates (latitude/longitude/altitude) |
-| `iptc.photo.locationCreated` | `locationCreated()` / `setLocationCreated` | Named place where the image was created |
-
-GPS coordinates and named place are **separate** properties with different backend support
-until session 48; see [docs/supported-types.md §3](../supported-types.md#3-location-metadata-gps-and-named-place)
-and [Location and GPS](#location-and-gps) below.
+Typed convenience accessors cover the cross-media concepts (and photo `rating`);
+generic `get`/`set` by id works for every property.
 
 `dateCreated` is when the scene was captured. Digitized-time (`DateTimeDigitized` /
 CreateDate) and file-modify time (`Exif.Image.DateTime` / ModifyDate) are different
@@ -89,8 +68,11 @@ GPS fields on the struct are numbers (decimal degrees, WGS 84; west/south negati
 Reads accept XMP `DDD,MM.mmmmmmH`, decimal, and hemisphere-suffixed strings; writes
 use decimal with a hemisphere suffix so brace-encoded structs stay comma-safe.
 Equivalence uses 1e-5° and 0.5 m. `gpsAltitudeRef` is 0 (above WGS 84) or 1
-(below). Camera EXIF GPS stays `exif.gps.position` until session 48; it is not
-copied onto Location Created.
+(below). Camera EXIF GPS IFD and top-level XMP-exif GPS are representations of
+`locationCreated[0]` GPS on photos (EXIF > XMP-exif > struct). A city-only
+Location Created merges GPS onto the same `[0]` entry. Video QuickTime GPS is
+not a `locationShot` representation; upcast `capturePosition` to fill
+`locationShot[0]` GPS, and default video writes downcast it back.
 
 **Created versus Shown.** Location Created is where the camera was.
 Location Shown is what the picture depicts. They are independent lists.
@@ -147,8 +129,8 @@ property id. Getters probe `iptc.photo.*` then `iptc.video.*` and do not need
 - `MediaDomain::unknown` (the default) writes the photo id — Phase 1 setter behavior.
 - `MediaDomain::photo` / `MediaDomain::video` select that domain on set.
 - `umm::read` sets the domain from the sniffed file type (JPEG → photo, MP4/MOV → video).
-- Full registry ids stay reachable via `get`/`set`. `gps()` is already cross-media via
-  well-known `exif.gps.position` (not an IPTC registry id).
+- Full registry ids stay reachable via `get`/`set`. Camera GPS is
+  `locationCreated()` / `locationShot` GPS fields, not a separate property.
 - `objectShown` is **deferred**: ArtworkOrObject ↔ Entity would keep only `title`↔`name`.
 
 ### Domain and transposition

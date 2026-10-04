@@ -4,6 +4,17 @@ Pre-1.0 (`0.y.z`): the C++ ABI is not stable. See [docs/abi-policy.md](../abi-po
 
 ## Unreleased
 
+### Session 48 — GPS as Location GPS
+
+Removed the Phase 1 well-known id `exif.gps.position`, `Metadata::gps()` /
+`setGps()`, and `Datatype::gps_coordinate`. `GpsCoordinate` remains in
+`value.hpp` for track matching. Photo camera GPS (EXIF IFD and top-level
+XMP-exif) is a representation of `iptc.photo.locationCreated[0]` GPS
+(precedence EXIF > XMP-exif > struct). Video QuickTime GPS stays the
+`capturePosition` cast, not `locationShot`. Geotag write-back merges GPS
+into `locationCreated[0]` (photo) or `locationShot[0]` (video). Rebuild
+consumers; this is a pre-1.0 source break.
+
 ### Session 47 — Cast engine
 
 `umm::cast` evaluates or applies the first rule set (`registry/casts/`).
@@ -24,8 +35,8 @@ structures, including GPS fields (`gpsLatitude` / `gpsLongitude` / `gpsAltitude`
 `gpsAltitudeRef`) as numbers. Write-sync emits XMP `LocationCreated` /
 `LocationShown`, not photoshop/IIM city. Legacy `cityLegacy` /
 `provinceOrStateLegacy` / `countryLegacy` no longer read or write as
-`locationCreated` (C4b). Camera EXIF GPS remains `exif.gps.position` until
-session 48. A side cast from legacy fields to Location Shown is session 47.
+`locationCreated` (C4b). Camera EXIF GPS is session 48 (`locationCreated[0]`).
+A side cast from legacy fields to Location Shown is session 47.
 
 ### Session 44 — Full read coverage
 

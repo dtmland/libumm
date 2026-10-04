@@ -197,29 +197,13 @@ offset when known), and IIM DateCreated+TimeCreated. Do not invent an offset.
 Single representation in Phase 1. Other rating tags remain unmapped.
 **Write-sync:** `Xmp.xmp.Rating` only.
 
-### `exif.gps.position` (GPS coordinate)
-
-Well-known Phase 1 id until an EXIF-domain registry exists (session 08).
-
-| Family | Base keys | Origin |
-| --- | --- | --- |
-| EXIF | `Exif.GPSInfo.GPSLatitude` + `GPSLatitudeRef` + `GPSLongitude` + `GPSLongitudeRef`; optional `GPSAltitude` + `GPSAltitudeRef`; optional GPS date/time | IPTC-MG GPS tags; EXIF 2.32 GPS IFD |
-| XMP | `Xmp.exif.GPSLatitude` / `GPSLongitude` / optional `GPSAltitude` | IPTC-MG / EXIF XMP |
-
-- Decimal degrees, WGS 84; west/south negative. Parse decimal, `deg/min/sec`,
-  and EXIF rational triplets. Altitude ref 1 / “Below Sea Level” negates altitude.
-- Equivalence: latitude/longitude within `1e-5` degrees; altitude within `0.5 m`
-  when both present; missing altitude/time is not a conflict (prefix rule).
-- Disagreement: `reconciled`, **EXIF GPS IFD > XMP-exif** (GPS is native EXIF;
-  XMP is a projection).
-- Named place is **not** this property (supported-types.md §3).
-- **Write-sync:** EXIF GPS IFD plus XMP-exif lat/lon (and altitude when set).
-
 ### `iptc.photo.locationCreated` (structure list)
 
-| Family | Base keys | Origin |
-| --- | --- | --- |
-| XMP | `Xmp.Iptc4xmpExt.LocationCreated` | IPTC-TR Extension LocationCreated |
+| Family | Rank | Base keys | Origin |
+| --- | --- | --- | --- |
+| EXIF | 0 | `Exif.GPSInfo.GPSLatitude` + `GPSLatitudeRef` + `GPSLongitude` + `GPSLongitudeRef`; optional `GPSAltitude` + `GPSAltitudeRef` | IPTC-MG GPS tags; EXIF 2.32 GPS IFD; C8 representation of `[0]` GPS |
+| XMP-exif | 1 | `Xmp.exif.GPSLatitude` / `GPSLongitude` / optional `GPSAltitude` | IPTC-MG / EXIF XMP; C8 |
+| XMP-ext | 2 | `Xmp.Iptc4xmpExt.LocationCreated` | IPTC-TR Extension LocationCreated |
 
 The value is a list of IPTC `Location` structures with TR fields `name`,
 `identifiers`, `sublocation`, `city`, `provinceState`, `countryName`,
@@ -229,15 +213,22 @@ hemisphere) are stored as numbers; write-sync emits decimal plus hemisphere.
 Equivalence for GPS fields uses 1e-5° and 0.5 m; other shared fields
 compare after trim; extra fields on one side are more complete, not a conflict.
 
+Camera EXIF GPS IFD and top-level XMP-exif GPS wrap as a one-entry list whose
+only fields are GPS (signed lat/lon; altitude as magnitude plus `gpsAltitudeRef`
+0/1). They merge onto `locationCreated[0]` when that entry has no overlapping
+fields (H3: never append a second entry for GPS-only). Disagreement on GPS
+fields is `reconciled` with **EXIF > XMP-exif > struct** (GPS is native EXIF;
+XMP-exif vs struct is cross-family, not same-tier `conflict`). GPS date/time
+and `GPSImgDirection` stay unmapped (H20).
+
 `photoshop:City` / `State` / `Country` and IIM `2:90` / `2:95` / `2:101` are
 **not** representations of this property. They belong to `cityLegacy`,
 `provinceOrStateLegacy`, and `countryLegacy` (C4b). A side cast onto Location
-Shown is `umm::cast` group `locationShownLegacy`. EXIF GPS IFD / top-level XMP-exif GPS stay
-`exif.gps.position` until session 48.
+Shown is `umm::cast` group `locationShownLegacy`.
 
-- Disagreement: `reconciled` among LocationCreated XMP groups (rank 0).
-- **Write-sync:** XMP LocationCreated only (table-driven struct encoding). Does
-  not write photoshop or IIM city/state/country.
+- **Write-sync:** XMP LocationCreated (table-driven struct encoding) plus EXIF
+  GPS IFD and XMP-exif GPS when `[0]` has GPS fields. Does not write photoshop
+  or IIM city/state/country.
 
 ### `iptc.photo.locationShownInTheImage` (structure list)
 
@@ -324,25 +315,18 @@ MP4/MOV ExifTool rows expose XMP plus `container_gps` (QuickTime); requesting
 `backend: "exiv2"` is `unsupported_capability`. Sidecar-only writes keep XMP
 only, as for stills.
 
-### `exif.gps.position` on video
+### `iptc.video.locationShot` GPS
 
-| Family | Base keys |
-| --- | --- |
-| XMP | `Xmp.exif.GPSLatitude` / `GPSLongitude` / optional altitude |
+`locationShot` is the video Location list. Its GPS fields come from the XMP
+LocationCreated struct (same codec as photo). Top-level `Xmp.exif.GPS*` on a
+video file is **not** a representation (C8). QuickTime Keys `location.ISO6709`
+and UserData `GPSCoordinates` are **not** representations of `locationShot`
+GPS (C7); they are the `capturePosition` cast group. Upcast to fill
+`locationShot[0]` GPS; default `umm::write` on video downcasts
+`capturePosition` when `[0]` has GPS.
 
-QuickTime Keys `location.ISO6709` and UserData `GPSCoordinates` are **not**
-representations of `exif.gps.position` or of `locationShot` GPS (C7). They are
-the `capturePosition` cast group. `setGps` writes XMP-exif GPS (and EXIF GPS
-when the storage decision lists EXIF); it does not write QuickTime GPS.
-Default `umm::write` on video downcasts `capturePosition` when
-`locationShot[0]` has GPS.
-
-Equivalence for XMP GPS uses the same degree/altitude tolerances as stills.
-
-**Write-sync:** XMP-exif lat/lon (and altitude when set). EXIF GPS IFD is also
-produced by the shared GPS writer and is dropped when the storage decision
-does not list EXIF (MP4/MOV). QuickTime GPS is written only by the
-`capturePosition` downcast.
+**Write-sync:** XMP LocationCreated struct only. QuickTime GPS is written only
+by the `capturePosition` downcast.
 
 ### R3 (per-property dispatch)
 

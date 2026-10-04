@@ -6,7 +6,6 @@
 #include <utility>
 #include <variant>
 
-#include "core/property_ids.hpp"
 #include "core/transpose.hpp"
 #include "cross_media_accessors.hpp"
 #include "umm/registry.hpp"
@@ -14,12 +13,7 @@
 namespace umm {
 namespace {
 
-using internal::kGps;
-
 std::optional<Datatype> datatypeFor(std::string_view property_id) {
-  if (property_id == kGps) {
-    return Datatype::gps_coordinate;
-  }
   if (const auto def = registry().find(property_id)) {
     return def->datatype;
   }
@@ -44,8 +38,6 @@ bool matchesDatatype(Datatype datatype, const Value& value) {
       return std::holds_alternative<Rational>(value.data);
     case Datatype::date_time:
       return std::holds_alternative<DateTime>(value.data);
-    case Datatype::gps_coordinate:
-      return std::holds_alternative<GpsCoordinate>(value.data);
     case Datatype::structure:
       return std::holds_alternative<Structure>(value.data);
     case Datatype::structure_list:
@@ -422,8 +414,6 @@ std::optional<PropertyValue> Metadata::licensor() const {
   return getConcept("licensor");
 }
 
-std::optional<PropertyValue> Metadata::gps() const { return get(kGps); }
-
 std::optional<PropertyValue> Metadata::locationCreated() const {
   return getConcept("locationCreated");
 }
@@ -579,10 +569,6 @@ Result<void> Metadata::setCopyrightOwner(std::vector<Structure> owners) {
 
 Result<void> Metadata::setLicensor(std::vector<Structure> licensors) {
   return setConcept("licensor", makeValue(std::move(licensors)));
-}
-
-Result<void> Metadata::setGps(GpsCoordinate position) {
-  return set(kGps, makeValue(position));
 }
 
 Result<void> Metadata::setLocationCreated(std::vector<Structure> locations) {

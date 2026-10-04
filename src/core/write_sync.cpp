@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstdint>
 #include <iomanip>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -286,25 +287,72 @@ void sync_date(BaseChanges& changes, const Value& value) {
   add(changes, "Iptc", "Iptc.Application2.TimeCreated", format_iim_time(*dt));
 }
 
-void sync_gps(BaseChanges& changes, const Value& value) {
-  const auto* gps = std::get_if<GpsCoordinate>(&value.data);
-  if (!gps) {
-    return;
+std::optional<double> as_gps_number(const Value& value) {
+  if (const auto* d = std::get_if<double>(&value.data)) {
+    return *d;
   }
-  const char lat_ref = gps->latitude < 0 ? 'S' : 'N';
-  const char lon_ref = gps->longitude < 0 ? 'W' : 'E';
+  if (const auto* i = std::get_if<std::int64_t>(&value.data)) {
+    return static_cast<double>(*i);
+  }
+  if (const auto* s = std::get_if<std::string>(&value.data)) {
+    return parse_gps_coord(*s);
+  }
+  return std::nullopt;
+}
+
+std::optional<GpsCoordinate> gps_from_location_value(const Value& value) {
+  const auto* list = std::get_if<std::vector<Structure>>(&value.data);
+  if (!list || list->empty()) {
+    return std::nullopt;
+  }
+  const Structure& fields = list->front();
+  const auto lat = fields.find("gpsLatitude");
+  const auto lon = fields.find("gpsLongitude");
+  if (lat == fields.end() || lon == fields.end()) {
+    return std::nullopt;
+  }
+  const auto latitude = as_gps_number(lat->second);
+  const auto longitude = as_gps_number(lon->second);
+  if (!latitude || !longitude) {
+    return std::nullopt;
+  }
+  GpsCoordinate gps;
+  gps.latitude = *latitude;
+  gps.longitude = *longitude;
+  const auto alt = fields.find("gpsAltitude");
+  if (alt != fields.end()) {
+    if (const auto meters = as_gps_number(alt->second)) {
+      int ref = 0;
+      if (const auto it = fields.find("gpsAltitudeRef"); it != fields.end()) {
+        if (const auto* i = std::get_if<std::int64_t>(&it->second.data)) {
+          ref = static_cast<int>(*i);
+        } else if (const auto* s = std::get_if<std::string>(&it->second.data)) {
+          if (*s == "1") {
+            ref = 1;
+          }
+        }
+      }
+      gps.altitude_meters = ref == 1 ? -std::fabs(*meters) : std::fabs(*meters);
+    }
+  }
+  return gps;
+}
+
+void sync_gps(BaseChanges& changes, const GpsCoordinate& gps) {
+  const char lat_ref = gps.latitude < 0 ? 'S' : 'N';
+  const char lon_ref = gps.longitude < 0 ? 'W' : 'E';
   add(changes, "Exif", "Exif.GPSInfo.GPSLatitude",
-      format_gps_number(std::fabs(gps->latitude)), "decimal");
+      format_gps_number(std::fabs(gps.latitude)), "decimal");
   add(changes, "Exif", "Exif.GPSInfo.GPSLatitudeRef", std::string(1, lat_ref));
   add(changes, "Exif", "Exif.GPSInfo.GPSLongitude",
-      format_gps_number(std::fabs(gps->longitude)), "decimal");
+      format_gps_number(std::fabs(gps.longitude)), "decimal");
   add(changes, "Exif", "Exif.GPSInfo.GPSLongitudeRef", std::string(1, lon_ref));
   add(changes, "Xmp", "Xmp.exif.GPSLatitude",
-      format_gps_number(std::fabs(gps->latitude)) + lat_ref);
+      format_gps_number(std::fabs(gps.latitude)) + lat_ref);
   add(changes, "Xmp", "Xmp.exif.GPSLongitude",
-      format_gps_number(std::fabs(gps->longitude)) + lon_ref);
-  if (gps->altitude_meters) {
-    const double alt = *gps->altitude_meters;
+      format_gps_number(std::fabs(gps.longitude)) + lon_ref);
+  if (gps.altitude_meters) {
+    const double alt = *gps.altitude_meters;
     add(changes, "Exif", "Exif.GPSInfo.GPSAltitude",
         format_gps_number(std::fabs(alt)), "decimal");
     add(changes, "Exif", "Exif.GPSInfo.GPSAltitudeRef", alt < 0 ? "1" : "0");
@@ -474,7 +522,9 @@ void sync_video_generic(BaseChanges& changes, std::string_view property_id,
       return;
     }
     for (const Structure& item : *list) {
-      if (is_photo_location_id(property_id)) {
+      if (is_photo_location_id(property_id) ||
+          property_id == "iptc.video.locationShot" ||
+          property_id == "iptc.video.locationShown") {
         add(changes, "Xmp", xmp,
             encode_exiftool_struct(encode_location_struct_fields(item)),
             "struct");
@@ -604,8 +654,11 @@ BaseChanges write_sync(const Metadata& metadata) {
       sync_keywords(changes, property->value);
     } else if (id == kDateCreated) {
       sync_date(changes, property->value);
-    } else if (id == kGps) {
-      sync_gps(changes, property->value);
+    } else if (id == kLocation) {
+      sync_video_generic(changes, id, property->value);
+      if (const auto gps = gps_from_location_value(property->value)) {
+        sync_gps(changes, *gps);
+      }
     } else if (id == kVideoCreator) {
       sync_video_creator(changes, property->value);
     } else if (id == kVideoKeywords) {

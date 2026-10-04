@@ -1042,7 +1042,6 @@ std::vector<std::string_view> mapped_video_property_ids() {
       ids.push_back(def.id);
     }
   }
-  ids.push_back(kGps);
   return ids;
 }
 
@@ -1053,7 +1052,6 @@ std::vector<std::string_view> mapped_photo_property_ids() {
       ids.push_back(def.id);
     }
   }
-  ids.push_back(kGps);
   return ids;
 }
 

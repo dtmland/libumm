@@ -29,7 +29,7 @@ These rules were applied throughout and still govern changes:
 - **Write safety:** temp file + atomic rename / `ReplaceFileW` (M3).
 - **Base vs RAW (C18):** file-stored metadata is base metadata (`BaseKey` / `BaseEntry`). Unmapped means not consumed as a representation (`dumpUnmapped()`). RAW means camera image formats only.
 - **Representation versus cast (C7):** a base key is a representation only when IPTC TR, VMH, Mapping Guidelines, MWG, or the XMP of those EXIF tags defines the link. Other links are opt-in casts (`registry/casts/`, `umm::cast`). Movie-header `CreateDate` and QuickTime GPS are casts, not `dateCreated` / GPS representations.
-- **No EXIF canonical domain (C17):** there is no `exif.*` property domain besides the temporary well-known `exif.gps.position` until session 48.
+- **No EXIF canonical domain (C17):** there is no `exif.*` property domain. Camera GPS is Location GPS (`locationCreated[0]` on photos; `capturePosition` on video).
 - End-user ExifTool acquisition is system-native `sh` + PowerShell scripts under
   `tools/get-exiftool/`, not Python (P3, P9).
 
@@ -40,7 +40,7 @@ These rules were applied throughout and still govern changes:
 | **0 — Build & CI foundation** | 01–03 | CMake skeleton and `umm::version()`; backend pins, `pins.sh`, offline Python build-contract tests; three-OS CI matrix with workflow contract tests. |
 | **1 — Backend acquisition** | 04–05 | Checksum-pinned FetchContent for ExifTool (with Perl discovery) and Exiv2 (BMFF on, private link); smoke tests on all OSes. |
 | **2 — Standards registry** | 06–07 | IPTC Photo TR 2025.1 vendored and imported to `registry/iptc-photo/`; codegen (`tools/registry/generate_cpp.py`) produces `umm::Registry` PropertyDef tables in committed `src/generated/`, plus a partial EXIF overlay. |
-| **3 — Core model & fixtures** | 08–09 | `Result`/`Value`/`Metadata` with provenance; rating is `iptc.photo.imageRating`, GPS is well-known `exif.gps.position`; Tier A JPEG+XMP fixture corpus with generator and MANIFEST. |
+| **3 — Core model & fixtures** | 08–09 | `Result`/`Value`/`Metadata` with provenance; rating is `iptc.photo.imageRating`; GPS later became Location GPS (session 48); Tier A JPEG+XMP fixture corpus with generator and MANIFEST. |
 | **4 — Phase 1 read/write (JPEG + XMP sidecar)** | 10–14 | Exiv2 and ExifTool `readRaw` adapters; reconciliation engine (`docs/reconciliation-policy.md`: XMP > IIM > EXIF, GPS EXIF > XMP); `umm::write` through both backends with write-sync and atomic replace; sidecar pairing, merge/conflict, `StoragePolicy`. |
 | **5 — Capabilities** | 15 | `umm::capabilities()` from `registry/capabilities/`; generated `docs/supported-types.md`; live probe drift tests. |
 | **6 — Stills expansion** | 16–19 | Capability-driven write dispatch replaces the JPEG gate (`evaluateStorage`; non-writable types return `unsupported_capability`); TIFF; PNG + WebP (capability-divergent: Exiv2 PNG is EXIF-blind, WebP has no IPTC); DNG read/write and the read-only-RAW sidecar pattern. |

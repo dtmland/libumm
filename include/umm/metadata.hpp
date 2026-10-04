@@ -1,7 +1,6 @@
 // Canonical, reconciled metadata for one asset (media file + any sidecar).
-// Typed accessors follow IPTC Photo Core/Extension ids from the session 06
-// registry; GPS is a well-known Phase 1 value shape until an EXIF-domain
-// registry exists.
+// Typed accessors follow IPTC Photo Core/Extension and Video Metadata Hub
+// ids. Camera GPS is Location GPS on `locationCreated` / `locationShot` (C8).
 #pragma once
 
 #include <map>
@@ -112,16 +111,17 @@ class Metadata {
   std::optional<PropertyValue> aiSystemVersionUsed() const;   // cross-media: iptc.photo.aiSystemVersionUsed / iptc.video.aiSystemVersionUsed
   // Location Created/Shown are full IPTC Location structs, including GPS
   // fields on the struct (C4a). photoshop/IIM city/state/country belong to
-  // the legacy ids, not Location Created (C4b). Camera EXIF GPS remains
-  // exif.gps.position until session 48 (supported-types.md §3).
+  // the legacy ids, not Location Created (C4b). Photo EXIF GPS IFD and
+  // top-level XMP-exif GPS are representations of locationCreated[0] GPS
+  // (C8). Video QuickTime GPS is the capturePosition cast, not a
+  // locationShot representation.
   std::optional<PropertyValue> otherConstraints() const;  // cross-media: lang-alt ↔ string
   std::optional<PropertyValue> digitalSourceType() const;  // cross-media: URI ↔ CvTerm.cvId
   std::optional<PropertyValue> modelReleaseStatus() const;  // cross-media: URI ↔ CvTerm.cvId
   std::optional<PropertyValue> propertyReleaseStatus() const;  // cross-media: URI ↔ CvTerm.cvId
   std::optional<PropertyValue> copyrightOwner() const;  // cross-media: name/identifiers subset; role video-only
   std::optional<PropertyValue> licensor() const;  // cross-media: photo list ↔ video single; >1 on video errors
-  std::optional<PropertyValue> gps() const;              // cross-media: exif.gps.position
-  std::optional<PropertyValue> locationCreated() const;  // full Location struct; video locationShot drops gpsAltitudeRef
+  std::optional<PropertyValue> locationCreated() const;  // full Location struct; camera GPS on [0]; video locationShot drops gpsAltitudeRef
   std::optional<PropertyValue> locationShown() const;    // full Location struct (photo locationShownInTheImage / video locationShown)
   std::optional<PropertyValue> personShown() const;      // cross-media: iptc.photo.personShownInTheImageWithDetails / iptc.video.personShown
   std::optional<PropertyValue> productShown() const;     // cross-media: iptc.photo.productShownInTheImage / iptc.video.productShown
@@ -160,7 +160,6 @@ class Metadata {
   Result<void> setPropertyReleaseStatus(std::string uri);
   Result<void> setCopyrightOwner(std::vector<Structure> owners);
   Result<void> setLicensor(std::vector<Structure> licensors);
-  Result<void> setGps(GpsCoordinate position);
   Result<void> setLocationCreated(std::vector<Structure> locations);
   Result<void> setLocationShown(std::vector<Structure> locations);
   Result<void> setPersonShown(std::vector<Structure> people);

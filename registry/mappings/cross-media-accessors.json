@@ -3,7 +3,7 @@
   "version": "1",
   "source": {
     "document": "docs/analysis/phase-2-video-convenience-accessors.md",
-    "note": "Hand-curated Phase 2 catalog. gps() is already cross-media via well-known id exif.gps.position and is omitted because that id is not in the IPTC registries. audio_ids is reserved empty until an audio registry exists."
+    "note": "Hand-curated Phase 2 catalog. GPS is locationCreated/locationShot struct fields, not a separate accessor. audio_ids is reserved empty until an audio registry exists."
   },
   "accessors": [
     {

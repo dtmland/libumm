@@ -1,6 +1,6 @@
 // GPS track import and correlation (concept.md §16, §29; sessions 25–26).
-// Location write-back uses umm::write and exif.gps.position — no track-specific
-// write path.
+// Location write-back uses umm::write with locationCreated[0] GPS (photo) or
+// locationShot[0] GPS (video) — no track-specific write path.
 #pragma once
 
 #include <cstdint>

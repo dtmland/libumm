@@ -40,10 +40,10 @@ std::string uri_from_structure(const Structure& fields);
 Structure structure_from_uri(std::string_view uri);
 std::string structure_display_name(const Structure& fields);
 
-// Every iptc.video.* registry id plus GPS until session 48 (C5).
+// Every iptc.video.* registry id (C5).
 std::vector<std::string_view> mapped_video_property_ids();
 
-// Every iptc.photo.* registry id plus GPS until session 48 (C5).
+// Every iptc.photo.* registry id (C5).
 std::vector<std::string_view> mapped_photo_property_ids();
 
 }  // namespace umm::internal

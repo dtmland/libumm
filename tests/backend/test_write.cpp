@@ -11,6 +11,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iterator>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <variant>
@@ -659,15 +660,42 @@ int test_roundtrip(const std::string& backend,
   return 0;
 }
 
+umm::Structure location_gps(double lat, double lon,
+                            std::optional<double> alt = {}) {
+  umm::Structure loc;
+  loc.emplace("gpsLatitude", umm::Value{lat});
+  loc.emplace("gpsLongitude", umm::Value{lon});
+  if (alt) {
+    loc.emplace("gpsAltitude", umm::Value{std::fabs(*alt)});
+    loc.emplace("gpsAltitudeRef", umm::Value{std::int64_t{*alt < 0 ? 1 : 0}});
+  }
+  return loc;
+}
+
+bool location_gps_is(const umm::Metadata& metadata, double lat, double lon) {
+  const auto loc = metadata.locationCreated();
+  const auto* list =
+      loc ? std::get_if<std::vector<umm::Structure>>(&loc->value.data) : nullptr;
+  if (!list || list->empty()) {
+    return false;
+  }
+  const auto la = list->front().find("gpsLatitude");
+  const auto lo = list->front().find("gpsLongitude");
+  if (la == list->front().end() || lo == list->front().end()) {
+    return false;
+  }
+  const auto* lat_n = std::get_if<double>(&la->second.data);
+  const auto* lon_n = std::get_if<double>(&lo->second.data);
+  return lat_n && lon_n && std::fabs(*lat_n - lat) <= 1e-4 &&
+         std::fabs(*lon_n - lon) <= 1e-4;
+}
+
 int test_png_gps_write(const std::string& backend) {
   const auto file =
       copy_fixture(raw_stem("png", "minimal", ".png"), backend + "-png-gps.png");
   umm::Metadata metadata;
-  umm::GpsCoordinate gps;
-  gps.latitude = 37.7749;
-  gps.longitude = -122.4194;
-  if (!metadata.setGps(gps).ok()) {
-    return fail("setGps png");
+  if (!metadata.setLocationCreated({location_gps(37.7749, -122.4194)}).ok()) {
+    return fail("setLocationCreated png gps");
   }
   const auto written = umm::write(file, metadata, opts(backend));
   if (!written.ok()) {
@@ -695,7 +723,7 @@ int test_png_gps_write(const std::string& backend) {
     return fail("png gps EXIF write did not follow capability formats");
   }
   const auto read = umm::read(file, ropts(backend));
-  if (!read.ok() || !read.value().gps()) {
+  if (!read.ok() || !location_gps_is(read.value(), 37.7749, -122.4194)) {
     return fail("png gps write was not readable");
   }
   return 0;
@@ -801,11 +829,8 @@ int test_avif_exiftool_embedded() {
   if (!metadata.setHeadline("AVIF headline").ok()) {
     return fail("avif setHeadline");
   }
-  umm::GpsCoordinate gps;
-  gps.latitude = 37.7749;
-  gps.longitude = -122.4194;
-  if (!metadata.setGps(gps).ok()) {
-    return fail("avif setGps");
+  if (!metadata.setLocationCreated({location_gps(37.7749, -122.4194)}).ok()) {
+    return fail("avif setLocationCreated gps");
   }
   const auto written = umm::write(file, metadata, opts_embedded("exiftool"));
   if (!written.ok()) {
@@ -840,7 +865,8 @@ int test_avif_exiftool_embedded() {
     return fail("avif embedded write listed IPTC");
   }
   const auto round = umm::read(file, ropts("exiftool"));
-  if (!round.ok() || !round.value().headline() || !round.value().gps()) {
+  if (!round.ok() || !round.value().headline() ||
+      !location_gps_is(round.value(), 37.7749, -122.4194)) {
     return fail("avif embedded write was not readable via ExifTool");
   }
   umm::Backend* exiv2 = umm::BackendManager::instance().get("exiv2");
@@ -921,12 +947,12 @@ int test_video_container(const char* ext) {
   if (!metadata.set("iptc.video.dateCreated", date_value).ok()) {
     return fail("video set date");
   }
-  umm::GpsCoordinate gps;
-  gps.latitude = 37.7749;
-  gps.longitude = -122.4194;
-  gps.altitude_meters = 10;
-  if (!metadata.setGps(gps).ok()) {
-    return fail("video setGps");
+  if (!metadata
+           .set("iptc.video.locationShot",
+                umm::Value{std::vector<umm::Structure>{
+                    location_gps(37.7749, -122.4194, 10.0)}})
+           .ok()) {
+    return fail("video set locationShot gps");
   }
 
   umm::internal::set_atomic_write_fault_for_test(
@@ -964,7 +990,7 @@ int test_video_container(const char* ext) {
         key.key.find("location.ISO6709") != std::string::npos) {
       saw_gps_qt = true;
     }
-    if (key.key == "Xmp.exif.GPSLatitude") {
+    if (key.key == "Xmp.Iptc4xmpExt.LocationCreated") {
       saw_gps_xmp = true;
     }
     if (key.family == "Exif") {
@@ -974,8 +1000,8 @@ int test_video_container(const char* ext) {
   if (!saw_title_xmp || !saw_title_qt || !saw_gps_xmp) {
     return fail("video WriteReport missing QuickTime/XMP");
   }
-  if (saw_gps_qt) {
-    return fail("setGps must not write QuickTime GPS without locationShot downcast");
+  if (!saw_gps_qt) {
+    return fail("locationShot GPS must downcast QuickTime GPS by default");
   }
   if (saw_exif || decision_has_format(written.value().decision, "EXIF")) {
     return fail("video write listed EXIF");
@@ -1019,12 +1045,7 @@ int test_video_container(const char* ext) {
   if (!dt || dt->year != 2020 || dt->month != 1 || dt->day != 2) {
     return fail("video date round-trip");
   }
-  const auto gps_value = round.value().gps();
-  const auto* coord =
-      gps_value ? std::get_if<umm::GpsCoordinate>(&gps_value->value.data)
-                : nullptr;
-  if (!coord || std::fabs(coord->latitude - 37.7749) > 1e-4 ||
-      std::fabs(coord->longitude + 122.4194) > 1e-4) {
+  if (!location_gps_is(round.value(), 37.7749, -122.4194)) {
     return fail("video gps round-trip");
   }
 
@@ -1032,7 +1053,7 @@ int test_video_container(const char* ext) {
   if (exiv2 && exiv2->availability().available) {
     const auto exiv2_read = umm::read(file, ropts("exiv2"));
     if (exiv2_read.ok()) {
-      (void)exiv2_read.value().gps();
+      (void)exiv2_read.value().locationCreated();
     }
   }
 
@@ -1399,7 +1420,7 @@ bool exiftool_lacks_tag(std::string_view id) {
 int test_video_mapped_container(const char* ext) {
   int index = 0;
   for (std::string_view id : umm::internal::mapped_video_property_ids()) {
-    if (id == "exif.gps.position" || exiftool_lacks_tag(id)) {
+    if (exiftool_lacks_tag(id)) {
       continue;
     }
     const auto found = umm::registry().find(id);
@@ -1456,9 +1477,6 @@ int test_video_mapped_roundtrip() {
 int test_photo_mapped_roundtrip(const std::string& backend) {
   int index = 0;
   for (std::string_view id : umm::internal::mapped_photo_property_ids()) {
-    if (id == "exif.gps.position") {
-      continue;
-    }
     const auto found = umm::registry().find(id);
     if (!found) {
       std::fprintf(stderr, "mapped photo missing registry %s\n",

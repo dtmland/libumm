@@ -149,12 +149,15 @@ int main() {
            .ok()) {
     return fail("set video locationShot");
   }
-  umm::GpsCoordinate gps;
-  gps.latitude = 37.7749;
-  gps.longitude = -122.4194;
-  gps.altitude_meters = 10;
-  if (!video.setGps(gps).ok()) {
-    return fail("set video gps");
+  loc.emplace("gpsLatitude", umm::Value{37.7749});
+  loc.emplace("gpsLongitude", umm::Value{-122.4194});
+  loc.emplace("gpsAltitude", umm::Value{10.0});
+  loc.emplace("gpsAltitudeRef", umm::Value{std::int64_t{0}});
+  if (!video
+           .set("iptc.video.locationShot",
+                umm::Value{std::vector<umm::Structure>{loc}})
+           .ok()) {
+    return fail("set video locationShot gps");
   }
   const umm::BaseChanges vchanges = umm::internal::write_sync(video);
   if (!has_value(vchanges, "Xmp.dc.title", "Video Title") ||
@@ -172,7 +175,7 @@ int main() {
                  "2020-01-02T03:04:05") ||
       !has_value(vchanges, "QuickTime.Keys.CreationDate",
                  "2020-01-02T03:04:05") ||
-      !has_value(vchanges, "Xmp.exif.GPSLatitude", "37.7749") ||
+      !has_value(vchanges, "Xmp.Iptc4xmpExt.LocationCreated", "37.7749") ||
       !has_value(vchanges, "Xmp.photoshop.Credit", "Video credit") ||
       !has_value(vchanges, "Xmp.Iptc4xmpExt.Headline", "Video headline") ||
       !has_value(vchanges, "Xmp.Iptc4xmpExt.LocationCreated", "Paris")) {
@@ -181,7 +184,10 @@ int main() {
   if (count_key(vchanges, "QuickTime.GPSCoordinates") != 0 ||
       count_key(vchanges, "QuickTime.Keys.GPSCoordinates") != 0 ||
       count_key(vchanges, "QuickTime.Keys.location.ISO6709") != 0) {
-    return fail("setGps must not write QuickTime GPS (C7 downcast)");
+    return fail("locationShot GPS must not write QuickTime GPS (C7 downcast)");
+  }
+  if (count_key(vchanges, "Xmp.exif.GPSLatitude") != 0) {
+    return fail("video locationShot must not write XMP-exif GPS");
   }
 
   umm::Metadata photo_location;
@@ -205,7 +211,9 @@ int main() {
   const umm::BaseChanges lchanges = umm::internal::write_sync(photo_location);
   if (!has_value(lchanges, "Xmp.Iptc4xmpExt.LocationCreated", "Paris") ||
       !has_value(lchanges, "Xmp.Iptc4xmpExt.LocationCreated", "Studio") ||
-      !has_value(lchanges, "Xmp.Iptc4xmpExt.LocationCreated", "GPSLatitude")) {
+      !has_value(lchanges, "Xmp.Iptc4xmpExt.LocationCreated", "GPSLatitude") ||
+      !has_value(lchanges, "Exif.GPSInfo.GPSLatitude", "37.7749") ||
+      !has_value(lchanges, "Xmp.exif.GPSLatitude", "37.7749")) {
     return fail("locationCreated writes XMP LocationCreated");
   }
   if (count_key(lchanges, "Xmp.photoshop.City") != 0 ||
