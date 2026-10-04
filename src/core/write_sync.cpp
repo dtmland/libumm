@@ -464,7 +464,9 @@ void sync_video_generic(BaseChanges& changes, std::string_view property_id,
     if (!fields || fields->empty()) {
       return;
     }
-    if (structure_is_uri_like(*fields)) {
+    const std::string_view xmp_local =
+        xmp_local_name(def->representations.xmp_property);
+    if (structure_is_uri_like(*fields) && xmp_local == "DigitalSourceType") {
       add(changes, "Xmp", xmp, uri_from_structure(*fields));
     } else {
       add(changes, "Xmp", xmp,

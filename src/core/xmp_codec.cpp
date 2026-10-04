@@ -613,6 +613,7 @@ std::vector<std::string_view> mapped_video_property_ids() {
       ids.push_back(def.id);
     }
   }
+  ids.push_back(kGps);
   return ids;
 }
 

@@ -54,8 +54,72 @@ std::string_view trim(std::string_view text) {
 
 std::string trimmed(std::string_view text) { return std::string(trim(text)); }
 
+bool xmp_local_matches(std::string_view entry_key, std::string_view base) {
+  constexpr std::string_view kXmp = "Xmp.";
+  if (entry_key.size() < kXmp.size() || base.size() < kXmp.size() ||
+      entry_key.substr(0, kXmp.size()) != kXmp ||
+      base.substr(0, kXmp.size()) != kXmp) {
+    return false;
+  }
+  const auto entry_dot = entry_key.find('.', kXmp.size());
+  const auto base_dot = base.find('.', kXmp.size());
+  if (entry_dot == std::string_view::npos || base_dot == std::string_view::npos) {
+    return false;
+  }
+  if (entry_key.substr(0, entry_dot) != base.substr(0, base_dot)) {
+    return false;
+  }
+  std::string_view entry_local = entry_key.substr(entry_dot + 1);
+  const std::string_view base_local = base.substr(base_dot + 1);
+  const auto cut = entry_local.find_first_of("[/");
+  const std::size_t local_n =
+      cut == std::string_view::npos ? entry_local.size() : cut;
+  entry_local = entry_local.substr(0, local_n);
+  if (ascii_lower(entry_local) != ascii_lower(base_local)) {
+    return false;
+  }
+  if (cut == std::string_view::npos) {
+    return true;
+  }
+  const char next = entry_key[entry_dot + 1 + local_n];
+  return next == '[' || next == '/';
+}
+
+bool xmp_flattened_field(std::string_view entry_key, std::string_view base) {
+  constexpr std::string_view kXmp = "Xmp.";
+  if (entry_key.size() < kXmp.size() || base.size() < kXmp.size() ||
+      entry_key.substr(0, kXmp.size()) != kXmp ||
+      base.substr(0, kXmp.size()) != kXmp) {
+    return false;
+  }
+  const auto entry_dot = entry_key.find('.', kXmp.size());
+  const auto base_dot = base.find('.', kXmp.size());
+  if (entry_dot == std::string_view::npos || base_dot == std::string_view::npos) {
+    return false;
+  }
+  if (entry_key.substr(0, entry_dot) != base.substr(0, base_dot)) {
+    return false;
+  }
+  std::string_view entry_local = entry_key.substr(entry_dot + 1);
+  const std::string_view base_local = base.substr(base_dot + 1);
+  const auto cut = entry_local.find_first_of("[/");
+  if (cut != std::string_view::npos) {
+    entry_local = entry_local.substr(0, cut);
+  }
+  const std::string entry_l = ascii_lower(entry_local);
+  const std::string base_l = ascii_lower(base_local);
+  if (entry_l.size() <= base_l.size() || entry_l.rfind(base_l, 0) != 0) {
+    return false;
+  }
+  const char next = entry_local[base_local.size()];
+  return next >= 'A' && next <= 'Z';
+}
+
 bool key_belongs(std::string_view entry_key, std::string_view base) {
   if (entry_key == base) {
+    return true;
+  }
+  if (xmp_local_matches(entry_key, base)) {
     return true;
   }
   if (entry_key.size() <= base.size()) {
@@ -862,6 +926,18 @@ std::vector<const BaseEntry*> matching(const BaseDocument& document,
   return out;
 }
 
+std::vector<const BaseEntry*> matching_struct(const BaseDocument& document,
+                                             std::string_view base) {
+  std::vector<const BaseEntry*> out;
+  for (const BaseEntry& entry : document.entries) {
+    if (key_belongs(entry.key.key, base) ||
+        xmp_flattened_field(entry.key.key, base)) {
+      out.push_back(&entry);
+    }
+  }
+  return out;
+}
+
 std::optional<std::string> first_value(const BaseDocument& document,
                                        std::string_view base) {
   for (const BaseEntry* entry : matching(document, base)) {
@@ -1371,7 +1447,7 @@ void put_location_field(Structure& fields, std::string_view name,
 std::optional<Group> structured_location(const BaseDocument& document,
                                          std::string_view backend,
                                          std::string_view base) {
-  const auto entries = matching(document, base);
+  const auto entries = matching_struct(document, base);
   if (entries.empty()) {
     return std::nullopt;
   }
@@ -1765,7 +1841,7 @@ std::optional<Group> video_structure_group(const BaseDocument& document,
                                            std::string_view backend,
                                            std::string_view base,
                                            std::string family, int rank) {
-  const auto entries = matching(document, base);
+  const auto entries = matching_struct(document, base);
   if (entries.empty()) {
     return std::nullopt;
   }
@@ -1808,7 +1884,7 @@ std::optional<Group> video_structure_group(const BaseDocument& document,
 std::optional<Group> video_structure_list_group(
     const BaseDocument& document, std::string_view backend,
     std::string_view base, std::string family, int rank, bool names_as_entities) {
-  const auto entries = matching(document, base);
+  const auto entries = matching_struct(document, base);
   if (entries.empty()) {
     return std::nullopt;
   }

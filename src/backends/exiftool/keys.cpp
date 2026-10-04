@@ -143,6 +143,8 @@ std::optional<BaseKey> map_exiftool_tag(std::string_view json_key) {
       // the IPTC Photo Metadata Technical Reference.
       if (name == "ShownEvent") {
         name = "EventExt";
+      } else if (name == "Snapshot") {
+        name = "SnapshotLink";
       } else {
         for (const ExifToolXmpTagAlias& row : kExifToolXmpTagAliases) {
           if (row.et_tag == name) {
@@ -341,6 +343,8 @@ std::optional<std::string> exiftool_tag_for_base_key(std::string_view base_key) 
       // the IPTC Photo Metadata Technical Reference.
       if (tag == "EventExt") {
         tag = "ShownEvent";
+      } else if (tag == "SnapshotLink") {
+        tag = "Snapshot";
       } else {
         for (const ExifToolXmpTagAlias& row : kExifToolXmpTagAliases) {
           if (row.xmp_local == tag) {
@@ -360,14 +364,25 @@ std::string_view exiftool_assign_operator(std::string_view tag,
   if (tag.rfind("XMP-", 0) != 0) {
     return "=";
   }
-  // PLUS controlled-vocabulary tags reject URIs unless written raw.
-  if (tag.rfind("XMP-plus:", 0) == 0) {
+  // PLUS and xmpDM controlled-vocabulary tags reject values unless written
+  // raw (field order, channel type, bitrate mode).
+  if (tag.rfind("XMP-plus:", 0) == 0 || tag.rfind("XMP-xmpDM:", 0) == 0) {
     return "#=";
   }
   if (tag.find("DigitalSourceType") != std::string_view::npos) {
     return "#=";
   }
   if (value.find("://") != std::string_view::npos) {
+    return "#=";
+  }
+  // PrintConv on *Type / *Mode / *Status (audioChannelType, bitRateMode)
+  // rejects values that are not in the enumerated list.
+  const auto colon = tag.rfind(':');
+  const std::string_view local =
+      colon == std::string_view::npos ? tag : tag.substr(colon + 1);
+  if (local.ends_with("Type") || local.ends_with("Mode") ||
+      local.ends_with("Status") || local.ends_with("Ready") ||
+      local.ends_with("Order")) {
     return "#=";
   }
   return "=";
