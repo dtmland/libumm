@@ -4,6 +4,14 @@ Pre-1.0 (`0.y.z`): the C++ ABI is not stable. See [docs/abi-policy.md](../abi-po
 
 ## Unreleased
 
+### Session 44 — Full read coverage
+
+`umm::read` reconciles every IPTC Photo or Video registry id for the file's domain, not
+only the cross-media accessor map. `dumpUnmapped()` shrinks as those representations are
+consumed. `rating()` / `setRating()` are Tier 1 (`iptc.photo.imageRating` ↔
+`iptc.video.workflowRating`). Photo `dateCreated` no longer treats `Exif.Image.DateTime`
+(ModifyDate) as a candidate; IFD0 `DateTimeOriginal` is accepted (DNG).
+
 ### Session 43 — Base metadata and dump views
 
 Public backend vocabulary is renamed from unmapped/raw to **base** (C18). `Metadata::unmapped()`
@@ -20,9 +28,10 @@ is replaced by `dumpAll()`, `dumpUnmapped()`, and `dumpValue()` (C13).
 | — | `Metadata::dumpUnmapped()` |
 
 `dumpAll()` is every base entry in source order. `dumpUnmapped()` is computed during
-reconcile: entries whose base key was not consumed as a representation. Until session 44
-adds more ids, keys of properties that are not reconciled yet remain in `dumpUnmapped()`.
-This is a pre-1.0 source break; rebuild consumers.
+reconcile: entries whose base key was not consumed as a representation. Session 44
+reconciles every domain registry id, so dumpUnmapped shrinks to leftover companions
+and tags no canonical property consumed. This is a pre-1.0 source break; rebuild
+consumers.
 
 ### Session 45 — Struct-field backend names
 

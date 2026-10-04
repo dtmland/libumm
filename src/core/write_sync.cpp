@@ -297,14 +297,6 @@ void sync_date(BaseChanges& changes, const Value& value) {
   add(changes, "Iptc", "Iptc.Application2.TimeCreated", format_iim_time(*dt));
 }
 
-void sync_rating(BaseChanges& changes, const Value& value) {
-  const auto* rating = std::get_if<double>(&value.data);
-  if (!rating) {
-    return;
-  }
-  add(changes, "Xmp", "Xmp.xmp.Rating", format_real(*rating));
-}
-
 void sync_gps(BaseChanges& changes, const Value& value) {
   const auto* gps = std::get_if<GpsCoordinate>(&value.data);
   if (!gps) {
@@ -435,6 +427,36 @@ void sync_video_generic(BaseChanges& changes, std::string_view property_id,
       }
       add_qt_plain(join_names(*list, ", "));
     }
+    return;
+  }
+  if (def->datatype == Datatype::integer) {
+    const auto* number = std::get_if<std::int64_t>(&value.data);
+    if (!number) {
+      return;
+    }
+    const std::string text = std::to_string(*number);
+    add(changes, "Xmp", xmp, text);
+    add_qt_plain(text);
+    return;
+  }
+  if (def->datatype == Datatype::real) {
+    const auto* number = std::get_if<double>(&value.data);
+    if (!number) {
+      return;
+    }
+    const std::string text = format_real(*number);
+    add(changes, "Xmp", xmp, text);
+    add_qt_plain(text);
+    return;
+  }
+  if (def->datatype == Datatype::boolean) {
+    const auto* flag = std::get_if<bool>(&value.data);
+    if (!flag) {
+      return;
+    }
+    const std::string text = *flag ? "True" : "False";
+    add(changes, "Xmp", xmp, text);
+    add_qt_plain(text);
     return;
   }
   if (def->datatype == Datatype::structure) {
@@ -605,8 +627,6 @@ BaseChanges write_sync(const Metadata& metadata) {
       sync_keywords(changes, property->value);
     } else if (id == kDateCreated) {
       sync_date(changes, property->value);
-    } else if (id == kRating) {
-      sync_rating(changes, property->value);
     } else if (id == kGps) {
       sync_gps(changes, property->value);
     } else if (id == kLocation) {

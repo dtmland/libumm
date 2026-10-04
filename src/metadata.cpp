@@ -15,7 +15,6 @@ namespace umm {
 namespace {
 
 using internal::kGps;
-using internal::kRating;
 
 std::optional<Datatype> datatypeFor(std::string_view property_id) {
   if (property_id == kGps) {
@@ -340,7 +339,7 @@ std::optional<PropertyValue> Metadata::keywords() const {
 }
 
 std::optional<PropertyValue> Metadata::rating() const {
-  return get(kRating);
+  return getConcept("rating");
 }
 
 std::optional<PropertyValue> Metadata::title() const {
@@ -494,7 +493,7 @@ Result<void> Metadata::setKeywords(std::vector<std::string> keywords) {
 }
 
 Result<void> Metadata::setRating(double rating) {
-  return set(kRating, makeValue(rating));
+  return setConcept("rating", makeValue(rating));
 }
 
 Result<void> Metadata::setTitle(LangAlt text) {

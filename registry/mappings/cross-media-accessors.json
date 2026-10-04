@@ -97,6 +97,24 @@
       "notes": ""
     },
     {
+      "concept": "rating",
+      "photo_ids": [
+        "iptc.photo.imageRating"
+      ],
+      "video_ids": [
+        "iptc.video.workflowRating"
+      ],
+      "audio_ids": [],
+      "tier": 1,
+      "transposition": "passthrough",
+      "photo_datatype": "number",
+      "photo_cardinality": "one",
+      "video_datatype": "number",
+      "video_cardinality": "one",
+      "deferred": false,
+      "notes": ""
+    },
+    {
       "concept": "altTextAccessibility",
       "photo_ids": [
         "iptc.photo.altTextAccessibility"

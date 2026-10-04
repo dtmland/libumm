@@ -56,10 +56,11 @@ class Metadata {
   // mediaDomain(). Cross-media setters resolve through the generated
   // CrossMediaAccessorDef table; unknown domain writes the photo id (Phase 1).
   //
-  // rating() stays photo-only. Tier 2/3 setters transpose photo-native values
-  // into the domain shape; getters return the stored domain value except
-  // shownEvent(), which assembles name+identifiers from the photo pair or the
-  // video Entity list. objectShown is deferred (too lossy: title↔name only).
+  // rating() is Tier 1 (iptc.photo.imageRating ↔ iptc.video.workflowRating).
+  // Tier 2/3 setters transpose photo-native values into the domain shape;
+  // getters return the stored domain value except shownEvent(), which
+  // assembles name+identifiers from the photo pair or the video Entity list.
+  // objectShown is deferred (too lossy: title↔name only).
   std::optional<PropertyValue> creator() const;          // cross-media: names ↔ EntityWRole.name
   std::optional<PropertyValue> description() const;      // cross-media: iptc.photo.description / iptc.video.description
   std::optional<PropertyValue> headline() const;         // cross-media: string ↔ x-default lang-alt
@@ -67,7 +68,7 @@ class Metadata {
   std::optional<PropertyValue> copyrightNotice() const;  // cross-media: iptc.photo.copyrightNotice / iptc.video.copyrightNotice
   std::optional<PropertyValue> creditLine() const;       // cross-media: iptc.photo.creditLine / iptc.video.creditLine
   std::optional<PropertyValue> keywords() const;         // cross-media: string list ↔ joined x-default lang-alt
-  std::optional<PropertyValue> rating() const;           // photo-only: iptc.photo.imageRating
+  std::optional<PropertyValue> rating() const;           // cross-media: iptc.photo.imageRating / iptc.video.workflowRating
   std::optional<PropertyValue> title() const;            // cross-media: iptc.photo.title / iptc.video.title
   std::optional<PropertyValue> altTextAccessibility() const;  // cross-media: iptc.photo.altTextAccessibility / iptc.video.altTextAccessibility
   std::optional<PropertyValue> extendedDescriptionAccessibility() const;  // cross-media: iptc.photo.extendedDescriptionAccessibility / iptc.video.extendedDescriptionAccessibility

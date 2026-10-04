@@ -1,8 +1,8 @@
 #include "core/xmp_codec.hpp"
 
 #include "core/property_ids.hpp"
-#include "cross_media_accessors.hpp"
 #include "exiftool/json.hpp"
+#include "property_registry.hpp"
 
 #include <cctype>
 #include <cstdint>
@@ -608,29 +608,21 @@ std::string structure_display_name(const Structure& fields) {
 
 std::vector<std::string_view> mapped_video_property_ids() {
   std::vector<std::string_view> ids;
-  for (const CrossMediaAccessorDef& row : kCrossMediaAccessors) {
-    if (row.deferred) {
-      continue;
-    }
-    for (std::size_t i = 0; i < row.video_id_count; ++i) {
-      ids.push_back(row.video_ids[i]);
+  for (const PropertyDef& def : kProperties) {
+    if (def.id.rfind("iptc.video.", 0) == 0) {
+      ids.push_back(def.id);
     }
   }
-  ids.push_back(kGps);
   return ids;
 }
 
 std::vector<std::string_view> mapped_photo_property_ids() {
   std::vector<std::string_view> ids;
-  for (const CrossMediaAccessorDef& row : kCrossMediaAccessors) {
-    if (row.deferred) {
-      continue;
-    }
-    for (std::size_t i = 0; i < row.photo_id_count; ++i) {
-      ids.push_back(row.photo_ids[i]);
+  for (const PropertyDef& def : kProperties) {
+    if (def.id.rfind("iptc.photo.", 0) == 0) {
+      ids.push_back(def.id);
     }
   }
-  ids.push_back(kRating);
   ids.push_back(kGps);
   return ids;
 }

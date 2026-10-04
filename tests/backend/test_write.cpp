@@ -1094,10 +1094,24 @@ umm::Value sample_video_value(const umm::PropertyDef& def) {
       value.data = when;
       return value;
     }
+    case umm::Datatype::text_list:
+      value.data = std::vector<std::string>{"Shape text"};
+      return value;
+    case umm::Datatype::integer:
+      value.data = std::int64_t{42};
+      return value;
+    case umm::Datatype::real:
+      value.data = 4.0;
+      return value;
+    case umm::Datatype::boolean:
+      value.data = true;
+      return value;
     case umm::Datatype::structure:
     case umm::Datatype::structure_list: {
       umm::Structure fields;
-      if (id_ends(def.id, "digitalSourceType") ||
+      if (def.id == "iptc.photo.locationCreated") {
+        fields.emplace("city", umm::Value{std::string("Shape City")});
+      } else if (id_ends(def.id, "digitalSourceType") ||
           id_ends(def.id, "modelReleaseStatus") ||
           id_ends(def.id, "propertyReleaseStatus") ||
           id_ends(def.id, "genre") ||
@@ -1165,6 +1179,15 @@ bool value_has_text(const umm::Value& value, const std::string& needle) {
   if (const auto* dt = std::get_if<umm::DateTime>(&value.data)) {
     return needle == "2020" && dt->year == 2020;
   }
+  if (const auto* number = std::get_if<std::int64_t>(&value.data)) {
+    return needle == std::to_string(*number);
+  }
+  if (const auto* number = std::get_if<double>(&value.data)) {
+    return needle == "4" && *number == 4.0;
+  }
+  if (const auto* flag = std::get_if<bool>(&value.data)) {
+    return needle == (*flag ? "true" : "false");
+  }
   if (const auto* fields = std::get_if<umm::Structure>(&value.data)) {
     for (const auto& [name, field] : *fields) {
       if (value_has_text(field, needle)) {
@@ -1188,6 +1211,15 @@ bool value_has_text(const umm::Value& value, const std::string& needle) {
 std::string sample_needle(const umm::PropertyDef& def) {
   if (def.datatype == umm::Datatype::date_time) {
     return "2020";
+  }
+  if (def.datatype == umm::Datatype::integer) {
+    return "42";
+  }
+  if (def.datatype == umm::Datatype::real) {
+    return "4";
+  }
+  if (def.datatype == umm::Datatype::boolean) {
+    return "true";
   }
   if (id_ends(def.id, "digitalSourceType") ||
       id_ends(def.id, "modelReleaseStatus") ||
@@ -1270,6 +1302,89 @@ int test_video_mapped_roundtrip() {
     return rc;
   }
   return test_video_mapped_container(".mov");
+}
+
+int test_photo_mapped_roundtrip(const std::string& backend) {
+  int index = 0;
+  for (std::string_view id : umm::internal::mapped_photo_property_ids()) {
+    if (id == "exif.gps.position") {
+      continue;
+    }
+    const auto found = umm::registry().find(id);
+    if (!found) {
+      std::fprintf(stderr, "mapped photo missing registry %s\n",
+                   std::string(id).c_str());
+      return 1;
+    }
+    const umm::PropertyDef& def = *found;
+    const std::string name =
+        backend + "-mapped-" + std::to_string(index++) + ".jpg";
+    const auto file = copy_fixture(raw_stem("jpeg", "minimal", ".jpg"), name);
+    umm::Metadata metadata;
+    if (!metadata.set(std::string(def.id), sample_video_value(def)).ok()) {
+      std::fprintf(stderr, "set %s failed\n", std::string(def.id).c_str());
+      return 1;
+    }
+    const auto written = umm::write(file, metadata, opts(backend));
+    if (!written.ok()) {
+      std::fprintf(stderr, "mapped photo write %s (%s): %s (%s)\n",
+                   std::string(def.id).c_str(), backend.c_str(),
+                   written.error().message.c_str(),
+                   written.error().detail.c_str());
+      return 1;
+    }
+    const auto round = umm::read(file, ropts(backend));
+    if (!round.ok()) {
+      std::fprintf(stderr, "mapped photo read %s (%s): %s\n",
+                   std::string(def.id).c_str(), backend.c_str(),
+                   round.error().message.c_str());
+      return 1;
+    }
+    const auto got = round.value().get(std::string(def.id));
+    if (!got || !value_has_text(got->value, sample_needle(def))) {
+      std::fprintf(stderr, "mapped photo mismatch %s on %s\n",
+                   std::string(def.id).c_str(), backend.c_str());
+      return 1;
+    }
+  }
+  return 0;
+}
+
+int test_dng_ifd0_datetimeoriginal(const std::string& backend) {
+  umm::Backend* adapter = umm::BackendManager::instance().get(backend);
+  if (!adapter || !adapter->availability().available) {
+    return 0;
+  }
+  const auto file = copy_fixture(raw_stem("raw", "minimal", ".dng"),
+                                 backend + "-ifd0-dto.dng");
+  umm::BaseChanges changes;
+  umm::BaseEntry entry;
+  entry.key.family = "Exif";
+  entry.key.key = "Exif.Image.DateTimeOriginal";
+  entry.value = "2020:01:02 03:04:05";
+  changes.upserts.push_back(std::move(entry));
+  const auto written = adapter->writeBase(file, changes);
+  if (!written.ok()) {
+    std::fprintf(stderr, "DNG IFD0 writeBase (%s): %s (%s)\n", backend.c_str(),
+                 written.error().message.c_str(),
+                 written.error().detail.c_str());
+    return 1;
+  }
+  const auto round = umm::read(file, ropts(backend));
+  if (!round.ok()) {
+    std::fprintf(stderr, "DNG IFD0 read (%s): %s\n", backend.c_str(),
+                 round.error().message.c_str());
+    return 1;
+  }
+  const auto date = round.value().dateCreated();
+  const auto* dt = date ? std::get_if<umm::DateTime>(&date->value.data)
+                        : nullptr;
+  if (!dt || dt->year != 2020 || dt->month != 1 || dt->day != 2) {
+    std::fprintf(stderr, "DNG IFD0 DateTimeOriginal missing on %s\n",
+                 backend.c_str());
+    return 1;
+  }
+  return 0;
 }
 
 umm::Structure sample_person() {
@@ -1581,7 +1696,10 @@ int check_backend(const std::string& backend,
       rc != 0) {
     return rc;
   }
-  return 0;
+  if (const int rc = test_photo_mapped_roundtrip(backend); rc != 0) {
+    return rc;
+  }
+  return test_dng_ifd0_datetimeoriginal(backend);
 }
 
 }  // namespace
