@@ -2,7 +2,8 @@
 
 Status: **accepted**. The maintainer answered OQ1–OQ8 on 2026-10-04 (§6). C18 (terminology)
 and C19 (real-device evidence) were added the same day. Design only; nothing here is
-implemented yet. The remaining confirmations before session docs are written are in §8.
+implemented yet. The confirmations before session docs (OQ-R1–OQ-R3) were answered the
+same day (§8); no questions remain open.
 
 This record follows
 [2026-10-03-canonical-properties-and-location-review.md](2026-10-03-canonical-properties-and-location-review.md),
@@ -440,8 +441,9 @@ The maintainer supplied `exiftool -G1 -a -s` output (ExifTool 12.76) for five re
 | Pixel XL `android1.jpg` | EXIF GPS IFD **and** top-level `XMP-exif` GPS (differences ≤ 0.03″, under 1e-5°); `XMP-exif:GPSDateTime`; `photoshop:DateCreated` `…28.3897` vs EXIF `SubSecTimeOriginal` `389696`; `xmp:CreateDate` | Both GPS encodings are representations and reconcile as `equal` within tolerance. Fractional seconds compare at the shorter precision (H12). `xmp:CreateDate` is the digitized time, not `dateCreated` (C16) |
 | GoPro HERO12 `gopro.mp4` | No Keys, no XMP; movie-header `CreateDate` `2016:01:07` (camera clock never set; the model shipped in 2023); `GoPro:Model`, `GoPro:CameraSerialNumber`, `UserData:LensSerialNumber`; GPS only in the `gpmd` timed-metadata track | Confirms the movie header can be wrong *and* local time (H12). `recordingDevice` gains GoPro sources. Per-frame GPS in a timed track is out of scope for casting; a later `importTrack` reader for embedded tracks is a candidate, not part of this plan |
 
-The sample contains personal GPS positions and device serial numbers. See OQ-R1 for how
-fixtures are derived from it.
+GPS coordinates, serial numbers, and unique ids in the sample are redacted to synthetic
+values in the same format (OQ-R1). The findings above depend only on tag layout, times, and
+the relative GPS differences, which are preserved.
 
 ---
 
@@ -557,13 +559,13 @@ All answered by the maintainer on 2026-10-04.
 - [concept.md](concept.md) Domain C; [2026-09-27-plan-review-and-decisions.md](2026-09-27-plan-review-and-decisions.md) (S2, S4b).
 - [docs/sample-output.txt](../sample-output.txt): real-device ExifTool output (C19).
 
-## 8. Remaining confirmations before session docs
+## 8. Confirmations before session docs
 
-These are small and each has a recommendation. Session docs 43–51 can be written once they
-are confirmed or overridden.
+All answered by the maintainer on 2026-10-04. No questions remain open; session docs 43–51
+can be written from this record.
 
-| # | Question | Recommendation |
+| # | Question | Answer |
 |---|---|---|
-| OQ-R1 | Fixtures for the C19 layouts. M6 allows generated in-repo fixtures (Tier A) or checksummed public downloads (Tier B). The original files are large (up to 97 MB) and contain personal GPS positions and serial numbers. | Generate Tier A fixtures that copy the **tag layouts** with synthetic values; do not commit the originals. Also redact the coordinates and serial numbers in `docs/sample-output.txt`, or move it out of the docs tree |
-| OQ-R2 | Movie-header `CreateDate` upcast is `approximate` (C19). `umm cast up` then applies it only with `include_approximate`, while the read preview still lists it. | Accept. The iPhone sample is seven years off and the GoPro sample's clock was never set |
-| OQ-R3 | Session breakdown §5.1 and documentation ownership §5.2. | Accept, or reorder. 43 and 45 have no dependencies and can run in parallel |
+| OQ-R1 | Fixtures for the C19 layouts. M6 allows generated in-repo fixtures (Tier A) or checksummed public downloads (Tier B). The original files are large (up to 97 MB) and contain personal GPS positions and serial numbers. | **Redact.** `docs/sample-output.txt` now has synthetic GPS coordinates, serial numbers, and unique ids in the original format; the EXIF-versus-XMP GPS differences are preserved. Session 51 generates Tier A fixtures that copy the tag **layouts** with synthetic values; the original files are not committed |
+| OQ-R2 | Movie-header `CreateDate` upcast is `approximate` (C19): `umm cast up` applies it only with `include_approximate`, while the read preview still lists it. | **Yes** |
+| OQ-R3 | Session breakdown §5.1 and documentation ownership §5.2. | **Approved** |

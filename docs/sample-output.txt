@@ -1,3 +1,8 @@
+NOTE: Redacted on 2026-10-04 (decision record OQ-R1). GPS coordinates, serial numbers,
+and unique identifiers are replaced with synthetic values of the same format. The small
+EXIF-versus-XMP GPS differences in android1.jpg are preserved. All other values are as
+ExifTool reported them.
+
 ======== ./IMG_3851.MOV
 [ExifTool]      ExifToolVersion                 : 12.76
 [System]        FileName                        : IMG_3851.MOV
@@ -96,7 +101,7 @@
 [Track2]        CompressorName                  : H.264
 [Track2]        BitDepth                        : 24
 [Track2]        VideoFrameRate                  : 30
-[Keys]          GPSCoordinates                  : 43 deg 4' 46.56" N, 79 deg 4' 36.12" W, 104.65 m Above Sea Level
+[Keys]          GPSCoordinates                  : 12 deg 34' 56.78" N, 98 deg 7' 6.54" W, 104.65 m Above Sea Level
 [Keys]          Make                            : Apple
 [Keys]          Model                           : iPhone X
 [Keys]          Software                        : 12.4.1
@@ -106,10 +111,10 @@
 [Composite]     AvgBitrate                      : 15.2 Mbps
 [Composite]     GPSAltitude                     : 104.65 m
 [Composite]     GPSAltitudeRef                  : Above Sea Level
-[Composite]     GPSLatitude                     : 43 deg 4' 46.56" N
-[Composite]     GPSLongitude                    : 79 deg 4' 36.12" W
+[Composite]     GPSLatitude                     : 12 deg 34' 56.78" N
+[Composite]     GPSLongitude                    : 98 deg 7' 6.54" W
 [Composite]     Rotation                        : 0
-[Composite]     GPSPosition                     : 43 deg 4' 46.56" N, 79 deg 4' 36.12" W
+[Composite]     GPSPosition                     : 12 deg 34' 56.78" N, 98 deg 7' 6.54" W
 ======== ./IMG_3853.HEIC
 [ExifTool]      ExifToolVersion                 : 12.76
 [System]        FileName                        : IMG_3853.HEIC
@@ -316,19 +321,19 @@
 [Apple]         AccelerationVector              : -1.030357122 -0.01277142204 0.0590058006
 [Apple]         FocusDistanceRange              : 0.12 - 1.24 m
 [Apple]         OISMode                         : 5
-[Apple]         ContentIdentifier               : 663E2940-1902-4F07-B3AA-EF73BBA97834
+[Apple]         ContentIdentifier               : 00000000-0000-4000-8000-000000000001
 [Apple]         ImageCaptureType                : Unknown (12)
 [Apple]         LivePhotoVideoIndex             : 8595185700
 [Apple]         HDRHeadroom                     : 1.00999999
 [Apple]         SignalToNoiseRatio              : 65.61946108
-[Apple]         PhotoIdentifier                 : 71DD8266-BC8A-4844-8134-DB31AFA778D9
+[Apple]         PhotoIdentifier                 : 00000000-0000-4000-8000-000000000002
 [Apple]         FocusPosition                   : 70
 [Apple]         HDRGain                         : 3.195510147
 [Apple]         FrontFacingCamera               : No
 [GPS]           GPSLatitudeRef                  : North
-[GPS]           GPSLatitude                     : 38 deg 53' 21.48"
+[GPS]           GPSLatitude                     : 23 deg 45' 6.78"
 [GPS]           GPSLongitudeRef                 : West
-[GPS]           GPSLongitude                    : 77 deg 3' 0.09"
+[GPS]           GPSLongitude                    : 87 deg 6' 5.43"
 [GPS]           GPSAltitudeRef                  : Above Sea Level
 [GPS]           GPSAltitude                     : 12.07893416 m
 [GPS]           GPSTimeStamp                    : 18:44:19
@@ -445,12 +450,12 @@
 [Composite]     SubSecModifyDate                : 2026:09:01 14:44:19-04:00
 [Composite]     GPSAltitude                     : 12 m Above Sea Level
 [Composite]     GPSDateTime                     : 2026:09:01 18:44:19Z
-[Composite]     GPSLatitude                     : 38 deg 53' 21.48" N
-[Composite]     GPSLongitude                    : 77 deg 3' 0.09" W
+[Composite]     GPSLatitude                     : 23 deg 45' 6.78" N
+[Composite]     GPSLongitude                    : 87 deg 6' 5.43" W
 [Composite]     CircleOfConfusion               : 0.008 mm
 [Composite]     FOV                             : 73.7 deg
 [Composite]     FocalLength35efl                : 6.8 mm (35 mm equivalent: 24.0 mm)
-[Composite]     GPSPosition                     : 38 deg 53' 21.48" N, 77 deg 3' 0.09" W
+[Composite]     GPSPosition                     : 23 deg 45' 6.78" N, 87 deg 6' 5.43" W
 [Composite]     HyperfocalDistance              : 3.04 m
 [Composite]     LightValue                      : 15.0
 [Composite]     LensID                          : iPhone 16 Pro back triple camera 6.765mm f/1.78
@@ -599,9 +604,9 @@
 [InteropIFD]    InteropVersion                  : 0100
 [GPS]           GPSAltitudeRef                  : Above Sea Level
 [GPS]           GPSLatitudeRef                  : North
-[GPS]           GPSLatitude                     : 47 deg 36' 41.17"
+[GPS]           GPSLatitude                     : 34 deg 56' 7.89"
 [GPS]           GPSLongitudeRef                 : West
-[GPS]           GPSLongitude                    : 122 deg 20' 14.13"
+[GPS]           GPSLongitude                    : 76 deg 5' 4.32"
 [GPS]           GPSAltitudeRef                  : Above Sea Level
 [GPS]           GPSAltitude                     : 0 m
 [GPS]           GPSTimeStamp                    : 20:47:22
@@ -620,8 +625,8 @@
 [XMP-photoshop] DateCreated                     : 2016:10:25 13:47:28.3897
 [XMP-xmp]       CreateDate                      : 2016:10:25 13:47:28.3897
 [XMP-xmp]       Rating                          : 0
-[XMP-exif]      GPSLatitude                     : 47 deg 36' 41.16" N
-[XMP-exif]      GPSLongitude                    : 122 deg 20' 14.10" W
+[XMP-exif]      GPSLatitude                     : 34 deg 56' 7.88" N
+[XMP-exif]      GPSLongitude                    : 76 deg 5' 4.29" W
 [XMP-exif]      GPSAltitudeRef                  : Above Sea Level
 [XMP-exif]      GPSAltitude                     : 0 m
 [XMP-exif]      GPSDateTime                     : 2016:10:25 20:47:22Z
@@ -638,13 +643,13 @@
 [Composite]     SubSecModifyDate                : 2016:10:25 13:47:28.389696
 [Composite]     GPSAltitude                     : 0 m Above Sea Level
 [Composite]     GPSDateTime                     : 2016:10:25 20:47:22Z
-[Composite]     GPSLatitude                     : 47 deg 36' 41.17" N
-[Composite]     GPSLongitude                    : 122 deg 20' 14.13" W
+[Composite]     GPSLatitude                     : 34 deg 56' 7.89" N
+[Composite]     GPSLongitude                    : 76 deg 5' 4.32" W
 [Composite]     DateTimeCreated                 : 2016:10:25 13:47:28-07:00
 [Composite]     GPSLatitudeRef                  : North
 [Composite]     GPSLongitudeRef                 : West
 [Composite]     FocalLength35efl                : 4.7 mm
-[Composite]     GPSPosition                     : 47 deg 36' 41.17" N, 122 deg 20' 14.13" W
+[Composite]     GPSPosition                     : 34 deg 56' 7.89" N, 76 deg 5' 4.32" W
 [Composite]     LightValue                      : 11.4
 ======== ./gopro.mp4
 [ExifTool]      ExifToolVersion                 : 12.76
@@ -804,14 +809,14 @@
 [Track4]        MetaFormat                      : gpmd
 [Track4]        Warning                         : [minor] The ExtractEmbedded option may find more tags in the media data
 [UserData]      FirmwareVersion                 : H23.01.01.09.25
-[UserData]      SerialNumberHash                : 679f8612520d190b8125ede808eb7c0c
-[UserData]      LensSerialNumber                : LSU3052802402141
+[UserData]      SerialNumberHash                : 00000000000000000000000000000000
+[UserData]      LensSerialNumber                : LSU0000000000000
 [GoPro]         DeviceName                      : Global Settings
 [GoPro]         MetadataVersion                 : 8.2.2
 [GoPro]         FirmwareVersion                 : H23.01.01.09.25
-[GoPro]         CameraSerialNumber              : C3501324543674
+[GoPro]         CameraSerialNumber              : C0000000000000
 [GoPro]         Model                           : HERO12 Black
-[GoPro]         MediaUniqueID                   : 12869f670b190d52e8ed25810c7ceb088fc06ae27eef11847953768038975aef
+[GoPro]         MediaUniqueID                   : 0000000000000000000000000000000000000000000000000000000000000000
 [GoPro]         AutoRotation                    : Up
 [GoPro]         DigitalZoom                     : No
 [GoPro]         ProTune                         : On
