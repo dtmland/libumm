@@ -475,6 +475,25 @@ if(UMM_BUILD_TESTS)
     add_test(NAME test_cast_api COMMAND test_cast_api)
     umm_apply_fixture_dir_to_test(test_cast_api)
 
+    add_executable(test_casting_verification tests/backend/test_casting_verification.cpp)
+    target_link_libraries(test_casting_verification PRIVATE umm::umm)
+    target_include_directories(test_casting_verification
+      PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/backend"
+    )
+    umm_apply_fixture_dir(test_casting_verification)
+    if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)
+      file(TO_CMAKE_PATH "${UMM_EXIFTOOL_SCRIPT}" UMM_TEST_CAST_VER_EXIFTOOL_SCRIPT)
+      file(TO_CMAKE_PATH "${UMM_PERL_EXECUTABLE}" UMM_TEST_CAST_VER_EXIFTOOL_PERL)
+      target_compile_definitions(test_casting_verification
+        PRIVATE
+          "UMM_TEST_EXIFTOOL_SCRIPT=R\"(${UMM_TEST_CAST_VER_EXIFTOOL_SCRIPT})\""
+          "UMM_TEST_EXIFTOOL_PERL=R\"(${UMM_TEST_CAST_VER_EXIFTOOL_PERL})\""
+      )
+    endif()
+    add_test(NAME test_casting_verification COMMAND test_casting_verification)
+    umm_apply_fixture_dir_to_test(test_casting_verification)
+
     add_executable(test_describe_api tests/backend/test_describe.cpp)
     target_link_libraries(test_describe_api PRIVATE umm::umm)
     target_include_directories(test_describe_api

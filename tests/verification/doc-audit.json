@@ -1,0 +1,401 @@
+{
+  "version": 1,
+  "documents": [
+    "docs/user/guide.md",
+    "docs/reconciliation-policy.md",
+    "docs/user/properties/README.md"
+  ],
+  "claims": [
+    {
+      "document": "docs/user/guide.md",
+      "heading": "libumm user guide",
+      "tests": [
+        "tests/backend/test_read.cpp",
+        "tests/backend/test_write.cpp"
+      ]
+    },
+    {
+      "document": "docs/user/guide.md",
+      "heading": "Reading and writing",
+      "tests": [
+        "tests/backend/test_read.cpp",
+        "tests/backend/test_write.cpp",
+        "tests/backend/test_sync.cpp",
+        "tests/backend/test_conflict.cpp"
+      ]
+    },
+    {
+      "document": "docs/user/guide.md",
+      "heading": "Canonical property names",
+      "tests": [
+        "tests/backend/test_read.cpp",
+        "tests/backend/test_cross_media.cpp",
+        "tests/build/test_property_reference.py"
+      ]
+    },
+    {
+      "document": "docs/user/guide.md",
+      "heading": "Location and GPS",
+      "tests": [
+        "tests/backend/test_casting_verification.cpp",
+        "tests/backend/test_cast.cpp",
+        "tests/backend/test_track_match.cpp"
+      ]
+    },
+    {
+      "document": "docs/user/guide.md",
+      "heading": "Casting",
+      "tests": [
+        "tests/backend/test_cast.cpp",
+        "tests/backend/test_casting_verification.cpp",
+        "tests/unit/test_cast.cpp"
+      ]
+    },
+    {
+      "document": "docs/user/guide.md",
+      "heading": "Exploring a property",
+      "tests": [
+        "tests/backend/test_describe.cpp"
+      ]
+    },
+    {
+      "document": "docs/user/guide.md",
+      "heading": "Cross-media accessors",
+      "tests": [
+        "tests/backend/test_cross_media.cpp",
+        "tests/build/test_cross_media_accessors.py"
+      ]
+    },
+    {
+      "document": "docs/user/guide.md",
+      "heading": "Domain and transposition",
+      "tests": [
+        "tests/backend/test_cross_media.cpp"
+      ]
+    },
+    {
+      "document": "docs/user/guide.md",
+      "heading": "Tier 1 — identical shape",
+      "tests": [
+        "tests/backend/test_cross_media.cpp"
+      ]
+    },
+    {
+      "document": "docs/user/guide.md",
+      "heading": "Tier 2 — transposing",
+      "tests": [
+        "tests/backend/test_cross_media.cpp"
+      ]
+    },
+    {
+      "document": "docs/user/guide.md",
+      "heading": "Tier 3 — renamed concepts",
+      "tests": [
+        "tests/backend/test_cross_media.cpp"
+      ]
+    },
+    {
+      "document": "docs/user/guide.md",
+      "heading": "Property reference",
+      "tests": [
+        "tests/build/test_property_reference.py"
+      ]
+    },
+    {
+      "document": "docs/user/guide.md",
+      "heading": "Base metadata",
+      "tests": [
+        "tests/backend/test_read.cpp",
+        "tests/backend/test_casting_verification.cpp"
+      ]
+    },
+    {
+      "document": "docs/user/guide.md",
+      "heading": "When a property will not write",
+      "tests": [
+        "tests/backend/test_write.cpp",
+        "tests/backend/test_capabilities_probe.cpp"
+      ]
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "Reconciliation policy (Phase 1)",
+      "tests": [
+        "tests/backend/test_read.cpp"
+      ]
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "Sources of the rules",
+      "untested": "Citation list for IPTC/MWG/XMP documents; no runtime behavior."
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "Classification",
+      "tests": [
+        "tests/backend/test_read.cpp",
+        "tests/backend/test_conflict.cpp"
+      ]
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "Normalization (all properties)",
+      "tests": [
+        "tests/backend/test_read.cpp",
+        "tests/backend/test_casting_verification.cpp"
+      ]
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "Read precedence (default)",
+      "tests": [
+        "tests/backend/test_read.cpp"
+      ]
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "Phase 1 properties",
+      "tests": [
+        "tests/backend/test_read.cpp"
+      ]
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "`iptc.photo.creator` (text list)",
+      "tests": [
+        "tests/backend/test_read.cpp"
+      ]
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "`iptc.photo.description` (lang-alt)",
+      "tests": [
+        "tests/backend/test_read.cpp"
+      ]
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "`iptc.photo.copyrightNotice` (lang-alt)",
+      "tests": [
+        "tests/backend/test_read.cpp"
+      ]
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "`iptc.photo.headline` (text)",
+      "tests": [
+        "tests/backend/test_read.cpp"
+      ]
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "`iptc.photo.creditLine` (text)",
+      "tests": [
+        "tests/backend/test_read.cpp"
+      ]
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "`iptc.photo.dateCreated` (date-time) — heart of Phase 1",
+      "tests": [
+        "tests/backend/test_read.cpp",
+        "tests/backend/test_casting_verification.cpp"
+      ]
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "`iptc.photo.keywords` (text list)",
+      "tests": [
+        "tests/backend/test_read.cpp"
+      ]
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "`iptc.photo.imageRating` (real)",
+      "tests": [
+        "tests/backend/test_cross_media.cpp"
+      ]
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "`iptc.photo.locationCreated` (structure list)",
+      "tests": [
+        "tests/backend/test_casting_verification.cpp",
+        "tests/backend/test_read.cpp"
+      ]
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "`iptc.photo.locationShownInTheImage` (structure list)",
+      "tests": [
+        "tests/backend/test_cast.cpp",
+        "tests/backend/test_casting_verification.cpp"
+      ]
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "Table-driven photo properties (session 39)",
+      "tests": [
+        "tests/backend/test_read.cpp"
+      ]
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "Accessor transposition (session 40)",
+      "tests": [
+        "tests/backend/test_cross_media.cpp"
+      ]
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "Video (MP4/MOV)",
+      "tests": [
+        "tests/backend/test_read.cpp",
+        "tests/backend/test_casting_verification.cpp"
+      ]
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "Read precedence (video)",
+      "tests": [
+        "tests/backend/test_read.cpp",
+        "tests/backend/test_casting_verification.cpp"
+      ]
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "Table-driven video properties (session 38)",
+      "tests": [
+        "tests/backend/test_read.cpp",
+        "tests/backend/test_cross_media.cpp"
+      ]
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "`iptc.video.locationShot` GPS",
+      "tests": [
+        "tests/backend/test_cast.cpp",
+        "tests/backend/test_casting_verification.cpp"
+      ]
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "R3 (per-property dispatch)",
+      "tests": [
+        "tests/backend/test_read.cpp"
+      ]
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "Sidecars",
+      "tests": [
+        "tests/backend/test_sidecar.cpp"
+      ]
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "Sidecar vs embedded precedence",
+      "tests": [
+        "tests/backend/test_sidecar.cpp",
+        "tests/backend/test_conflict.cpp"
+      ]
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "Sidecar write",
+      "tests": [
+        "tests/backend/test_write.cpp",
+        "tests/backend/test_sidecar.cpp"
+      ]
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "Synchronization",
+      "tests": [
+        "tests/backend/test_sync.cpp"
+      ]
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "Conflict resolution API",
+      "tests": [
+        "tests/backend/test_conflict.cpp"
+      ]
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "Accessor transposition",
+      "tests": [
+        "tests/backend/test_cross_media.cpp"
+      ]
+    },
+    {
+      "document": "docs/reconciliation-policy.md",
+      "heading": "Cross-backend identity",
+      "tests": [
+        "tests/backend/test_cross_backend.cpp",
+        "tests/build/test_verification.py"
+      ]
+    },
+    {
+      "document": "docs/user/properties/README.md",
+      "heading": "Property reference",
+      "tests": [
+        "tests/build/test_property_reference.py"
+      ]
+    },
+    {
+      "document": "docs/user/properties/README.md",
+      "heading": "Cross-media properties",
+      "tests": [
+        "tests/build/test_cross_media_accessors.py",
+        "tests/backend/test_describe.cpp"
+      ]
+    },
+    {
+      "document": "docs/user/properties/README.md",
+      "heading": "Tier 1 — identical shape",
+      "tests": [
+        "tests/backend/test_cross_media.cpp"
+      ]
+    },
+    {
+      "document": "docs/user/properties/README.md",
+      "heading": "Tier 2 — transposing",
+      "tests": [
+        "tests/backend/test_cross_media.cpp"
+      ]
+    },
+    {
+      "document": "docs/user/properties/README.md",
+      "heading": "Tier 3 — renamed concepts",
+      "tests": [
+        "tests/backend/test_cross_media.cpp"
+      ]
+    },
+    {
+      "document": "docs/user/properties/README.md",
+      "heading": "Remaining photo properties",
+      "tests": [
+        "tests/build/test_property_reference.py",
+        "tests/backend/test_read.cpp"
+      ]
+    },
+    {
+      "document": "docs/user/properties/README.md",
+      "heading": "Remaining video properties",
+      "tests": [
+        "tests/build/test_property_reference.py",
+        "tests/backend/test_read.cpp"
+      ]
+    },
+    {
+      "document": "docs/user/properties/README.md",
+      "heading": "Non-canonical keys that take part in casts",
+      "tests": [
+        "tests/unit/test_cast.cpp",
+        "tests/backend/test_casting_verification.cpp"
+      ]
+    }
+  ]
+}

@@ -4,6 +4,16 @@ Pre-1.0 (`0.y.z`): the C++ ABI is not stable. See [docs/abi-policy.md](../abi-po
 
 ## Unreleased
 
+### Session 51 — Casting verification
+
+Tier A fixtures reproduce the C19 real-device tag layouts with synthetic values
+(`video/iphone-style.mov`, `jpeg/iphone-heic-layout.jpg`, `raw/pixel-style.dng`,
+`jpeg/pixel-style.jpg`, `video/gopro-style.mp4`). The HEIC container stays Tier B.
+`test_casting_verification` checks those layouts and the first cast-rule set on
+each claiming backend. Gaps live in `tests/verification/ledger.json`; doc headings
+in the user guide, reconciliation policy, and generated property index map to tests
+in `tests/verification/doc-audit.json`.
+
 ### Session 50 — Generated property reference
 
 `docs/user/properties/` replaces the hand-maintained full-property tables in the

@@ -51,6 +51,7 @@ These rules were applied throughout and still govern changes:
 | **11 — Release engineering** | 29–34 | Install rules and `umm::umm` CMake package export with consumer smoke test; version macros and `docs/abi-policy.md` (P4); THIRD-PARTY-NOTICES, vendored license texts, corresponding-source manifest (P1); `UMM_EXIV2_SHARED` option (P2); `tools/get-exiftool/` native acquisition scripts (P3, P9); tag-triggered draft-release pipeline with three-OS archives and SHA256SUMS (uploads onto an existing tag release instead of creating a second untagged draft). |
 | **12 — BMFF enablement** | 35 | HEIC/HEIF/AVIF/CR3/JXL sniffing, Exiv2-read/ExifTool-write pattern; AVIF in Tier A, HEIC/CR3/JXL in Tier B; ExifTool writes no IPTC IIM on BMFF. |
 | **13 — Cross-media accessors (Phase 2)** | 36–42 | `MediaDomain` on `Metadata`; generated photo↔video accessor map; table-driven video reconcile/write-sync; Tier 1–3 convenience accessors; catalog contract + JPEG/MP4/MOV matrix. `objectShown` stays deferred (title↔name only). |
+| **14 — Canonical model and casting** | 43–51 | Base-metadata terminology and dump views (C13, C18); full registry-id read; Location structs and GPS as Location GPS; cast engine and first rule set; `umm::describe`; generated property reference; C19 real-device layout fixtures and backend verification matrix (C15). |
 
 ## Conventions worth keeping
 

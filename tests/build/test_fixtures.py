@@ -88,6 +88,7 @@ AVIF_FILES = (
 DNG_FILES = (
     "raw/minimal.dng",
     "raw/full-agreeing.dng",
+    "raw/pixel-style.dng",
 )
 
 # Session 21 (docs/developer/implementation-history.md)
@@ -98,6 +99,17 @@ VIDEO_FILES = (
     "video/gps.mp4",
     "video/conflicting.mp4",
     "video/xmp-shapes.mp4",
+)
+
+# Session 51 (C19 / OQ-R1) — real-device tag layouts, synthetic values.
+LAYOUT_JPEG_FILES = (
+    "jpeg/iphone-heic-layout.jpg",
+    "jpeg/pixel-style.jpg",
+)
+LAYOUT_DNG_FILES = ("raw/pixel-style.dng",)
+LAYOUT_VIDEO_FILES = (
+    "video/iphone-style.mov",
+    "video/gopro-style.mp4",
 )
 
 # Session 25 (docs/developer/implementation-history.md) — hand-authored text tracks.
@@ -436,6 +448,18 @@ class TestFixtureCorpus(unittest.TestCase):
             self.assertIn(relpath, entries, f"{relpath} missing from MANIFEST.md")
             self.assertTrue(path.is_file(), f"missing fixture {relpath}")
 
+    def test_c19_layout_jpegs_are_present(self) -> None:
+        text = MANIFEST.read_text(encoding="utf-8")
+        entries = parse_manifest(text)
+        for relpath in LAYOUT_JPEG_FILES:
+            path = FIXTURES / relpath
+            self.assertIn(relpath, entries, f"{relpath} missing from MANIFEST.md")
+            self.assertTrue(path.is_file(), f"missing fixture {relpath}")
+            self.assertTrue(
+                path.read_bytes().startswith(b"\xff\xd8"),
+                f"{relpath} is not JPEG SOI",
+            )
+
     def test_tiff_matrix_is_present(self) -> None:
         text = MANIFEST.read_text(encoding="utf-8")
         entries = parse_manifest(text)
@@ -489,11 +513,32 @@ class TestFixtureCorpus(unittest.TestCase):
             ),
             "MANIFEST must point jpeg/makernote.jpg at the Tier B corpus",
         )
+        for relpath in LAYOUT_DNG_FILES:
+            path = FIXTURES / relpath
+            self.assertIn(relpath, entries, f"{relpath} missing from MANIFEST.md")
+            self.assertTrue(path.is_file(), f"missing fixture {relpath}")
+            data = path.read_bytes()
+            self.assertTrue(
+                (data.startswith(b"II*\x00") or data.startswith(b"MM\x00*")),
+                f"{relpath} is not TIFF/DNG magic",
+            )
 
     def test_video_matrix_is_present(self) -> None:
         text = MANIFEST.read_text(encoding="utf-8")
         entries = parse_manifest(text)
         for relpath in VIDEO_FILES:
+            path = FIXTURES / relpath
+            self.assertIn(relpath, entries, f"{relpath} missing from MANIFEST.md")
+            self.assertTrue(path.is_file(), f"missing fixture {relpath}")
+            data = path.read_bytes()
+            self.assertGreaterEqual(len(data), 12, relpath)
+            self.assertEqual(data[4:8], b"ftyp", f"{relpath} is not ISO BMFF ftyp")
+            brand = data[8:12]
+            if relpath.endswith(".mov"):
+                self.assertEqual(brand, b"qt  ", f"{relpath} brand is not qt")
+            else:
+                self.assertNotEqual(brand, b"qt  ", f"{relpath} should not be MOV brand")
+        for relpath in LAYOUT_VIDEO_FILES:
             path = FIXTURES / relpath
             self.assertIn(relpath, entries, f"{relpath} missing from MANIFEST.md")
             self.assertTrue(path.is_file(), f"missing fixture {relpath}")
@@ -734,6 +779,56 @@ class TestFixtureExifTool(unittest.TestCase):
         self.assertTrue(xmp_date)
         self.assertNotIn("2020:01:01", xmp_date)
         self.assertNotIn("2020:03:03", qt_date)
+
+    def test_c19_iphone_style_mov_keys_vs_movie_header(self) -> None:
+        record = exiftool_json(
+            self.perl, self.script, FIXTURES / "video" / "iphone-style.mov"
+        )
+        self.assertEqual(record.get("Keys:CreationDate"), "2019:09:05 14:23:07-04:00")
+        self.assertEqual(record.get("QuickTime:CreateDate"), "2026:10:04 04:35:02")
+        self.assertEqual(record.get("Keys:Make"), "Apple")
+        self.assertEqual(record.get("Keys:Model"), "iPhone X")
+        gps = str(record.get("Keys:GPSCoordinates", ""))
+        self.assertIn("12.58243889", gps)
+        self.assertIn("104.65", gps)
+
+    def test_c19_iphone_heic_layout_jpeg(self) -> None:
+        record = exiftool_json(
+            self.perl, self.script, FIXTURES / "jpeg" / "iphone-heic-layout.jpg"
+        )
+        self.assertEqual(record.get("ExifIFD:DateTimeOriginal"), "2026:09:01 14:44:19")
+        self.assertEqual(str(record.get("ExifIFD:SubSecTimeOriginal")), "685")
+        self.assertEqual(record.get("ExifIFD:OffsetTimeOriginal"), "-04:00")
+        self.assertTrue(record.get("GPS:GPSImgDirection") is not None)
+        self.assertTrue(record.get("GPS:GPSSpeed") is not None)
+        self.assertTrue(record.get("GPS:GPSHPositioningError") is not None)
+
+    def test_c19_pixel_style_dng_ifd0_and_iim(self) -> None:
+        record = exiftool_json(
+            self.perl, self.script, FIXTURES / "raw" / "pixel-style.dng"
+        )
+        self.assertEqual(record.get("IFD0:DateTimeOriginal"), "2016:10:25 20:47:28")
+        self.assertIsNone(record.get("ExifIFD:DateTimeOriginal"))
+        self.assertEqual(record.get("IPTC:TimeCreated"), "20:47:28-07:00")
+
+    def test_c19_pixel_style_jpeg_gps_and_fractions(self) -> None:
+        record = exiftool_json(
+            self.perl, self.script, FIXTURES / "jpeg" / "pixel-style.jpg"
+        )
+        self.assertEqual(str(record.get("ExifIFD:SubSecTimeOriginal")), "389696")
+        self.assertIn("3897", str(record.get("XMP-photoshop:DateCreated", "")))
+        self.assertTrue(record.get("XMP-xmp:CreateDate"))
+        self.assertTrue(record.get("GPS:GPSLatitude") is not None)
+        self.assertTrue(record.get("XMP-exif:GPSLatitude") is not None)
+
+    def test_c19_gopro_style_mp4_movie_header_only(self) -> None:
+        record = exiftool_json(
+            self.perl, self.script, FIXTURES / "video" / "gopro-style.mp4"
+        )
+        self.assertEqual(record.get("QuickTime:CreateDate"), "2016:01:07 20:05:15")
+        self.assertIsNone(record.get("Keys:CreationDate"))
+        self.assertFalse(any(key.startswith("XMP-") for key in record))
+        self.assertIsNone(record.get("GoPro:Model"))
 
     def test_avif_full_agreeing_has_exif_and_xmp(self) -> None:
         record = exiftool_json(
