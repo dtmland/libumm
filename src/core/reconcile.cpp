@@ -54,6 +54,27 @@ std::string_view trim(std::string_view text) {
 
 std::string trimmed(std::string_view text) { return std::string(trim(text)); }
 
+// Exiv2 encodes rdf:Bag/Seq/Alt/Struct nodes as values like type="Bag".
+// Those are container markers, not Location (or other struct) fields.
+bool is_xmp_type_marker(std::string_view text) {
+  text = trim(text);
+  if (text.size() < 7) {
+    return false;
+  }
+  const std::string lower = ascii_lower(text);
+  if (lower.rfind("type=", 0) != 0) {
+    return false;
+  }
+  std::string_view rest = text.substr(5);
+  rest = trim(rest);
+  if (rest.size() >= 2 && rest.front() == '"' && rest.back() == '"') {
+    rest.remove_prefix(1);
+    rest.remove_suffix(1);
+  }
+  const std::string kind = ascii_lower(rest);
+  return kind == "bag" || kind == "seq" || kind == "alt" || kind == "struct";
+}
+
 bool xmp_local_matches(std::string_view entry_key, std::string_view base) {
   constexpr std::string_view kXmp = "Xmp.";
   if (entry_key.size() < kXmp.size() || base.size() < kXmp.size() ||
@@ -1772,7 +1793,7 @@ std::optional<Group> video_structure_group(const BaseDocument& document,
         }
       } else {
         const std::string text = trimmed(entry->value);
-        if (!text.empty()) {
+        if (!text.empty() && !is_xmp_type_marker(text)) {
           fields = structure_from_uri(text);
         }
       }
@@ -1819,7 +1840,7 @@ std::optional<Group> video_structure_list_group(
         continue;
       }
       const std::string text = trimmed(entry->value);
-      if (text.empty()) {
+      if (text.empty() || is_xmp_type_marker(text)) {
         continue;
       }
       if (names_as_entities) {

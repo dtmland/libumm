@@ -736,6 +736,48 @@ int main() {
 
   {
     const auto result = umm::internal::reconcile(
+        doc({entry("Xmp", "Xmp.Iptc4xmpExt.LocationCreated", "type=\"Bag\"",
+                   "XmpBag"),
+             entry("Xmp", "Xmp.Iptc4xmpExt.LocationCreated[1]",
+                   "type=\"Struct\"", "XmpText"),
+             entry("Xmp",
+                   "Xmp.Iptc4xmpExt.LocationCreated[1]/Iptc4xmpExt:City",
+                   "San Francisco"),
+             entry("Xmp",
+                   "Xmp.Iptc4xmpExt.LocationCreated[1]/Iptc4xmpExt:ProvinceState",
+                   "CA"),
+             entry("Xmp",
+                   "Xmp.Iptc4xmpExt.LocationCreated[1]/Iptc4xmpExt:CountryName",
+                   "United States")}),
+        "test");
+    if (!result.ok()) {
+      return fail("Exiv2 Location bag reconcile failed");
+    }
+    const auto created = result.value().locationCreated();
+    const auto* created_list =
+        created ? std::get_if<std::vector<umm::Structure>>(&created->value.data)
+                : nullptr;
+    if (!created_list || created_list->size() != 1) {
+      return fail("Exiv2 Location bag should be one struct");
+    }
+    const umm::Structure& loc = created_list->front();
+    auto text = [&](std::string_view name) -> const std::string* {
+      const auto it = loc.find(std::string(name));
+      return it == loc.end() ? nullptr
+                             : std::get_if<std::string>(&it->second.data);
+    };
+    if (!text("city") || *text("city") != "San Francisco" ||
+        !text("provinceState") || *text("provinceState") != "CA" ||
+        !text("countryName") || *text("countryName") != "United States") {
+      return fail("Exiv2 Location bag fields");
+    }
+    if (text("name")) {
+      return fail("Exiv2 type marker must not become Location name");
+    }
+  }
+
+  {
+    const auto result = umm::internal::reconcile(
         doc({entry("Xmp", "Xmp.photoshop.City", "Agreeing City"),
              entry("Iptc", "Iptc.Application2.City", "Agreeing City")}),
         "test");
