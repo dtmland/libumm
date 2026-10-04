@@ -16,11 +16,13 @@ DEFAULT_REGISTRY_DIRS = (
 )
 DEFAULT_OVERLAY = REPO_ROOT / "registry" / "mappings" / "iptc-exif-overlay.json"
 DEFAULT_CROSS_MEDIA = REPO_ROOT / "registry" / "mappings" / "cross-media-accessors.json"
+DEFAULT_CASTS_DIR = REPO_ROOT / "registry" / "casts"
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "src" / "generated"
 
 HEADER_NAME = "property_registry.hpp"
 SOURCE_NAME = "property_registry.cpp"
 CROSS_MEDIA_HEADER_NAME = "cross_media_accessors.hpp"
+CAST_HEADER_NAME = "cast_rules.hpp"
 
 OVERLAY_SOURCE_KEYS = (
     "document",
@@ -49,6 +51,22 @@ CROSS_MEDIA_ACCESSOR_KEYS = (
     "deferred",
     "notes",
 )
+CAST_GROUP_KEYS = (
+    "id",
+    "direction",
+    "partial",
+    "approximate",
+    "one_way",
+    "citation",
+    "source_priority",
+    "rules",
+)
+CAST_RULE_KEYS = ("id", "source", "target", "heuristic", "citation")
+CAST_ENDPOINT_KEYS = ("kind", "key", "field", "index")
+CAST_DIRECTIONS = ("up", "down", "side")
+CAST_KINDS = ("base_key", "property", "property_field")
+CAST_HEURISTICS = tuple(f"H{n}" for n in range(1, 22))
+
 TRANSPOSITIONS = (
     "passthrough",
     "string_to_lang_alt",
@@ -815,12 +833,238 @@ def generate_source(banner_text: str) -> str:
     )
 
 
+def load_cast_endpoint(data: Any, *, path: str) -> dict[str, Any]:
+    if not isinstance(data, dict):
+        raise CodegenError(f"{path}: endpoint must be an object")
+    unknown = [key for key in data if key not in CAST_ENDPOINT_KEYS]
+    if unknown:
+        raise CodegenError(f"{path}: unexpected keys {unknown}")
+    for required in ("kind", "key"):
+        if required not in data:
+            raise CodegenError(f"{path}: missing {required}")
+    kind = data["kind"]
+    if kind not in CAST_KINDS:
+        raise CodegenError(f"{path}: unknown kind {kind!r}")
+    if not isinstance(data["key"], str) or not data["key"]:
+        raise CodegenError(f"{path}: key must be a non-empty string")
+    field = data.get("field") or ""
+    if field and not isinstance(field, str):
+        raise CodegenError(f"{path}: field must be a string")
+    index = data.get("index", 0 if kind == "property_field" else -1)
+    if not isinstance(index, int):
+        raise CodegenError(f"{path}: index must be an integer")
+    return {
+        "kind": kind,
+        "key": data["key"],
+        "field": field,
+        "index": index,
+    }
+
+
+def load_casts(casts_dir: Path) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[Path]]:
+    if not casts_dir.is_dir():
+        raise CodegenError(f"{casts_dir}: missing casts directory")
+    files = sorted(
+        path
+        for path in casts_dir.glob("*.json")
+        if path.name != "schema.json"
+    )
+    if not files:
+        raise CodegenError(f"{casts_dir}: no cast JSON files")
+    groups: list[dict[str, Any]] = []
+    rules: list[dict[str, Any]] = []
+    seen_group_dir: set[tuple[str, str]] = set()
+    seen_rule: set[tuple[str, str, str]] = set()
+    for path in files:
+        data = load_json(path)
+        group = ordered(data, CAST_GROUP_KEYS, path=str(path))
+        if group["direction"] not in CAST_DIRECTIONS:
+            raise CodegenError(f"{path}: unknown direction {group['direction']!r}")
+        for flag in ("partial", "approximate", "one_way"):
+            if not isinstance(group[flag], bool):
+                raise CodegenError(f"{path}: {flag} must be a boolean")
+        if not isinstance(group["citation"], str) or not group["citation"]:
+            raise CodegenError(f"{path}: citation must be a non-empty string")
+        if not isinstance(group["source_priority"], list) or not group["source_priority"]:
+            raise CodegenError(f"{path}: source_priority must be a non-empty array")
+        if not isinstance(group["rules"], list) or not group["rules"]:
+            raise CodegenError(f"{path}: rules must be a non-empty array")
+        key = (group["id"], group["direction"])
+        if key in seen_group_dir:
+            raise CodegenError(f"{path}: duplicate group {group['id']} {group['direction']}")
+        seen_group_dir.add(key)
+        priority = []
+        for item in group["source_priority"]:
+            if not isinstance(item, str) or not item:
+                raise CodegenError(f"{path}: source_priority entries must be strings")
+            priority.append(item)
+        groups.append(
+            {
+                "id": group["id"],
+                "direction": group["direction"],
+                "partial": group["partial"],
+                "approximate": group["approximate"],
+                "one_way": group["one_way"],
+                "citation": group["citation"],
+                "source_priority": priority,
+            }
+        )
+        for index, raw_rule in enumerate(group["rules"]):
+            rule_path = f"{path}:rules[{index}]"
+            rule = ordered(raw_rule, CAST_RULE_KEYS, path=rule_path)
+            if rule["heuristic"] not in CAST_HEURISTICS:
+                raise CodegenError(f"{rule_path}: unknown heuristic {rule['heuristic']!r}")
+            source = load_cast_endpoint(rule["source"], path=f"{rule_path}.source")
+            target = load_cast_endpoint(rule["target"], path=f"{rule_path}.target")
+            rule_key = (group["id"], group["direction"], rule["id"])
+            if rule_key in seen_rule:
+                raise CodegenError(f"{rule_path}: duplicate rule id {rule['id']}")
+            seen_rule.add(rule_key)
+            rules.append(
+                {
+                    "id": rule["id"],
+                    "group": group["id"],
+                    "direction": group["direction"],
+                    "heuristic": rule["heuristic"],
+                    "citation": rule["citation"],
+                    "source_kind": source["kind"],
+                    "source_key": source["key"],
+                    "source_field": source["field"],
+                    "source_index": source["index"],
+                    "target_kind": target["kind"],
+                    "target_key": target["key"],
+                    "target_field": target["field"],
+                    "target_index": target["index"],
+                }
+            )
+        missing = [item for item in priority if (group["id"], group["direction"], item) not in seen_rule]
+        if missing:
+            raise CodegenError(f"{path}: source_priority unknown rule ids {missing}")
+    groups.sort(key=lambda item: (item["id"], item["direction"]))
+    rules.sort(key=lambda item: (item["group"], item["direction"], item["id"]))
+    return groups, rules, files
+
+
+def emit_cast_group(row: dict[str, Any]) -> str:
+    priority = row["source_priority"]
+    padded = list(priority) + [""] * (8 - len(priority))
+    if len(priority) > 8:
+        raise CodegenError(f"group {row['id']}: more than 8 source_priority entries")
+    items = ", ".join(cpp_string(item) for item in padded)
+    return "\n".join(
+        [
+            "    {",
+            f"        {cpp_string(row['id'])},",
+            f"        {cpp_string(row['direction'])},",
+            f"        {'true' if row['partial'] else 'false'},",
+            f"        {'true' if row['approximate'] else 'false'},",
+            f"        {'true' if row['one_way'] else 'false'},",
+            f"        {cpp_string(row['citation'])},",
+            f"        {{{items}}},",
+            f"        {len(priority)},",
+            "    }",
+        ]
+    )
+
+
+def emit_cast_rule(row: dict[str, Any]) -> str:
+    return "\n".join(
+        [
+            "    {",
+            f"        {cpp_string(row['id'])},",
+            f"        {cpp_string(row['group'])},",
+            f"        {cpp_string(row['direction'])},",
+            f"        {cpp_string(row['heuristic'])},",
+            f"        {cpp_string(row['citation'])},",
+            f"        {cpp_string(row['source_kind'])},",
+            f"        {cpp_string(row['source_key'])},",
+            f"        {cpp_string(row['source_field'])},",
+            f"        {row['source_index']},",
+            f"        {cpp_string(row['target_kind'])},",
+            f"        {cpp_string(row['target_key'])},",
+            f"        {cpp_string(row['target_field'])},",
+            f"        {row['target_index']},",
+            "    }",
+        ]
+    )
+
+
+def generate_cast_header(
+    *,
+    files: list[Path],
+    groups: list[dict[str, Any]],
+    rules: list[dict[str, Any]],
+) -> str:
+    names = ", ".join(path.name for path in files)
+    banner_text = (
+        "// GENERATED by tools/registry/generate_cpp.py — do not edit.\n"
+        f"// Casts: {names}\n"
+        "\n"
+    )
+    group_rows = ",\n".join(emit_cast_group(row) for row in groups)
+    rule_rows = ",\n".join(emit_cast_rule(row) for row in rules)
+    return (
+        f"{banner_text}"
+        "#pragma once\n"
+        "\n"
+        "#include <cstddef>\n"
+        "#include <iterator>\n"
+        "#include <string_view>\n"
+        "\n"
+        "namespace umm::internal {\n"
+        "\n"
+        "struct CastGroupDef {\n"
+        "  std::string_view id;\n"
+        "  std::string_view direction;\n"
+        "  bool partial;\n"
+        "  bool approximate;\n"
+        "  bool one_way;\n"
+        "  std::string_view citation;\n"
+        "  std::string_view source_priority[8];\n"
+        "  std::size_t source_priority_count;\n"
+        "};\n"
+        "\n"
+        "struct CastRuleDef {\n"
+        "  std::string_view id;\n"
+        "  std::string_view group;\n"
+        "  std::string_view direction;\n"
+        "  std::string_view heuristic;\n"
+        "  std::string_view citation;\n"
+        "  std::string_view source_kind;\n"
+        "  std::string_view source_key;\n"
+        "  std::string_view source_field;\n"
+        "  int source_index;\n"
+        "  std::string_view target_kind;\n"
+        "  std::string_view target_key;\n"
+        "  std::string_view target_field;\n"
+        "  int target_index;\n"
+        "};\n"
+        "\n"
+        f"inline constexpr std::size_t kCastGroupCount = {len(groups)};\n"
+        f"inline constexpr std::size_t kCastRuleCount = {len(rules)};\n"
+        "\n"
+        "inline constexpr CastGroupDef kCastGroups[] = {\n"
+        f"{group_rows}\n"
+        "};\n"
+        "\n"
+        "inline constexpr CastRuleDef kCastRules[] = {\n"
+        f"{rule_rows}\n"
+        "};\n"
+        "\n"
+        "static_assert(std::size(kCastGroups) == kCastGroupCount);\n"
+        "static_assert(std::size(kCastRules) == kCastRuleCount);\n"
+        "\n"
+        "}  // namespace umm::internal\n"
+    )
+
+
 def generate(
     registry_dirs: list[Path],
     overlay_path: Path,
     output_dir: Path,
     cross_media_path: Path | None = None,
-) -> tuple[Path, Path, Path]:
+    casts_dir: Path | None = None,
+) -> tuple[Path, Path, Path, Path]:
     files = registry_files(registry_dirs)
     overlay = load_overlay(overlay_path)
     registries: list[dict[str, Any]] = []
@@ -882,10 +1126,16 @@ def generate(
     header_path = output_dir / HEADER_NAME
     source_path = output_dir / SOURCE_NAME
     cross_path = output_dir / CROSS_MEDIA_HEADER_NAME
+    groups, cast_rules, cast_files = load_casts(casts_dir or DEFAULT_CASTS_DIR)
+    cast_header = generate_cast_header(
+        files=cast_files, groups=groups, rules=cast_rules
+    )
     write_text(header_path, header)
     write_text(source_path, source)
     write_text(cross_path, cross_header)
-    return header_path, source_path, cross_path
+    cast_path = output_dir / CAST_HEADER_NAME
+    write_text(cast_path, cast_header)
+    return header_path, source_path, cross_path, cast_path
 
 
 def write_text(path: Path, text: str) -> None:
@@ -922,6 +1172,12 @@ def main(argv: list[str] | None = None) -> int:
         default=DEFAULT_CROSS_MEDIA,
         help="Hand-curated cross-media accessor map JSON",
     )
+    parser.add_argument(
+        "--casts-dir",
+        type=Path,
+        default=DEFAULT_CASTS_DIR,
+        help="Directory of curated cast-rule JSON files",
+    )
     args = parser.parse_args(argv)
     try:
         registry_dirs = args.registry_dirs or list(DEFAULT_REGISTRY_DIRS)
@@ -930,6 +1186,7 @@ def main(argv: list[str] | None = None) -> int:
             args.overlay.resolve(),
             args.output_dir.resolve(),
             args.cross_media.resolve(),
+            args.casts_dir.resolve(),
         )
     except (CodegenError, OSError, json.JSONDecodeError, KeyError) as exc:
         print(f"generate_cpp: {exc}", file=sys.stderr)

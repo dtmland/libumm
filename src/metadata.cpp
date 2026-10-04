@@ -699,4 +699,12 @@ void Metadata::recomputeUnmapped() {
   }
 }
 
+const std::vector<CastCandidate>& Metadata::castCandidates() const {
+  return cast_candidates_;
+}
+
+void Metadata::assignCastCandidates(std::vector<CastCandidate> candidates) {
+  cast_candidates_ = std::move(candidates);
+}
+
 }  // namespace umm

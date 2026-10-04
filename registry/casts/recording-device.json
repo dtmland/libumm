@@ -1,0 +1,132 @@
+{
+  "id": "recordingDevice",
+  "direction": "up",
+  "partial": true,
+  "approximate": false,
+  "one_way": true,
+  "citation": "C19; IPTC video recordingDevice; Keys make/model, EXIF Make/Model/SerialNumber/LensModel, GoPro Model/CameraSerialNumber",
+  "source_priority": [
+    "keys_make",
+    "keys_model",
+    "exif_make",
+    "exif_model",
+    "exif_serial",
+    "exif_lens",
+    "gopro_model",
+    "gopro_serial"
+  ],
+  "rules": [
+    {
+      "id": "keys_make",
+      "source": {
+        "kind": "base_key",
+        "key": "QuickTime.Keys.Make"
+      },
+      "target": {
+        "kind": "property_field",
+        "key": "iptc.video.recordingDevice",
+        "field": "manufacturer"
+      },
+      "heuristic": "H8",
+      "citation": "QuickTime Keys Make"
+    },
+    {
+      "id": "keys_model",
+      "source": {
+        "kind": "base_key",
+        "key": "QuickTime.Keys.Model"
+      },
+      "target": {
+        "kind": "property_field",
+        "key": "iptc.video.recordingDevice",
+        "field": "modelName"
+      },
+      "heuristic": "H8",
+      "citation": "QuickTime Keys Model"
+    },
+    {
+      "id": "exif_make",
+      "source": {
+        "kind": "base_key",
+        "key": "Exif.Image.Make"
+      },
+      "target": {
+        "kind": "property_field",
+        "key": "iptc.video.recordingDevice",
+        "field": "manufacturer"
+      },
+      "heuristic": "H8",
+      "citation": "EXIF IFD0 Make"
+    },
+    {
+      "id": "exif_model",
+      "source": {
+        "kind": "base_key",
+        "key": "Exif.Image.Model"
+      },
+      "target": {
+        "kind": "property_field",
+        "key": "iptc.video.recordingDevice",
+        "field": "modelName"
+      },
+      "heuristic": "H8",
+      "citation": "EXIF IFD0 Model"
+    },
+    {
+      "id": "exif_serial",
+      "source": {
+        "kind": "base_key",
+        "key": "Exif.Photo.BodySerialNumber"
+      },
+      "target": {
+        "kind": "property_field",
+        "key": "iptc.video.recordingDevice",
+        "field": "serialNumber"
+      },
+      "heuristic": "H8",
+      "citation": "EXIF BodySerialNumber"
+    },
+    {
+      "id": "exif_lens",
+      "source": {
+        "kind": "base_key",
+        "key": "Exif.Photo.LensModel"
+      },
+      "target": {
+        "kind": "property_field",
+        "key": "iptc.video.recordingDevice",
+        "field": "attLensDescription"
+      },
+      "heuristic": "H8",
+      "citation": "EXIF LensModel"
+    },
+    {
+      "id": "gopro_model",
+      "source": {
+        "kind": "base_key",
+        "key": "ExifTool.GoPro.Model"
+      },
+      "target": {
+        "kind": "property_field",
+        "key": "iptc.video.recordingDevice",
+        "field": "modelName"
+      },
+      "heuristic": "H8",
+      "citation": "C19 GoPro Model"
+    },
+    {
+      "id": "gopro_serial",
+      "source": {
+        "kind": "base_key",
+        "key": "ExifTool.GoPro.CameraSerialNumber"
+      },
+      "target": {
+        "kind": "property_field",
+        "key": "iptc.video.recordingDevice",
+        "field": "serialNumber"
+      },
+      "heuristic": "H8",
+      "citation": "C19 GoPro CameraSerialNumber"
+    }
+  ]
+}
