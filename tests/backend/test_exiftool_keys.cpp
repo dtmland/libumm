@@ -68,11 +68,16 @@ int main() {
                  "Xmp.libummtest.UnknownWidget") != 0 ||
       expect_key("MakerNotes:LensType", "ExifTool",
                  "ExifTool.MakerNotes.LensType") != 0 ||
-      expect_key("ItemList:Title", "QuickTime", "QuickTime.Title") != 0 ||
-      expect_key("Keys:CreationDate", "QuickTime", "QuickTime.CreationDate") !=
+      expect_key("ItemList:Title", "QuickTime", "QuickTime.ItemList.Title") !=
           0 ||
+      expect_key("Keys:CreationDate", "QuickTime",
+                 "QuickTime.Keys.CreationDate") != 0 ||
       expect_key("Keys:GPSCoordinates", "QuickTime",
-                 "QuickTime.GPSCoordinates") != 0 ||
+                 "QuickTime.Keys.GPSCoordinates") != 0 ||
+      expect_key("Keys:location.ISO6709", "QuickTime",
+                 "QuickTime.Keys.location.ISO6709") != 0 ||
+      expect_key("UserData:GPSCoordinates", "QuickTime",
+                 "QuickTime.UserData.GPSCoordinates") != 0 ||
       expect_key("QuickTime:Duration", "QuickTime", "QuickTime.Duration") != 0 ||
       expect_key("QuickTime:HandlerType", "ExifTool",
                  "ExifTool.QuickTime.HandlerType") != 0) {
@@ -90,13 +95,15 @@ int main() {
   const auto creator =
       umm::internal::exiftool_tag_for_base_key("Xmp.dc.creator[1]");
   const auto title =
-      umm::internal::exiftool_tag_for_base_key("QuickTime.Title");
+      umm::internal::exiftool_tag_for_base_key("QuickTime.Keys.Title");
   const auto qt_artist =
-      umm::internal::exiftool_tag_for_base_key("QuickTime.Artist");
+      umm::internal::exiftool_tag_for_base_key("QuickTime.ItemList.Artist");
   const auto created =
-      umm::internal::exiftool_tag_for_base_key("QuickTime.CreationDate");
-  const auto gps =
-      umm::internal::exiftool_tag_for_base_key("QuickTime.GPSCoordinates");
+      umm::internal::exiftool_tag_for_base_key("QuickTime.Keys.CreationDate");
+  const auto gps = umm::internal::exiftool_tag_for_base_key(
+      "QuickTime.Keys.GPSCoordinates");
+  const auto iso = umm::internal::exiftool_tag_for_base_key(
+      "QuickTime.Keys.location.ISO6709");
   const auto loc = umm::internal::exiftool_tag_for_base_key(
       "Xmp.Iptc4xmpExt.LocationCreated");
   const auto alt = umm::internal::exiftool_tag_for_base_key(
@@ -114,7 +121,8 @@ int main() {
       !title || *title != "Keys:Title" || !qt_artist ||
       *qt_artist != "ItemList:Artist" || !created ||
       *created != "Keys:CreationDate" || !gps ||
-      *gps != "Keys:GPSCoordinates" || !loc ||
+      *gps != "Keys:GPSCoordinates" || !iso ||
+      *iso != "Keys:location.ISO6709" || !loc ||
       *loc != "XMP-iptcExt:LocationCreated" || !alt ||
       *alt != "XMP-iptcCore:AltTextAccessibility" || !event ||
       *event != "XMP-iptcExt:ShownEvent" || !registry ||

@@ -136,8 +136,31 @@ bool xmp_flattened_field(std::string_view entry_key, std::string_view base) {
   return next >= 'A' && next <= 'Z';
 }
 
+bool quicktime_tag_matches(std::string_view entry_key, std::string_view base) {
+  constexpr std::string_view kPrefix = "QuickTime.";
+  if (entry_key.rfind(kPrefix, 0) != 0 || base.rfind(kPrefix, 0) != 0) {
+    return false;
+  }
+  auto strip_group = [](std::string_view rest) {
+    const auto dot = rest.find('.');
+    if (dot == std::string_view::npos) {
+      return rest;
+    }
+    const std::string_view group = rest.substr(0, dot);
+    if (group == "Keys" || group == "UserData" || group == "ItemList") {
+      return rest.substr(dot + 1);
+    }
+    return rest;
+  };
+  return strip_group(entry_key.substr(kPrefix.size())) ==
+         strip_group(base.substr(kPrefix.size()));
+}
+
 bool key_belongs(std::string_view entry_key, std::string_view base) {
   if (entry_key == base) {
+    return true;
+  }
+  if (quicktime_tag_matches(entry_key, base)) {
     return true;
   }
   if (xmp_local_matches(entry_key, base)) {
@@ -1744,23 +1767,10 @@ void collect_gps(std::vector<Group>& groups, const BaseDocument& document,
     }
   };
   if (video) {
-    if (const auto text = first_value(document, "QuickTime.GPSCoordinates")) {
-      GpsCoordinate gps;
-      if (parse_qt_gps(*text, gps)) {
-        Group group;
-        group.family = "quicktime";
-        group.rank = 0;
-        group.primary_key = "QuickTime.GPSCoordinates";
-        add_sources(group.sources, document, backend,
-                    "QuickTime.GPSCoordinates");
-        group.value = make_value(gps);
-        groups.push_back(std::move(group));
-      }
-    }
     push(gps_group(document, backend, "Xmp.exif.GPSLatitude",
                    "Xmp.exif.GPSLatitudeRef", "Xmp.exif.GPSLongitude",
                    "Xmp.exif.GPSLongitudeRef", "Xmp.exif.GPSAltitude",
-                   "Xmp.exif.GPSAltitudeRef", "xmp", 1));
+                   "Xmp.exif.GPSAltitudeRef", "xmp", 0));
     return;
   }
   push(gps_group(document, backend, "Exif.GPSInfo.GPSLatitude",
@@ -1971,16 +1981,14 @@ void collect_video_property(std::vector<Group>& groups,
     }
   };
 
-  // Policy § iptc.video.dateCreated: XMP first; movie-header remains rank 2
-  // until session 47.
+  // Policy § iptc.video.dateCreated: XMP first; Keys CreationDate is a
+  // representation (C7). Movie-header CreateDate is a cast (session 47).
   if (property_id == kVideoDateCreated) {
     if (!xmp.empty()) {
       push(date_group(document, backend, xmp, "", "", "xmp", 0));
     }
-    push(date_group(document, backend, "QuickTime.CreationDate", "", "",
+    push(date_group(document, backend, "QuickTime.Keys.CreationDate", "", "",
                     "quicktime", 1));
-    push(date_group(document, backend, "QuickTime.CreateDate", "", "",
-                    "quicktime-header", 2));
     return;
   }
   if (property_id == kVideoCreator) {
@@ -2006,8 +2014,8 @@ void collect_video_property(std::vector<Group>& groups,
       groups.push_back(std::move(group));
     }
     std::vector<std::string> qt_names;
-    for (const char* key : {"QuickTime.Artist", "QuickTime.Author",
-                            "QuickTime.Director"}) {
+    for (const char* key : {"QuickTime.ItemList.Artist", "QuickTime.Keys.Author",
+                            "QuickTime.ItemList.Director"}) {
       auto part = collect_list(document, key);
       qt_names.insert(qt_names.end(), part.begin(), part.end());
     }
@@ -2021,10 +2029,11 @@ void collect_video_property(std::vector<Group>& groups,
       Group group;
       group.family = "quicktime";
       group.rank = 1;
-      group.primary_key = "QuickTime.Artist";
-      add_sources(group.sources, document, backend, "QuickTime.Artist");
-      add_sources(group.sources, document, backend, "QuickTime.Author");
-      add_sources(group.sources, document, backend, "QuickTime.Director");
+      group.primary_key = "QuickTime.ItemList.Artist";
+      add_sources(group.sources, document, backend, "QuickTime.ItemList.Artist");
+      add_sources(group.sources, document, backend, "QuickTime.Keys.Author");
+      add_sources(group.sources, document, backend,
+                  "QuickTime.ItemList.Director");
       group.value = make_value(std::move(entities));
       groups.push_back(std::move(group));
     }
@@ -2055,7 +2064,7 @@ void collect_video_property(std::vector<Group>& groups,
     if (!xmp.empty()) {
       push(as_lang(xmp, "xmp", 0));
     }
-    push(as_lang("QuickTime.Keywords", "quicktime", 1));
+    push(as_lang("QuickTime.Keys.Keywords", "quicktime", 1));
     return;
   }
   collect_video_generic(groups, document, backend, property_id);

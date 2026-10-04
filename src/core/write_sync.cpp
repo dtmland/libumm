@@ -303,17 +303,13 @@ void sync_gps(BaseChanges& changes, const Value& value) {
       format_gps_number(std::fabs(gps->latitude)) + lat_ref);
   add(changes, "Xmp", "Xmp.exif.GPSLongitude",
       format_gps_number(std::fabs(gps->longitude)) + lon_ref);
-  std::string qt = format_gps_number(gps->latitude) + ", " +
-                   format_gps_number(gps->longitude);
   if (gps->altitude_meters) {
     const double alt = *gps->altitude_meters;
     add(changes, "Exif", "Exif.GPSInfo.GPSAltitude",
         format_gps_number(std::fabs(alt)), "decimal");
     add(changes, "Exif", "Exif.GPSInfo.GPSAltitudeRef", alt < 0 ? "1" : "0");
     add(changes, "Xmp", "Xmp.exif.GPSAltitude", format_gps_number(alt));
-    qt += ", " + format_gps_number(alt);
   }
-  add(changes, "QuickTime", "QuickTime.GPSCoordinates", std::move(qt));
 }
 
 std::string_view xmp_local_name(std::string_view property) {
@@ -513,7 +509,8 @@ void sync_video_creator(BaseChanges& changes, const Value& value) {
   for (const std::string& name : names) {
     add(changes, "Xmp", "Xmp.dc.creator", name, "XmpSeq");
   }
-  add(changes, "QuickTime", "QuickTime.Artist", join_names(names, "; "));
+  add(changes, "QuickTime", "QuickTime.ItemList.Artist",
+      join_names(names, "; "));
 }
 
 void sync_video_keywords(BaseChanges& changes, const Value& value) {
@@ -525,7 +522,7 @@ void sync_video_keywords(BaseChanges& changes, const Value& value) {
   if (plain.empty()) {
     return;
   }
-  add(changes, "QuickTime", "QuickTime.Keywords", plain);
+  add(changes, "QuickTime", "QuickTime.Keys.Keywords", plain);
   std::string_view rest = plain;
   while (!rest.empty()) {
     const auto comma = rest.find(',');
@@ -552,7 +549,7 @@ void sync_video_date(BaseChanges& changes, const Value& value) {
   }
   const std::string iso = format_xmp_datetime(*dt);
   add(changes, "Xmp", "Xmp.photoshop.DateCreated", iso);
-  add(changes, "QuickTime", "QuickTime.CreationDate", iso);
+  add(changes, "QuickTime", "QuickTime.Keys.CreationDate", iso);
 }
 
 bool writes_iptc_application(const BaseChanges& changes) {

@@ -19,10 +19,12 @@ VIDEO_REGISTRY_DIR = REPO_ROOT / "registry" / "iptc-video"
 VIDEO_REGISTRY_JSON = VIDEO_REGISTRY_DIR / "iptc-video.json"
 OVERLAY = REPO_ROOT / "registry" / "mappings" / "iptc-exif-overlay.json"
 CROSS_MEDIA = REPO_ROOT / "registry" / "mappings" / "cross-media-accessors.json"
+CASTS_DIR = REPO_ROOT / "registry" / "casts"
 GENERATED_DIR = REPO_ROOT / "src" / "generated"
 GENERATED_HPP = GENERATED_DIR / "property_registry.hpp"
 GENERATED_CPP = GENERATED_DIR / "property_registry.cpp"
 GENERATED_CROSS = GENERATED_DIR / "cross_media_accessors.hpp"
+GENERATED_CASTS = GENERATED_DIR / "cast_rules.hpp"
 GITATTRIBUTES = REPO_ROOT / ".gitattributes"
 CMAKE_REGISTRY = REPO_ROOT / "cmake" / "LibummRegistry.cmake"
 
@@ -37,6 +39,7 @@ def run_generator(
     overlay: Path,
     output_dir: Path,
     cross_media: Path | None = None,
+    casts_dir: Path | None = None,
 ) -> subprocess.CompletedProcess[str]:
     if isinstance(registry_dirs, Path):
         registry_dirs = [registry_dirs]
@@ -50,6 +53,7 @@ def run_generator(
     ]
     if cross_media is not None:
         command.extend(["--cross-media", str(cross_media)])
+    command.extend(["--casts-dir", str(casts_dir or CASTS_DIR)])
     for registry_dir in registry_dirs:
         command.extend(["--registry-dir", str(registry_dir)])
     return subprocess.run(
@@ -70,14 +74,17 @@ class TestCodegen(unittest.TestCase):
             GENERATED_HPP,
             GENERATED_CPP,
             GENERATED_CROSS,
+            GENERATED_CASTS,
             CMAKE_REGISTRY,
         ):
             self.assertTrue(path.is_file(), f"missing {path}")
+        self.assertTrue(CASTS_DIR.is_dir(), f"missing {CASTS_DIR}")
 
     def test_committed_generated_sources_match_generator(self) -> None:
         committed_hpp = GENERATED_HPP.read_bytes()
         committed_cpp = GENERATED_CPP.read_bytes()
         committed_cross = GENERATED_CROSS.read_bytes()
+        committed_casts = GENERATED_CASTS.read_bytes()
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp)
             result = run_generator([REGISTRY_DIR, VIDEO_REGISTRY_DIR], OVERLAY, output)
@@ -85,18 +92,23 @@ class TestCodegen(unittest.TestCase):
             generated_hpp = (output / GENERATED_HPP.name).read_bytes()
             generated_cpp = (output / GENERATED_CPP.name).read_bytes()
             generated_cross = (output / GENERATED_CROSS.name).read_bytes()
+            generated_casts = (output / GENERATED_CASTS.name).read_bytes()
         self.assertEqual(generated_hpp, committed_hpp)
         self.assertEqual(generated_cpp, committed_cpp)
         self.assertEqual(generated_cross, committed_cross)
+        self.assertEqual(generated_casts, committed_casts)
         self.assertTrue(committed_hpp.endswith(b"\n"))
         self.assertTrue(committed_cpp.endswith(b"\n"))
         self.assertTrue(committed_cross.endswith(b"\n"))
+        self.assertTrue(committed_casts.endswith(b"\n"))
         self.assertNotIn(b"\r\n", committed_hpp)
         self.assertNotIn(b"\r\n", committed_cpp)
         self.assertNotIn(b"\r\n", committed_cross)
+        self.assertNotIn(b"\r\n", committed_casts)
         self.assertTrue(committed_hpp.startswith(b"// GENERATED"))
         self.assertTrue(committed_cpp.startswith(b"// GENERATED"))
         self.assertTrue(committed_cross.startswith(b"// GENERATED"))
+        self.assertTrue(committed_casts.startswith(b"// GENERATED"))
 
     def test_generator_is_byte_identical_across_runs(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -117,6 +129,10 @@ class TestCodegen(unittest.TestCase):
             self.assertEqual(
                 (first / GENERATED_CROSS.name).read_bytes(),
                 (second / GENERATED_CROSS.name).read_bytes(),
+            )
+            self.assertEqual(
+                (first / GENERATED_CASTS.name).read_bytes(),
+                (second / GENERATED_CASTS.name).read_bytes(),
             )
 
     def test_property_count_matches_registry_json(self) -> None:
@@ -170,6 +186,32 @@ class TestCodegen(unittest.TestCase):
             text = (output / GENERATED_HPP.name).read_text(encoding="utf-8")
             self.assertIn('"dc:editedCreator"', text)
             self.assertNotIn('"dc:creator"', text)
+
+    def test_editing_cast_rule_changes_generated_header(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            casts_dir = tmp_path / "casts"
+            shutil.copytree(CASTS_DIR, casts_dir)
+            path = casts_dir / "video-created.json"
+            data = json.loads(path.read_text(encoding="utf-8"))
+            data["citation"] = "edited-cast-citation"
+            path.write_text(
+                json.dumps(data, indent=2, ensure_ascii=False) + "\n",
+                encoding="utf-8",
+                newline="\n",
+            )
+            output = tmp_path / "generated"
+            result = run_generator(
+                [REGISTRY_DIR, VIDEO_REGISTRY_DIR],
+                OVERLAY,
+                output,
+                casts_dir=casts_dir,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            text = (output / GENERATED_CASTS.name).read_text(encoding="utf-8")
+            self.assertIn("edited-cast-citation", text)
+            self.assertIn("kCastGroups", text)
+            self.assertIn("kCastRules", text)
 
     def test_src_has_no_hand_written_xmp_style_strings(self) -> None:
         src = REPO_ROOT / "src"

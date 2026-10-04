@@ -19,8 +19,9 @@ Documentation is organized by audience.
 
 - [Implementation history](developer/implementation-history.md) — how libumm was built:
   standing constraints, stage-by-stage summary, conventions.
-- [Implementation sessions](implementation/README.md) — Phase 2 (36–42, complete) and canonical model and casting (43–51, planned) session documents
-  for the cross-media convenience accessor phase (sessions 36–42).
+- [Implementation sessions](implementation/README.md) — Phase 2 (36–42, complete) and canonical model and casting (43–51) session documents.
+- [Canonical model](developer/canonical-model.md) — L0–L3 layers, representation versus
+  cast (C7), first rule set, heuristics, how to add a cast rule.
 - [Reconciliation policy](reconciliation-policy.md) — precedence and write-sync rules across
   XMP / IPTC IIM / EXIF / QuickTime (normative; referenced from `src/`).
 - [Versioning and ABI policy](abi-policy.md) — semver rules, version macros, package
@@ -38,8 +39,9 @@ Documentation is organized by audience.
 - [Casting and the canonical model](analysis/2026-10-03-casting-and-canonical-model-decisions.md)
   — C7–C19: representation versus cast, removal of `exif.gps.position`, up/down/side
   casting, the property map, `dumpAll()`/`dumpUnmapped()`, the generated property
-  reference, "base" (not "raw") metadata terminology, real-device evidence, and the
-  proposed sessions 43–51 (accepted design; not implemented).
+  reference, "base" (not "raw") metadata terminology, real-device evidence, and
+  sessions 43–51. Session 47 implements the cast engine and first rule set;
+  C8 (`exif.gps.position` removal) is session 48.
 
 ## Future work
 

@@ -767,7 +767,7 @@ std::vector<std::string> quicktime_base_keys(std::string_view registry_key) {
     if (tag.empty()) {
       continue;
     }
-    out.push_back("QuickTime." + tag);
+    out.push_back("QuickTime.Keys." + tag);
   }
   return out;
 }

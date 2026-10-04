@@ -145,7 +145,8 @@ Result<Metadata> merge(Metadata metadata, std::string_view property_id,
 // Write canonical metadata through the mapping engine to synchronized
 // representations, with temp-file + atomic-rename safety (decision M3).
 // preferred/embedded_only: writable embedded categories and container GPS
-// from capabilities() (QuickTime GPSCoordinates via capturePosition downcast).
+// from capabilities() (video capturePosition downcast writes Keys
+// location.ISO6709 and UserData GPSCoordinates).
 // sidecar_only: XMP sidecar (media bytes unchanged).
 // sidecar_required: sidecar must be written; when embedded writes are also
 // available and sidecar is not recommended, Method::mixed writes both.

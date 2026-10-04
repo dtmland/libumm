@@ -65,11 +65,13 @@ add_library(umm
   src/value.cpp
   src/metadata.cpp
   src/read.cpp
+  src/cast.cpp
   src/conflict.cpp
   src/sync.cpp
   src/track.cpp
   src/write.cpp
   src/capabilities.cpp
+  src/core/cast.cpp
   src/core/reconcile.cpp
   src/core/xmp_codec.cpp
   src/core/transpose.cpp
@@ -189,6 +191,15 @@ if(UMM_BUILD_TESTS)
       "${CMAKE_CURRENT_SOURCE_DIR}/src"
   )
   add_test(NAME test_write_sync COMMAND test_write_sync)
+
+  add_executable(test_cast tests/unit/test_cast.cpp)
+  target_link_libraries(test_cast PRIVATE umm::umm)
+  target_include_directories(test_cast
+    PRIVATE
+      "${CMAKE_CURRENT_SOURCE_DIR}/src"
+      "${UMM_REGISTRY_GENERATED_DIR}"
+  )
+  add_test(NAME test_cast COMMAND test_cast)
 
   add_executable(test_gps_codec tests/unit/test_gps_codec.cpp)
   target_link_libraries(test_gps_codec PRIVATE umm::umm)
@@ -435,6 +446,25 @@ if(UMM_BUILD_TESTS)
     endif()
     add_test(NAME test_sync COMMAND test_sync)
     umm_apply_fixture_dir_to_test(test_sync)
+
+    add_executable(test_cast_api tests/backend/test_cast.cpp)
+    target_link_libraries(test_cast_api PRIVATE umm::umm)
+    target_include_directories(test_cast_api
+      PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/backend"
+    )
+    umm_apply_fixture_dir(test_cast_api)
+    if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)
+      file(TO_CMAKE_PATH "${UMM_EXIFTOOL_SCRIPT}" UMM_TEST_CAST_EXIFTOOL_SCRIPT)
+      file(TO_CMAKE_PATH "${UMM_PERL_EXECUTABLE}" UMM_TEST_CAST_EXIFTOOL_PERL)
+      target_compile_definitions(test_cast_api
+        PRIVATE
+          "UMM_TEST_EXIFTOOL_SCRIPT=R\"(${UMM_TEST_CAST_EXIFTOOL_SCRIPT})\""
+          "UMM_TEST_EXIFTOOL_PERL=R\"(${UMM_TEST_CAST_EXIFTOOL_PERL})\""
+      )
+    endif()
+    add_test(NAME test_cast_api COMMAND test_cast_api)
+    umm_apply_fixture_dir_to_test(test_cast_api)
 
     add_executable(test_conflict_api tests/backend/test_conflict.cpp)
     target_link_libraries(test_conflict_api PRIVATE umm::umm)

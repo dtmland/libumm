@@ -465,8 +465,8 @@ int main() {
 
   {
     const auto result = umm::internal::reconcile(
-        doc({entry("QuickTime", "QuickTime.GPSCoordinates",
-                   "37.7749, -122.4194, 10"),
+        doc({entry("QuickTime", "QuickTime.Keys.location.ISO6709",
+                   "+37.7749-122.4194/"),
              entry("Xmp", "Xmp.exif.GPSLatitude", "10.0N"),
              entry("Xmp", "Xmp.exif.GPSLongitude", "10.0E")}),
         "test", nullptr, "MP4");
@@ -474,30 +474,40 @@ int main() {
       return fail("video gps reconcile failed");
     }
     const auto gps = result.value().gps();
-    if (!gps || gps->resolution != umm::Resolution::reconciled) {
-      return fail("video gps not reconciled");
+    if (!gps || gps->resolution != umm::Resolution::single) {
+      return fail("video gps should come from XMP only (C7)");
     }
     const auto* coord = std::get_if<umm::GpsCoordinate>(&gps->value.data);
-    if (!coord || std::fabs(coord->latitude - 37.7749) > 1e-4 ||
-        std::fabs(coord->longitude + 122.4194) > 1e-4) {
-      return fail("video gps did not prefer QuickTime");
+    if (!coord || std::fabs(coord->latitude - 10.0) > 1e-4 ||
+        std::fabs(coord->longitude - 10.0) > 1e-4) {
+      return fail("video gps did not prefer XMP over QuickTime cast source");
+    }
+    if (result.value().get("iptc.video.locationShot")) {
+      return fail("QuickTime GPS must not fill locationShot without upcast");
     }
   }
   {
     const auto result = umm::internal::reconcile(
-        doc({entry("QuickTime", "QuickTime.GPSCoordinates",
+        doc({entry("QuickTime", "QuickTime.CreateDate", "2020:01:02 03:04:05")}),
+        "test", nullptr, "MP4");
+    if (!result.ok()) {
+      return fail("movie-header CreateDate reconcile failed");
+    }
+    if (result.value().get("iptc.video.dateCreated")) {
+      return fail("movie-header CreateDate must not fill dateCreated (C7)");
+    }
+  }
+  {
+    const auto result = umm::internal::reconcile(
+        doc({entry("QuickTime", "QuickTime.UserData.GPSCoordinates",
                    "37 deg 46' 29.64\" N, 122 deg 25' 9.84\" W, 10 m Above Sea "
                    "Level")}),
         "test", nullptr, "MP4");
     if (!result.ok()) {
       return fail("video gps DMS reconcile failed");
     }
-    const auto gps = result.value().gps();
-    const auto* coord =
-        gps ? std::get_if<umm::GpsCoordinate>(&gps->value.data) : nullptr;
-    if (!coord || std::fabs(coord->latitude - 37.7749) > 1e-4 ||
-        std::fabs(coord->longitude + 122.4194) > 1e-4) {
-      return fail("video gps DMS parse");
+    if (result.value().gps()) {
+      return fail("UserData GPSCoordinates must not fill gps() (C7)");
     }
   }
 

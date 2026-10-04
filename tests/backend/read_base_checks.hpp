@@ -385,8 +385,11 @@ inline int check_video_unmapped_reads(umm::Backend& backend) {
                  gps.error().message.c_str());
     return 1;
   }
-  if (!base_value_of(gps.value(), "QuickTime.GPSCoordinates")) {
-    return raw_fail("video gps missing QuickTime.GPSCoordinates");
+  if (!base_value_of(gps.value(), "QuickTime.GPSCoordinates") &&
+      !base_value_of(gps.value(), "QuickTime.Keys.GPSCoordinates") &&
+      !base_value_of(gps.value(), "QuickTime.Keys.location.ISO6709") &&
+      !base_value_of(gps.value(), "QuickTime.UserData.GPSCoordinates")) {
+    return raw_fail("video gps missing QuickTime GPSCoordinates");
   }
   const auto mov = backend.readBase(raw_stem("video", "minimal", ".mov"));
   if (!mov.ok()) {

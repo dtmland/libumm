@@ -232,7 +232,7 @@ compare after trim; extra fields on one side are more complete, not a conflict.
 `photoshop:City` / `State` / `Country` and IIM `2:90` / `2:95` / `2:101` are
 **not** representations of this property. They belong to `cityLegacy`,
 `provinceOrStateLegacy`, and `countryLegacy` (C4b). A side cast onto Location
-Shown is session 47. EXIF GPS IFD / top-level XMP-exif GPS stay
+Shown is `umm::cast` group `locationShownLegacy`. EXIF GPS IFD / top-level XMP-exif GPS stay
 `exif.gps.position` until session 48.
 
 - Disagreement: `reconciled` among LocationCreated XMP groups (rank 0).
@@ -276,15 +276,17 @@ must not populate photo properties on a video file.
 
 ### Read precedence (video)
 
-**XMP > QuickTime item/keys metadata > movie-header `CreateDate`**
+**XMP > QuickTime Keys / UserData / ItemList**
 
 Cross-family disagreement is `reconciled` with that ranking. Same-tier
-disagreement remains `conflict`. GPS is native to the container and inverts
-XMP vs QuickTime (below).
+disagreement remains `conflict`. Movie-header `QuickTime.CreateDate` is **not**
+a `dateCreated` representation (C7); it is the `videoCreated` upcast
+(`approximate`). QuickTime GPS is **not** a GPS representation (C7); it is the
+`capturePosition` cast.
 
 Movie-header `QuickTime.CreateDate` is often stored as UTC with **no offset
 field**. libumm does **not** invent UTC (`+00:00`) for a naive header date.
-`Keys:CreationDate` (`com.apple.quicktime.creationdate`) may include an
+`QuickTime.Keys.CreationDate` (`com.apple.quicktime.creationdate`) may include an
 offset; missing vs present offset stays equivalent (`opt_equal`).
 
 ### Table-driven video properties (session 38)
@@ -298,7 +300,7 @@ and real `com.apple.quicktime.*` keys). See
 | --- | --- | --- |
 | lang-alt | XMP; QT plain text as `x-default` when mapped | XMP LangAlt + QT plain text |
 | text / uri | XMP (and QT when mapped) | XMP string (+ QT when mapped) |
-| date-time | XMP rank 0; QT `CreationDate` rank 1; movie-header `CreateDate` rank 2 for `dateCreated` | XMP + `CreationDate` |
+| date-time | XMP rank 0; QT Keys `CreationDate` rank 1 | XMP + Keys `CreationDate` |
 | structure | JSON / ExifTool struct; a plain URI wraps as `{cvId}` | ExifTool struct, or the URI string when URI-like |
 | structure list | JSON array / repeated structs; a name bag wraps as Entity `name` | structs, name bag, or URI strings |
 
@@ -307,8 +309,8 @@ Phase-1 specials stay behavior-identical:
 | Family | Base keys |
 | --- | --- |
 | XMP | Registry `xmp_property` (plus `Xmp.dc.creator` names flattened to EntityWRole `name`) |
-| QuickTime | `QuickTime.Title`, `Description`, `Artist`/`Author`/`Director` (creator names), `Copyright`, `Keywords`, `CreationDate` |
-| Movie header | `QuickTime.CreateDate` (date only; lowest rank) |
+| QuickTime | `QuickTime.Keys.Title`, `Keys.Description`, `ItemList.Artist` / `Keys` Author/Director, `Keys.Copyright`, `Keys.Keywords`, `Keys.CreationDate` |
+| Movie header | `QuickTime.CreateDate` / `ModifyDate` stay base entries (casts `videoCreated` / `videoModified`, not representations) |
 
 `iptc.video.title` / `description` / `copyrightNotice` / `keywords` are lang-alt.
 `iptc.video.creator` is a structure list (`name` only for Phase 1 string sources).
@@ -326,15 +328,21 @@ only, as for stills.
 
 | Family | Base keys |
 | --- | --- |
-| QuickTime | `QuickTime.GPSCoordinates` (`lat lon [alt]`, comma or whitespace; ISO 6709 accepted when decimal) |
 | XMP | `Xmp.exif.GPSLatitude` / `GPSLongitude` / optional altitude |
 
-Disagreement: `reconciled`, **container GPS > XMP**. Equivalence uses the same
-degree/altitude tolerances as stills.
+QuickTime Keys `location.ISO6709` and UserData `GPSCoordinates` are **not**
+representations of `exif.gps.position` or of `locationShot` GPS (C7). They are
+the `capturePosition` cast group. `setGps` writes XMP-exif GPS (and EXIF GPS
+when the storage decision lists EXIF); it does not write QuickTime GPS.
+Default `umm::write` on video downcasts `capturePosition` when
+`locationShot[0]` has GPS.
 
-**Write-sync:** `QuickTime.GPSCoordinates` as `lat, lon[, alt]` plus XMP-exif
-lat/lon (and altitude when set). EXIF GPS IFD is also produced by the shared
-GPS writer and is dropped when the storage decision does not list EXIF (MP4/MOV).
+Equivalence for XMP GPS uses the same degree/altitude tolerances as stills.
+
+**Write-sync:** XMP-exif lat/lon (and altitude when set). EXIF GPS IFD is also
+produced by the shared GPS writer and is dropped when the storage decision
+does not list EXIF (MP4/MOV). QuickTime GPS is written only by the
+`capturePosition` downcast.
 
 ### R3 (per-property dispatch)
 

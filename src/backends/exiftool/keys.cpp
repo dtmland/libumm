@@ -95,12 +95,19 @@ std::string mapped_quicktime_tag(std::string_view tag) {
   if (tag == "UserRating") {
     return "Rating";
   }
+  if (tag == "LocationISO6709" || tag == "location.ISO6709") {
+    return "location.ISO6709";
+  }
+  if (tag == "LocationRole" || tag == "location.role") {
+    return "location.role";
+  }
   if (tag == "Title" || tag == "Description" || tag == "Artist" ||
       tag == "Author" || tag == "Director" || tag == "Copyright" ||
       tag == "Publisher" || tag == "Year" || tag == "Keywords" ||
       tag == "Genre" || tag == "CreateDate" || tag == "CreationDate" ||
-      tag == "GPSCoordinates" || tag == "Duration" || tag == "MediaDuration" ||
-      tag == "TrackDuration" || tag == "Rating") {
+      tag == "ModifyDate" || tag == "GPSCoordinates" || tag == "Duration" ||
+      tag == "MediaDuration" || tag == "TrackDuration" || tag == "Rating" ||
+      tag == "Make" || tag == "Model" || tag == "Software") {
     return std::string(tag);
   }
   return {};
@@ -204,7 +211,11 @@ std::optional<BaseKey> map_exiftool_tag(std::string_view json_key) {
     const std::string mapped = mapped_quicktime_tag(tag);
     if (!mapped.empty()) {
       key.family = "QuickTime";
-      key.key = "QuickTime." + mapped;
+      if (group == "QuickTime") {
+        key.key = "QuickTime." + mapped;
+      } else {
+        key.key = "QuickTime." + std::string(group) + "." + mapped;
+      }
       return key;
     }
   }
@@ -316,13 +327,23 @@ std::optional<std::string> exiftool_tag_for_base_key(std::string_view base_key) 
     return "IPTC:" + iptc_exiftool_name(*name);
   }
   if (const auto name = after_prefix("QuickTime.")) {
+    const auto dot = name->find('.');
+    if (dot != std::string::npos) {
+      const std::string group = name->substr(0, dot);
+      const std::string tag = name->substr(dot + 1);
+      if (group == "Keys" || group == "UserData" || group == "ItemList") {
+        return group + ":" + tag;
+      }
+    }
     if (*name == "Artist" || *name == "Director" || *name == "Genre" ||
         *name == "Publisher") {
       return std::string("ItemList") + ":" + *name;
     }
     if (*name == "CreationDate" || *name == "GPSCoordinates" ||
         *name == "Title" || *name == "Description" || *name == "Author" ||
-        *name == "Copyright" || *name == "Keywords") {
+        *name == "Copyright" || *name == "Keywords" || *name == "Make" ||
+        *name == "Model" || *name == "Software" ||
+        *name == "location.ISO6709") {
       return "Keys:" + *name;
     }
     return "QuickTime:" + *name;

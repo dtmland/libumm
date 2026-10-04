@@ -1,6 +1,7 @@
 #include "umm/umm.hpp"
 
 #include "core/atomic_write.hpp"
+#include "core/cast.hpp"
 #include "core/sidecar.hpp"
 #include "core/write_sync.hpp"
 
@@ -185,8 +186,17 @@ Result<WriteReport> write(const std::filesystem::path& media,
   StorageDecision decided = decision.value();
   decided.backend = backend->id();
 
-  BaseChanges changes =
-      filter_changes(internal::write_sync(metadata), decided.formats);
+  BaseChanges changes = internal::write_sync(metadata);
+  std::string file_type;
+  std::optional<Capabilities> caps;
+  if (const auto discovered = capabilities(media); discovered.ok()) {
+    caps = discovered.value();
+    file_type = caps->file_type;
+  }
+  internal::merge_base_changes(
+      changes, internal::downcast_write_changes(
+                   metadata, options, file_type, caps ? &*caps : nullptr));
+  changes = filter_changes(std::move(changes), decided.formats);
   const bool mixed = decided.method == StorageDecision::Method::mixed;
   const bool sidecar_write =
       decided.method == StorageDecision::Method::sidecar;

@@ -363,18 +363,18 @@ int probe_backend(const std::string& backend_id) {
     }
     bool saw_gps = false;
     for (const umm::BaseKey& key : written.value().written) {
-      if (key.key == "QuickTime.GPSCoordinates") {
+      if (key.key.find("GPSLatitude") != std::string::npos) {
         saw_gps = true;
       }
     }
     if (!saw_gps) {
-      return fail("probe MP4 write missing GPSCoordinates");
+      return fail("probe MP4 write missing XMP GPS");
     }
     umm::ReadOptions read_options;
     read_options.backend = "exiftool";
     const auto round = umm::read(dest, read_options);
     if (!round.ok() || !round.value().gps()) {
-      return fail("probe MP4 write vs container_gps read-back");
+      return fail("probe MP4 write vs XMP GPS read-back");
     }
   }
 
