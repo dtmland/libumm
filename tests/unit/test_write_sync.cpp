@@ -2,6 +2,7 @@
 
 #include "umm/umm.hpp"
 
+#include <cstdint>
 #include <cstdio>
 #include <string>
 #include <string_view>
@@ -179,6 +180,35 @@ int main() {
   }
   if (count_key(vchanges, "QuickTime.GPSCoordinates") != 1) {
     return fail("video GPSCoordinates count");
+  }
+
+  umm::Metadata photo_location;
+  umm::Structure photo_loc;
+  photo_loc.emplace("name", umm::Value{std::string("Studio")});
+  photo_loc.emplace("city", umm::Value{std::string("Paris")});
+  photo_loc.emplace("provinceState", umm::Value{std::string("IDF")});
+  photo_loc.emplace("countryName", umm::Value{std::string("France")});
+  photo_loc.emplace("countryCode", umm::Value{std::string("FR")});
+  photo_loc.emplace("sublocation", umm::Value{std::string("Le Marais")});
+  photo_loc.emplace("worldRegion", umm::Value{std::string("Europe")});
+  photo_loc.emplace("identifiers",
+                    umm::Value{std::string("https://example.com/loc")});
+  photo_loc.emplace("gpsLatitude", umm::Value{37.7749});
+  photo_loc.emplace("gpsLongitude", umm::Value{-122.4194});
+  photo_loc.emplace("gpsAltitude", umm::Value{16.5});
+  photo_loc.emplace("gpsAltitudeRef", umm::Value{std::int64_t{0}});
+  if (!photo_location.setLocationCreated({photo_loc}).ok()) {
+    return fail("set photo locationCreated");
+  }
+  const umm::BaseChanges lchanges = umm::internal::write_sync(photo_location);
+  if (!has_value(lchanges, "Xmp.Iptc4xmpExt.LocationCreated", "Paris") ||
+      !has_value(lchanges, "Xmp.Iptc4xmpExt.LocationCreated", "Studio") ||
+      !has_value(lchanges, "Xmp.Iptc4xmpExt.LocationCreated", "GPSLatitude")) {
+    return fail("locationCreated writes XMP LocationCreated");
+  }
+  if (count_key(lchanges, "Xmp.photoshop.City") != 0 ||
+      count_key(lchanges, "Iptc.Application2.City") != 0) {
+    return fail("locationCreated must not write legacy city fields");
   }
 
   const umm::BaseChanges xmp = umm::internal::write_sync_xmp(metadata);

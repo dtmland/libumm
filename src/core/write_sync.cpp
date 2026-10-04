@@ -225,17 +225,6 @@ std::string format_exif_offset(const DateTime& dt) {
   return out;
 }
 
-std::string structure_text(const Structure& fields, std::string_view name) {
-  const auto it = fields.find(std::string(name));
-  if (it == fields.end()) {
-    return {};
-  }
-  if (const auto* text = std::get_if<std::string>(&it->second.data)) {
-    return *text;
-  }
-  return {};
-}
-
 void sync_creator(BaseChanges& changes, const Value& value) {
   const auto* names = std::get_if<std::vector<std::string>>(&value.data);
   if (!names || names->empty()) {
@@ -489,10 +478,16 @@ void sync_video_generic(BaseChanges& changes, std::string_view property_id,
       return;
     }
     for (const Structure& item : *list) {
-      add(changes, "Xmp", xmp,
-          encode_exiftool_struct(alias_exiftool_struct_fields(
-              def->representations.xmp_property, item)),
-          "struct");
+      if (is_photo_location_id(property_id)) {
+        add(changes, "Xmp", xmp,
+            encode_exiftool_struct(encode_location_struct_fields(item)),
+            "struct");
+      } else {
+        add(changes, "Xmp", xmp,
+            encode_exiftool_struct(alias_exiftool_struct_fields(
+                def->representations.xmp_property, item)),
+            "struct");
+      }
     }
   }
 }
@@ -560,23 +555,6 @@ void sync_video_date(BaseChanges& changes, const Value& value) {
   add(changes, "QuickTime", "QuickTime.CreationDate", iso);
 }
 
-void sync_location(BaseChanges& changes, const Value& value) {
-  const auto* list = std::get_if<std::vector<Structure>>(&value.data);
-  if (!list || list->empty()) {
-    return;
-  }
-  const Structure& fields = list->front();
-  const std::string city = structure_text(fields, "city");
-  const std::string state = structure_text(fields, "provinceState");
-  const std::string country = structure_text(fields, "countryName");
-  add(changes, "Xmp", "Xmp.photoshop.City", city);
-  add(changes, "Xmp", "Xmp.photoshop.State", state);
-  add(changes, "Xmp", "Xmp.photoshop.Country", country);
-  add(changes, "Iptc", "Iptc.Application2.City", city);
-  add(changes, "Iptc", "Iptc.Application2.ProvinceState", state);
-  add(changes, "Iptc", "Iptc.Application2.CountryName", country);
-}
-
 bool writes_iptc_application(const BaseChanges& changes) {
   for (const BaseEntry& entry : changes.upserts) {
     if (entry.key.key.rfind("Iptc.Application2.", 0) == 0) {
@@ -631,8 +609,6 @@ BaseChanges write_sync(const Metadata& metadata) {
       sync_date(changes, property->value);
     } else if (id == kGps) {
       sync_gps(changes, property->value);
-    } else if (id == kLocation) {
-      sync_location(changes, property->value);
     } else if (id == kVideoCreator) {
       sync_video_creator(changes, property->value);
     } else if (id == kVideoKeywords) {

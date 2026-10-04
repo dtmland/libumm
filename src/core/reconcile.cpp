@@ -54,6 +54,27 @@ std::string_view trim(std::string_view text) {
 
 std::string trimmed(std::string_view text) { return std::string(trim(text)); }
 
+// Exiv2 encodes rdf:Bag/Seq/Alt/Struct nodes as values like type="Bag".
+// Those are container markers, not Location (or other struct) fields.
+bool is_xmp_type_marker(std::string_view text) {
+  text = trim(text);
+  if (text.size() < 7) {
+    return false;
+  }
+  const std::string lower = ascii_lower(text);
+  if (lower.rfind("type=", 0) != 0) {
+    return false;
+  }
+  std::string_view rest = text.substr(5);
+  rest = trim(rest);
+  if (rest.size() >= 2 && rest.front() == '"' && rest.back() == '"') {
+    rest.remove_prefix(1);
+    rest.remove_suffix(1);
+  }
+  const std::string kind = ascii_lower(rest);
+  return kind == "bag" || kind == "seq" || kind == "alt" || kind == "struct";
+}
+
 bool xmp_local_matches(std::string_view entry_key, std::string_view base) {
   constexpr std::string_view kXmp = "Xmp.";
   if (entry_key.size() < kXmp.size() || base.size() < kXmp.size() ||
@@ -959,6 +980,17 @@ void add_sources(std::vector<SourceRef>& sources, const BaseDocument& document,
   }
 }
 
+void add_struct_sources(std::vector<SourceRef>& sources,
+                        const BaseDocument& document, std::string_view backend,
+                        std::string_view base) {
+  for (const BaseEntry* entry : matching_struct(document, base)) {
+    SourceRef ref;
+    ref.base_key = entry->key.key;
+    ref.backend = std::string(backend);
+    sources.push_back(std::move(ref));
+  }
+}
+
 struct Group {
   std::string family;
   int rank{0};
@@ -1087,7 +1119,7 @@ bool values_equivalent(std::string_view property_id, const Value& a,
     const auto* lb = std::get_if<LangAlt>(&b.data);
     return la && lb && lang_equivalent(*la, *lb);
   }
-  if (property_id == kLocation) {
+  if (is_photo_location_id(property_id)) {
     const auto* la = std::get_if<std::vector<Structure>>(&a.data);
     const auto* lb = std::get_if<std::vector<Structure>>(&b.data);
     if (!la || !lb || la->empty() || lb->empty()) {
@@ -1095,9 +1127,40 @@ bool values_equivalent(std::string_view property_id, const Value& a,
     }
     const Structure& sa = la->front();
     const Structure& sb = lb->front();
+    auto number = [](const Value& value) -> std::optional<double> {
+      if (const auto* d = std::get_if<double>(&value.data)) {
+        return *d;
+      }
+      if (const auto* i = std::get_if<std::int64_t>(&value.data)) {
+        return static_cast<double>(*i);
+      }
+      if (const auto* s = std::get_if<std::string>(&value.data)) {
+        return parse_gps_coord(*s);
+      }
+      return std::nullopt;
+    };
     for (const auto& [name, value] : sa) {
       const auto it = sb.find(name);
-      if (it != sb.end() && !(it->second == value)) {
+      if (it == sb.end()) {
+        continue;
+      }
+      if (name == "gpsLatitude" || name == "gpsLongitude") {
+        const auto na = number(value);
+        const auto nb = number(it->second);
+        if (!na || !nb || std::fabs(*na - *nb) > kGpsDegEps) {
+          return false;
+        }
+        continue;
+      }
+      if (name == "gpsAltitude") {
+        const auto na = number(value);
+        const auto nb = number(it->second);
+        if (!na || !nb || std::fabs(*na - *nb) > kGpsAltEps) {
+          return false;
+        }
+        continue;
+      }
+      if (!(it->second == value)) {
         return false;
       }
     }
@@ -1148,7 +1211,7 @@ Value merge_values(std::string_view property_id, Value a, const Value& b) {
       return make_value(gps_merge(*ga, *gb));
     }
   }
-  if (property_id == kLocation) {
+  if (is_photo_location_id(property_id)) {
     const auto* la = std::get_if<std::vector<Structure>>(&a.data);
     const auto* lb = std::get_if<std::vector<Structure>>(&b.data);
     if (la && lb && !la->empty() && !lb->empty()) {
@@ -1408,100 +1471,6 @@ std::optional<Group> date_group(const BaseDocument& document,
   return group;
 }
 
-std::optional<Structure> location_from_fields(const BaseDocument& document,
-                                              std::string_view city,
-                                              std::string_view state,
-                                              std::string_view country) {
-  Structure fields;
-  if (const auto value = first_value(document, city)) {
-    fields.emplace("city", make_value(*value));
-  }
-  if (const auto value = first_value(document, state)) {
-    fields.emplace("provinceState", make_value(*value));
-  }
-  if (const auto value = first_value(document, country)) {
-    fields.emplace("countryName", make_value(*value));
-  }
-  if (fields.empty()) {
-    return std::nullopt;
-  }
-  return fields;
-}
-
-void put_location_field(Structure& fields, std::string_view name,
-                        std::string_view value) {
-  const std::string n = ascii_lower(name);
-  const std::string v = trimmed(value);
-  if (v.empty()) {
-    return;
-  }
-  if (n == "city") {
-    fields.insert_or_assign("city", make_value(v));
-  } else if (n == "provincestate" || n == "state" || n == "province") {
-    fields.insert_or_assign("provinceState", make_value(v));
-  } else if (n == "countryname" || n == "country") {
-    fields.insert_or_assign("countryName", make_value(v));
-  }
-}
-
-std::optional<Group> structured_location(const BaseDocument& document,
-                                         std::string_view backend,
-                                         std::string_view base) {
-  const auto entries = matching_struct(document, base);
-  if (entries.empty()) {
-    return std::nullopt;
-  }
-  Structure fields;
-  for (const BaseEntry* entry : entries) {
-    if (entry->key.key == base ||
-        (entry->key.key.size() > base.size() &&
-         entry->key.key[base.size()] == '[' &&
-         entry->key.key.find('/') == std::string::npos)) {
-      const std::string_view text = trim(entry->value);
-      if (!text.empty() && text.front() == '{') {
-        std::string_view rest = text;
-        while (true) {
-          auto q1 = rest.find('"');
-          if (q1 == std::string_view::npos) {
-            break;
-          }
-          auto q2 = rest.find('"', q1 + 1);
-          if (q2 == std::string_view::npos) {
-            break;
-          }
-          const std::string key(rest.substr(q1 + 1, q2 - q1 - 1));
-          auto colon = rest.find(':', q2);
-          if (colon == std::string_view::npos) {
-            break;
-          }
-          auto v1 = rest.find('"', colon);
-          if (v1 == std::string_view::npos) {
-            break;
-          }
-          auto v2 = rest.find('"', v1 + 1);
-          if (v2 == std::string_view::npos) {
-            break;
-          }
-          put_location_field(fields, key, rest.substr(v1 + 1, v2 - v1 - 1));
-          rest.remove_prefix(v2 + 1);
-        }
-      }
-      continue;
-    }
-    put_location_field(fields, last_field(entry->key.key), entry->value);
-  }
-  if (fields.empty()) {
-    return std::nullopt;
-  }
-  Group group;
-  group.family = "xmp";
-  group.rank = 0;
-  group.primary_key = std::string(base);
-  add_sources(group.sources, document, backend, base);
-  group.value = make_value(std::vector<Structure>{std::move(fields)});
-  return group;
-}
-
 std::optional<Group> gps_group(const BaseDocument& document,
                                std::string_view backend,
                                std::string_view lat_key,
@@ -1627,43 +1596,6 @@ void collect_registry_property(std::vector<Group>& groups,
     return;
   }
 
-  // Policy § iptc.photo.locationCreated: XMP LocationCreated plus legacy
-  // photoshop/IIM city-state-country until session 46.
-  if (property_id == kLocation) {
-    if (!rep.xmp_property.empty()) {
-      push(structured_location(document, backend, xmp_base_key(rep.xmp_property)));
-    }
-    if (auto fields = location_from_fields(document, "Xmp.photoshop.City",
-                                           "Xmp.photoshop.State",
-                                           "Xmp.photoshop.Country")) {
-      Group group;
-      group.family = "xmp-legacy";
-      group.rank = 1;
-      group.primary_key = "Xmp.photoshop.City";
-      add_sources(group.sources, document, backend, "Xmp.photoshop.City");
-      add_sources(group.sources, document, backend, "Xmp.photoshop.State");
-      add_sources(group.sources, document, backend, "Xmp.photoshop.Country");
-      group.value = make_value(std::vector<Structure>{std::move(*fields)});
-      groups.push_back(std::move(group));
-    }
-    if (auto fields = location_from_fields(document, "Iptc.Application2.City",
-                                           "Iptc.Application2.ProvinceState",
-                                           "Iptc.Application2.CountryName")) {
-      Group group;
-      group.family = "iim";
-      group.rank = 2;
-      group.primary_key = "Iptc.Application2.City";
-      add_sources(group.sources, document, backend, "Iptc.Application2.City");
-      add_sources(group.sources, document, backend,
-                  "Iptc.Application2.ProvinceState");
-      add_sources(group.sources, document, backend,
-                  "Iptc.Application2.CountryName");
-      group.value = make_value(std::vector<Structure>{std::move(*fields)});
-      groups.push_back(std::move(group));
-    }
-    return;
-  }
-
   const std::string xmp =
       rep.xmp_property.empty() ? std::string() : xmp_base_key(rep.xmp_property);
   const std::string iim =
@@ -1735,8 +1667,12 @@ void collect_registry_property(std::vector<Group>& groups,
   if (def->datatype == Datatype::structure_list) {
     if (!xmp.empty()) {
       const bool names_as_entities = xmp_base_keys(rep.xmp_property).size() > 1;
+      const std::size_t before = groups.size();
       push(video_structure_list_group(document, backend, xmp, "xmp", 0,
                                       names_as_entities));
+      if (is_photo_location_id(property_id) && groups.size() > before) {
+        decode_location_value(groups.back().value);
+      }
     }
     return;
   }
@@ -1857,7 +1793,7 @@ std::optional<Group> video_structure_group(const BaseDocument& document,
         }
       } else {
         const std::string text = trimmed(entry->value);
-        if (!text.empty()) {
+        if (!text.empty() && !is_xmp_type_marker(text)) {
           fields = structure_from_uri(text);
         }
       }
@@ -1876,7 +1812,7 @@ std::optional<Group> video_structure_group(const BaseDocument& document,
   group.family = std::move(family);
   group.rank = rank;
   group.primary_key = std::string(base);
-  add_sources(group.sources, document, backend, base);
+  add_struct_sources(group.sources, document, backend, base);
   group.value = make_value(std::move(fields));
   return group;
 }
@@ -1904,7 +1840,7 @@ std::optional<Group> video_structure_list_group(
         continue;
       }
       const std::string text = trimmed(entry->value);
-      if (text.empty()) {
+      if (text.empty() || is_xmp_type_marker(text)) {
         continue;
       }
       if (names_as_entities) {
@@ -1926,8 +1862,17 @@ std::optional<Group> video_structure_list_group(
       flattened.insert_or_assign(name, make_value(text));
     }
   }
-  if (items.empty() && !flattened.empty()) {
-    items.push_back(std::move(flattened));
+  if (!flattened.empty()) {
+    if (items.empty()) {
+      items.push_back(std::move(flattened));
+    } else {
+      // ExifTool JSON without -struct emits a parent brace/JSON struct plus
+      // flattened field tags (LocationCreatedGPSLatitude). Merge those into
+      // the first bag item; otherwise GPS lat/lon are dropped.
+      for (auto& [name, value] : flattened) {
+        items.front().insert_or_assign(name, std::move(value));
+      }
+    }
   }
   if (items.empty()) {
     return std::nullopt;
@@ -1936,7 +1881,7 @@ std::optional<Group> video_structure_list_group(
   group.family = std::move(family);
   group.rank = rank;
   group.primary_key = std::string(base);
-  add_sources(group.sources, document, backend, base);
+  add_struct_sources(group.sources, document, backend, base);
   group.value = make_value(std::move(items));
   return group;
 }

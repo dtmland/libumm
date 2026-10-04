@@ -1741,6 +1741,162 @@ int test_tier3_accessor_roundtrip(const std::string& backend, const char* folder
   return 0;
 }
 
+int test_photo_location_structs(const std::string& backend, const char* folder,
+                                const char* ext) {
+  const auto file = copy_fixture(raw_stem(folder, "minimal", ext),
+                                 backend + std::string("-location") + ext);
+  umm::Metadata metadata;
+  umm::Structure loc;
+  loc.emplace("name", umm::Value{std::string("Studio")});
+  loc.emplace("identifiers",
+              umm::Value{std::string("https://example.com/loc")});
+  loc.emplace("sublocation", umm::Value{std::string("Le Marais")});
+  loc.emplace("city", umm::Value{std::string("Paris")});
+  loc.emplace("provinceState", umm::Value{std::string("IDF")});
+  loc.emplace("countryName", umm::Value{std::string("France")});
+  loc.emplace("countryCode", umm::Value{std::string("FR")});
+  loc.emplace("worldRegion", umm::Value{std::string("Europe")});
+  loc.emplace("gpsLatitude", umm::Value{37.7749});
+  loc.emplace("gpsLongitude", umm::Value{-122.4194});
+  loc.emplace("gpsAltitude", umm::Value{16.5});
+  loc.emplace("gpsAltitudeRef", umm::Value{std::int64_t{0}});
+  umm::Structure shown;
+  shown.emplace("city", umm::Value{std::string("Lyon")});
+  shown.emplace("gpsLatitude", umm::Value{45.7640});
+  if (!metadata.setLocationCreated({loc}).ok() ||
+      !metadata.setLocationShown({shown}).ok()) {
+    return fail("set photo Location structs");
+  }
+  const auto written = umm::write(file, metadata, opts(backend));
+  if (!written.ok()) {
+    if (written.error().code == umm::ErrorCode::unsupported_capability ||
+        written.error().code == umm::ErrorCode::unsupported_type) {
+      return 0;
+    }
+    std::fprintf(stderr, "location write failed (%s %s %s): %s (%s)\n",
+                 backend.c_str(), folder, ext, written.error().message.c_str(),
+                 written.error().detail.c_str());
+    return 1;
+  }
+  bool saw_created = false;
+  bool saw_shown = false;
+  bool saw_legacy = false;
+  for (const umm::BaseKey& key : written.value().written) {
+    if (key.key == "Xmp.Iptc4xmpExt.LocationCreated") {
+      saw_created = true;
+    }
+    if (key.key == "Xmp.Iptc4xmpExt.LocationShown") {
+      saw_shown = true;
+    }
+    if (key.key == "Xmp.photoshop.City" ||
+        key.key == "Iptc.Application2.City") {
+      saw_legacy = true;
+    }
+  }
+  if (!saw_created || !saw_shown) {
+    std::fprintf(stderr, "location write missing XMP structs (%s %s)\n",
+                 backend.c_str(), folder);
+    return 1;
+  }
+  if (saw_legacy) {
+    return fail("location write leaked legacy city fields");
+  }
+  const auto round = umm::read(file, ropts(backend));
+  if (!round.ok()) {
+    std::fprintf(stderr, "location read failed (%s %s): %s\n", backend.c_str(),
+                 folder, round.error().message.c_str());
+    return 1;
+  }
+  const auto created = round.value().locationCreated();
+  const auto shown_prop = round.value().locationShown();
+  const auto* created_list =
+      created ? std::get_if<std::vector<umm::Structure>>(&created->value.data)
+              : nullptr;
+  const auto* shown_list =
+      shown_prop
+          ? std::get_if<std::vector<umm::Structure>>(&shown_prop->value.data)
+          : nullptr;
+  if (!created_list || created_list->empty() || !shown_list ||
+      shown_list->empty()) {
+    return fail("location round-trip missing structs");
+  }
+  const umm::Structure& got = created_list->front();
+  auto text = [&](std::string_view name, std::string_view expected) {
+    const auto it = got.find(std::string(name));
+    const auto* value =
+        it == got.end() ? nullptr : std::get_if<std::string>(&it->second.data);
+    return value && *value == expected;
+  };
+  auto gps = [&](std::string_view name, double expected, double eps) {
+    const auto it = got.find(std::string(name));
+    if (it == got.end()) {
+      return false;
+    }
+    if (const auto* d = std::get_if<double>(&it->second.data)) {
+      return std::fabs(*d - expected) <= eps;
+    }
+    if (const auto* i = std::get_if<std::int64_t>(&it->second.data)) {
+      return std::fabs(static_cast<double>(*i) - expected) <= eps;
+    }
+    return false;
+  };
+  auto identifiers = [&]() {
+    const auto it = got.find("identifiers");
+    if (it == got.end()) {
+      return false;
+    }
+    if (const auto* value = std::get_if<std::string>(&it->second.data)) {
+      return *value == "https://example.com/loc";
+    }
+    if (const auto* list =
+            std::get_if<std::vector<std::string>>(&it->second.data)) {
+      for (const std::string& item : *list) {
+        if (item == "https://example.com/loc") {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+  if (!text("name", "Studio") || !identifiers() ||
+      !text("sublocation", "Le Marais") || !text("city", "Paris") ||
+      !text("provinceState", "IDF") || !text("countryName", "France") ||
+      !text("countryCode", "FR") || !text("worldRegion", "Europe") ||
+      !gps("gpsLatitude", 37.7749, 1e-5) ||
+      !gps("gpsLongitude", -122.4194, 1e-5) ||
+      !gps("gpsAltitude", 16.5, 0.5) || !gps("gpsAltitudeRef", 0, 0.5)) {
+    std::fprintf(stderr, "locationCreated round-trip fields (%s %s): %s\n",
+                 backend.c_str(), folder,
+                 created->value.toString().c_str());
+    for (const umm::BaseEntry& item : round.value().dumpAll()) {
+      if (item.key.key.find("Location") != std::string::npos ||
+          item.key.key.find("GPS") != std::string::npos ||
+          item.key.key.find("Gps") != std::string::npos) {
+        std::fprintf(stderr, "  base %s = %s\n", item.key.key.c_str(),
+                     item.value.c_str());
+      }
+    }
+    return 1;
+  }
+  const auto shown_city = shown_list->front().find("city");
+  const auto* shown_city_text =
+      shown_city == shown_list->front().end()
+          ? nullptr
+          : std::get_if<std::string>(&shown_city->second.data);
+  if (!shown_city_text || *shown_city_text != "Lyon") {
+    return fail("locationShown city round-trip");
+  }
+  const auto shown_lat = shown_list->front().find("gpsLatitude");
+  const auto* shown_lat_n =
+      shown_lat == shown_list->front().end()
+          ? nullptr
+          : std::get_if<double>(&shown_lat->second.data);
+  if (!shown_lat_n || std::fabs(*shown_lat_n - 45.7640) > 1e-5) {
+    return fail("locationShown GPS round-trip");
+  }
+  return 0;
+}
+
 int check_backend(const std::string& backend,
                   const std::vector<std::string>& readers) {
   if (const int rc = test_payload(backend, "jpeg", ".jpg"); rc != 0) {
@@ -1842,6 +1998,30 @@ int check_backend(const std::string& backend,
     return rc;
   }
   if (const int rc = test_photo_mapped_roundtrip(backend); rc != 0) {
+    return rc;
+  }
+  if (const int rc = test_photo_location_structs(backend, "jpeg", ".jpg");
+      rc != 0) {
+    return rc;
+  }
+  if (const int rc = test_photo_location_structs(backend, "tiff", ".tif");
+      rc != 0) {
+    return rc;
+  }
+  if (const int rc = test_photo_location_structs(backend, "png", ".png");
+      rc != 0) {
+    return rc;
+  }
+  if (const int rc = test_photo_location_structs(backend, "webp", ".webp");
+      rc != 0) {
+    return rc;
+  }
+  if (const int rc = test_photo_location_structs(backend, "raw", ".dng");
+      rc != 0) {
+    return rc;
+  }
+  if (const int rc = test_photo_location_structs(backend, "avif", ".avif");
+      rc != 0) {
     return rc;
   }
   return test_dng_ifd0_datetimeoriginal(backend);

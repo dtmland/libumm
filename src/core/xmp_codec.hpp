@@ -28,6 +28,13 @@ std::optional<Structure> decode_structure_text(std::string_view text);
 std::optional<std::vector<Structure>> decode_structure_list_text(
     std::string_view text);
 
+bool is_photo_location_id(std::string_view id);
+std::optional<double> parse_gps_coord(std::string_view text);
+std::string format_gps_coord(double degrees, bool longitude);
+Structure canonicalize_location_struct(const Structure& fields);
+Structure encode_location_struct_fields(const Structure& fields);
+void decode_location_value(Value& value);
+
 bool structure_is_uri_like(const Structure& fields);
 std::string uri_from_structure(const Structure& fields);
 Structure structure_from_uri(std::string_view uri);

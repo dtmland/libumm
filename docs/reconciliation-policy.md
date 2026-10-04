@@ -219,20 +219,31 @@ Well-known Phase 1 id until an EXIF-domain registry exists (session 08).
 
 | Family | Base keys | Origin |
 | --- | --- | --- |
-| XMP structured | `Xmp.Iptc4xmpExt.LocationCreated` | IPTC-TR Extension LocationCreated |
-| XMP legacy | `Xmp.photoshop.City` / `State` / `Country` | IPTC-MG legacy Photoshop mapping |
-| IIM legacy | `Iptc.Application2.City` (`2:90`), `ProvinceState` (`2:95`), `CountryName` (`2:101`) | IPTC-MG legacy IIM named place |
+| XMP | `Xmp.Iptc4xmpExt.LocationCreated` | IPTC-TR Extension LocationCreated |
 
-Phase 1 stores one `Structure` with fields `city`, `provinceState`,
-`countryName` when only legacy tags exist (fixture `gps.jpg` /
-`full-agreeing.jpg`). Structured Extension values win when present.
+The value is a list of IPTC `Location` structures with TR fields `name`,
+`identifiers`, `sublocation`, `city`, `provinceState`, `countryName`,
+`countryCode`, `worldRegion`, `gpsLatitude`, `gpsLongitude`, `gpsAltitude`,
+and `gpsAltitudeRef`. GPS strings (`DDD,MM.mmmmmmH`, decimal, or decimal plus
+hemisphere) are stored as numbers; write-sync emits decimal plus hemisphere.
+Equivalence for GPS fields uses 1e-5° and 0.5 m; other shared fields
+compare after trim; extra fields on one side are more complete, not a conflict.
 
-- Equivalence: shared fields equal after trim; extra fields on one side are
-  more complete, not a conflict, if the shared fields match.
-- Disagreement: `reconciled`, structured XMP > photoshop legacy > IIM.
-- **Write-sync:** structured LocationCreated when the writer can; also legacy
-  IIM + photoshop fields from `city` / `provinceState` / `countryName`. Full
-  Extension location structures are Stage 6.
+`photoshop:City` / `State` / `Country` and IIM `2:90` / `2:95` / `2:101` are
+**not** representations of this property. They belong to `cityLegacy`,
+`provinceOrStateLegacy`, and `countryLegacy` (C4b). A side cast onto Location
+Shown is session 47. EXIF GPS IFD / top-level XMP-exif GPS stay
+`exif.gps.position` until session 48.
+
+- Disagreement: `reconciled` among LocationCreated XMP groups (rank 0).
+- **Write-sync:** XMP LocationCreated only (table-driven struct encoding). Does
+  not write photoshop or IIM city/state/country.
+
+### `iptc.photo.locationShownInTheImage` (structure list)
+
+Same `Location` struct and GPS codec as Location Created. Base key
+`Xmp.Iptc4xmpExt.LocationShown`. Independent of Location Created and of the
+legacy city ids.
 
 ### Table-driven photo properties (session 39)
 

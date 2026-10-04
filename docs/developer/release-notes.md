@@ -4,6 +4,16 @@ Pre-1.0 (`0.y.z`): the C++ ABI is not stable. See [docs/abi-policy.md](../abi-po
 
 ## Unreleased
 
+### Session 46 — Full photo Location structs
+
+Photo `locationCreated` and `locationShownInTheImage` are full IPTC Location
+structures, including GPS fields (`gpsLatitude` / `gpsLongitude` / `gpsAltitude` /
+`gpsAltitudeRef`) as numbers. Write-sync emits XMP `LocationCreated` /
+`LocationShown`, not photoshop/IIM city. Legacy `cityLegacy` /
+`provinceOrStateLegacy` / `countryLegacy` no longer read or write as
+`locationCreated` (C4b). Camera EXIF GPS remains `exif.gps.position` until
+session 48. A side cast from legacy fields to Location Shown is session 47.
+
 ### Session 44 — Full read coverage
 
 `umm::read` reconciles every IPTC Photo or Video registry id for the file's domain, not

@@ -83,8 +83,10 @@ class Metadata {
   std::optional<PropertyValue> aiPromptWriterName() const;    // cross-media: iptc.photo.aiPromptWriterName / iptc.video.aiPromptWriterName
   std::optional<PropertyValue> aiSystemUsed() const;          // cross-media: iptc.photo.aiSystemUsed / iptc.video.aiSystemUsed
   std::optional<PropertyValue> aiSystemVersionUsed() const;   // cross-media: iptc.photo.aiSystemVersionUsed / iptc.video.aiSystemVersionUsed
-  // Location: GPS coordinates and named place are SEPARATE properties
-  // (supported-types.md §3).
+  // Location Created/Shown are full IPTC Location structs, including GPS
+  // fields on the struct (C4a). photoshop/IIM city/state/country belong to
+  // the legacy ids, not Location Created (C4b). Camera EXIF GPS remains
+  // exif.gps.position until session 48 (supported-types.md §3).
   std::optional<PropertyValue> otherConstraints() const;  // cross-media: lang-alt ↔ string
   std::optional<PropertyValue> digitalSourceType() const;  // cross-media: URI ↔ CvTerm.cvId
   std::optional<PropertyValue> modelReleaseStatus() const;  // cross-media: URI ↔ CvTerm.cvId
@@ -92,8 +94,8 @@ class Metadata {
   std::optional<PropertyValue> copyrightOwner() const;  // cross-media: name/identifiers subset; role video-only
   std::optional<PropertyValue> licensor() const;  // cross-media: photo list ↔ video single; >1 on video errors
   std::optional<PropertyValue> gps() const;              // cross-media: exif.gps.position
-  std::optional<PropertyValue> locationCreated() const;  // cross-media: iptc.photo.locationCreated / iptc.video.locationShot; video drops gpsAltitudeRef
-  std::optional<PropertyValue> locationShown() const;    // cross-media: iptc.photo.locationShownInTheImage / iptc.video.locationShown
+  std::optional<PropertyValue> locationCreated() const;  // full Location struct; video locationShot drops gpsAltitudeRef
+  std::optional<PropertyValue> locationShown() const;    // full Location struct (photo locationShownInTheImage / video locationShown)
   std::optional<PropertyValue> personShown() const;      // cross-media: iptc.photo.personShownInTheImageWithDetails / iptc.video.personShown
   std::optional<PropertyValue> productShown() const;     // cross-media: iptc.photo.productShownInTheImage / iptc.video.productShown
   std::optional<PropertyValue> shownEvent() const;       // cross-media: eventName+eventIdentifier ↔ iptc.video.shownEvent
