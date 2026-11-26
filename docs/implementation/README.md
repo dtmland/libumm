@@ -46,9 +46,12 @@ ships (decision record §5.2); docs are not edited ahead of the code.
 
 The governing design record is
 [2026-11-26-feature-request-1-decisions.md](../analysis/2026-11-26-feature-request-1-decisions.md)
-(F1–F15, **proposed**), answering [docs/feature-request-1.md](../feature-request-1.md)
+(F1–F16, **accepted** 2026-11-26), answering [docs/feature-request-1.md](../feature-request-1.md)
 (U1–U14). Each session is sized for about one hour; the record's §3 lists small sessions
-that can share a sitting and a suggested order.
+that can share a sitting and a suggested order. Sessions 52–59 ship as v0.2.0, sessions
+60–77 as v0.3.0.
+
+### v0.2.0
 
 | Session | Title | Requests | Depends on | Progress |
 |---|---|---|---|---|
@@ -57,25 +60,32 @@ that can share a sitting and a suggested order.
 | [54](54-backend-instance-pool.md) | Backend instance pool | U1 | 53 | planned |
 | [55](55-cancellation-api-and-checkpoints.md) | Cancellation API and core checkpoints | U9 | 52 | planned |
 | [56](56-exiftool-in-flight-cancellation.md) | ExifTool in-flight cancellation | U9 | 54, 55 | planned |
-| [57](57-datetime-shift-helpers.md) | `DateTime` shift and offset helpers | U8 | — | planned |
-| [58](58-property-access-api.md) | Per-property access API and reason codes | U4 | — | planned |
-| [59](59-property-access-agreement-matrix.md) | Per-property access agreement matrix | U4 | 58 | planned |
-| [60](60-selective-reads.md) | Selective reads | U10 | 52 | planned |
-| [61](61-read-many-and-batching.md) | `readMany`, ExifTool batching, benchmark | U10 | 54, 55, 60 | planned |
-| [62](62-read-time-upcasts.md) | Read-time upcasts | U3, U12, U13 (prerequisite) | — | planned |
-| [63](63-video-technical-upcasts.md) | Video technical upcasts from QuickTime | U3 | 62 | planned |
-| [64](64-technical-view-contract.md) | Technical view: header, source table, codegen | U2 | — | planned |
-| [65](65-technical-view-values.md) | Technical view: photo and video values | U2 | 63, 64 | planned |
-| [66](66-legacy-text-casts.md) | Legacy EXIF text casts | U12 | 62 | planned |
-| [67](67-container-text-casts.md) | Container text casts | U12 | 62 (after 66) | planned |
-| [68](68-hierarchical-keywords.md) | Hierarchical keywords and legacy write-sync policy | U12 | 66, 67 | planned |
-| [69](69-people-regions.md) | People regions read cast and guidance | U13 | 62 | planned |
-| [70](70-durable-writes.md) | Durable write option | U11 | — | planned |
-| [71](71-application-packaging-guide.md) | Application packaging and ExifTool guide | U7 | 52, 54 | planned |
-| [72](72-payload-digest.md) | Payload digest | U14 | — | planned |
-| [73](73-read-from-bytes.md) | Read from bytes | U5 | 52 | planned |
-| [74](74-more-type-mappings.md) | Read mappings and sidecars for BMP, MKV, AVI, WAV, ASF | U6 | 63 | planned |
-| [75](75-feature-request-1-verification.md) | Verification, doc audit, release notes | all | 52–74 | planned |
+| [57](57-property-access-api.md) | Per-property access API and reason codes | U4 | — | planned |
+| [58](58-property-access-agreement-matrix.md) | Per-property access agreement matrix | U4 | 57 | planned |
+| [59](59-v0.2.0-verification-and-release.md) | v0.2.0 verification and release | U1, U4, U7, U9 | 52–58 | planned |
+
+### v0.3.0
+
+| Session | Title | Requests | Depends on | Progress |
+|---|---|---|---|---|
+| [60](60-datetime-shift-helpers.md) | `DateTime` shift and offset helpers | U8 | — | planned |
+| [61](61-selective-reads.md) | Selective reads | U10 | 52 | planned |
+| [62](62-read-many-and-batching.md) | `readMany`, ExifTool batching, benchmark | U10 | 54, 55, 61 | planned |
+| [63](63-read-time-upcasts.md) | Read-time upcasts | U3, U12, U13 (prerequisite) | — | planned |
+| [64](64-video-technical-upcasts.md) | Video technical upcasts from QuickTime | U3 | 63 | planned |
+| [65](65-technical-view-contract.md) | Technical view: header, source table, codegen | U2 | — | planned |
+| [66](66-technical-view-values.md) | Technical view: photo and video values | U2 | 64, 65 | planned |
+| [67](67-legacy-text-casts.md) | Legacy EXIF text casts | U12 | 63 | planned |
+| [68](68-container-text-casts.md) | Container text casts | U12 | 63 (after 67) | planned |
+| [69](69-hierarchical-keywords.md) | Hierarchical keywords and legacy write-sync policy | U12 | 67, 68 | planned |
+| [70](70-people-regions.md) | People regions read cast and guidance | U13 | 63 | planned |
+| [71](71-durable-writes.md) | Durable write option | U11 | — | planned |
+| [72](72-application-packaging-guide.md) | Application packaging and ExifTool guide | U7 | 52, 54 | planned |
+| [73](73-payload-digest.md) | Payload digest (ExifTool `ImageDataHash`-compatible) | U14 | — | planned |
+| [74](74-metadata-diff.md) | Metadata diff and file comparison | U14 (F16) | 73 | planned |
+| [75](75-read-from-bytes.md) | Read from bytes | U5 | 52 | planned |
+| [76](76-more-type-mappings.md) | Read mappings and sidecars for BMP, MKV, AVI, WAV, ASF | U6 | 64 | planned |
+| [77](77-feature-request-1-verification.md) | v0.3.0 verification, doc audit, release | all | 60–76 | planned |
 
 ## Standing constraints (inherited from sessions 01–35)
 

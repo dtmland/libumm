@@ -1,4 +1,4 @@
-# Session 64 — Technical view: header, source table, codegen
+# Session 65 — Technical view: header, source table, codegen
 
 ## Goal
 
@@ -32,7 +32,7 @@ hand-written tag names in `src/` outside `src/generated/`.
   reported by `propertyAccess` as `property_read_only`.
 
 **Out:**
-- Filling values (session 65).
+- Filling values (session 66).
 
 ## Documentation
 

@@ -1,4 +1,4 @@
-# Session 67 — Container text casts (`pngText`, `quickTimeUserData`)
+# Session 68 — Container text casts (`pngText`, `quickTimeUserData`)
 
 ## Goal
 
@@ -7,7 +7,7 @@ copyright, and date created (U12, part 2).
 
 ## Depends on
 
-Session 62. Run after session 66 (same registry files and generator).
+Session 63. Run after session 67 (same registry files and generator).
 
 ## Governing decisions
 
@@ -23,7 +23,7 @@ F12, F9. C9, C10, H12 (dates without offset stay without offset).
 - `©day` parsing: partial-precision `DateTime`; no offset invented.
 - Fixtures: PNG with `tEXt` and `iTXt` chunks; MOV/MP4 with user data atoms (generator,
   MANIFEST).
-- Tests as in session 66.
+- Tests as in session 67.
 
 **Out:**
 - Writing the container text carriers.

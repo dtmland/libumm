@@ -1,4 +1,4 @@
-# Session 71 — Application packaging and ExifTool guide
+# Session 72 — Application packaging and ExifTool guide
 
 ## Goal
 
@@ -8,7 +8,7 @@ to locate and configure ExifTool (U7).
 ## Depends on
 
 Session 52 (call-order rules). Session 54 for pool sizing text. Documentation-only; can
-share a sitting with session 70.
+share a sitting with session 71.
 
 ## Governing decisions
 
@@ -26,7 +26,7 @@ F2. P1, P2 (licensing, corresponding source), S1c (locate, never bundle), P3/P9
   - locating ExifTool: explicit `ExifToolConfig` path from app settings, `UMM_EXIFTOOL`,
     PATH; offering `tools/get-exiftool/` to users; Windows `.exe` vs Perl packaging;
   - reconfiguring at runtime (F2) and pool sizing (session 54);
-  - surfacing ExifTool absence in the UI via `propertyAccess` reasons (session 58).
+  - surfacing ExifTool absence in the UI via `propertyAccess` reasons (session 57).
 - Link from `docs/user/guide.md` "Threads" and from `docs/README.md` if a new page is
   created instead of a section.
 

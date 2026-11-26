@@ -1,4 +1,4 @@
-# Session 65 — Technical view: photo and video values
+# Session 66 — Technical view: photo and video values
 
 ## Goal
 
@@ -7,7 +7,7 @@ source key for each value and a defined absent state (U2 acceptance).
 
 ## Depends on
 
-Sessions 63 (video technical values) and 64 (contract and source table).
+Sessions 64 (video technical values) and 65 (contract and source table).
 
 ## Governing decisions
 
@@ -19,7 +19,7 @@ F11, F10.
 - Adapters: Exiv2 fills `intrinsics` from `Image::pixelWidth()` / `pixelHeight()`;
   ExifTool requests only the intrinsic `File:` tags the source table lists.
 - Core fills the view from the generated source table after reconcile. Video fields come
-  from canonical `recordingDevice` and the `videoTechnical` values (session 63), applied
+  from canonical `recordingDevice` and the `videoTechnical` values (session 64), applied
   in memory for the view even when `ReadOptions::upcast` does not request them.
 - Orientation: EXIF `Orientation` 1–8 for photos; QuickTime rotation degrees for video.
   Pixel size: intrinsic first, then EXIF `PixelXDimension`/`PixelYDimension`.

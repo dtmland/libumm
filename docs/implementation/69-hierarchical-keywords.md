@@ -1,4 +1,4 @@
-# Session 68 — Hierarchical keywords and legacy write-sync policy
+# Session 69 — Hierarchical keywords and legacy write-sync policy
 
 ## Goal
 
@@ -7,7 +7,7 @@ writes do to legacy copies (U12, part 3).
 
 ## Depends on
 
-Sessions 66, 67. Small; can share a sitting with session 69.
+Sessions 67, 68. Small; can share a sitting with session 70.
 
 ## Governing decisions
 

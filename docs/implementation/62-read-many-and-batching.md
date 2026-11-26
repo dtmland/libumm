@@ -1,4 +1,4 @@
-# Session 61 — `readMany`, ExifTool batching, benchmark
+# Session 62 — `readMany`, ExifTool batching, benchmark
 
 ## Goal
 
@@ -7,7 +7,7 @@ measurably faster (U10 acceptance).
 
 ## Depends on
 
-Sessions 54 (pool), 55 (cancellation), 60 (selective reads).
+Sessions 54 (pool), 55 (cancellation), 61 (selective reads).
 
 ## Governing decisions
 

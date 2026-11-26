@@ -1,4 +1,4 @@
-# Session 69 — People regions read cast and guidance
+# Session 70 — People regions read cast and guidance
 
 ## Goal
 
@@ -7,7 +7,7 @@ Read person names from MWG and Microsoft face regions, and document how to write
 
 ## Depends on
 
-Session 62. Small; can share a sitting with session 68.
+Session 63. Small; can share a sitting with session 69.
 
 ## Governing decisions
 

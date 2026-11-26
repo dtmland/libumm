@@ -1,4 +1,4 @@
-# Session 63 — Video technical upcasts from QuickTime
+# Session 64 — Video technical upcasts from QuickTime
 
 ## Goal
 
@@ -7,7 +7,7 @@ and MOV files without XMP, and document which backend each value needs (U3).
 
 ## Depends on
 
-Session 62.
+Session 63.
 
 ## Governing decisions
 
@@ -18,9 +18,10 @@ F10. C7, C9 (one-way groups), C17 (VMH technical properties are upcast targets).
 **In:**
 - **Spike first (≤ 20 min):** build with `EXIV2_ENABLE_VIDEO ON` against the pinned Exiv2
   0.28.9, read the MP4/MOV Tier A fixtures, and record which `Xmp.video.*` /
-  `Xmp.audio.*` keys appear. Decide per OQ-F2 whether to enable it; if enabled, update
+  `Xmp.audio.*` keys appear. If the spike is clean, enable it (OQ-F2, accepted): update
   `cmake/LibummExiv2.cmake`, the Exiv2 capability data in `registry/capabilities/`, and
-  regenerate `docs/supported-types.md`.
+  regenerate `docs/supported-types.md` (generated; never hand-edit). If it is not clean,
+  record the gap in the decision record and keep the option off.
 - `registry/casts/video-technical.json`: one-way up group `videoTechnical` with sources
   per target (ExifTool QuickTime keys first; Exiv2 synthetic video keys when enabled) and
   citations. Rotation maps to `orientation`. Regenerate `src/generated/` and the property
@@ -35,7 +36,7 @@ F10. C7, C9 (one-way groups), C17 (VMH technical properties are upcast targets).
 
 **Out:**
 - Downcasting technical values (never; one-way).
-- The cross-media technical view (session 65).
+- The cross-media technical view (session 66).
 
 ## Documentation
 

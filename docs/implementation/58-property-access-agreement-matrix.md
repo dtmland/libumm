@@ -1,4 +1,4 @@
-# Session 59 — Per-property access agreement matrix
+# Session 58 — Per-property access agreement matrix
 
 ## Goal
 
@@ -7,7 +7,7 @@ type, property, and policy (U4 acceptance).
 
 ## Depends on
 
-Session 58.
+Session 57.
 
 ## Governing decisions
 

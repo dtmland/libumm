@@ -1,4 +1,4 @@
-# Session 70 — Durable write option
+# Session 71 — Durable write option
 
 ## Goal
 
@@ -6,7 +6,7 @@ Make `umm::write` durable on return when the caller asks for it (U11).
 
 ## Depends on
 
-None. Small; can share a sitting with session 57 or 71.
+None. Small; can share a sitting with session 60 or 72.
 
 ## Governing decisions
 

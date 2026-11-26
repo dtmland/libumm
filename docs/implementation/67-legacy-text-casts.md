@@ -1,4 +1,4 @@
-# Session 66 — Legacy EXIF text casts (`windowsXP`, `exifUserComment`)
+# Session 67 — Legacy EXIF text casts (`windowsXP`, `exifUserComment`)
 
 ## Goal
 
@@ -7,7 +7,7 @@ keywords, and creator (U12, part 1).
 
 ## Depends on
 
-Session 62.
+Session 63.
 
 ## Governing decisions
 
@@ -28,7 +28,7 @@ F12, F9. C9, C10 (heuristics; `exifUserComment` approximate).
   canonical values win (status `equal` / `needs_force`, never applied on read).
 
 **Out:**
-- Writing or removing the legacy tags (F12; session 68 documents the policy).
+- Writing or removing the legacy tags (F12; session 69 documents the policy).
 
 ## Documentation
 

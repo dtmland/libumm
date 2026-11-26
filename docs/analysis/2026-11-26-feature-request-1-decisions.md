@@ -1,12 +1,12 @@
 # Feature request 1 — decision record and session plan — 2026-11-26
 
-Status: **proposed**. Planning only; nothing here is implemented. The maintainer confirms
-or amends the F-series decisions and answers the open questions (§5) before the first
-session in each track starts. Sessions 52–75 in [docs/implementation/](../implementation/)
+Status: **accepted** (design only; nothing here is implemented). The maintainer answered
+OQ-F1–OQ-F6 on 2026-11-26 (§5). The same answers added F16 (metadata diff) and the
+§6 research on payload hashing. Sessions 52–77 in [docs/implementation/](../implementation/)
 carry the *what*; this record keeps the *why*.
 
 Source: [docs/feature-request-1.md](../feature-request-1.md) (requests U1–U14, written
-against the v0.1.2 tag). This record starts the **F** series (F1–F15). It does not change
+against the v0.1.2 tag). This record starts the **F** series (F1–F16). It does not change
 any C-, H-, S-, M-, R-, or P-series decision except where a row says so.
 
 Per the repository rules, the user, sysadmin, and developer docs are not edited ahead of the
@@ -39,7 +39,7 @@ Checked on `main` at `804a230` (version macros still `0.1.2`).
 
 ---
 
-## 2. Decisions (proposed)
+## 2. Decisions (accepted 2026-11-26)
 
 ### F1 — Thread-safety contract, in two steps (U1)
 
@@ -75,7 +75,8 @@ state, `cancel()`, `cancelled()`; copyable; cheap). `ReadOptions`, `WriteOptions
 `std::optional<std::chrono::steady_clock::time_point> deadline`.
 
 - New `ErrorCode::cancelled` (token) and `ErrorCode::deadline_exceeded` (deadline),
-  appended at the end of the enum. `backend_timeout` keeps meaning `command_timeout`.
+  appended at the end of the enum (two codes confirmed, OQ-F5). `backend_timeout` keeps
+  meaning `command_timeout`.
 - **Checkpoints:** before backend selection, between backend read and reconcile, between
   embedded and sidecar reads, and immediately before the atomic rename. Exiv2 calls are not
   interrupted mid-call (in-process, no safe abort); ExifTool calls are (F4).
@@ -107,7 +108,7 @@ call succeeds. The token check never blocks on the child.
   `unknown_property`. Stable within a minor version (request); new reasons are appended.
 - **One code path:** the implementation runs the same storage evaluation and write-sync
   mapping as `write(..., dry_run = true)` for a single-property change. It does not consult
-  a second table. The agreement matrix (session 59) is the acceptance test.
+  a second table. The agreement matrix (session 58) is the acceptance test.
 - No file read beyond sniffing; the result depends on path type, policy, and the backends
   available now.
 
@@ -145,7 +146,7 @@ read.
 std::function<void(const std::filesystem::path&, Result<Metadata>)>) -> Result<void>`.
 The callback runs on the calling thread, once per path, in input order. Per-file errors go
 to the callback; the return value fails only for cancellation, deadline, or argument
-errors. The ExifTool adapter batches up to N files per `-execute` (N fixed in session 61
+errors. The ExifTool adapter batches up to N files per `-execute` (N fixed in session 62
 after measurement) and splits results by `SourceFile`.
 
 ### F9 — Read-time upcasts (prerequisite for U3, U12, U13)
@@ -156,8 +157,8 @@ canonical values **in memory only**, with provenance that names the cast group a
 key (visible through `report_casts` and `describe`). Nothing is written. Only rules whose
 status would be `can_cast` apply; `needs_force` and `ambiguous` never apply on read.
 
-**Default.** Proposed: `nullopt` means no groups in v0.2 (keeps C9 opt-in behavior
-unchanged). See OQ-F1.
+**Default.** `nullopt` means no groups (OQ-F1, confirmed): C9 opt-in behavior is
+unchanged. Callers that want technical or legacy-text values on read list the groups.
 
 ### F10 — Video technical values from QuickTime (U3)
 
@@ -166,12 +167,17 @@ targeting `fileDuration`, `frameSize`, `videoFrameRate`, `videoCoding`, audio sa
 and channels, and `orientation` (from rotation). Each source key's backend requirement is
 documented in the generated property reference.
 
-For "without ExifTool", session 63 first spikes `EXIV2_ENABLE_VIDEO ON` against the pinned
+For "without ExifTool", session 64 first spikes `EXIV2_ENABLE_VIDEO ON` against the pinned
 Exiv2 0.28.9 and records what it reports for the MP4/MOV fixtures. Exiv2's video readers
 report container facts under synthetic `Xmp.video.*` / `Xmp.audio.*` keys. Those are not
 stored XMP, so under C7 they are **cast sources**, never representations, and they must not
 be written back. If the spike shows the Exiv2 path is unusable, the session records the
 gap and U3 ships ExifTool-only with the reason surfaced by F5.
+
+**Exiv2 video build (OQ-F2, accepted).** If the spike is clean, session 64 turns
+`EXIV2_ENABLE_VIDEO` on in `cmake/LibummExiv2.cmake` for the bundled build, updates the
+Exiv2 capability probe, and regenerates `docs/supported-types.md`. The page is generated;
+it is never hand-edited.
 
 ### F11 — Read-only technical view (U2)
 
@@ -228,28 +234,75 @@ per platform is documented in the user guide.
 ### F15 — Nice-to-have scope (U14, U5, U6)
 
 - **U14 payload digest.** `payloadDigest(path) -> Result<PayloadDigest>` with
-  `{std::string scheme; std::string hex;}`, scheme `umm-payload-v1-sha256`. First cut:
-  JPEG (all non-APPn, non-COM segments), PNG (critical chunks plus `tRNS`), WebP (`VP8`,
-  `VP8L`, `VP8X` image data, `ALPH`, `ANIM`, `ANMF`), MP4/MOV (contents of every `mdat` in
-  file order). Others return `unsupported_capability`. SHA-256 is implemented in-repo:
-  no existing dependency provides it (Exiv2 does not expose hashing; OS crypto APIs differ
-  per platform), and a small, test-vector-checked implementation is cheaper than a new
-  dependency. This needs maintainer sign-off (OQ-F4).
+  `{std::string scheme; std::string hex;}`. SHA-256 is implemented in-repo (OQ-F4,
+  approved): no existing dependency provides it (Exiv2 does not expose hashing; OS crypto
+  APIs differ per platform), and a small implementation checked against the FIPS 180-4 test
+  vectors is cheaper than a new dependency.
+  - **Compatibility first.** No IPTC, XMP, or EXIF field standardizes a "payload without
+    metadata" hash (§6). The closest widely used convention is ExifTool's `ImageDataHash`.
+    For every type where it is feasible, libumm hashes the **same byte ranges** as
+    `exiftool -api ImageHashType=SHA256 -ImageDataHash`. Those digests use scheme
+    `exiftool-imagedatahash-sha256`, so a libumm digest equals the one ExifTool users
+    already have. Where libumm cannot or does not want to match (for example, ExifTool
+    includes `JpgFromRaw` for some RAW types), the type uses scheme
+    `umm-payload-v1-sha256` and the session doc records the byte-range definition.
+  - **First cut:** JPEG, PNG, WebP, MP4/MOV. Session 73 starts by reading ExifTool's
+    `ImageDataHash` implementation (by type) and fixes each type's scheme from that.
+    Others return `unsupported_capability`.
+  - **Cross-check:** when ExifTool is installed, a test compares libumm's digest with
+    `ImageDataHash` (SHA256) for every Tier A fixture of an `exiftool-*` scheme type.
+  - **Storing the digest** (ExifTool's `XMP-et:OriginalImageHash` /
+    `OriginalImageHashType`) is not planned. `et` is ExifTool's private namespace, not a
+    standard; under C7 it could only be an explicit cast. Revisit on request.
 - **U5 bytes.** `read(std::span<const std::byte>, ReadOptions, std::string_view
   file_type_hint = {})`. Exiv2 uses `MemIo`. ExifTool's stdin is its argfile, so the
   adapter writes a private temp file and removes it after the read. No sidecar pairing.
 - **U6 types.** Neither backend writes BMP, MKV, AVI, WAV, or ASF embedded metadata, so
   "editing" means `sidecar_only` / `sidecar_recommended` XMP sidecars plus read mapping of
   standard representations (embedded XMP in RIFF `_PMX`) and casts for container tags.
-  Session 74 records this in `registry/capabilities/` and the generated supported-types
+  Session 76 records this in `registry/capabilities/` and the generated supported-types
   page.
+- **WAV (OQ-F3).** The maintainer accepted the video domain *if* it allowed embedded
+  writes. It does not: ExifTool reads WAV only (`registry/capabilities/exiftool.json`,
+  "Read-only in both backends") and Exiv2 has no WAV writer, so the media domain does not
+  change where metadata can be written. WAV is routed to the **video** domain so its VMH
+  audio fields (duration, sample rate, channels) and embedded XMP read through the same
+  mappings as MP4/MOV audio. Editing stays **sidecar-only**. Embedded WAV writes would need
+  a new RIFF writer, which is out of scope (libumm integrates existing implementations).
+
+### F16 — Metadata diff and file comparison (follows U14)
+
+**Decision.** Add a pure, backend-free comparison in a new header
+`include/umm/diff.hpp`:
+
+- `diff(const Metadata& a, const Metadata& b, DiffOptions = {}) -> MetadataDiff`. It lists
+  canonical properties added, removed, and changed. Changes compare normalized values with
+  the same rules reconcile uses to decide that two carriers agree (`src/core/reconcile.cpp`,
+  behind `detectConflict`), so it never reports formatting-only noise. `Metadata` has no
+  `operator==` today; the session adds the comparison helper. Optionally
+  (`DiffOptions::base_entries`) it also lists base-entry and unmapped differences by
+  `BaseKey` (`BaseEntry` already has defaulted equality). Diff is read-only and never
+  applies casts. Changed entries carry both values in the `ConflictEntry` style so callers
+  can render both sides.
+- `compareFiles(path_a, path_b, CompareOptions = {}) -> Result<FileComparison>`. It reads
+  both files and calls `payloadDigest` on each. It classifies the pair as `identical`,
+  `metadata_only` (same payload digest, different metadata), `payload_only`, or `both`, and
+  carries the `MetadataDiff`. If no digest is available for the type, it reports
+  `payload_unknown` instead of guessing.
+
+Rationale: the request behind U14 ("same photo, only metadata differs") is a diff
+question. Putting it in libumm keeps the canonical comparison rules (H-series reconcile
+normalization) in one place instead of every caller re-implementing them.
 
 ---
 
-## 3. Session map
+## 3. Session map and releases
 
 Sessions are sized for about one hour. "Pairs with" marks small sessions that can share one
-sitting.
+sitting. Session numbers follow release order (OQ-F6): **v0.2.0** ships sessions 52–59
+(concurrency, cancellation, per-property access), **v0.3.0** ships sessions 60–77.
+
+### v0.2.0 — concurrency, cancellation, property access
 
 | Session | Title | Requests | Depends on | Pairs with |
 |---|---|---|---|---|
@@ -258,38 +311,45 @@ sitting.
 | [54](../implementation/54-backend-instance-pool.md) | Backend instance pool | U1 | 53 | — |
 | [55](../implementation/55-cancellation-api-and-checkpoints.md) | Cancellation API and core checkpoints | U9 | 52 | — |
 | [56](../implementation/56-exiftool-in-flight-cancellation.md) | ExifTool in-flight cancellation | U9 | 54, 55 | — |
-| [57](../implementation/57-datetime-shift-helpers.md) | `DateTime` shift and offset helpers | U8 | — | 70 |
-| [58](../implementation/58-property-access-api.md) | Per-property access API and reason codes | U4 | — | — |
-| [59](../implementation/59-property-access-agreement-matrix.md) | Per-property access agreement matrix | U4 | 58 | — |
-| [60](../implementation/60-selective-reads.md) | Selective reads | U10 | 52 | — |
-| [61](../implementation/61-read-many-and-batching.md) | `readMany`, ExifTool batching, benchmark | U10 | 54, 55, 60 | — |
-| [62](../implementation/62-read-time-upcasts.md) | Read-time upcasts | (U3, U12, U13) | — | — |
-| [63](../implementation/63-video-technical-upcasts.md) | Video technical upcasts from QuickTime | U3 | 62 | — |
-| [64](../implementation/64-technical-view-contract.md) | Technical view: header, source table, codegen | U2 | — | — |
-| [65](../implementation/65-technical-view-values.md) | Technical view: photo and video values | U2 | 63, 64 | — |
-| [66](../implementation/66-legacy-text-casts.md) | Legacy EXIF text casts (`windowsXP`, `exifUserComment`) | U12 | 62 | — |
-| [67](../implementation/67-container-text-casts.md) | Container text casts (`pngText`, `quickTimeUserData`) | U12 | 62 | — |
-| [68](../implementation/68-hierarchical-keywords.md) | Hierarchical keywords and legacy write-sync policy | U12 | 66, 67 | 69 |
-| [69](../implementation/69-people-regions.md) | People regions read cast and guidance | U13 | 62 | 68 |
-| [70](../implementation/70-durable-writes.md) | Durable write option | U11 | — | 57, 71 |
-| [71](../implementation/71-application-packaging-guide.md) | Application packaging and ExifTool guide | U7 | 52 (54 for the pool text) | 70 |
-| [72](../implementation/72-payload-digest.md) | Payload digest | U14 | — | — |
-| [73](../implementation/73-read-from-bytes.md) | Read from bytes | U5 | 52 | — |
-| [74](../implementation/74-more-type-mappings.md) | Read mappings and sidecars for BMP, MKV, AVI, WAV, ASF | U6 | 63 (Exiv2 video spike) | — |
-| [75](../implementation/75-feature-request-1-verification.md) | Verification, doc audit, release notes | all | all | — |
+| [57](../implementation/57-property-access-api.md) | Per-property access API and reason codes | U4 | — | — |
+| [58](../implementation/58-property-access-agreement-matrix.md) | Per-property access agreement matrix | U4 | 57 | — |
+| [59](../implementation/59-v0.2.0-verification-and-release.md) | v0.2.0 verification and release | U1, U4, U7 (partial), U9 | 52–58 | — |
+
+### v0.3.0 — remaining requests
+
+| Session | Title | Requests | Depends on | Pairs with |
+|---|---|---|---|---|
+| [60](../implementation/60-datetime-shift-helpers.md) | `DateTime` shift and offset helpers | U8 | — | 71 |
+| [61](../implementation/61-selective-reads.md) | Selective reads | U10 | 52 | — |
+| [62](../implementation/62-read-many-and-batching.md) | `readMany`, ExifTool batching, benchmark | U10 | 54, 55, 61 | — |
+| [63](../implementation/63-read-time-upcasts.md) | Read-time upcasts | (U3, U12, U13) | — | — |
+| [64](../implementation/64-video-technical-upcasts.md) | Video technical upcasts from QuickTime | U3 | 63 | — |
+| [65](../implementation/65-technical-view-contract.md) | Technical view: header, source table, codegen | U2 | — | — |
+| [66](../implementation/66-technical-view-values.md) | Technical view: photo and video values | U2 | 64, 65 | — |
+| [67](../implementation/67-legacy-text-casts.md) | Legacy EXIF text casts (`windowsXP`, `exifUserComment`) | U12 | 63 | — |
+| [68](../implementation/68-container-text-casts.md) | Container text casts (`pngText`, `quickTimeUserData`) | U12 | 63 | — |
+| [69](../implementation/69-hierarchical-keywords.md) | Hierarchical keywords and legacy write-sync policy | U12 | 67, 68 | 70 |
+| [70](../implementation/70-people-regions.md) | People regions read cast and guidance | U13 | 63 | 69 |
+| [71](../implementation/71-durable-writes.md) | Durable write option | U11 | — | 60, 72 |
+| [72](../implementation/72-application-packaging-guide.md) | Application packaging and ExifTool guide | U7 | 52 (54 for the pool text) | 71 |
+| [73](../implementation/73-payload-digest.md) | Payload digest (ExifTool `ImageDataHash`-compatible) | U14 | — | — |
+| [74](../implementation/74-metadata-diff.md) | Metadata diff and file comparison | U14 (F16) | 73 | — |
+| [75](../implementation/75-read-from-bytes.md) | Read from bytes | U5 | 52 | — |
+| [76](../implementation/76-more-type-mappings.md) | Read mappings and sidecars for BMP, MKV, AVI, WAV, ASF | U6 | 64 (Exiv2 video spike) | — |
+| [77](../implementation/77-feature-request-1-verification.md) | v0.3.0 verification, doc audit, release | all | 60–76 | — |
 
 ### Suggested order
 
 Blocking items first, then the items that unblock other work:
 
-1. **52 → 53** (U1 minimum; unblocks parallel scans). **58 → 59** (U4) can run in parallel.
-2. **57** (+ **70**), **55**, **54**, **56**.
-3. **60 → 61** (scan speed), **62 → 63** (video technical).
-4. **64 → 65** (technical view), **66 → 67 → 68** (+ **69**).
-5. **71**, **72**, **73**, **74**, then **75**.
+1. **52 → 53** (U1 minimum; unblocks parallel scans). **57 → 58** (U4) can run in parallel.
+2. **55**, **54**, **56**, then **59** (cut v0.2.0).
+3. **60** (+ **71**), **61 → 62** (scan speed), **63 → 64** (video technical).
+4. **65 → 66** (technical view), **67 → 68 → 69** (+ **70**).
+5. **72**, **73 → 74**, **75**, **76**, then **77** (cut v0.3.0).
 
 Tracks that touch the same files (`umm.hpp` options structs, `src/read.cpp`) are ordered so
-that two sessions never change the same struct in parallel: 55, 60, 62, and 70 each add
+that two sessions never change the same struct in parallel: 55, 61, 63, and 71 each add
 `ReadOptions`/`WriteOptions` members, so they run one after another.
 
 ---
@@ -299,30 +359,46 @@ that two sessions never change the same struct in parallel: 55, 60, 62, and 70 e
 | Doc | Updated by |
 |---|---|
 | `include/umm/*.hpp` (normative, before code) | each session's first step |
-| `docs/user/guide.md` | 52, 55, 57, 58, 60, 61, 62, 63, 65, 66–69, 70, 72, 73 |
-| `docs/user/properties/` (generated) | 63, 64, 66–69 (regenerate) |
-| `docs/supported-types.md` (generated) | 63 (if Exiv2 video is enabled), 74 |
-| `docs/sysadmin/install.md` | 53 (sanitizer build), 63 (Exiv2 video option), 71 |
-| `docs/reconciliation-policy.md` | 62 (upcast provenance), 68 (legacy write-sync) |
-| `docs/developer/canonical-model.md` | 62, 64, 66–69 |
-| `docs/developer/implementation-history.md` | 75 (stage row for 52–75) |
-| `docs/developer/release-notes.md` | every session that changes the public API or layout |
-| `docs/feature-request-1.md` | 75 (status column per request) |
+| `docs/user/guide.md` | 52, 55, 57, 60, 61, 62, 63, 64, 66, 67–70, 71, 73, 74, 75 |
+| `docs/user/properties/` (generated) | 64, 65, 67–70 (regenerate) |
+| `docs/supported-types.md` (generated) | 64 (if Exiv2 video is enabled), 76 |
+| `docs/sysadmin/install.md` | 53 (sanitizer build), 64 (Exiv2 video option), 72 |
+| `docs/reconciliation-policy.md` | 63 (upcast provenance), 69 (legacy write-sync) |
+| `docs/developer/canonical-model.md` | 63, 65, 67–70 |
+| `docs/developer/implementation-history.md` | 59 (stage row for 52–59), 77 (stage row for 60–77) |
+| `docs/developer/release-notes.md` | every session that changes the public API or layout; 59 and 77 cut the release |
+| `docs/feature-request-1.md` | 59 and 77 (status column per request) |
 
 ---
 
-## 5. Open questions for the maintainer
+## 5. Maintainer answers (2026-11-26)
 
-- **OQ-F1 — Default upcasts on read.** Keep `nullopt` = none (C9 unchanged), or default to
-  the one-way technical and legacy-text groups so scans see them without opting in?
-  Proposed: none in v0.2; revisit after session 68.
-- **OQ-F2 — Exiv2 video readers.** Accept turning on `EXIV2_ENABLE_VIDEO` (F10, F15/U6)
-  if the session 63 spike is clean? It changes the Exiv2 capability probe and the
-  generated supported-types page.
-- **OQ-F3 — WAV domain.** Treat WAV as the video domain (VMH audio fields) or leave it
-  unmapped and sidecar-only?
-- **OQ-F4 — In-repo SHA-256** for U14, versus deferring U14.
-- **OQ-F5 — ErrorCode additions.** Two codes (`cancelled`, `deadline_exceeded`) or one
-  (`cancelled`, deadline in the message)? Proposed: two.
-- **OQ-F6 — Version.** Ship sessions 52–75 as v0.2.0 (new API, `SOVERSION` bump per
-  `docs/abi-policy.md`), or cut v0.2.0 after Track A and U4 and continue in v0.3.0?
+| Question | Answer | Effect |
+|---|---|---|
+| **OQ-F1** — Default upcasts on read | Off by default | F9: `ReadOptions::upcast = nullopt` applies no groups; C9 unchanged. |
+| **OQ-F2** — Exiv2 video readers | Yes, if the session 64 spike is clean | F10: session 64 enables `EXIV2_ENABLE_VIDEO`, updates the probe, regenerates `docs/supported-types.md`. |
+| **OQ-F3** — WAV domain | Video, if that allows embedded writes | It does not (no backend writes WAV). F15: WAV reads as video domain; editing stays sidecar-only. |
+| **OQ-F4** — In-repo SHA-256 | Approved; research a standard field | F15: in-repo SHA-256, byte-compatible with ExifTool `ImageDataHash` where feasible (§6). New F16 diff. |
+| **OQ-F5** — ErrorCode additions | Two codes | F3: `cancelled` and `deadline_exceeded`. |
+| **OQ-F6** — Version | v0.2.0, then v0.3.0 | §3: v0.2.0 = sessions 52–59; v0.3.0 = sessions 60–77. Each release bumps `SOVERSION` per `docs/abi-policy.md` (pre-1.0: major.minor). |
+
+---
+
+## 6. Research: is there a standard payload hash? (U14)
+
+Question from the maintainer: is there a standard field for a hash of the media payload
+that excludes metadata, so two files that differ only in metadata can be detected?
+
+| Source | What it is | Fit for U14 |
+|---|---|---|
+| ExifTool `ImageDataHash` (`html/TagNames/Extra.html`, `exiftool/exiftool`) | Computed on request (`-ImageDataHash` or `-api requesttags=imagedatahash`). Algorithm `-api ImageHashType=MD5\|SHA256\|SHA512` (default MD5). Covers JPEG, TIFF, PNG, CRW, CR3, MRW, RAF, X3F, IIQ, JP2, JXL, HEIC, AVIF, MOV/MP4 (video and audio data), and RIFF AVI, WAV, WEBP. Hashes main image data (plus `JpgFromRaw`/`OtherImage` for some types); excludes `ThumbnailImage` and `PreviewImage`. | Best match: de facto convention, widely deployed (also used by exiftool-vendored.js consumers). Not a standard. |
+| ExifTool `XMP-et:OriginalImageHash` / `OriginalImageHashType` | Where ExifTool suggests storing the hash. `et` is ExifTool's own XMP namespace (`lib/Image/ExifTool/XMP.pm`). | Non-standard carrier; not a representation under C7. |
+| DNG `RawImageDigest`, `NewRawImageDigest`, `OriginalRawFileDigest` | MD5 digests defined by the DNG specification. | DNG only. |
+| C2PA hard bindings (`c2pa.hash.data`, `c2pa.hash.bmff`) | Standard hash of the asset with declared exclusion ranges (the manifest, optionally other boxes). | Provenance signing; exclusion ranges are chosen per manifest, so two signers can hash different bytes. Not a general comparison key. |
+| XMP `xmpMM:DocumentID` / `InstanceID` | Identity fields assigned by editors. | Identity, not content; editors change or copy them. |
+| Perceptual hashes (pHash, dHash) | Similarity after re-encoding or resizing. | Different problem (near-duplicates); out of scope. |
+
+**Conclusion.** No IPTC, XMP, EXIF, or container standard defines a "payload hash without
+metadata". ExifTool's `ImageDataHash` is the convention most tools already produce, so F15
+matches its byte ranges (scheme `exiftool-imagedatahash-sha256`) and verifies against
+ExifTool in CI. F16 builds the "only metadata differs" comparison on top of it.

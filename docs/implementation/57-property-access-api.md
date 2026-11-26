@@ -1,4 +1,4 @@
-# Session 58 — Per-property access API and reason codes
+# Session 57 — Per-property access API and reason codes
 
 ## Goal
 
@@ -25,13 +25,13 @@ F5. M2 (capability-driven, never silent), concept.md §12 (storage policy).
   synthetic single-property change. Factor a shared internal function if needed; do not
   add a second mapping table.
 - Read-only access: report `read` with `property_read_only` for one-way cast targets and
-  (after session 64) `technical.*`; report `none` with `no_mapping_for_type` when the type
+  (after session 65) `technical.*`; report `none` with `no_mapping_for_type` when the type
   has no representation of the property.
 - Unit tests for each reason, including `backend_unavailable` with ExifTool absent (reuse
   `tests/backend/test_exiftool_unavailable.cpp` setup) and each `StoragePolicy`.
 
 **Out:**
-- The full type × property × policy agreement matrix (session 59).
+- The full type × property × policy agreement matrix (session 58).
 
 ## Documentation
 

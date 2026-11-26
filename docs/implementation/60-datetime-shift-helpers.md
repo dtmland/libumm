@@ -1,4 +1,4 @@
-# Session 57 — `DateTime` shift and offset helpers
+# Session 60 — `DateTime` shift and offset helpers
 
 ## Goal
 
@@ -6,7 +6,7 @@ Batch clock repair without losing precision or inventing a time zone (U8).
 
 ## Depends on
 
-None. Small; can share a sitting with session 70.
+None. Small; can share a sitting with session 71.
 
 ## Governing decisions
 

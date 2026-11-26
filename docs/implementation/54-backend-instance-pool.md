@@ -34,7 +34,7 @@ F1 (step 2), F2. S1a, S1c.
 
 **Out:**
 - Cancellation (sessions 55–56).
-- Cross-file batching (session 61).
+- Cross-file batching (session 62).
 
 ## Documentation
 

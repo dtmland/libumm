@@ -1,4 +1,4 @@
-# Session 60 — Selective reads
+# Session 61 — Selective reads
 
 ## Goal
 
@@ -27,8 +27,8 @@ F7. C13 (dump views).
   read, on both backends.
 
 **Out:**
-- Multi-file reads and the benchmark (session 61).
-- Technical pseudo-ids (`technical.*`, session 65 adds them).
+- Multi-file reads and the benchmark (session 62).
+- Technical pseudo-ids (`technical.*`, session 66 adds them).
 
 ## Documentation
 
