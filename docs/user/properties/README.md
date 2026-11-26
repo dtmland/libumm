@@ -180,6 +180,7 @@ Canonical video ids that are not a cross-media accessor endpoint. Use `get` / `s
 These base keys are not canonical properties. They appear as cast sources or as frequent camera tags that stay non-canonical. Details: [base keys](base-keys.md).
 
 - [`Exif.GPSInfo.GPSLatitude`](base-keys.md#Exif.GPSInfo.GPSLatitude)
+- [`Exif.GPSInfo.GPSLongitude`](base-keys.md#Exif.GPSInfo.GPSLongitude)
 - [`Exif.Image.Make`](base-keys.md#Exif.Image.Make)
 - [`Exif.Image.Model`](base-keys.md#Exif.Image.Model)
 - [`Exif.Photo.BodySerialNumber`](base-keys.md#Exif.Photo.BodySerialNumber)

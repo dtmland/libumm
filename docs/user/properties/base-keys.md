@@ -19,6 +19,14 @@ Index: [property reference](README.md).
 |---|---|---|---|---|
 | `capturePosition` | up | [`iptc.video.locationShot`](video.md#iptc.video.locationShot)`[0].gpsLatitude` | H10 — Fan-in: combine per rule (GPS refs) | EXIF GPS IFD combined with latitude/longitude refs (H10); extra GPS tags remain unmapped (H20) |
 
+<a id="Exif.GPSInfo.GPSLongitude"></a>
+
+## `Exif.GPSInfo.GPSLongitude`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `capturePosition` | up | [`iptc.video.locationShot`](video.md#iptc.video.locationShot)`[0].gpsLongitude` | H10 — Fan-in: combine per rule (GPS refs) | EXIF GPS IFD combined with latitude/longitude refs (H10); extra GPS tags remain unmapped (H20) |
+
 <a id="Exif.Image.Make"></a>
 
 ## `Exif.Image.Make`
@@ -104,7 +112,9 @@ Lens model. Intentionally non-canonical.
 | Group | Direction | Canonical partner | Heuristic | Citation |
 |---|---|---|---|---|
 | `capturePosition` | down | [`iptc.video.locationShot`](video.md#iptc.video.locationShot)`[0].gpsLatitude` | H1 — List → single: first entry | First locationShot GPS (H1) to Keys location.ISO6709 and UserData GPSCoordinates |
+| `capturePosition` | down | [`iptc.video.locationShot`](video.md#iptc.video.locationShot)`[0].gpsLongitude` | H1 — List → single: first entry | First locationShot GPS (H1) to Keys location.ISO6709 and UserData GPSCoordinates |
 | `capturePosition` | up | [`iptc.video.locationShot`](video.md#iptc.video.locationShot)`[0].gpsLatitude` | H11 — Units / encodings; 1e-5° / 0.5 m | Apple QuickTime Keys location.ISO6709; H18 role 0 or absent only |
+| `capturePosition` | up | [`iptc.video.locationShot`](video.md#iptc.video.locationShot)`[0].gpsLongitude` | H11 — Units / encodings; 1e-5° / 0.5 m | Apple QuickTime Keys location.ISO6709; H18 role 0 or absent only |
 
 <a id="QuickTime.ModifyDate"></a>
 
@@ -120,7 +130,10 @@ Lens model. Intentionally non-canonical.
 
 | Group | Direction | Canonical partner | Heuristic | Citation |
 |---|---|---|---|---|
+| `capturePosition` | down | [`iptc.video.locationShot`](video.md#iptc.video.locationShot)`[0].gpsLatitude` | H1 — List → single: first entry | First locationShot GPS (H1) to Keys location.ISO6709 and UserData GPSCoordinates |
+| `capturePosition` | down | [`iptc.video.locationShot`](video.md#iptc.video.locationShot)`[0].gpsLongitude` | H1 — List → single: first entry | First locationShot GPS (H1) to Keys location.ISO6709 and UserData GPSCoordinates |
 | `capturePosition` | up | [`iptc.video.locationShot`](video.md#iptc.video.locationShot)`[0].gpsLatitude` | H11 — Units / encodings; 1e-5° / 0.5 m | QuickTime UserData copyright-xyz / GPSCoordinates |
+| `capturePosition` | up | [`iptc.video.locationShot`](video.md#iptc.video.locationShot)`[0].gpsLongitude` | H11 — Units / encodings; 1e-5° / 0.5 m | QuickTime UserData copyright-xyz / GPSCoordinates |
 
 ## Frequent camera keys
 

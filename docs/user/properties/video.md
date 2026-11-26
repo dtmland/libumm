@@ -1673,7 +1673,9 @@ Video Location Shot GPS lives on the IPTC Location struct. QuickTime GPS is a `c
 | Group | Direction | Partner | Heuristic | Flags | Citation |
 |---|---|---|---|---|---|
 | `capturePosition` | down | `QuickTime.Keys.location.ISO6709` | H1 — List → single: first entry | partial | First locationShot GPS (H1) to Keys location.ISO6709 and UserData GPSCoordinates |
+| `capturePosition` | down | `QuickTime.UserData.GPSCoordinates` | H1 — List → single: first entry | partial | First locationShot GPS (H1) to Keys location.ISO6709 and UserData GPSCoordinates |
 | `capturePosition` | up | `Exif.GPSInfo.GPSLatitude` | H10 — Fan-in: combine per rule (GPS refs) | partial | EXIF GPS IFD combined with latitude/longitude refs (H10); extra GPS tags remain unmapped (H20) |
+| `capturePosition` | up | `Exif.GPSInfo.GPSLongitude` | H10 — Fan-in: combine per rule (GPS refs) | partial | EXIF GPS IFD combined with latitude/longitude refs (H10); extra GPS tags remain unmapped (H20) |
 | `capturePosition` | up | `QuickTime.Keys.location.ISO6709` | H11 — Units / encodings; 1e-5° / 0.5 m | partial | Apple QuickTime Keys location.ISO6709; H18 role 0 or absent only |
 | `capturePosition` | up | `QuickTime.UserData.GPSCoordinates` | H11 — Units / encodings; 1e-5° / 0.5 m | partial | QuickTime UserData copyright-xyz / GPSCoordinates |
 
