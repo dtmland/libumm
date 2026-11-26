@@ -1086,7 +1086,7 @@ _No cast rules touch this property._
 ### Accessor
 
 - `Metadata::locationCreated()` — Tier 3 `struct_field_subset`. Other domain: [`iptc.video.locationShot`](video.md#iptc.video.locationShot).
-  Both Location lists; video Location lacks gpsAltitudeRef.
+  Both Location lists include gpsAltitude. Photo also has gpsAltitudeRef (0 above WGS 84, 1 below), which is dropped when setting video.
 
 <a id="iptc.photo.locationShownInTheImage"></a>
 

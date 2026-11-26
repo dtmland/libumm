@@ -230,6 +230,26 @@ class TestPropertyReference(unittest.TestCase):
                 row = f"| `capturePosition` | {direction} | `{key}` |"
                 self.assertEqual(video.count(row), 1, row)
 
+    def test_location_created_altitude_and_reference_are_distinct(self) -> None:
+        for domain, registry_dir in (("photo", REGISTRY_PHOTO), ("video", REGISTRY_VIDEO)):
+            data = json.loads(
+                (registry_dir / f"iptc-{domain}.json").read_text(encoding="utf-8")
+            )
+            location = next(
+                item for item in data["structs"]
+                if item["id"] == f"iptc.{domain}.struct.Location"
+            )
+            fields = {field["id"].rsplit(".", 1)[-1] for field in location["fields"]}
+            self.assertIn("gpsAltitude", fields)
+            self.assertEqual("gpsAltitudeRef" in fields, domain == "photo")
+
+        note = (
+            "Both Location lists include gpsAltitude. Photo also has gpsAltitudeRef "
+            "(0 above WGS 84, 1 below), which is dropped when setting video."
+        )
+        for page in ("README.md", "photo.md", "video.md"):
+            self.assertIn(note, (OUTPUT_DIR / page).read_text(encoding="utf-8"))
+
     def test_gitattributes_and_cmake_wire_the_generator(self) -> None:
         attrs = GITATTRIBUTES.read_text(encoding="utf-8")
         self.assertIn("docs/user/properties/**/*.md", attrs)
