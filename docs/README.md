@@ -22,7 +22,10 @@ Documentation is organized by audience.
 
 - [Implementation history](developer/implementation-history.md) — how libumm was built:
   standing constraints, stage-by-stage summary, conventions.
-- [Implementation sessions](implementation/README.md) — Phase 2 (36–42, complete) and canonical model and casting (43–51) session documents.
+- [Implementation sessions](implementation/README.md) — Phase 2 (36–42, complete), canonical model and casting (43–51), and feature request 1 (52–75, planned) session documents.
+- [Feature request 1 decisions](analysis/2026-11-26-feature-request-1-decisions.md)
+  — F1–F15 (proposed) answering [feature request 1](feature-request-1.md) U1–U14: claims
+  rechecked against current sources, session map 52–75, open questions.
 - [Canonical model](developer/canonical-model.md) — L0–L3 layers, representation versus
   cast (C7), first rule set, heuristics, how to add a cast rule.
 - [Reconciliation policy](reconciliation-policy.md) — precedence and write-sync rules across
