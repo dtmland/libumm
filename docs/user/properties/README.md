@@ -57,7 +57,7 @@ Short names spanning a photo id and a video id (`registry/mappings/cross-media-a
 
 | Accessor | Photo | Video | Transpose | Notes |
 |---|---|---|---|---|
-| `locationCreated` | [`iptc.photo.locationCreated`](photo.md#iptc.photo.locationCreated) | [`iptc.video.locationShot`](video.md#iptc.video.locationShot) | `struct_field_subset` | Both Location lists; video Location lacks gpsAltitudeRef. |
+| `locationCreated` | [`iptc.photo.locationCreated`](photo.md#iptc.photo.locationCreated) | [`iptc.video.locationShot`](video.md#iptc.video.locationShot) | `struct_field_subset` | Both Location lists include gpsAltitude. Photo also has gpsAltitudeRef (0 above WGS 84, 1 below), which is dropped when setting video. |
 | `locationShown` | [`iptc.photo.locationShownInTheImage`](photo.md#iptc.photo.locationShownInTheImage) | [`iptc.video.locationShown`](video.md#iptc.video.locationShown) | `passthrough` | Same Location struct list; photo property is locationShownInTheImage. |
 | `personShown` | [`iptc.photo.personShownInTheImageWithDetails`](photo.md#iptc.photo.personShownInTheImageWithDetails) | [`iptc.video.personShown`](video.md#iptc.video.personShown) | `passthrough` | Identical PersonWDetails struct lists. |
 | `productShown` | [`iptc.photo.productShownInTheImage`](photo.md#iptc.photo.productShownInTheImage) | [`iptc.video.productShown`](video.md#iptc.video.productShown) | `passthrough` | ProductWGtin ↔ ProductWGTIN; same fields. |

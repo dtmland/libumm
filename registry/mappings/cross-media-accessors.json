@@ -526,7 +526,7 @@
       "video_datatype": "struct",
       "video_cardinality": "many",
       "deferred": false,
-      "notes": "Both Location lists; video Location lacks gpsAltitudeRef."
+      "notes": "Both Location lists include gpsAltitude. Photo also has gpsAltitudeRef (0 above WGS 84, 1 below), which is dropped when setting video."
     },
     {
       "concept": "locationShown",

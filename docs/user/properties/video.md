@@ -1684,7 +1684,7 @@ Casts are opt-in (`umm::cast`). See [canonical model heuristics](../../developer
 ### Accessor
 
 - `Metadata::locationCreated()` — Tier 3 `struct_field_subset`. Other domain: [`iptc.photo.locationCreated`](photo.md#iptc.photo.locationCreated).
-  Both Location lists; video Location lacks gpsAltitudeRef.
+  Both Location lists include gpsAltitude. Photo also has gpsAltitudeRef (0 above WGS 84, 1 below), which is dropped when setting video.
 
 <a id="iptc.video.locationShown"></a>
 
