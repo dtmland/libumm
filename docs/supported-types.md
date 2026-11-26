@@ -1,9 +1,81 @@
-# Backend file-type coverage: Exiv2 and ExifTool
+# Supported file types
 
 > **GENERATED** from `registry/capabilities/` by `tools/registry/generate_supported_types.py`.
 > Do not edit by hand. Decision **M2**: capability data is machine-readable; this document is generated output. Tier A CI probes pinned backends against the data so drift fails a test.
 
-This is a snapshot of **file-type** (container) support in the two backends named in [concept.md](analysis/concept.md). It is **not** a list of IPTC/EXIF/XMP *properties*.
+The table in [Types libumm accepts](#types-libumm-accepts) is the supported-type list: read, write, canonical coverage, and which backend is used. It is **not** a list of IPTC/EXIF/XMP *properties*. Backend category tables below are secondary.
+
+## Types libumm accepts
+
+This is the list. `umm::capabilities`, `umm::read` / `get`, and `umm::write` / `set` recognize these containers (magic, then extension). Anything else is `unsupported_type`. Sections 1–6 are the backend evidence; they are not a second supported-type list.
+
+| Type | Extensions | Read | Write | Canonical | Tools |
+|---|---|---|---|---|---|
+| JPEG | .jpg, .jpeg | yes | yes | direct (photo) | Exiv2 (preferred), ExifTool |
+| TIFF | .tif, .tiff | yes | yes | direct (photo) | Exiv2 (preferred), ExifTool |
+| DNG | .dng | yes | yes | direct (photo) | Exiv2 (preferred), ExifTool |
+| JP2 | .jp2 | yes | yes | direct (photo) | Exiv2 (preferred), ExifTool |
+| PSD | .psd | yes | yes | direct (photo) | Exiv2 (preferred), ExifTool |
+| EXV | .exv | yes | yes | direct (photo) | Exiv2 (preferred), ExifTool |
+| ARW | .arw | yes | sidecar | direct (photo) | Exiv2 (preferred), ExifTool |
+| CR2 | .cr2 | yes | sidecar | direct (photo) | Exiv2 (preferred), ExifTool |
+| NEF | .nef | yes | sidecar | direct (photo) | Exiv2 (preferred), ExifTool |
+| ORF | .orf | yes | sidecar | direct (photo) | Exiv2 (preferred), ExifTool |
+| PEF | .pef | yes | sidecar | direct (photo) | Exiv2 (preferred), ExifTool |
+| SRW | .srw | yes | sidecar | direct (photo) | Exiv2 (preferred), ExifTool |
+| PGF | .pgf | yes | yes | direct (photo) | Exiv2 (preferred), ExifTool (read) |
+| PNG | .png | yes | yes | direct (photo) | Exiv2 (preferred), ExifTool |
+| WEBP | .webp | yes | yes | direct (photo) | Exiv2 (preferred), ExifTool |
+| EPS | .eps | yes | yes | direct (photo) | Exiv2 (preferred), ExifTool |
+| XMP | .xmp | yes | yes | direct (photo) | Exiv2 (preferred), ExifTool |
+| CRW | .crw | yes | sidecar | direct (photo) | Exiv2 (preferred), ExifTool |
+| DCP | .dcp | yes | sidecar | direct (photo) | Exiv2 (preferred), ExifTool |
+| CR3 | .cr3 | yes | sidecar | direct (photo) | ExifTool (preferred), Exiv2 (read, BMFF build) |
+| HEIC | .heic | yes | sidecar | direct (photo) | ExifTool (preferred), Exiv2 (read, BMFF build) |
+| HEIF | .heif | yes | sidecar | direct (photo) | ExifTool (preferred), Exiv2 (read, BMFF build) |
+| AVIF | .avif | yes | sidecar | direct (photo) | ExifTool (preferred), Exiv2 (read, BMFF build) |
+| JXL | .jxl | yes | sidecar | direct (photo) | ExifTool (preferred), Exiv2 (read) |
+| RAF | .raf | yes | sidecar | direct (photo) | ExifTool (preferred), Exiv2 (read) |
+| RW2 | .rw2 | yes | sidecar | direct (photo) | ExifTool (preferred), Exiv2 (read) |
+| MRW | .mrw | yes | sidecar | direct (photo) | ExifTool (preferred), Exiv2 (read) |
+| SR2 | .sr2 | yes | sidecar | direct (photo) | ExifTool (preferred), Exiv2 (read) |
+| GIF | .gif | yes | yes | direct (photo) | ExifTool (preferred), Exiv2 (identify only) |
+| BMP | .bmp | yes | no | — | ExifTool (preferred, read), Exiv2 (identify only) |
+| TGA | .tga | no | no | — | Exiv2 (preferred, identify only) |
+| MOV | .mov | yes | yes | direct + cast (video) | ExifTool (preferred), Exiv2 (rudimentary read) |
+| MP4 | .mp4 | yes | yes | direct + cast (video) | ExifTool (preferred), Exiv2 (rudimentary read) |
+| MKV | .mkv | yes | no | — | ExifTool (preferred, read), Exiv2 (rudimentary read) |
+| AVI | .avi | yes | no | — | ExifTool (preferred, read), Exiv2 (rudimentary read) |
+| WAV | .wav | yes | no | — | ExifTool (preferred, read), Exiv2 (rudimentary read) |
+| ASF | .asf | yes | no | — | ExifTool (preferred, read), Exiv2 (rudimentary read) |
+
+**Read** — `yes` if at least one backend can read metadata (`umm::read` / `get`). Identify-only recognition (MIME type and dimensions, no metadata categories) is `no`.
+
+**Write** — default `umm::write` / `set` (`StoragePolicy::preferred`):
+
+- `yes` — embeds metadata in the file
+- `sidecar` — writes a paired `.xmp` because `sidecar_recommended` is set, even when Tools lists an embedded writer. `StoragePolicy::embedded_only` uses that writer instead
+- `no` — `unsupported_capability`. `StoragePolicy::sidecar_only` can still create a paired `.xmp` for any type in this table
+
+`yes` / `sidecar` is not “every location encoding is writable.” GPS versus named place versus QuickTime GPS stays in [§3](#3-location-metadata-gps-and-named-place).
+
+**Canonical** — whether container metadata is a representation or only a cast. This is not a promise that a given file contains those tags.
+
+- `direct (photo)` — the container can hold EXIF, IPTC IIM, and/or XMP representations of `iptc.photo.*`. Every type here except MP4 and MOV is the photo domain (`src/core/media_domain.hpp`). `umm::read` / `get` reconcile those automatically.
+- `direct + cast (video)` — MP4 and MOV use `iptc.video.*`. XMP and Video Metadata Hub QuickTime keys are representations. Container GPS, movie-header dates, and recording-device tags are casts (`registry/casts/`); they are not filled unless casting is requested. Default video writes downcast `capturePosition`.
+- `—` — no representation family and no cast rule. Backends may still return base tags (`dumpAll()` / `dumpUnmapped()`).
+
+Photo side casts (`locationShownLegacy`, `personShown`, `creatorImageCreator`) copy between canonical properties that are already direct. They are not a separate container-coverage flag.
+
+**Tools** — backends that read or write metadata for the type. Names are the `exiv2` (libexiv2) and `exiftool` backend ids. A name with no role, or only **preferred**, can both read and write. **read** means that backend does not write. **preferred** is what `umm::read` / `umm::write` select when `backend` is empty and that backend is available; otherwise the first available backend. An explicit `backend` is a hard pin. Exiv2 video read is rudimentary and is not the canonical path. **BMFF build** means Exiv2 read needs `enable_bmff`.
+
+ISO BMFF whose brand is not HEIC, HEIF, AVIF, CR3, JXL, or QuickTime is sniffed as MP4. Section 4 lists extra ExifTool containers that this table does not route.
+
+---
+
+## Backend detail
+
+The rest of this page is a snapshot of **file-type** (container) support in the two backends named in [concept.md](analysis/concept.md). Use it to see why two types with the same Read/Write cell are not interchangeable — especially for location.
 
 **Location is called out separately.** `getLocation()` / `setLocation()` in [concept.md](analysis/concept.md) is not a file-type flag. Coordinates and named place live in different encodings, and Exiv2 vs ExifTool do not offer the same location **read** or **write** path for the same type. See [§3 Location metadata](#3-location-metadata-gps-and-named-place).
 
@@ -14,7 +86,7 @@ Sources (check these for drift):
 - ExifTool file types and meta-information formats: [ExifTool README](https://github.com/exiftool/exiftool/blob/master/README) (lists **GPS** and **GeoTIFF** as their own r/w/c formats)
 - ExifTool geotagging (track → GPS tags, including QuickTime `GPSCoordinates`): [geotag.html](https://github.com/exiftool/exiftool/blob/master/html/geotag.html)
 
-Capability discovery in libumm must be **per backend, per file type, and per metadata category** — including **location** (GPS coordinates vs IPTC/XMP named place vs container GPS). A static “this extension is supported” table is not enough.
+Capability discovery in libumm is **per backend, per file type, and per metadata category** — including **location** (GPS coordinates vs IPTC/XMP named place vs container GPS). The master list answers whether anything can be read or written. It does not collapse those categories into one flag.
 
 ---
 

@@ -21,7 +21,9 @@ These rules were applied throughout and still govern changes:
   `registry/` JSON and code-generated; libumm never invents metadata definitions.
 - **Capability data is machine-readable** (M2): `registry/capabilities/` is the source of
   truth; `docs/supported-types.md` and `src/generated/capabilities_data.hpp` are generated,
-  and CI probes pinned backends for drift.
+  and CI probes pinned backends for drift. The generated page leads with the routed-type
+  master list (`policy.json`: read, write, canonical coverage, tools). Sections 1–6 stay
+  backend evidence, not a second supported-type list.
 - **Pins:** Exiv2 by checksum-pinned FetchContent (M4a); Strawberry Perl pinned on Windows
   (M4b); static default linkage (M4c). Pins live in `tools/build/backends.env`.
 - **Fixtures:** generated, tiny, in-repo (Tier A); third-party media only by checksummed
