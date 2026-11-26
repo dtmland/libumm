@@ -98,7 +98,8 @@ magic, so sniffing uses the `.dng` extension to discriminate DNG from TIFF
 
 ## Generated outputs
 
-- `supported-types.md` — narrative section order preserved; tables generated
+- `supported-types.md` — master list of routed types first (`policy.json`);
+  backend narrative section order preserved after that; tables generated
 - `src/generated/capabilities_data.hpp` — committed C++ lookup tables
 
 Editing JSON and regenerating must be byte-identical across runs. Stale

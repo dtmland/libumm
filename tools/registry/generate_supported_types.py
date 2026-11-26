@@ -17,6 +17,13 @@ DEFAULT_HPP = REPO_ROOT / "src" / "generated" / "capabilities_data.hpp"
 ACCESS_RANK = {"none": 0, "read": 1, "read_write": 2, "create": 3}
 CAT_KEYS = ("exif", "iptc", "xmp", "comments", "icc", "thumbnail")
 LOC_KEYS = ("gps_exif", "named_place", "xmp_location", "container_gps", "geotiff")
+READABLE = frozenset({"read", "read_write", "create"})
+WRITABLE = frozenset({"read_write", "create"})
+# Sniffed domain (src/core/media_domain.hpp): only these select iptc.video.*.
+VIDEO_DOMAIN = frozenset({"MP4", "MOV"})
+# Container cast base keys (registry/casts/). Photo side casts are property-to-property.
+CAST_BASE_PREFIXES = ("QuickTime.", "Exif.", "ExifTool.GoPro.")
+BACKEND_DISPLAY = {"exiv2": "Exiv2", "exiftool": "ExifTool"}
 ACCESS_CPP = {
     "none": "Access::none",
     "read": "Access::read",
@@ -358,9 +365,219 @@ def empty_categories() -> dict[str, str]:
     return {key: "none" for key in CAT_KEYS}
 
 
+def row_readable(row: dict[str, Any]) -> bool:
+    if row.get("identify_only"):
+        return False
+    categories = row.get("categories") or {}
+    if any(ACCESS_RANK.get(categories.get(key), 0) >= 1 for key in ("exif", "iptc", "xmp", "comments")):
+        return True
+    location = row.get("location") or {}
+    if any(ACCESS_RANK.get(location.get(key), 0) >= 1 for key in LOC_KEYS):
+        return True
+    if row.get("video"):
+        return True
+    return row.get("file") in READABLE
+
+
+def row_writable(row: dict[str, Any]) -> bool:
+    """Embedded write, matching evaluateStorage's category / container-GPS check."""
+    if row.get("identify_only"):
+        return False
+    categories = row.get("categories") or {}
+    if any(categories.get(key) in WRITABLE for key in ("exif", "iptc", "xmp")):
+        return True
+    location = row.get("location") or {}
+    return location.get("container_gps") in WRITABLE
+
+
+def representation_readable(rows: list[dict[str, Any]], keys: tuple[str, ...]) -> bool:
+    for row in rows:
+        categories = row.get("categories") or {}
+        if any(ACCESS_RANK.get(categories.get(key), 0) >= 1 for key in keys):
+            return True
+    return False
+
+
+def assert_container_cast_scope() -> None:
+    casts = REPO_ROOT / "registry" / "casts"
+    if not casts.is_dir():
+        raise GeneratorError(f"missing cast rules: {casts}")
+    found = False
+    for path in sorted(casts.glob("*.json")):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        for rule in data.get("rules", []):
+            for end in ("source", "target"):
+                endpoint = rule.get(end) or {}
+                if endpoint.get("kind") != "base_key":
+                    continue
+                found = True
+                key = str(endpoint.get("key", ""))
+                if not key.startswith(CAST_BASE_PREFIXES):
+                    raise GeneratorError(
+                        f"{path.name}: base key {key} is outside the supported-types "
+                        "cast scope; update the master-list rule"
+                    )
+    if not found:
+        raise GeneratorError("registry/casts has no base-key cast rules")
+
+
+def canonical_coverage(type_name: str, rows: list[dict[str, Any]]) -> str:
+    if type_name in VIDEO_DOMAIN:
+        # XMP plus VMH QuickTime keys are representations. Container GPS and
+        # movie-header dates are casts (canonical-model.md; registry/casts/).
+        if not representation_readable(rows, ("xmp",)):
+            raise GeneratorError(
+                f"{type_name}: video domain has no XMP representation path"
+            )
+        return "direct + cast (video)"
+    if representation_readable(rows, ("exif", "iptc", "xmp")):
+        return "direct (photo)"
+    return "—"
+
+
+def tool_label(backend_id: str, row: dict[str, Any], preferred: bool) -> str | None:
+    readable = row_readable(row)
+    writable = row_writable(row)
+    if not readable and not writable:
+        if backend_id == "exiftool" and row.get("listed") is False:
+            return None
+        if not row.get("identify_only") and backend_id != "exiv2":
+            return None
+        notes = ["preferred"] if preferred else []
+        notes.append("identify only")
+        return f"{BACKEND_DISPLAY[backend_id]} ({', '.join(notes)})"
+    notes: list[str] = []
+    if preferred:
+        notes.append("preferred")
+    if readable and not writable:
+        if row.get("video") and backend_id == "exiv2":
+            notes.append("rudimentary read")
+        else:
+            notes.append("read")
+    if row.get("bmff") and readable:
+        notes.append("BMFF build")
+    if notes:
+        return f"{BACKEND_DISPLAY[backend_id]} ({', '.join(notes)})"
+    return BACKEND_DISPLAY[backend_id]
+
+
+def master_list_lines(
+    exiv2_types: list[dict[str, Any]],
+    exiftool: dict[str, Any],
+    policy: dict[str, Any],
+) -> list[str]:
+    assert_container_cast_scope()
+    exiv2 = by_type(exiv2_types)
+    et = by_type(exiftool["overlap_types"])
+    for group in exiftool["extra_groups"]:
+        for row in group["types"]:
+            et.setdefault(row["type"], row)
+    lines = [
+        "## Types libumm accepts",
+        "",
+        "This is the list. `umm::capabilities`, `umm::read` / `get`, and `umm::write` / "
+        "`set` recognize these containers (magic, then extension). Anything else is "
+        "`unsupported_type`. Sections 1–6 are the backend evidence; they are not a second "
+        "supported-type list.",
+        "",
+        "| Type | Extensions | Read | Write | Canonical | Tools |",
+        "|---|---|---|---|---|---|",
+    ]
+    for raw in policy["types"]:
+        name = raw["type"]
+        rows_by_id = {
+            "exiv2": exiv2.get(name),
+            "exiftool": et.get(name),
+        }
+        present = [row for row in rows_by_id.values() if row is not None]
+        if not present:
+            raise GeneratorError(f"policy type {name} has no backend record")
+        preferred = raw["preferred_backend"]
+        if preferred not in rows_by_id or rows_by_id[preferred] is None:
+            raise GeneratorError(f"policy type {name} preferred backend {preferred} has no record")
+        read = "yes" if any(row_readable(row) for row in present) else "no"
+        if raw["sidecar_recommended"]:
+            write = "sidecar"
+        elif any(row_writable(row) for row in present):
+            write = "yes"
+        else:
+            write = "no"
+        labels: list[str] = []
+        order = [preferred] + [bid for bid in ("exiv2", "exiftool") if bid != preferred]
+        for backend_id in order:
+            row = rows_by_id[backend_id]
+            if row is None:
+                continue
+            label = tool_label(backend_id, row, backend_id == preferred)
+            if label:
+                labels.append(label)
+        if not labels:
+            raise GeneratorError(f"policy type {name} has no tool label")
+        extensions = ", ".join(raw["extensions"])
+        lines.append(
+            "| {type} | {ext} | {read} | {write} | {canon} | {tools} |".format(
+                type=name,
+                ext=extensions,
+                read=read,
+                write=write,
+                canon=canonical_coverage(name, present),
+                tools=", ".join(labels),
+            )
+        )
+    lines.extend(
+        [
+            "",
+            "**Read** — `yes` if at least one backend can read metadata (`umm::read` / `get`). "
+            "Identify-only recognition (MIME type and dimensions, no metadata categories) is `no`.",
+            "",
+            "**Write** — default `umm::write` / `set` (`StoragePolicy::preferred`):",
+            "",
+            "- `yes` — embeds metadata in the file",
+            "- `sidecar` — writes a paired `.xmp` because `sidecar_recommended` is set, even when "
+            "Tools lists an embedded writer. `StoragePolicy::embedded_only` uses that writer instead",
+            "- `no` — `unsupported_capability`. `StoragePolicy::sidecar_only` can still create a "
+            "paired `.xmp` for any type in this table",
+            "",
+            "`yes` / `sidecar` is not “every location encoding is writable.” GPS versus named place "
+            "versus QuickTime GPS stays in [§3](#3-location-metadata-gps-and-named-place).",
+            "",
+            "**Canonical** — whether container metadata is a representation or only a cast. This is "
+            "not a promise that a given file contains those tags.",
+            "",
+            "- `direct (photo)` — the container can hold EXIF, IPTC IIM, and/or XMP representations "
+            "of `iptc.photo.*`. Every type here except MP4 and MOV is the photo domain "
+            "(`src/core/media_domain.hpp`). `umm::read` / `get` reconcile those automatically.",
+            "- `direct + cast (video)` — MP4 and MOV use `iptc.video.*`. XMP and Video Metadata Hub "
+            "QuickTime keys are representations. Container GPS, movie-header dates, and "
+            "recording-device tags are casts (`registry/casts/`); they are not filled unless "
+            "casting is requested. Default video writes downcast `capturePosition`.",
+            "- `—` — no representation family and no cast rule. Backends may still return base tags "
+            "(`dumpAll()` / `dumpUnmapped()`).",
+            "",
+            "Photo side casts (`locationShownLegacy`, `personShown`, `creatorImageCreator`) copy "
+            "between canonical properties that are already direct. They are not a separate "
+            "container-coverage flag.",
+            "",
+            "**Tools** — backends that read or write metadata for the type. Names are the `exiv2` "
+            "(libexiv2) and `exiftool` backend ids. A name with no role, or only **preferred**, can "
+            "both read and write. **read** means that backend does not write. **preferred** is what "
+            "`umm::read` / `umm::write` select when `backend` is empty and that backend is available; "
+            "otherwise the first available backend. An explicit `backend` is a hard pin. Exiv2 video "
+            "read is rudimentary and is not the canonical path. **BMFF build** means Exiv2 read needs "
+            "`enable_bmff`.",
+            "",
+            "ISO BMFF whose brand is not HEIC, HEIF, AVIF, CR3, JXL, or QuickTime is sniffed as "
+            "MP4. Section 4 lists extra ExifTool containers that this table does not route.",
+            "",
+        ]
+    )
+    return lines
+
+
 def markdown_for(
     exiv2_types: list[dict[str, Any]],
     exiftool: dict[str, Any],
+    policy: dict[str, Any],
 ) -> str:
     listed = [row for row in exiv2_types if row.get("listed", True) and not row.get("video")]
     identify = [row["type"] for row in listed if row.get("identify_only")]
@@ -370,7 +587,7 @@ def markdown_for(
     lines: list[str] = []
     add = lines.append
 
-    add("# Backend file-type coverage: Exiv2 and ExifTool")
+    add("# Supported file types")
     add("")
     add(
         "> **GENERATED** from `registry/capabilities/` by "
@@ -383,9 +600,20 @@ def markdown_for(
     )
     add("")
     add(
-        "This is a snapshot of **file-type** (container) support in the two backends "
-        "named in [concept.md](analysis/concept.md). It is **not** a list of IPTC/EXIF/XMP "
-        "*properties*."
+        "The table in [Types libumm accepts](#types-libumm-accepts) is the supported-type "
+        "list: read, write, canonical coverage, and which backend is used. It is **not** a "
+        "list of IPTC/EXIF/XMP *properties*. Backend category tables below are secondary."
+    )
+    add("")
+    lines.extend(master_list_lines(exiv2_types, exiftool, policy))
+    add("---")
+    add("")
+    add("## Backend detail")
+    add("")
+    add(
+        "The rest of this page is a snapshot of **file-type** (container) support in the two "
+        "backends named in [concept.md](analysis/concept.md). Use it to see why two types with "
+        "the same Read/Write cell are not interchangeable — especially for location."
     )
     add("")
     add(
@@ -416,9 +644,10 @@ def markdown_for(
     )
     add("")
     add(
-        "Capability discovery in libumm must be **per backend, per file type, and per "
-        "metadata category** — including **location** (GPS coordinates vs IPTC/XMP named "
-        "place vs container GPS). A static “this extension is supported” table is not enough."
+        "Capability discovery in libumm is **per backend, per file type, and per metadata "
+        "category** — including **location** (GPS coordinates vs IPTC/XMP named place vs "
+        "container GPS). The master list answers whether anything can be read or written. "
+        "It does not collapse those categories into one flag."
     )
     add("")
     add("---")
@@ -996,7 +1225,9 @@ def generate(cap_dir: Path, markdown_path: Path, hpp_path: Path) -> None:
     exiv2_types = load_exiv2(cap_dir / "exiv2.json")
     exiftool = load_exiftool(cap_dir / "exiftool.json")
     policy = load_json(cap_dir / "policy.json")
-    markdown_path.write_text(markdown_for(exiv2_types, exiftool), encoding="utf-8", newline="\n")
+    markdown_path.write_text(
+        markdown_for(exiv2_types, exiftool, policy), encoding="utf-8", newline="\n"
+    )
     hpp_path.parent.mkdir(parents=True, exist_ok=True)
     hpp_path.write_text(emit_hpp(exiv2_types, exiftool, policy), encoding="utf-8", newline="\n")
 

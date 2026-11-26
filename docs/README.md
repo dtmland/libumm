@@ -8,8 +8,9 @@ Documentation is organized by audience.
   Location/GPS, and how to handle unmapped metadata.
 - [Property reference](user/properties/README.md) — generated API-style pages for every
   canonical property, representation, cast rule, and cross-media accessor (C14a).
-- [Backend file-type coverage](supported-types.md) — what each backend can read/write per
-  file type, including location metadata. **Generated** from `registry/capabilities/`.
+- [Supported file types](supported-types.md) — master list of types libumm accepts
+  (read, write, canonical coverage, backends), then backend category detail.
+  **Generated** from `registry/capabilities/`.
 
 ## For sysadmins (building, packaging, deploying)
 

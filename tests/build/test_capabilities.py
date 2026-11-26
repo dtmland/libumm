@@ -76,8 +76,15 @@ class TestCapabilitiesCodegen(unittest.TestCase):
         self.assertTrue(committed_hpp.endswith(b"\n"))
         self.assertNotIn(b"\r\n", committed_md)
         self.assertNotIn(b"\r\n", committed_hpp)
-        self.assertTrue(committed_md.startswith(b"# Backend file-type coverage"))
+        self.assertTrue(committed_md.startswith(b"# Supported file types"))
         self.assertIn(b"GENERATED", committed_md.splitlines()[2])
+        self.assertIn(b"## Types libumm accepts", committed_md)
+        master, _, detail = committed_md.partition(b"## Backend detail")
+        self.assertIn(b"## 1. Exiv2 supported types", detail)
+        policy = json.loads(POLICY_JSON.read_text(encoding="utf-8"))
+        for row in policy["types"]:
+            needle = f"| {row['type']} |".encode()
+            self.assertIn(needle, master, row["type"])
         self.assertTrue(committed_hpp.startswith(b"// GENERATED"))
 
     def test_generator_is_byte_identical_across_runs(self) -> None:

@@ -36,7 +36,8 @@ auto report = umm::write("photo.jpg", m);      // atomic, write-synchronized
 - `umm::detectConflict` / `umm::merge` / `umm::synchronize` handle disagreeing sources and
   keep embedded and sidecar carriers in agreement.
 - `umm::capabilities` reports, per backend / file type / metadata category, what can be read
-  or written — the data behind [docs/supported-types.md](../supported-types.md).
+  or written. The supported-type list is the first table in
+  [docs/supported-types.md](../supported-types.md).
 - `umm::describe` returns the property map (representations, casts, cross-media partner);
   pass a file to fill values and cast statuses. See [Exploring a property](#exploring-a-property).
 
