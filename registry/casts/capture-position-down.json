@@ -23,6 +23,51 @@
       },
       "heuristic": "H1",
       "citation": "First locationShot GPS (H1) to Keys location.ISO6709 and UserData GPSCoordinates"
+    },
+    {
+      "id": "location_shot_gps_longitude",
+      "source": {
+        "kind": "property_field",
+        "key": "iptc.video.locationShot",
+        "index": 0,
+        "field": "gpsLongitude"
+      },
+      "target": {
+        "kind": "base_key",
+        "key": "QuickTime.Keys.location.ISO6709"
+      },
+      "heuristic": "H1",
+      "citation": "First locationShot GPS (H1) to Keys location.ISO6709 and UserData GPSCoordinates"
+    },
+    {
+      "id": "location_shot_gps_userdata_latitude",
+      "source": {
+        "kind": "property_field",
+        "key": "iptc.video.locationShot",
+        "index": 0,
+        "field": "gpsLatitude"
+      },
+      "target": {
+        "kind": "base_key",
+        "key": "QuickTime.UserData.GPSCoordinates"
+      },
+      "heuristic": "H1",
+      "citation": "First locationShot GPS (H1) to Keys location.ISO6709 and UserData GPSCoordinates"
+    },
+    {
+      "id": "location_shot_gps_userdata_longitude",
+      "source": {
+        "kind": "property_field",
+        "key": "iptc.video.locationShot",
+        "index": 0,
+        "field": "gpsLongitude"
+      },
+      "target": {
+        "kind": "base_key",
+        "key": "QuickTime.UserData.GPSCoordinates"
+      },
+      "heuristic": "H1",
+      "citation": "First locationShot GPS (H1) to Keys location.ISO6709 and UserData GPSCoordinates"
     }
   ]
 }

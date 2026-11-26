@@ -5,6 +5,7 @@
 #include "cross_media_accessors.hpp"
 #include "property_registry.hpp"
 
+#include <algorithm>
 #include <utility>
 
 namespace umm {
@@ -224,7 +225,9 @@ std::vector<CastLinkMap> casts_for(std::string_view property_id) {
     row.partner = partner_of(rule, property_id);
     row.heuristic = std::string(rule.heuristic);
     row.citation = std::string(rule.citation);
-    out.push_back(std::move(row));
+    if (std::find(out.begin(), out.end(), row) == out.end()) {
+      out.push_back(std::move(row));
+    }
   }
   return out;
 }

@@ -467,6 +467,7 @@ def casts_for(
     groups: dict[tuple[str, str], dict[str, Any]],
 ) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
+    seen: set[tuple[str, ...]] = set()
     for rule in rules:
         if rule["source_key"] != property_id and rule["target_key"] != property_id:
             continue
@@ -478,17 +479,19 @@ def casts_for(
             flags.append("partial")
         if group.get("one_way"):
             flags.append("one-way")
-        rows.append(
-            {
-                "group": rule["group"],
-                "direction": rule["direction"],
-                "partner": partner_of(rule, property_id),
-                "heuristic": rule["heuristic"],
-                "citation": rule["citation"],
-                "flags": ", ".join(flags),
-                "heuristic_label": HEURISTIC_LABELS.get(rule["heuristic"], ""),
-            }
-        )
+        row = {
+            "group": rule["group"],
+            "direction": rule["direction"],
+            "partner": partner_of(rule, property_id),
+            "heuristic": rule["heuristic"],
+            "citation": rule["citation"],
+            "flags": ", ".join(flags),
+            "heuristic_label": HEURISTIC_LABELS.get(rule["heuristic"], ""),
+        }
+        signature = tuple(row.values())
+        if signature not in seen:
+            rows.append(row)
+            seen.add(signature)
     return rows
 
 

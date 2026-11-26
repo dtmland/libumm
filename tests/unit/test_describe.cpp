@@ -3,6 +3,7 @@
 #include "property_registry.hpp"
 #include "umm/umm.hpp"
 
+#include <algorithm>
 #include <cstdio>
 #include <string>
 #include <string_view>
@@ -42,6 +43,17 @@ bool has_cast_group(const umm::PropertyLayers& layers, std::string_view group) {
     }
   }
   return false;
+}
+
+std::size_t count_cast_links(const umm::PropertyLayers& layers,
+                             umm::CastDirection direction,
+                             std::string_view partner) {
+  return static_cast<std::size_t>(
+      std::count_if(layers.casts.begin(), layers.casts.end(),
+                    [&](const umm::CastLinkMap& link) {
+                      return link.direction == direction &&
+                             link.partner == partner;
+                    }));
 }
 
 bool registry_keys_present(const umm::PropertyLayers& layers) {
@@ -155,6 +167,18 @@ int main() {
       location.value().properties[0].cross_media->other.id !=
           "iptc.video.locationShot") {
     return fail("locationCreated L3");
+  }
+  const auto video_location = umm::describe("iptc.video.locationShot");
+  if (!video_location.ok()) {
+    return fail("locationShot lookup");
+  }
+  const umm::PropertyLayers& video_loc =
+      video_location.value().properties[0].layers;
+  if (count_cast_links(video_loc, umm::CastDirection::up,
+                       "QuickTime.UserData.GPSCoordinates") != 1 ||
+      count_cast_links(video_loc, umm::CastDirection::down,
+                       "QuickTime.UserData.GPSCoordinates") != 1) {
+    return fail("locationShot GPS cast links should not duplicate compound fields");
   }
 
   const auto video_only = umm::describe("iptc.video.circaDateCreated");

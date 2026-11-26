@@ -27,6 +27,21 @@
       "citation": "Apple QuickTime Keys location.ISO6709; H18 role 0 or absent only"
     },
     {
+      "id": "keys_iso6709_longitude",
+      "source": {
+        "kind": "base_key",
+        "key": "QuickTime.Keys.location.ISO6709"
+      },
+      "target": {
+        "kind": "property_field",
+        "key": "iptc.video.locationShot",
+        "index": 0,
+        "field": "gpsLongitude"
+      },
+      "heuristic": "H11",
+      "citation": "Apple QuickTime Keys location.ISO6709; H18 role 0 or absent only"
+    },
+    {
       "id": "userdata_xyz",
       "source": {
         "kind": "base_key",
@@ -42,6 +57,21 @@
       "citation": "QuickTime UserData copyright-xyz / GPSCoordinates"
     },
     {
+      "id": "userdata_xyz_longitude",
+      "source": {
+        "kind": "base_key",
+        "key": "QuickTime.UserData.GPSCoordinates"
+      },
+      "target": {
+        "kind": "property_field",
+        "key": "iptc.video.locationShot",
+        "index": 0,
+        "field": "gpsLongitude"
+      },
+      "heuristic": "H11",
+      "citation": "QuickTime UserData copyright-xyz / GPSCoordinates"
+    },
+    {
       "id": "exif_gps",
       "source": {
         "kind": "base_key",
@@ -52,6 +82,21 @@
         "key": "iptc.video.locationShot",
         "index": 0,
         "field": "gpsLatitude"
+      },
+      "heuristic": "H10",
+      "citation": "EXIF GPS IFD combined with latitude/longitude refs (H10); extra GPS tags remain unmapped (H20)"
+    },
+    {
+      "id": "exif_gps_longitude",
+      "source": {
+        "kind": "base_key",
+        "key": "Exif.GPSInfo.GPSLongitude"
+      },
+      "target": {
+        "kind": "property_field",
+        "key": "iptc.video.locationShot",
+        "index": 0,
+        "field": "gpsLongitude"
       },
       "heuristic": "H10",
       "citation": "EXIF GPS IFD combined with latitude/longitude refs (H10); extra GPS tags remain unmapped (H20)"

@@ -202,6 +202,34 @@ class TestPropertyReference(unittest.TestCase):
         self.assertIn("Exif.Image.Make", base)
         self.assertIn(EXIFTOOL_TAGNAMES_SNIPPET, base)
 
+    def test_gps_casts_document_latitude_and_longitude(self) -> None:
+        base = (OUTPUT_DIR / "base-keys.md").read_text(encoding="utf-8")
+        for key, field in (
+            ("Exif.GPSInfo.GPSLatitude", "gpsLatitude"),
+            ("Exif.GPSInfo.GPSLongitude", "gpsLongitude"),
+        ):
+            section = base.split(f'<a id="{key}"></a>', 1)[1].split(
+                "\n<a id=", 1
+            )[0]
+            self.assertIn(field, section, key)
+        for key in (
+            "QuickTime.Keys.location.ISO6709",
+            "QuickTime.UserData.GPSCoordinates",
+        ):
+            section = base.split(f'<a id="{key}"></a>', 1)[1].split(
+                "\n<a id=", 1
+            )[0]
+            self.assertIn("gpsLatitude", section, key)
+            self.assertIn("gpsLongitude", section, key)
+        video = (OUTPUT_DIR / "video.md").read_text(encoding="utf-8")
+        for direction in ("up", "down"):
+            for key in (
+                "QuickTime.Keys.location.ISO6709",
+                "QuickTime.UserData.GPSCoordinates",
+            ):
+                row = f"| `capturePosition` | {direction} | `{key}` |"
+                self.assertEqual(video.count(row), 1, row)
+
     def test_gitattributes_and_cmake_wire_the_generator(self) -> None:
         attrs = GITATTRIBUTES.read_text(encoding="utf-8")
         self.assertIn("docs/user/properties/**/*.md", attrs)
