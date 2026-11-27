@@ -81,7 +81,7 @@ that can share a sitting and a suggested order. Sessions 52–59 ship as v0.2.0,
 | [70](70-people-regions.md) | People regions read cast and guidance | U13 | 63 | planned |
 | [71](71-durable-writes.md) | Durable write option | U11 | — | done |
 | [72](72-application-packaging-guide.md) | Application packaging and ExifTool guide | U7 | 52, 54 | done |
-| [73](73-payload-digest.md) | Payload digest (ExifTool `ImageDataHash`-compatible) | U14 | — | planned |
+| [73](73-payload-digest.md) | Payload digest (ExifTool `ImageDataHash`-compatible) | U14 | — | done |
 | [74](74-metadata-diff.md) | Metadata diff and file comparison | U14 (F16) | 73 | planned |
 | [75](75-read-from-bytes.md) | Read from bytes | U5 | 52 | planned |
 | [76](76-more-type-mappings.md) | Read mappings and sidecars for BMP, MKV, AVI, WAV, ASF | U6 | 64 | planned |

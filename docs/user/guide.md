@@ -457,6 +457,33 @@ failure after the rename returns `io_write_failed`; the new bytes are already
 in place. Power loss is not tested in CI — the guarantee is this syscall
 sequence (`src/core/atomic_write.cpp`).
 
+## Duplicate detection
+
+`umm::payloadDigest(path)` returns a stable hash of the media essence — the
+pixels or samples — that ignores metadata edits. Two files whose titles,
+keywords, GPS, or other metadata differ but whose picture or video content is
+identical share one digest, which makes it a reliable duplicate-detection key.
+
+```cpp
+umm::Result<umm::PayloadDigest> digest = umm::payloadDigest("photo.jpg");
+if (digest.ok()) {
+  // digest.value().hex is a lowercase SHA-256; group files by it.
+}
+```
+
+Supported containers are JPEG, PNG, WebP, and MP4/MOV. Other types return
+`ErrorCode::unsupported_capability`; a truncated or malformed file returns
+`ErrorCode::format_corrupt`. The call is backend-free and thread-safe: it does
+not start ExifTool or take a metadata lock, and it never changes the file.
+
+`PayloadDigest::scheme` names both the hash and the exact byte-range definition.
+For every supported type libumm hashes the same bytes as ExifTool's
+`ImageDataHash`, so the scheme is `exiftool-imagedatahash-sha256` and the hex
+equals `exiftool -api ImageHashType=SHA256 -ImageDataHash`. Thumbnails and
+previews are excluded. Compare digests only within the same scheme: if a future
+release changes which bytes are hashed, the scheme string changes too, so old
+and new digests never silently compare as different content.
+
 ## Enabling editor controls
 
 `umm::propertyAccess(path, id, policy)` dry-runs `umm::write` for one property and reports

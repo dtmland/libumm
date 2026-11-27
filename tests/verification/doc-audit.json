@@ -165,6 +165,14 @@
     },
     {
       "document": "docs/user/guide.md",
+      "heading": "Duplicate detection",
+      "tests": [
+        "tests/unit/test_digest.cpp",
+        "tests/backend/test_digest_backend.cpp"
+      ]
+    },
+    {
+      "document": "docs/user/guide.md",
       "heading": "Enabling editor controls",
       "tests": [
         "tests/backend/test_property_access.cpp"

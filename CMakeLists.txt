@@ -96,6 +96,8 @@ add_library(umm
   src/core/sidecar.cpp
   src/core/selective.cpp
   src/core/technical.cpp
+  src/core/sha256.cpp
+  src/core/digest.cpp
   src/backends/backend_manager.cpp
   src/backends/exiftool/json.cpp
   src/backends/exiftool/keys.cpp
@@ -165,6 +167,20 @@ if(UMM_BUILD_TESTS)
   add_executable(test_value tests/unit/test_value.cpp)
   target_link_libraries(test_value PRIVATE umm::umm)
   add_test(NAME test_value COMMAND test_value)
+
+  add_executable(test_sha256 tests/unit/test_sha256.cpp)
+  target_link_libraries(test_sha256 PRIVATE umm::umm)
+  target_include_directories(test_sha256
+    PRIVATE
+      "${CMAKE_CURRENT_SOURCE_DIR}/src"
+  )
+  add_test(NAME test_sha256 COMMAND test_sha256)
+
+  add_executable(test_digest tests/unit/test_digest.cpp)
+  target_link_libraries(test_digest PRIVATE umm::umm)
+  umm_apply_fixture_dir(test_digest)
+  add_test(NAME test_digest COMMAND test_digest)
+  umm_apply_fixture_dir_to_test(test_digest)
 
   add_executable(test_metadata tests/unit/test_metadata.cpp)
   target_link_libraries(test_metadata PRIVATE umm::umm)
@@ -378,6 +394,21 @@ if(UMM_BUILD_TESTS)
     add_test(NAME test_write COMMAND test_write)
     umm_apply_fixture_dir_to_test(test_write)
     umm_apply_corpus_dir_to_test(test_write)
+
+    add_executable(test_digest_backend tests/backend/test_digest_backend.cpp)
+    target_link_libraries(test_digest_backend PRIVATE umm::umm)
+    umm_apply_fixture_dir(test_digest_backend)
+    if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)
+      file(TO_CMAKE_PATH "${UMM_EXIFTOOL_SCRIPT}" UMM_TEST_DIGEST_EXIFTOOL_SCRIPT)
+      file(TO_CMAKE_PATH "${UMM_PERL_EXECUTABLE}" UMM_TEST_DIGEST_EXIFTOOL_PERL)
+      target_compile_definitions(test_digest_backend
+        PRIVATE
+          "UMM_TEST_EXIFTOOL_SCRIPT=R\"(${UMM_TEST_DIGEST_EXIFTOOL_SCRIPT})\""
+          "UMM_TEST_EXIFTOOL_PERL=R\"(${UMM_TEST_DIGEST_EXIFTOOL_PERL})\""
+      )
+    endif()
+    add_test(NAME test_digest_backend COMMAND test_digest_backend)
+    umm_apply_fixture_dir_to_test(test_digest_backend)
 
     add_executable(test_cross_media tests/backend/test_cross_media.cpp)
     target_link_libraries(test_cross_media PRIVATE umm::umm)
