@@ -229,6 +229,7 @@ These base keys are not canonical properties. They appear as cast sources or as 
 - [`QuickTime.VideoFrameRate`](base-keys.md#QuickTime.VideoFrameRate)
 - [`Xmp.audio.ChannelType`](base-keys.md#Xmp.audio.ChannelType)
 - [`Xmp.audio.SampleRate`](base-keys.md#Xmp.audio.SampleRate)
+- [`Xmp.lr.hierarchicalSubject`](base-keys.md#Xmp.lr.hierarchicalSubject)
 - [`Xmp.video.Codec`](base-keys.md#Xmp.video.Codec)
 - [`Xmp.video.Compressor`](base-keys.md#Xmp.video.Compressor)
 - [`Xmp.video.Duration`](base-keys.md#Xmp.video.Duration)

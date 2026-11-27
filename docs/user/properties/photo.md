@@ -2170,6 +2170,7 @@ Enter any number of keywords, terms or phrases to express the subject and other 
 
 | Group | Direction | Partner | Heuristic | Flags | Citation |
 |---|---|---|---|---|---|
+| `hierarchicalKeywords` | up | `Xmp.lr.hierarchicalSubject` | H6 — Hierarchical ↔ flat (later) | partial, one-way | lr:hierarchicalSubject leaf term after the last '\|' (H6), then union with existing keywords (H4). The cast schema has no separator field; '\|' is fixed in the citation. |
 | `windowsXP` | up | `Exif.Image.XPKeywords` | H5 — Joined string ↔ list | partial, one-way | XPKeywords split on semicolon (H5). The cast schema has no separator field; ';' is fixed in the citation. |
 
 Casts are opt-in (`umm::cast`). See [canonical model heuristics](../../developer/canonical-model.md).
