@@ -98,6 +98,7 @@ add_library(umm
   src/core/technical.cpp
   src/core/sha256.cpp
   src/core/digest.cpp
+  src/core/diff.cpp
   src/backends/backend_manager.cpp
   src/backends/exiftool/json.cpp
   src/backends/exiftool/keys.cpp
@@ -181,6 +182,10 @@ if(UMM_BUILD_TESTS)
   umm_apply_fixture_dir(test_digest)
   add_test(NAME test_digest COMMAND test_digest)
   umm_apply_fixture_dir_to_test(test_digest)
+
+  add_executable(test_diff tests/unit/test_diff.cpp)
+  target_link_libraries(test_diff PRIVATE umm::umm)
+  add_test(NAME test_diff COMMAND test_diff)
 
   add_executable(test_metadata tests/unit/test_metadata.cpp)
   target_link_libraries(test_metadata PRIVATE umm::umm)
@@ -409,6 +414,21 @@ if(UMM_BUILD_TESTS)
     endif()
     add_test(NAME test_digest_backend COMMAND test_digest_backend)
     umm_apply_fixture_dir_to_test(test_digest_backend)
+
+    add_executable(test_compare_backend tests/backend/test_compare_backend.cpp)
+    target_link_libraries(test_compare_backend PRIVATE umm::umm)
+    umm_apply_fixture_dir(test_compare_backend)
+    if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)
+      file(TO_CMAKE_PATH "${UMM_EXIFTOOL_SCRIPT}" UMM_TEST_COMPARE_EXIFTOOL_SCRIPT)
+      file(TO_CMAKE_PATH "${UMM_PERL_EXECUTABLE}" UMM_TEST_COMPARE_EXIFTOOL_PERL)
+      target_compile_definitions(test_compare_backend
+        PRIVATE
+          "UMM_TEST_EXIFTOOL_SCRIPT=R\"(${UMM_TEST_COMPARE_EXIFTOOL_SCRIPT})\""
+          "UMM_TEST_EXIFTOOL_PERL=R\"(${UMM_TEST_COMPARE_EXIFTOOL_PERL})\""
+      )
+    endif()
+    add_test(NAME test_compare_backend COMMAND test_compare_backend)
+    umm_apply_fixture_dir_to_test(test_compare_backend)
 
     add_executable(test_cross_media tests/backend/test_cross_media.cpp)
     target_link_libraries(test_cross_media PRIVATE umm::umm)

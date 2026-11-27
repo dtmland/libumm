@@ -173,6 +173,14 @@
     },
     {
       "document": "docs/user/guide.md",
+      "heading": "Comparing files",
+      "tests": [
+        "tests/unit/test_diff.cpp",
+        "tests/backend/test_compare_backend.cpp"
+      ]
+    },
+    {
+      "document": "docs/user/guide.md",
       "heading": "Enabling editor controls",
       "tests": [
         "tests/backend/test_property_access.cpp"

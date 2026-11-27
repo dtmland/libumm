@@ -484,6 +484,40 @@ previews are excluded. Compare digests only within the same scheme: if a future
 release changes which bytes are hashed, the scheme string changes too, so old
 and new digests never silently compare as different content.
 
+## Comparing files
+
+`umm::compareFiles(a, b)` reads and reconciles both files, then reports whether
+they differ in metadata, in essence, or both. It pairs the canonical diff with
+the payload digest (see [Duplicate detection](#duplicate-detection)) so you can
+tell a metadata-only edit from a content change.
+
+```cpp
+umm::Result<umm::FileComparison> cmp = umm::compareFiles("a.jpg", "b.jpg");
+if (cmp.ok()) {
+  switch (cmp.value().kind) {
+    case umm::ComparisonKind::identical:       /* same metadata and essence */ break;
+    case umm::ComparisonKind::metadata_only:   /* only metadata differs */ break;
+    case umm::ComparisonKind::payload_only:    /* only essence differs */ break;
+    case umm::ComparisonKind::both:            /* metadata and essence differ */ break;
+    case umm::ComparisonKind::payload_unknown: /* a type has no digest */ break;
+  }
+}
+```
+
+Every libumm write on a digest-supported type keeps the essence bytes intact, so
+rewriting metadata and comparing yields `metadata_only`. `payload_unknown` means
+at least one file is a type with no payload digest (for example TIFF), or the two
+digests use different schemes; the `metadata` diff is still filled in those
+cases. Pass `CompareOptions::read` to apply specific `ReadOptions` to both reads.
+
+For comparing two in-memory reads without touching the filesystem, call
+`umm::diff(a, b)`. It is pure, backend-free, and thread-safe, and it reports
+`added`, `removed`, and `changed` canonical properties. Differences that
+reconciliation treats as equivalent — keyword set order, date-time offsets,
+language-alternative formatting, GPS within epsilon — are not reported. Set
+`DiffOptions::base_entries` to also diff base-metadata entries by `BaseKey`, with
+entries that no canonical property consumed flagged as unmapped.
+
 ## Enabling editor controls
 
 `umm::propertyAccess(path, id, policy)` dry-runs `umm::write` for one property and reports

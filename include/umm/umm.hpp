@@ -17,6 +17,7 @@
 #include "umm/cancel.hpp"
 #include "umm/capabilities.hpp"
 #include "umm/describe.hpp"
+#include "umm/diff.hpp"
 #include "umm/digest.hpp"
 #include "umm/metadata.hpp"
 #include "umm/registry.hpp"
