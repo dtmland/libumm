@@ -123,6 +123,20 @@ read of the same bytes (minus the sidecar) on both backends. This also fixes a
 latent bug where `iptc.video.keywords` (a lang-alt value) was compared as a
 string list, so two equivalent values were reported as differing.
 
+### Session 69 — Hierarchical keywords and legacy write-sync policy
+
+`hierarchicalKeywords` is a new up-only cast group that unions the leaf term
+after the last `|` of each Lightroom `lr:hierarchicalSubject` path (H6) into
+`iptc.photo.keywords` (H4 union: existing order kept, missing leaves appended,
+duplicates dropped). It completes the five legacy/container up-cast groups
+(`windowsXP`, `exifUserComment`, `pngText`, `quickTimeUserData`,
+`hierarchicalKeywords`). A matching test proves the F12 write-sync policy: a
+canonical write leaves `lr:hierarchicalSubject`, the `XP*` tags, PNG text, and
+QuickTime user data byte-for-byte unchanged, so disagreement stays visible as a
+cast candidate rather than being silently rewritten. The leaf match is
+case-insensitive because the Exiv2 and ExifTool adapters capitalize the
+`HierarchicalSubject` tag differently.
+
 ## v0.2.0
 
 Breaking / relink required. Pre-1.0 `SOVERSION` is `0.2`. `ErrorCode` gained

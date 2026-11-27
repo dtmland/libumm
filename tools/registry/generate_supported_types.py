@@ -34,6 +34,7 @@ CAST_BASE_PREFIXES = (
     "Xmp.audio.",
     "ExifTool.PNG.",
     "Png.",
+    "Xmp.lr.",
 )
 BACKEND_DISPLAY = {"exiv2": "Exiv2", "exiftool": "ExifTool"}
 ACCESS_CPP = {
@@ -560,7 +561,8 @@ def master_list_lines(
             "- `direct (photo)` — the container can hold EXIF, IPTC IIM, and/or XMP representations "
             "of `iptc.photo.*`. Every type here except MP4 and MOV is the photo domain "
             "(`src/core/media_domain.hpp`). `umm::read` / `get` reconcile those automatically. "
-            "Windows XP* / UserComment (`Exif.*`) and PNG text (`ExifTool.PNG.*`, `Png.Text.*`) "
+            "Windows XP* / UserComment (`Exif.*`), PNG text (`ExifTool.PNG.*`, `Png.Text.*`), "
+            "and Lightroom hierarchical keywords (`Xmp.lr.hierarchicalSubject`) "
             "are upcasts, not representations.",
             "- `direct + cast (video)` — MP4 and MOV use `iptc.video.*`. XMP and Video Metadata Hub "
             "QuickTime keys are representations. Container GPS, movie-header dates, "

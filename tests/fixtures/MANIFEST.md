@@ -421,6 +421,13 @@ Each committed media file is generator-produced (decision **M6**); track files a
 - **Purpose:** XMP title differs from XPTitle so title stays needs_force while description fills
 - **Command:** `exiftool -overwrite_original -all= jpeg/windows-xp-kept.jpg && exiftool -overwrite_original -XMP-dc:Title=Kept title -IFD0:XPTitle=XP title -IFD0:XPComment=Filled description jpeg/windows-xp-kept.jpg`
 
+### `jpeg/hierarchical-keywords.jpg`
+
+- **SHA-256:** `833152290b1ba2feb4099180f615f3872e7dcf93908776a8b53d6b68bf22d88c`
+- **Size:** 3324 bytes
+- **Purpose:** Lightroom lr:hierarchicalSubject plus flat dc:subject for the hierarchicalKeywords union upcast
+- **Command:** `exiftool -overwrite_original -all= jpeg/hierarchical-keywords.jpg && exiftool -overwrite_original -XMP-dc:Subject=alpha -XMP-dc:Subject=beta -XMP-lr:HierarchicalSubject=Places|France|Paris -XMP-lr:HierarchicalSubject=Nature|Tree -XMP-lr:HierarchicalSubject=alpha jpeg/hierarchical-keywords.jpg`
+
 ### `png/text-chunks.png`
 
 - **SHA-256:** `acc28af196f549c838c6e98e0dc1a621102776d59cb36932cdff7714a84d913c`

@@ -5,6 +5,7 @@
 #include "core/xmp_codec.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
@@ -499,7 +500,8 @@ bool group_applies(std::string_view id, MediaDomain domain) {
   }
   if (id == "locationShownLegacy" || id == "personShown" ||
       id == "creatorImageCreator" || id == "windowsXP" ||
-      id == "exifUserComment" || id == "pngText") {
+      id == "exifUserComment" || id == "pngText" ||
+      id == "hierarchicalKeywords") {
     return domain != MediaDomain::video;
   }
   return true;
@@ -1865,6 +1867,93 @@ void apply_text_group(Metadata& metadata, const CastCandidate& candidate,
   }
 }
 
+// Leaf term after the last '|' separator in a Lightroom hierarchical subject
+// path (H6). "Places|France|Paris" -> "Paris"; a plain term is its own leaf.
+std::string hierarchical_leaf(std::string_view path) {
+  std::string_view body = trim(path);
+  const std::size_t bar = body.rfind('|');
+  if (bar != std::string_view::npos) {
+    body = body.substr(bar + 1);
+  }
+  return std::string(trim(body));
+}
+
+// Collect every lr:hierarchicalSubject base entry (bag items are keyed with a
+// [1], [2], ... suffix when count>1) and return the deduped leaf terms in
+// document order. The match is case-insensitive because the exiv2 and ExifTool
+// adapters disagree on the capitalization of the HierarchicalSubject tag.
+std::vector<std::string> hierarchical_leaves(const Metadata& metadata) {
+  constexpr std::string_view kPrefix = "xmp.lr.hierarchicalsubject";
+  std::vector<std::string> leaves;
+  for (const BaseEntry& entry : metadata.dumpAll()) {
+    std::string lowered = entry.key.key;
+    for (char& ch : lowered) {
+      ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+    }
+    std::string_view key = lowered;
+    if (key.rfind(kPrefix, 0) != 0) {
+      continue;
+    }
+    const std::string_view rest = key.substr(kPrefix.size());
+    // Accept the bare key or an indexed bag item (…[1]); nothing else.
+    if (!rest.empty() && rest.front() != '[') {
+      continue;
+    }
+    const std::string leaf = hierarchical_leaf(entry.value);
+    if (leaf.empty()) {
+      continue;
+    }
+    if (!contains_name(leaves, leaf)) {
+      leaves.push_back(leaf);
+    }
+  }
+  return leaves;
+}
+
+// hierarchicalKeywords (F12/H6/H4): union the leaf terms of
+// lr:hierarchicalSubject into iptc.photo.keywords. Up only and one-way — the
+// legacy source is never written or removed (docs/reconciliation-policy.md).
+CastCandidate hierarchical_keywords_up(const Metadata& metadata,
+                                       const CastGroupDef& group) {
+  const std::vector<std::string> leaves = hierarchical_leaves(metadata);
+  const auto keywords = metadata.get("iptc.photo.keywords");
+  const std::vector<std::string> existing =
+      keywords ? as_name_list(keywords->value) : std::vector<std::string>{};
+  std::string source_preview;
+  for (std::size_t i = 0; i < leaves.size(); ++i) {
+    if (i != 0) {
+      source_preview += "; ";
+    }
+    source_preview += leaves[i];
+  }
+  std::string target_preview;
+  for (std::size_t i = 0; i < existing.size(); ++i) {
+    if (i != 0) {
+      target_preview += "; ";
+    }
+    target_preview += existing[i];
+  }
+  if (leaves.empty()) {
+    return make_candidate(group, CastStatus::source_empty,
+                          "Xmp.lr.hierarchicalSubject", "iptc.photo.keywords",
+                          "", target_preview, {});
+  }
+  bool missing = false;
+  for (const std::string& leaf : leaves) {
+    if (!contains_name(existing, leaf)) {
+      missing = true;
+    }
+  }
+  if (!missing) {
+    return make_candidate(group, CastStatus::equal,
+                          "Xmp.lr.hierarchicalSubject", "iptc.photo.keywords",
+                          source_preview, target_preview, {});
+  }
+  return make_candidate(group, CastStatus::can_cast,
+                        "Xmp.lr.hierarchicalSubject", "iptc.photo.keywords",
+                        source_preview, target_preview, {});
+}
+
 CastCandidate evaluate_group(const Metadata& metadata, const CastGroupDef& group,
                              const Capabilities* caps) {
   if (group.id == "capturePosition" && group.direction == "up") {
@@ -1894,6 +1983,9 @@ CastCandidate evaluate_group(const Metadata& metadata, const CastGroupDef& group
   if (group.id == "creatorImageCreator") {
     return list_side(metadata, group, "iptc.photo.creator",
                      "iptc.photo.imageCreator", false);
+  }
+  if (group.id == "hierarchicalKeywords") {
+    return hierarchical_keywords_up(metadata, group);
   }
   return make_candidate(group, CastStatus::source_empty, "", "", "", "", {});
 }
@@ -2101,6 +2193,27 @@ void apply_list_side(Metadata& metadata, const CastCandidate& candidate,
   (void)metadata.set(right_id, make_value(std::move(details)));
 }
 
+// Apply the hierarchicalKeywords union: add leaf terms missing from
+// iptc.photo.keywords, preserving existing order and never removing. The legacy
+// source (lr:hierarchicalSubject) is left untouched (one-way, F12/H4).
+void apply_hierarchical_keywords_up(Metadata& metadata,
+                                    const CastCandidate& candidate, bool force) {
+  (void)force;
+  if (candidate.status != CastStatus::can_cast &&
+      candidate.status != CastStatus::needs_force) {
+    return;
+  }
+  const auto keywords = metadata.get("iptc.photo.keywords");
+  std::vector<std::string> names =
+      keywords ? as_name_list(keywords->value) : std::vector<std::string>{};
+  for (const std::string& leaf : hierarchical_leaves(metadata)) {
+    if (!contains_name(names, leaf)) {
+      names.push_back(leaf);
+    }
+  }
+  (void)metadata.set("iptc.photo.keywords", make_value(std::move(names)));
+}
+
 }  // namespace
 
 bool is_upcast_group(std::string_view id) {
@@ -2264,6 +2377,8 @@ void apply_cast_candidates(Metadata& metadata,
     } else if (candidate.group == "creatorImageCreator") {
       apply_list_side(metadata, candidate, "iptc.photo.creator",
                       "iptc.photo.imageCreator", false, options.force);
+    } else if (candidate.group == "hierarchicalKeywords") {
+      apply_hierarchical_keywords_up(metadata, candidate, options.force);
     }
   };
   // Non-approximate text fills first so UserComment cannot overwrite XPComment.

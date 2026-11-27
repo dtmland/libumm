@@ -264,6 +264,32 @@ photo-native convenience type and transpose when `mediaDomain()` is `video`.
 | `struct_field_subset` (copyrightOwner) | keep `name`/`identifiers` (PLUS aliases mapped) | Video-only `role` and other PLUS fields drop |
 | `list_to_single` (licensor) | one Licensor/Entity → single Entity | Setter with 0 or >1 entries on video is `invalid_value`; extras stay only under the full property id |
 
+## Legacy carriers and write-sync (F12)
+
+Some file formats carry metadata in **legacy** containers that are not canonical
+representations of any IPTC property: Windows `XP*` tags (`Exif.Image.XPTitle`,
+`XPComment`, `XPKeywords`, `XPAuthor`, `XPSubject`), PNG `tEXt`/`iTXt` keywords,
+QuickTime user-data atoms, and Lightroom's `Xmp.lr.hierarchicalSubject`. libumm
+reads these only through opt-in `umm::cast` up-cast groups (`windowsXP`,
+`exifUserComment`, `pngText`, `quickTimeUserData`, `hierarchicalKeywords`); by
+default they stay as base entries so nothing is invented from a non-standard
+carrier.
+
+**Write-sync policy:** a canonical write never updates or removes a legacy
+carrier. Writing `iptc.photo.keywords`, `title`, or any other canonical property
+leaves `lr:hierarchicalSubject`, the `XP*` tags, PNG text chunks, and QuickTime
+user data byte-for-byte unchanged. The library does not keep legacy copies in
+sync, because doing so would either silently rewrite a user's established
+carrier or guess a mapping the standards do not define. Any disagreement between
+a canonical property and its legacy carrier stays visible through the cast
+candidates (`report_casts` / `castCandidates()`), where the user can choose to
+up-cast.
+
+- **hierarchicalKeywords (H6, H4):** the leaf term after the last `|` of each
+  `lr:hierarchicalSubject` path (`Places|France|Paris` → `Paris`) is unioned into
+  `iptc.photo.keywords` — existing keywords keep their order, missing leaves are
+  appended, and duplicates are dropped. Up only; one-way.
+
 ## Video (MP4/MOV)
 
 Sniffed file types `MP4` and `MOV` select the `iptc.video.*` domain instead of

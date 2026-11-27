@@ -1,0 +1,26 @@
+{
+  "id": "hierarchicalKeywords",
+  "direction": "up",
+  "partial": true,
+  "approximate": false,
+  "one_way": true,
+  "citation": "F12, H6, H4; Lightroom lr:hierarchicalSubject is not an IPTC keyword representation. Canonical writes do not update or remove it.",
+  "source_priority": [
+    "hierarchical_subject"
+  ],
+  "rules": [
+    {
+      "id": "hierarchical_subject",
+      "source": {
+        "kind": "base_key",
+        "key": "Xmp.lr.hierarchicalSubject"
+      },
+      "target": {
+        "kind": "property",
+        "key": "iptc.photo.keywords"
+      },
+      "heuristic": "H6",
+      "citation": "lr:hierarchicalSubject leaf term after the last '|' (H6), then union with existing keywords (H4). The cast schema has no separator field; '|' is fixed in the citation."
+    }
+  ]
+}

@@ -324,6 +324,13 @@
   },
   {
    "document": "docs/reconciliation-policy.md",
+   "heading": "Legacy carriers and write-sync (F12)",
+   "tests": [
+    "tests/backend/test_upcast.cpp"
+   ]
+  },
+  {
+   "document": "docs/reconciliation-policy.md",
    "heading": "Video (MP4/MOV)",
    "tests": [
     "tests/backend/test_read.cpp",

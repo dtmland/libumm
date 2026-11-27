@@ -77,7 +77,7 @@ that can share a sitting and a suggested order. Sessions 52–59 ship as v0.2.0,
 | [66](66-technical-view-values.md) | Technical view: photo and video values | U2 | 64, 65 | done |
 | [67](67-legacy-text-casts.md) | Legacy EXIF text casts | U12 | 63 | done |
 | [68](68-container-text-casts.md) | Container text casts | U12 | 63 (after 67) | done |
-| [69](69-hierarchical-keywords.md) | Hierarchical keywords and legacy write-sync policy | U12 | 67, 68 | planned |
+| [69](69-hierarchical-keywords.md) | Hierarchical keywords and legacy write-sync policy | U12 | 67, 68 | done |
 | [70](70-people-regions.md) | People regions read cast and guidance | U13 | 63 | planned |
 | [71](71-durable-writes.md) | Durable write option | U11 | — | done |
 | [72](72-application-packaging-guide.md) | Application packaging and ExifTool guide | U7 | 52, 54 | done |

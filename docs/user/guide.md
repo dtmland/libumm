@@ -245,6 +245,22 @@ the canonical property does not update or remove the legacy or container text.
 An existing canonical value is left unchanged. Exiv2 reads PNG Description
 only, and does not read QuickTime user data in the bundled build.
 
+`hierarchicalKeywords` fills photo keywords from Lightroom's
+`lr:hierarchicalSubject`. The leaf term after the last `|` of each path
+(`Places|France|Paris` → `Paris`) is unioned into `iptc.photo.keywords`:
+existing keywords keep their order, missing leaves are appended, and duplicates
+are dropped. It is up-only — a canonical keyword write never updates or removes
+`lr:hierarchicalSubject`.
+
+**Importing an existing library.** When you ingest files written by other tools,
+enable the legacy up-cast groups together — `windowsXP`, `exifUserComment`,
+`pngText`, `quickTimeUserData`, and `hierarchicalKeywords` — so established
+Windows, PNG, QuickTime, and Lightroom carriers surface as canonical
+properties. They are read-only: libumm never writes back to those carriers
+(see the write-sync policy in
+[reconciliation-policy.md](../reconciliation-policy.md)), so any disagreement
+stays visible as a cast candidate rather than being silently rewritten.
+
 Cast-rule sources appear in `dumpUnmapped()` with `BaseEntry::cast_source`.
 
 ## Exploring a property

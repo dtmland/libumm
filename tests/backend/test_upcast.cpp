@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <optional>
@@ -523,6 +524,48 @@ int check_png_text(const char* backend) {
   return 0;
 }
 
+int check_hierarchical_keywords(const char* backend) {
+  const auto path = raw_stem("jpeg", "hierarchical-keywords", ".jpg");
+  const auto before = file_bytes(path);
+  umm::ReadOptions options;
+  options.backend = backend;
+  options.report_casts = true;
+  options.upcast = std::vector<std::string>{"hierarchicalKeywords"};
+  const auto read = umm::read(path, options);
+  if (!read.ok()) {
+    std::fprintf(stderr, "hierarchical keywords %s: %s\n", backend,
+                 read.error().message.c_str());
+    return 1;
+  }
+  if (file_bytes(path) != before) {
+    return fail("hierarchical keywords upcast modified the file");
+  }
+  const auto keywords = read.value().get("iptc.photo.keywords");
+  const auto* words =
+      keywords ? std::get_if<std::vector<std::string>>(&keywords->value.data)
+               : nullptr;
+  // Existing flat keywords [alpha, beta] keep their order; the leaf terms of
+  // lr:hierarchicalSubject (Paris, Tree) are appended; the overlapping "alpha"
+  // leaf is deduped (H4 union, H6 leaf term).
+  const std::vector<std::string> expected = {"alpha", "beta", "Paris", "Tree"};
+  if (!words || *words != expected) {
+    return fail("hierarchical keywords union");
+  }
+  if (!has_cast_source(*keywords, "hierarchicalKeywords")) {
+    return fail("hierarchical keywords provenance");
+  }
+  bool listed = false;
+  for (const umm::CastCandidate& candidate : read.value().castCandidates()) {
+    if (candidate.group == "hierarchicalKeywords") {
+      listed = true;
+    }
+  }
+  if (!listed) {
+    return fail("castCandidates must list hierarchicalKeywords");
+  }
+  return 0;
+}
+
 int check_user_data(const char* backend) {
   if (std::string(backend) != "exiftool") {
     return 0;
@@ -580,6 +623,83 @@ int check_exiv2_text_gaps() {
   return 0;
 }
 
+// Collect base entries whose key contains `needle`, as sorted "key=value"
+// strings, using a plain (no-upcast) read so legacy carriers appear verbatim.
+std::vector<std::string> legacy_entries(const std::filesystem::path& path,
+                                        const char* backend,
+                                        const char* needle) {
+  umm::ReadOptions options;
+  options.backend = backend;
+  const auto read = umm::read(path, options);
+  std::vector<std::string> out;
+  if (!read.ok()) {
+    return out;
+  }
+  for (const umm::BaseEntry& entry : read.value().dumpAll()) {
+    if (entry.key.key.find(needle) != std::string::npos) {
+      out.push_back(entry.key.key + "=" + entry.value);
+    }
+  }
+  std::sort(out.begin(), out.end());
+  return out;
+}
+
+// F12 write-sync policy: a canonical write never updates or removes the legacy
+// carriers (lr:hierarchicalSubject, XP*, PNG text, QuickTime user data). The
+// disagreement stays visible through casts instead.
+int check_write_sync_policy(const char* backend) {
+  struct Carrier {
+    const char* folder;
+    const char* stem;
+    const char* ext;
+    const char* needle;
+    const char* target;
+    bool exiftool_only;
+  };
+  const Carrier carriers[] = {
+      {"jpeg", "hierarchical-keywords", ".jpg", "ierarchicalSubject",
+       "iptc.photo.keywords", false},
+      {"jpeg", "windows-xp", ".jpg", "XP", "iptc.photo.title", false},
+      {"png", "text-chunks", ".png", "PNG.", "iptc.photo.title", true},
+      {"video", "user-data", ".mov", "UserData.", "iptc.photo.title", true},
+  };
+  for (const Carrier& carrier : carriers) {
+    if (carrier.exiftool_only && std::string(backend) != "exiftool") {
+      continue;
+    }
+    const auto source = raw_stem(carrier.folder, carrier.stem, carrier.ext);
+    const auto dest = work_dir() / (std::string("write-sync-") + carrier.stem +
+                                    carrier.ext);
+    std::filesystem::copy_file(
+        source, dest, std::filesystem::copy_options::overwrite_existing);
+    const auto before = legacy_entries(dest, backend, carrier.needle);
+    if (before.empty()) {
+      return fail("write-sync fixture missing legacy carrier");
+    }
+    umm::Metadata metadata;
+    if (std::string(carrier.target) == "iptc.photo.keywords") {
+      (void)metadata.set(carrier.target,
+                         umm::Value{std::vector<std::string>{"gamma"}});
+    } else {
+      (void)metadata.set(carrier.target,
+                         umm::Value{umm::LangAlt{{"x-default", "Canonical"}}});
+    }
+    umm::WriteOptions write_options;
+    write_options.backend = backend;
+    const auto written = umm::write(dest, metadata, write_options);
+    if (!written.ok()) {
+      std::fprintf(stderr, "write-sync %s %s: %s\n", backend, carrier.stem,
+                   written.error().message.c_str());
+      return 1;
+    }
+    const auto after = legacy_entries(dest, backend, carrier.needle);
+    if (after != before) {
+      return fail("canonical write changed a legacy carrier");
+    }
+  }
+  return 0;
+}
+
 int check_rejected() {
   umm::ReadOptions options;
   options.upcast = std::vector<std::string>{"not-a-group"};
@@ -608,13 +728,17 @@ int main() {
       check_technical("exiftool") != 0 || check_exiv2_gap() != 0 ||
       check_windows_xp("exiftool") != 0 || check_windows_xp_kept("exiftool") != 0 ||
       check_windows_xp_selective("exiftool") != 0 ||
-      check_png_text("exiftool") != 0 || check_user_data("exiftool") != 0) {
+      check_png_text("exiftool") != 0 || check_user_data("exiftool") != 0 ||
+      check_hierarchical_keywords("exiftool") != 0 ||
+      check_write_sync_policy("exiftool") != 0) {
     return 1;
   }
   umm::Backend* exiv2 = umm::BackendManager::instance().get("exiv2");
   if (exiv2 && exiv2->availability().available) {
     if (check_windows_xp("exiv2") != 0 || check_windows_xp_kept("exiv2") != 0 ||
         check_windows_xp_selective("exiv2") != 0 || check_png_text("exiv2") != 0 ||
+        check_hierarchical_keywords("exiv2") != 0 ||
+        check_write_sync_policy("exiv2") != 0 ||
         check_exiv2_text_gaps() != 0) {
       return 1;
     }
