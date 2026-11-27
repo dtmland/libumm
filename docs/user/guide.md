@@ -280,3 +280,49 @@ format), `umm::write` returns `unsupported_capability` — or, with
 `StoragePolicy::preferred`, routes the data to an XMP sidecar when that is the recommended
 storage. Check `umm::capabilities(media)` or
 [docs/supported-types.md](../supported-types.md) first when scripting bulk writes.
+
+## Threads
+
+Backend-free calls (`umm::version()`, registry lookup, and value helpers that do not touch
+a file) may run on any thread. `umm::read`, `umm::write`, `umm::synchronize`, `umm::cast`,
+`umm::describe` of a file, and track matching use backends.
+
+ExifTool calls run in parallel up to `ExifToolConfig::max_processes` (default 1, one
+stay-open process). Exiv2 calls are serialized: its XMP toolkit is process-global, so the
+pool size for that backend is 1. Do not share one `Metadata` object across threads without
+your own lock. `CancelToken` is safe to share.
+
+`configureExifTool` applies to calls that start after it returns. An in-flight ExifTool
+call finishes on the process it already leased; that process is then retired.
+
+## Cancellation
+
+`ReadOptions`, `WriteOptions`, `SyncOptions`, and `CastOptions` take an optional
+`CancelToken` and an optional deadline. Create a token with `CancelToken::create()`, share
+it with the worker, and call `cancel()` from the UI thread. A cancelled call returns
+`ErrorCode::cancelled`. A deadline that elapses first returns `ErrorCode::deadline_exceeded`.
+
+Cancellation is checked before backend selection, between carriers, between read and
+reconcile, and immediately before the atomic rename. A write that has already renamed the
+temp file into place returns success. A cancel between an embedded write and its sidecar
+returns `cancelled` with the message `embedded write succeeded; sidecar write failed`, and
+the embedded file is already updated. Exiv2 calls are not interrupted mid-call. ExifTool
+calls wake within 50 ms, kill that child, and the next call starts a new process.
+
+## Enabling editor controls
+
+`umm::propertyAccess(path, id, policy)` dry-runs `umm::write` for one property and reports
+whether an editor control should be enabled. `read_write` means that dry-run would write at
+least one base key. `propertyAccessAll` returns one row per registry id. Reason strings from
+`to_string(AccessReason)` are stable within a minor version; new reasons are appended.
+
+| Reason | Meaning |
+| --- | --- |
+| `ok` | The dry-run would write the property. |
+| `unknown_property` | The id is not in the registry. |
+| `backend_unavailable` | The preferred backend that could write this type is not available. `backend` names it. |
+| `container_read_only` | This container has no writable metadata for the property, including via a sidecar. |
+| `policy_forbids_sidecar` | The path is an XMP sidecar and the policy is `embedded_only`. |
+| `policy_requires_sidecar` | Embedded storage cannot hold the property, but a sidecar write would. |
+| `property_read_only` | The property is a one-way cast target (or, later, a technical field). |
+| `no_mapping_for_type` | The type has no representation of the property under this policy. |

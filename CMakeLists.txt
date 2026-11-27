@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-project(libumm VERSION 0.1.2 LANGUAGES CXX)
+project(libumm VERSION 0.2.0 LANGUAGES CXX)
 
 # Session 30: header macros are normative; CMake PROJECT_VERSION must match.
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/include/umm/version.hpp" _umm_version_hpp)
@@ -56,6 +56,17 @@ if(NOT CMAKE_CXX_COMPILER_LAUNCHER)
   endif()
 endif()
 
+set(UMM_SANITIZE "" CACHE STRING "Sanitizer to enable: thread, address, or empty")
+if(UMM_SANITIZE STREQUAL "thread" OR UMM_SANITIZE STREQUAL "address")
+  if(MSVC)
+    message(FATAL_ERROR "UMM_SANITIZE=${UMM_SANITIZE} is not supported with MSVC")
+  endif()
+  add_compile_options(-fsanitize=${UMM_SANITIZE} -fno-omit-frame-pointer -g)
+  add_link_options(-fsanitize=${UMM_SANITIZE})
+elseif(NOT UMM_SANITIZE STREQUAL "")
+  message(FATAL_ERROR "UMM_SANITIZE must be thread, address, or empty")
+endif()
+
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/LibummPins.cmake")
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/LibummExifTool.cmake")
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/LibummRegistry.cmake")
@@ -71,7 +82,10 @@ add_library(umm
   src/sync.cpp
   src/track.cpp
   src/write.cpp
+  src/cancel.cpp
+  src/property_access.cpp
   src/capabilities.cpp
+  src/core/call_context.cpp
   src/core/cast.cpp
   src/core/reconcile.cpp
   src/core/xmp_codec.cpp
@@ -225,6 +239,13 @@ if(UMM_BUILD_TESTS)
   add_executable(test_capabilities tests/unit/test_capabilities.cpp)
   target_link_libraries(test_capabilities PRIVATE umm::umm)
   add_test(NAME test_capabilities COMMAND test_capabilities)
+
+  add_executable(test_cancel tests/unit/test_cancel.cpp)
+  target_link_libraries(test_cancel PRIVATE umm::umm)
+  target_include_directories(test_cancel PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+  umm_apply_fixture_dir(test_cancel)
+  add_test(NAME test_cancel COMMAND test_cancel)
+  umm_apply_fixture_dir_to_test(test_cancel)
 
   add_executable(test_fixtures_path tests/unit/test_fixtures_path.cpp)
   umm_apply_fixture_dir(test_fixtures_path)
@@ -394,6 +415,36 @@ if(UMM_BUILD_TESTS)
     endif()
     add_test(NAME test_read COMMAND test_read)
     umm_apply_fixture_dir_to_test(test_read)
+
+    add_executable(test_parallel_read tests/backend/test_parallel_read.cpp)
+    target_link_libraries(test_parallel_read PRIVATE umm::umm)
+    umm_apply_fixture_dir(test_parallel_read)
+    if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)
+      file(TO_CMAKE_PATH "${UMM_EXIFTOOL_SCRIPT}" UMM_TEST_PARALLEL_EXIFTOOL_SCRIPT)
+      file(TO_CMAKE_PATH "${UMM_PERL_EXECUTABLE}" UMM_TEST_PARALLEL_EXIFTOOL_PERL)
+      target_compile_definitions(test_parallel_read
+        PRIVATE
+          "UMM_TEST_EXIFTOOL_SCRIPT=R\"(${UMM_TEST_PARALLEL_EXIFTOOL_SCRIPT})\""
+          "UMM_TEST_EXIFTOOL_PERL=R\"(${UMM_TEST_PARALLEL_EXIFTOOL_PERL})\""
+      )
+    endif()
+    add_test(NAME test_parallel_read COMMAND test_parallel_read)
+    umm_apply_fixture_dir_to_test(test_parallel_read)
+
+    add_executable(test_property_access tests/backend/test_property_access.cpp)
+    target_link_libraries(test_property_access PRIVATE umm::umm)
+    umm_apply_fixture_dir(test_property_access)
+    if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)
+      file(TO_CMAKE_PATH "${UMM_EXIFTOOL_SCRIPT}" UMM_TEST_ACCESS_EXIFTOOL_SCRIPT)
+      file(TO_CMAKE_PATH "${UMM_PERL_EXECUTABLE}" UMM_TEST_ACCESS_EXIFTOOL_PERL)
+      target_compile_definitions(test_property_access
+        PRIVATE
+          "UMM_TEST_EXIFTOOL_SCRIPT=R\"(${UMM_TEST_ACCESS_EXIFTOOL_SCRIPT})\""
+          "UMM_TEST_EXIFTOOL_PERL=R\"(${UMM_TEST_ACCESS_EXIFTOOL_PERL})\""
+      )
+    endif()
+    add_test(NAME test_property_access COMMAND test_property_access)
+    umm_apply_fixture_dir_to_test(test_property_access)
 
     add_executable(test_capabilities_probe tests/backend/test_capabilities_probe.cpp)
     target_link_libraries(test_capabilities_probe PRIVATE umm::umm)
@@ -660,6 +711,36 @@ if(UMM_BUILD_TESTS)
     )
     add_test(NAME test_exiftool_read COMMAND test_exiftool_read)
     umm_apply_fixture_dir_to_test(test_exiftool_read)
+
+    add_executable(test_exiftool_pool tests/backend/test_exiftool_pool.cpp)
+    target_link_libraries(test_exiftool_pool PRIVATE umm::umm)
+    target_include_directories(test_exiftool_pool
+      PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/backends"
+    )
+    umm_apply_fixture_dir(test_exiftool_pool)
+    target_compile_definitions(test_exiftool_pool
+      PRIVATE
+        "UMM_TEST_EXIFTOOL_SCRIPT=R\"(${UMM_EXIFTOOL_SCRIPT_CMAKE})\""
+        "UMM_TEST_EXIFTOOL_PERL=R\"(${UMM_PERL_EXECUTABLE_CMAKE})\""
+    )
+    add_test(NAME test_exiftool_pool COMMAND test_exiftool_pool)
+    umm_apply_fixture_dir_to_test(test_exiftool_pool)
+
+    add_executable(test_exiftool_cancel tests/backend/test_exiftool_cancel.cpp)
+    target_link_libraries(test_exiftool_cancel PRIVATE umm::umm)
+    target_include_directories(test_exiftool_cancel
+      PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/backends"
+    )
+    umm_apply_fixture_dir(test_exiftool_cancel)
+    target_compile_definitions(test_exiftool_cancel
+      PRIVATE
+        "UMM_TEST_EXIFTOOL_SCRIPT=R\"(${UMM_EXIFTOOL_SCRIPT_CMAKE})\""
+        "UMM_TEST_EXIFTOOL_PERL=R\"(${UMM_PERL_EXECUTABLE_CMAKE})\""
+    )
+    add_test(NAME test_exiftool_cancel COMMAND test_exiftool_cancel)
+    umm_apply_fixture_dir_to_test(test_exiftool_cancel)
   endif()
 endif()
 

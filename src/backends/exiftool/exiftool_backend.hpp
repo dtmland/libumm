@@ -1,11 +1,17 @@
 #pragma once
 
+#include <atomic>
+#include <condition_variable>
 #include <cstdint>
+#include <list>
 #include <memory>
+#include <mutex>
 
 #include "umm/backend.hpp"
 
 namespace umm::internal {
+
+class ChildProcess;
 
 class ExifToolBackend final : public Backend {
  public:
@@ -20,23 +26,42 @@ class ExifToolBackend final : public Backend {
   Result<void> typeCapabilities(std::string_view media_type) const override;
 
   void configure(ExifToolConfig config);
-  std::uint64_t spawnCount() const { return spawn_count_; }
+  std::uint64_t spawnCount() const;
+  std::size_t liveProcessCount() const;
   void killChildForTest();
 
  private:
-  void shutdown();
-  Result<void> ensure_process();
-  Result<std::string> execute(const std::string& command);
-  void resolve() const;
+  struct Slot {
+    std::unique_ptr<ChildProcess> child;
+    ExifToolConfig config;
+    std::filesystem::path perl;
+    std::filesystem::path script;
+    bool native_exe = false;
+    std::string absence_reason;
+    bool busy = false;
+    bool retire = false;
+  };
 
+  Slot* acquire();
+  void release(Slot* slot);
+  Result<void> ensure_process(Slot& slot);
+  Result<std::string> execute(const std::string& command);
+  void shutdown_slot(Slot& slot);
+  void resolve_slot(Slot& slot);
+  void resolve() const;
+  int process_limit() const;
+  void shutdown_all();
+
+  mutable std::mutex mu_;
+  std::condition_variable cv_;
+  std::list<std::unique_ptr<Slot>> slots_;
   ExifToolConfig config_;
   mutable std::filesystem::path perl_;
   mutable std::filesystem::path script_;
   mutable bool native_exe_{false};
   mutable std::string absence_reason_;
   mutable std::string version_;
-  std::unique_ptr<class ChildProcess> child_;
-  std::uint64_t spawn_count_{0};
+  std::atomic<std::uint64_t> spawn_count_{0};
 };
 
 std::unique_ptr<Backend> make_exiftool_backend(ExifToolConfig config);

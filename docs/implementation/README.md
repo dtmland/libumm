@@ -55,14 +55,14 @@ that can share a sitting and a suggested order. Sessions 52–59 ship as v0.2.0,
 
 | Session | Title | Requests | Depends on | Progress |
 |---|---|---|---|---|
-| [52](52-thread-safety-contract.md) | Thread-safety contract and serialized entry points | U1, U7 | — | planned |
-| [53](53-parallel-read-tests-and-tsan.md) | Parallel-read tests and ThreadSanitizer CI | U1 | 52 | planned |
-| [54](54-backend-instance-pool.md) | Backend instance pool | U1 | 53 | planned |
-| [55](55-cancellation-api-and-checkpoints.md) | Cancellation API and core checkpoints | U9 | 52 | planned |
-| [56](56-exiftool-in-flight-cancellation.md) | ExifTool in-flight cancellation | U9 | 54, 55 | planned |
-| [57](57-property-access-api.md) | Per-property access API and reason codes | U4 | — | planned |
-| [58](58-property-access-agreement-matrix.md) | Per-property access agreement matrix | U4 | 57 | planned |
-| [59](59-v0.2.0-verification-and-release.md) | v0.2.0 verification and release | U1, U4, U7, U9 | 52–58 | planned |
+| [52](52-thread-safety-contract.md) | Thread-safety contract and serialized entry points | U1, U7 | — | done |
+| [53](53-parallel-read-tests-and-tsan.md) | Parallel-read tests and ThreadSanitizer CI | U1 | 52 | done |
+| [54](54-backend-instance-pool.md) | Backend instance pool | U1 | 53 | done |
+| [55](55-cancellation-api-and-checkpoints.md) | Cancellation API and core checkpoints | U9 | 52 | done |
+| [56](56-exiftool-in-flight-cancellation.md) | ExifTool in-flight cancellation | U9 | 54, 55 | done |
+| [57](57-property-access-api.md) | Per-property access API and reason codes | U4 | — | done |
+| [58](58-property-access-agreement-matrix.md) | Per-property access agreement matrix | U4 | 57 | done |
+| [59](59-v0.2.0-verification-and-release.md) | v0.2.0 verification and release | U1, U4, U7, U9 | 52–58 | done |
 
 ### v0.3.0
 

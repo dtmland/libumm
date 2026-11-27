@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-find_package(umm 0.1 CONFIG REQUIRED)
+find_package(umm 0.2 CONFIG REQUIRED)
 
 add_executable(umm_consumer main.cpp)
 target_link_libraries(umm_consumer PRIVATE umm::umm)

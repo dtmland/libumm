@@ -5,9 +5,10 @@
 // Compile-time library version (session 30). These macros are the public
 // contract for feature tests. They must match CMake PROJECT_VERSION and
 // umm::version(); they do not encode standards versions (concept.md §21).
+// Thread-safe: version() may be called from any thread.
 #define UMM_VERSION_MAJOR 0
-#define UMM_VERSION_MINOR 1
-#define UMM_VERSION_PATCH 2
+#define UMM_VERSION_MINOR 2
+#define UMM_VERSION_PATCH 0
 
 #define UMM_VERSION_STRING_XSTR(s) #s
 #define UMM_VERSION_STRING_STR(maj, min, pat) \

@@ -1,5 +1,7 @@
 // Property map (C12b): every layer libumm can traverse for a canonical
 // property or a cross-media accessor name.
+// Thread-safe for concurrent describe() calls. Metadata arguments are
+// caller-owned and are not synchronized.
 #pragma once
 
 #include <filesystem>

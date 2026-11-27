@@ -1,5 +1,7 @@
 #include "exiftool/process.hpp"
 
+#include "core/call_context.hpp"
+
 #include <algorithm>
 #include <chrono>
 #include <cstring>
@@ -37,6 +39,34 @@ int remaining_ms(Clock::time_point deadline) {
     return 1'000'000;
   }
   return static_cast<int>(left.count());
+}
+
+int wait_slice_ms(Clock::time_point command_deadline) {
+  int left = remaining_ms(command_deadline);
+  if (left > 50) {
+    left = 50;
+  }
+  if (const CallState* call = current_call(); call && call->deadline) {
+    const int until_call = remaining_ms(*call->deadline);
+    if (until_call < left) {
+      left = until_call;
+    }
+  }
+  return left;
+}
+
+ChildProcess::Read stop_for_call() {
+  const CallState* call = current_call();
+  if (!call) {
+    return ChildProcess::Read::ok;
+  }
+  if (call->token.cancelled()) {
+    return ChildProcess::Read::cancelled;
+  }
+  if (call->deadline && Clock::now() >= *call->deadline) {
+    return ChildProcess::Read::deadline;
+  }
+  return ChildProcess::Read::ok;
 }
 
 #if defined(_WIN32)
@@ -552,6 +582,12 @@ ChildProcess::Read ChildProcess::read_until(std::string_view needle,
   bool stdout_eof = false;
   bool stderr_eof = false;
   while (Clock::now() < deadline) {
+    const ChildProcess::Read stopped = stop_for_call();
+    if (stopped != ChildProcess::Read::ok) {
+      err = impl_->stderr_acc;
+      out = impl_->stdout_acc;
+      return stopped;
+    }
 #if defined(_WIN32)
     if (!read_available(impl_->stdout_r, impl_->stdout_acc) ||
         !read_available(impl_->stderr_r, impl_->stderr_acc)) {
@@ -582,7 +618,7 @@ ChildProcess::Read ChildProcess::read_until(std::string_view needle,
     fds[0].events = POLLIN;
     fds[1].fd = impl_->stderr_fd;
     fds[1].events = POLLIN;
-    const int rc = ::poll(fds, 2, remaining_ms(deadline));
+    const int rc = ::poll(fds, 2, wait_slice_ms(deadline));
     if (rc < 0) {
       if (errno == EINTR) {
         continue;
@@ -592,7 +628,7 @@ ChildProcess::Read ChildProcess::read_until(std::string_view needle,
       return Read::error;
     }
     if (rc == 0) {
-      break;
+      continue;
     }
     if (fds[0].revents & (POLLIN | POLLHUP | POLLERR)) {
       if (!read_fd(impl_->stdout_fd, impl_->stdout_acc, stdout_eof)) {
@@ -695,7 +731,11 @@ ChildProcess::Read ChildProcess::read_all(std::chrono::milliseconds timeout,
     if (nfd == 0) {
       break;
     }
-    const int rc = ::poll(fds, nfd, remaining_ms(deadline));
+    const ChildProcess::Read stopped = stop_for_call();
+    if (stopped != ChildProcess::Read::ok) {
+      return stopped;
+    }
+    const int rc = ::poll(fds, nfd, wait_slice_ms(deadline));
     if (rc < 0) {
       if (errno == EINTR) {
         continue;
@@ -704,7 +744,7 @@ ChildProcess::Read ChildProcess::read_all(std::chrono::milliseconds timeout,
       return Read::error;
     }
     if (rc == 0) {
-      return Read::timeout;
+      continue;
     }
     if (stdout_i >= 0 &&
         (fds[stdout_i].revents & (POLLIN | POLLHUP | POLLERR))) {

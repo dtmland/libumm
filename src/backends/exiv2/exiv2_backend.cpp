@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstddef>
 #include <exception>
+#include <mutex>
 #include <fstream>
 #include <map>
 #include <stdexcept>
@@ -393,6 +394,19 @@ Result<void> save_image(Exiv2::Image& image, const std::filesystem::path& media)
   return {};
 }
 
+std::mutex& exiv2_call_mutex() {
+  static std::mutex mutex;
+  return mutex;
+}
+
+void ensure_exiv2_initialized() {
+  static std::once_flag once;
+  std::call_once(once, [] {
+    Exiv2::LogMsg::setLevel(Exiv2::LogMsg::mute);
+    Exiv2::XmpParser::initialize();
+  });
+}
+
 class Exiv2Backend final : public Backend {
  public:
   std::string id() const override {
@@ -407,6 +421,8 @@ class Exiv2Backend final : public Backend {
   }
 
   Result<BaseDocument> readBase(const std::filesystem::path& media) override {
+    ensure_exiv2_initialized();
+    std::lock_guard lock(exiv2_call_mutex());
     try {
       if (media.empty() || !std::filesystem::exists(media)) {
         return make_error(ErrorCode::io_not_found, "media file not found",
@@ -442,6 +458,8 @@ class Exiv2Backend final : public Backend {
 
   Result<void> writeBase(const std::filesystem::path& media,
                         const BaseChanges& changes) override {
+    ensure_exiv2_initialized();
+    std::lock_guard lock(exiv2_call_mutex());
     try {
       if (media.empty() || !std::filesystem::exists(media)) {
         return make_error(ErrorCode::io_not_found, "media file not found",
@@ -487,7 +505,7 @@ class Exiv2Backend final : public Backend {
 }  // namespace
 
 std::unique_ptr<Backend> make_exiv2_backend() {
-  Exiv2::LogMsg::setLevel(Exiv2::LogMsg::mute);
+  ensure_exiv2_initialized();
   return std::make_unique<Exiv2Backend>();
 }
 

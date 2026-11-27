@@ -29,7 +29,7 @@ class ChildProcess {
 
   std::string write_all(std::string_view bytes);
 
-  enum class Read { ok, timeout, eof, error };
+  enum class Read { ok, timeout, eof, error, cancelled, deadline };
   Read read_until(std::string_view needle, std::chrono::milliseconds timeout,
                   std::string& out, std::string& err,
                   std::string& error_message);

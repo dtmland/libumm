@@ -54,6 +54,7 @@ These rules were applied throughout and still govern changes:
 | **12 — BMFF enablement** | 35 | HEIC/HEIF/AVIF/CR3/JXL sniffing, Exiv2-read/ExifTool-write pattern; AVIF in Tier A, HEIC/CR3/JXL in Tier B; ExifTool writes no IPTC IIM on BMFF. |
 | **13 — Cross-media accessors (Phase 2)** | 36–42 | `MediaDomain` on `Metadata`; generated photo↔video accessor map; table-driven video reconcile/write-sync; Tier 1–3 convenience accessors; catalog contract + JPEG/MP4/MOV matrix. `objectShown` stays deferred (title↔name only). |
 | **14 — Canonical model and casting** | 43–51 | Base-metadata terminology and dump views (C13, C18); full registry-id read; Location structs and GPS as Location GPS; cast engine and first rule set; `umm::describe`; generated property reference; C19 real-device layout fixtures and backend verification matrix (C15). |
+| **15 — Concurrency, cancellation, property access** | 52–59 | Thread-safety contract (F1); ExifTool process pool and serialized Exiv2 (F2); `CancelToken` and deadlines (F3–F4); `propertyAccess` reason codes (F5). v0.2.0. |
 
 ## Conventions worth keeping
 
@@ -66,6 +67,9 @@ These rules were applied throughout and still govern changes:
   `.gitattributes` so Windows checkouts stay byte-identical to the generators.
 - A contract test forbids hand-written `ns:prop` XMP-style strings in `src/` outside
   `src/generated/` — all property naming flows from the registry.
+- Thread safety (F1): do not share a `Metadata` object across threads without an external
+  lock. ExifTool parallelism is the process pool; Exiv2 stays serialized. New public entry
+  points must state their rule in the header.
 
 ## Where the details live
 

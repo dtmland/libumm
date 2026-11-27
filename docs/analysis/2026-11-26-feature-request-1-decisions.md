@@ -1,9 +1,10 @@
 # Feature request 1 — decision record and session plan — 2026-11-26
 
-Status: **accepted** (design only; nothing here is implemented). The maintainer answered
-OQ-F1–OQ-F6 on 2026-11-26 (§5). The same answers added F16 (metadata diff) and the
-§6 research on payload hashing. Sessions 52–77 in [docs/implementation/](../implementation/)
-carry the *what*; this record keeps the *why*.
+Status: **F1–F5 implemented in v0.2.0** (sessions 52–59). F6–F16 remain accepted
+design only. The maintainer answered OQ-F1–OQ-F6 on 2026-11-26 (§5). The same
+answers added F16 (metadata diff) and the §6 research on payload hashing. Sessions
+52–77 in [docs/implementation/](../implementation/) carry the *what*; this record
+keeps the *why*.
 
 Source: [docs/feature-request-1.md](../feature-request-1.md) (requests U1–U14, written
 against the v0.1.2 tag). This record starts the **F** series (F1–F16). It does not change

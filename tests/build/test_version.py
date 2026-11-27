@@ -93,7 +93,7 @@ class TestVersionContract(unittest.TestCase):
         self.assertIn("PROJECT_VERSION_MAJOR EQUAL 0", text)
         self.assertIn("SOVERSION ${UMM_SOVERSION}", text)
         self.assertNotRegex(text, r"\bSOVERSION\s+0\b")
-        self.assertEqual(expected_soversion(major, minor), "0.1")
+        self.assertEqual(expected_soversion(major, minor), "0.2")
 
     def test_package_compatibility_follows_abi_policy(self) -> None:
         cmake = CMAKE_LISTS.read_text(encoding="utf-8")
