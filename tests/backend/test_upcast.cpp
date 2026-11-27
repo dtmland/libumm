@@ -544,24 +544,17 @@ int check_user_data(const char* backend) {
       lang_default(read.value().get("iptc.video.description")) != "UD description") {
     return fail("user data text");
   }
-  const auto date = as_dt(read.value().get("iptc.video.dateCreated"));
+  const auto created = read.value().get("iptc.video.dateCreated");
+  const auto* date = as_dt(created);
   if (!date || date->year != 2020 || date->month != 1 || date->day != 2) {
     return fail("user data date");
   }
   if (date->utc_offset_minutes && *date->utc_offset_minutes != 0) {
     return fail("user data date invented a nonzero offset");
   }
-  const auto* people = as_structs(read.value().get("iptc.video.creator"));
+  const auto creator = read.value().get("iptc.video.creator");
+  const auto* people = as_structs(creator);
   if (!people || people->size() != 1) {
-    std::fprintf(stderr, "user data artist keys:\n");
-    for (const umm::BaseEntry& entry : read.value().dumpAll()) {
-      if (entry.key.key.find("Artist") != std::string::npos ||
-          entry.key.key.find("Author") != std::string::npos ||
-          entry.key.key.find("Director") != std::string::npos) {
-        std::fprintf(stderr, "  %s=%s\n", entry.key.key.c_str(),
-                     entry.value.c_str());
-      }
-    }
     return fail("user data artist");
   }
   const auto mp4 = umm::read(raw_stem("video", "user-data", ".mp4"), options);
