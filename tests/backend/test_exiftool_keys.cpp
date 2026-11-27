@@ -98,6 +98,18 @@ int main() {
                  "QuickTime.Keys.location.ISO6709") != 0 ||
       expect_key("UserData:GPSCoordinates", "QuickTime",
                  "QuickTime.UserData.GPSCoordinates") != 0 ||
+      expect_key("UserData:Artist", "QuickTime",
+                 "QuickTime.UserData.Artist") != 0 ||
+      expect_key("UserData:Artist-eng", "QuickTime",
+                 "QuickTime.UserData.Artist") != 0 ||
+      expect_key("UserData:Artist-und", "QuickTime",
+                 "QuickTime.UserData.Artist") != 0 ||
+      expect_key("UserData:Artist-copy1", "QuickTime",
+                 "QuickTime.UserData.Artist") != 0 ||
+      expect_key("UserData:ART", "QuickTime", "QuickTime.UserData.Artist") !=
+          0 ||
+      expect_key("ItemList:Artist-eng", "QuickTime",
+                 "QuickTime.ItemList.Artist") != 0 ||
       expect_key("QuickTime:Duration", "QuickTime", "QuickTime.Duration") != 0 ||
       expect_key("QuickTime:HandlerType", "ExifTool",
                  "ExifTool.QuickTime.HandlerType") != 0) {

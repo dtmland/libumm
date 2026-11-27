@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <optional>
@@ -552,6 +553,11 @@ int check_user_data(const char* backend) {
   }
   const auto* people = as_structs(read.value().get("iptc.video.creator"));
   if (!people || people->size() != 1) {
+    std::fprintf(stderr, "user data artist keys:\n");
+    for (const umm::BaseEntry& entry : read.value().dumpAll()) {
+      std::fprintf(stderr, "  %s=%s\n", entry.key.key.c_str(),
+                   entry.value.c_str());
+    }
     return fail("user data artist");
   }
   const auto mp4 = umm::read(raw_stem("video", "user-data", ".mp4"), options);
