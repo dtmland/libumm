@@ -4,6 +4,7 @@ namespace umm::internal {
 namespace {
 
 thread_local CallState* t_call = nullptr;
+thread_local const std::vector<std::string>* t_selective_tags = nullptr;
 std::atomic<const char*> g_cancel_checkpoint{nullptr};
 
 }  // namespace
@@ -51,6 +52,21 @@ Result<void> checkpoint(const char* name) {
 
 void set_cancel_at_checkpoint_for_test(const char* name) {
   g_cancel_checkpoint.store(name, std::memory_order_release);
+}
+
+SelectiveTagGuard::SelectiveTagGuard(const std::vector<std::string>* tags)
+    : previous_(t_selective_tags), active_(true) {
+  t_selective_tags = tags;
+}
+
+SelectiveTagGuard::~SelectiveTagGuard() {
+  if (active_) {
+    t_selective_tags = previous_;
+  }
+}
+
+const std::vector<std::string>* current_selective_tags() noexcept {
+  return t_selective_tags;
 }
 
 }  // namespace umm::internal

@@ -722,6 +722,108 @@ std::string qt_suffix_tag(std::string_view suffix) {
 
 }  // namespace
 
+std::string exif_base_key(std::string_view tag) {
+  const auto colon = tag.find(':');
+  std::string group;
+  std::string name(tag);
+  if (colon != std::string_view::npos) {
+    group = std::string(tag.substr(0, colon));
+    name = std::string(tag.substr(colon + 1));
+  }
+  if (group == "IFD0") {
+    return "Exif.Image." + name;
+  }
+  if (group == "IFD1") {
+    return "Exif.Thumbnail." + name;
+  }
+  if (group == "ExifIFD") {
+    return "Exif.Photo." + name;
+  }
+  if (group == "GPS") {
+    return "Exif.GPSInfo." + name;
+  }
+  if (group == "InteropIFD") {
+    return "Exif.Iop." + name;
+  }
+  return "Exif." + (group.empty() ? name : group + "." + name);
+}
+
+std::string iim_base_key(std::string_view dataset) {
+  if (dataset == "2:80") {
+    return "Iptc.Application2.Byline";
+  }
+  if (dataset == "2:120") {
+    return "Iptc.Application2.Caption";
+  }
+  if (dataset == "2:105") {
+    return "Iptc.Application2.Headline";
+  }
+  if (dataset == "2:116") {
+    return "Iptc.Application2.Copyright";
+  }
+  if (dataset == "2:110") {
+    return "Iptc.Application2.Credit";
+  }
+  if (dataset == "2:25") {
+    return "Iptc.Application2.Keywords";
+  }
+  if (dataset == "2:55") {
+    return "Iptc.Application2.DateCreated";
+  }
+  if (dataset == "2:60") {
+    return "Iptc.Application2.TimeCreated";
+  }
+  if (dataset == "2:04") {
+    return "Iptc.Application2.ObjectAttribute";
+  }
+  if (dataset == "2:05") {
+    return "Iptc.Application2.ObjectName";
+  }
+  if (dataset == "2:12") {
+    return "Iptc.Application2.Subject";
+  }
+  if (dataset == "2:40") {
+    return "Iptc.Application2.SpecialInstructions";
+  }
+  if (dataset == "2:85") {
+    return "Iptc.Application2.BylineTitle";
+  }
+  if (dataset == "2:90") {
+    return "Iptc.Application2.City";
+  }
+  if (dataset == "2:92") {
+    return "Iptc.Application2.SubLocation";
+  }
+  if (dataset == "2:95") {
+    return "Iptc.Application2.ProvinceState";
+  }
+  if (dataset == "2:100") {
+    return "Iptc.Application2.CountryCode";
+  }
+  if (dataset == "2:101") {
+    return "Iptc.Application2.CountryName";
+  }
+  if (dataset == "2:103") {
+    return "Iptc.Application2.TransmissionReference";
+  }
+  if (dataset == "2:115") {
+    return "Iptc.Application2.Source";
+  }
+  if (dataset == "2:122") {
+    return "Iptc.Application2.Writer";
+  }
+  return {};
+}
+
+std::vector<std::string_view> iim_companion_datasets(std::string_view dataset) {
+  // IPTC IIM Date Created is stored as dataset 2:55 plus Time Created 2:60.
+  // The generated registry field keeps only the primary dataset.
+  if (dataset == "2:55") {
+    return {"2:60"};
+  }
+  return {};
+}
+
 std::string xmp_base_key(std::string_view property) {
   const auto colon = property.find(':');
   if (colon == std::string_view::npos) {

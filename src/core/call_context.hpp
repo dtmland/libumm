@@ -7,6 +7,7 @@
 #include <cstring>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "umm/cancel.hpp"
 #include "umm/result.hpp"
@@ -42,5 +43,23 @@ class CallGuard {
 Result<void> checkpoint(const char* name);
 
 void set_cancel_at_checkpoint_for_test(const char* name);
+
+// Thread-local ExifTool tag hint for ReadOptions::properties (decision F7).
+// nullptr means a full read. A non-null vector, including empty, is selective.
+// Exiv2 ignores the hint. The pointed-to vector must outlive the guard.
+class SelectiveTagGuard {
+ public:
+  explicit SelectiveTagGuard(const std::vector<std::string>* tags);
+  ~SelectiveTagGuard();
+
+  SelectiveTagGuard(const SelectiveTagGuard&) = delete;
+  SelectiveTagGuard& operator=(const SelectiveTagGuard&) = delete;
+
+ private:
+  const std::vector<std::string>* previous_ = nullptr;
+  bool active_ = false;
+};
+
+const std::vector<std::string>* current_selective_tags() noexcept;
 
 }  // namespace umm::internal

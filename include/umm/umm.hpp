@@ -42,6 +42,12 @@ struct ReadOptions {
   bool report_casts{false};
   CancelToken cancel;
   std::optional<std::chrono::steady_clock::time_point> deadline;
+  // Selective read (decision F7). nullopt reconciles every domain id.
+  // A set list reconciles only those registry ids (iptc.photo.* /
+  // iptc.video.*, not accessor names). Unknown ids fail with
+  // unknown_property. dumpAll() and dumpUnmapped() are empty. Sidecar
+  // pairing still follows merge_sidecar and sidecar_required.
+  std::optional<std::vector<std::string>> properties;
 };
 
 struct WriteOptions {
@@ -139,7 +145,8 @@ std::optional<std::filesystem::path> findSidecar(
 // Read + reconcile (docs/reconciliation-policy.md) into canonical Metadata.
 // Embedded metadata, plus sidecar XMP when merge_sidecar and a pair exists.
 // A standalone .xmp file is readable as sidecar-only. sidecar_required fails
-// when a non-sidecar path has no paired .xmp.
+// when a non-sidecar path has no paired .xmp. ReadOptions::properties limits
+// reconciliation to those ids; listed-id values match a full read.
 Result<Metadata> read(const std::filesystem::path& media, ReadOptions options = {});
 
 // Enumerate disagreed properties without inspecting every field of a read.

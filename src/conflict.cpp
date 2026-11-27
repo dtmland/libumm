@@ -53,7 +53,8 @@ Result<ConflictReport> detectConflict(const std::filesystem::path& media,
   ConflictReport report;
   Result<Metadata> metadata = internal::reconcile(
       asset.embedded, asset.backend_id, asset.sidecar(), asset.file_type,
-      &report.entries);
+      &report.entries,
+      options.properties ? &*options.properties : nullptr);
   if (!metadata.ok()) {
     return metadata.error();
   }

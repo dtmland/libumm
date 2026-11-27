@@ -5,6 +5,7 @@
 #include "core/media_domain.hpp"
 #include "core/read_internal.hpp"
 #include "core/reconcile.hpp"
+#include "core/selective.hpp"
 #include "core/sidecar.hpp"
 
 namespace umm {
@@ -69,6 +70,19 @@ Result<LoadedRead> load_read(const std::filesystem::path& media,
   if (Result<void> stopped = checkpoint("before_backend"); !stopped.ok()) {
     return stopped.error();
   }
+  std::vector<std::string> selective_tags;
+  const std::vector<std::string>* selective = nullptr;
+  if (options.properties) {
+    for (const std::string& id : *options.properties) {
+      if (!registry().find(id)) {
+        return Error{ErrorCode::unknown_property, "unknown property: " + id,
+                     "", ""};
+      }
+    }
+    selective_tags = exiftool_tags_for_properties(*options.properties);
+    selective = &selective_tags;
+  }
+  SelectiveTagGuard tags(selective);
   Backend* backend = select_backend(media, options);
   if (!backend) {
     if (!options.backend.empty()) {
@@ -143,7 +157,8 @@ Result<Metadata> read(const std::filesystem::path& media, ReadOptions options) {
     return stopped.error();
   }
   Result<Metadata> metadata = internal::reconcile(
-      asset.embedded, asset.backend_id, asset.sidecar(), asset.file_type);
+      asset.embedded, asset.backend_id, asset.sidecar(), asset.file_type,
+      nullptr, options.properties ? &*options.properties : nullptr);
   if (metadata.ok()) {
     Metadata value = std::move(metadata).value();
     value.setMediaDomain(internal::media_domain_from_file_type(asset.file_type));

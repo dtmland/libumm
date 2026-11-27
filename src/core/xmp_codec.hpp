@@ -15,6 +15,17 @@ namespace umm::internal {
 std::string xmp_base_key(std::string_view property);
 std::vector<std::string> xmp_base_keys(std::string_view property);
 
+// IPTC Mapping Guidelines EXIF token (IFD0:Artist, GPS:GPSLatitude) ->
+// Exiv2-syntax base key. Plus-separated companions are the caller's job.
+std::string exif_base_key(std::string_view tag);
+
+// IPTC IIM dataset (2:80) -> Exiv2-syntax base key. Empty when unmapped.
+std::string iim_base_key(std::string_view dataset);
+
+// Companion datasets named beside a primary dataset in the IPTC IIM
+// representation (Date Created 2:55 + Time Created 2:60).
+std::vector<std::string_view> iim_companion_datasets(std::string_view dataset);
+
 // Registry QuickTime key text -> QuickTime.* vocabulary. Prose / unknown
 // tokens are skipped; only com.apple.quicktime.* keys are mapped.
 std::vector<std::string> quicktime_base_keys(std::string_view registry_key);

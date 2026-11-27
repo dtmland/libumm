@@ -12,6 +12,14 @@ Not released. `SOVERSION` stays `0.2` until session 77.
 Precision rules and the ±18:00 offset limit are in the header. An unknown
 offset is not treated as UTC.
 
+### Session 61 — Selective reads
+
+`ReadOptions::properties` reconciles only the listed registry ids. Unknown ids
+return `unknown_property`. `dumpAll()` and `dumpUnmapped()` are empty on a
+selective read. Sidecar pairing is unchanged. ExifTool receives the
+registry-derived tag list; Exiv2 ignores the hint. Listed-id values match a
+full read.
+
 ### Session 71 — Durable writes
 
 `WriteOptions::durable` and `SyncOptions::durable` (default `false`). POSIX
