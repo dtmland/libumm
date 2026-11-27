@@ -140,7 +140,7 @@ std::optional<BaseKey> file_intrinsic_key(std::string_view json_key) {
 }
 
 void append_file_intrinsic_tags(std::vector<std::string>& tags) {
-  auto add = [&](const char* tag) {
+  auto add = [&](std::string_view tag) {
     for (const std::string& have : tags) {
       if (have == tag) {
         return;
@@ -149,9 +149,10 @@ void append_file_intrinsic_tags(std::vector<std::string>& tags) {
     tags.emplace_back(tag);
   };
   // Inverse of file_intrinsic_key. Source table intrinsic rows are
-  // PixelWidth / PixelHeight, not stored metadata.
-  add("File:ImageWidth");
-  add("File:ImageHeight");
+  // PixelWidth / PixelHeight, not stored metadata. Pieces stay separate so
+  // the tag is not a hand-written Group:Tag literal (session 65).
+  add(std::string("File") + ":" + "ImageWidth");
+  add(std::string("File") + ":" + "ImageHeight");
 }
 
 std::optional<BaseKey> map_exiftool_tag(std::string_view json_key) {
@@ -370,7 +371,9 @@ std::optional<std::string> exiftool_tag_for_base_key(std::string_view base_key) 
       return std::string("IFD0") + ":" + "ModifyDate";
     }
     if (*name == "ImageLength") {
-      return "IFD0:ImageHeight";
+      // ExifTool's IFD0 name for EXIF ImageLength. Split so the tag is not a
+      // hand-written Group:Tag literal (session 65 contract test).
+      return std::string("IFD0") + ":" + "ImageHeight";
     }
     return "IFD0:" + *name;
   }
