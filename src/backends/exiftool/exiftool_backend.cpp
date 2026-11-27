@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <exception>
+#include <span>
 #include <string_view>
 #include <system_error>
 #include <utility>
@@ -145,6 +146,112 @@ Error map_exiftool_error_text(std::string text) {
   }
   return make_error(ErrorCode::format_corrupt, "ExifTool reported an error",
                     std::move(text));
+}
+
+void append_entry(BaseDocument& document, BaseKey key, const JsonValue& value);
+
+std::string read_command_prefix() {
+  // -n ValueConv (decimal GPS); -a keep GPS: and Composite copies;
+  // -s short tag names so JSON is GPSLatitude, not "GPS Latitude".
+  // --binary- cancels stay_open common_args -b. Do not use -b-: ExifTool
+  // treats that as a binary extract and JSON collapses to SourceFile only.
+  std::string command = "-j\n-n\n-a\n-s\n--binary-\n";
+  if (const std::vector<std::string>* tags = current_selective_tags()) {
+    if (tags->empty()) {
+      command += "-UMMSelectiveEmpty\n";
+    } else {
+      for (const std::string& tag : *tags) {
+        command += "-";
+        command += tag;
+        command += "\n";
+      }
+    }
+  }
+  return command;
+}
+
+std::string trim_exiftool_payload(std::string json_text) {
+  while (!json_text.empty() &&
+         (json_text.back() == '\n' || json_text.back() == '\r' ||
+          json_text.front() == '\n' || json_text.front() == '\r')) {
+    if (json_text.back() == '\n' || json_text.back() == '\r') {
+      json_text.pop_back();
+    } else {
+      json_text.erase(json_text.begin());
+    }
+  }
+  return json_text;
+}
+
+const JsonValue* source_file_field(const JsonValue& object) {
+  if (const JsonValue* field = find_named_field(object, "SourceFile", "File")) {
+    return field;
+  }
+  if (const JsonValue* field = find_named_field(object, "SourceFile", "System")) {
+    return field;
+  }
+  return find_named_field(object, "SourceFile", "ExifTool");
+}
+
+bool same_source_path(const std::filesystem::path& requested,
+                      std::string_view reported) {
+  if (reported.empty()) {
+    return false;
+  }
+  if (path_to_utf8(requested) == reported) {
+    return true;
+  }
+  const std::filesystem::path other(std::u8string(
+      reinterpret_cast<const char8_t*>(reported.data()), reported.size()));
+  if (requested == other) {
+    return true;
+  }
+  std::error_code ec;
+  if (std::filesystem::equivalent(requested, other, ec)) {
+    return true;
+  }
+  const std::string requested_generic = requested.generic_string();
+  const std::string reported_generic = other.generic_string();
+  return !requested_generic.empty() && requested_generic == reported_generic;
+}
+
+Result<BaseDocument> document_from_object(const JsonValue& object) {
+  if (object.kind != JsonValue::Kind::object) {
+    return make_error(ErrorCode::backend_failed, "ExifTool JSON was not an object",
+                      "");
+  }
+  if (const JsonValue* error_field = find_named_field(object, "Error", "ExifTool")) {
+    return map_exiftool_error_text(error_field->as_text());
+  }
+  if (const JsonValue* warning_field =
+          find_named_field(object, "Warning", "ExifTool")) {
+    Error mapped = map_exiftool_error_text(warning_field->as_text());
+    if (mapped.code == ErrorCode::format_corrupt ||
+        mapped.code == ErrorCode::format_unrecognized) {
+      return mapped;
+    }
+  }
+  BaseDocument document;
+  for (const auto& field : object.object) {
+    const auto mapped = map_exiftool_tag(field.first);
+    if (!mapped) {
+      continue;
+    }
+    append_entry(document, *mapped, field.second);
+  }
+  return document;
+}
+
+Result<BaseDocument> precheck_media(const std::filesystem::path& media) {
+  if (media.empty() || !std::filesystem::exists(media)) {
+    return make_error(ErrorCode::io_not_found, "media file not found",
+                      path_to_utf8(media));
+  }
+  if (!std::filesystem::is_regular_file(media)) {
+    return make_error(ErrorCode::io_read_failed, "media path is not a file",
+                      path_to_utf8(media));
+  }
+  return BaseDocument{};
 }
 
 void append_entry(BaseDocument& document, BaseKey key, const JsonValue& value) {
@@ -605,34 +712,14 @@ Result<BaseDocument> ExifToolBackend::readBase(
     if (!absent.empty()) {
       return make_error(ErrorCode::backend_unavailable, absent, "");
     }
-    if (media.empty() || !std::filesystem::exists(media)) {
-      return make_error(ErrorCode::io_not_found, "media file not found",
-                        path_to_utf8(media));
-    }
-    if (!std::filesystem::is_regular_file(media)) {
-      return make_error(ErrorCode::io_read_failed, "media path is not a file",
-                        path_to_utf8(media));
+    if (Result<BaseDocument> checked = precheck_media(media); !checked.ok()) {
+      return checked.error();
     }
 
-    // -n ValueConv (decimal GPS); -a keep GPS: and Composite copies;
-    // -s short tag names so JSON is GPSLatitude, not "GPS Latitude".
-    // --binary- cancels stay_open common_args -b. Do not use -b-: ExifTool
-    // treats that as a binary extract and JSON collapses to SourceFile only.
     // fixtures_exiftool uses -j -G1 -a -s -n without -b and sees GPS.
     // A selective read (decision F7) appends registry-derived -TAG lines.
     // An empty list must still limit extraction; a missing tag name does.
-    std::string command = "-j\n-n\n-a\n-s\n--binary-\n";
-    if (const std::vector<std::string>* tags = current_selective_tags()) {
-      if (tags->empty()) {
-        command += "-UMMSelectiveEmpty\n";
-      } else {
-        for (const std::string& tag : *tags) {
-          command += "-";
-          command += tag;
-          command += "\n";
-        }
-      }
-    }
+    std::string command = read_command_prefix();
     command += path_to_utf8(media);
     command += "\n-execute\n";
     Result<std::string> body = execute(command);
@@ -640,17 +727,7 @@ Result<BaseDocument> ExifToolBackend::readBase(
       return body.error();
     }
 
-    std::string json_text = std::move(body.value());
-    while (!json_text.empty() &&
-           (json_text.back() == '\n' || json_text.back() == '\r' ||
-            json_text.front() == '\n' || json_text.front() == '\r')) {
-      if (json_text.back() == '\n' || json_text.back() == '\r') {
-        json_text.pop_back();
-      } else {
-        json_text.erase(json_text.begin());
-      }
-    }
-
+    const std::string json_text = trim_exiftool_payload(std::move(body).value());
     std::string parse_error;
     const auto parsed = parse_json(json_text, &parse_error);
     if (!parsed) {
@@ -664,33 +741,146 @@ Result<BaseDocument> ExifToolBackend::readBase(
     } else if (parsed->kind == JsonValue::Kind::object) {
       object = &*parsed;
     }
-    if (!object || object->kind != JsonValue::Kind::object) {
+    if (!object) {
       return make_error(ErrorCode::backend_failed,
                         "ExifTool JSON was not an object", json_text);
     }
+    return document_from_object(*object);
+  } catch (const std::exception& error) {
+    return make_error(ErrorCode::backend_failed, "ExifTool read failed",
+                      error.what());
+  } catch (...) {
+    return make_error(ErrorCode::internal, "unknown exception from ExifTool",
+                      "");
+  }
+}
 
-    if (const JsonValue* error_field =
-            find_named_field(*object, "Error", "ExifTool")) {
-      return map_exiftool_error_text(error_field->as_text());
+Result<std::vector<Result<BaseDocument>>> ExifToolBackend::readBaseMany(
+    std::span<const std::filesystem::path> paths) {
+  std::vector<Result<BaseDocument>> documents;
+  documents.reserve(paths.size());
+  try {
+    const std::string absent = resolve();
+    if (!absent.empty()) {
+      return make_error(ErrorCode::backend_unavailable, absent, "");
     }
-    if (const JsonValue* warning_field =
-            find_named_field(*object, "Warning", "ExifTool")) {
-      Error mapped = map_exiftool_error_text(warning_field->as_text());
-      if (mapped.code == ErrorCode::format_corrupt ||
-          mapped.code == ErrorCode::format_unrecognized) {
-        return mapped;
-      }
-    }
-
-    BaseDocument document;
-    for (const auto& field : object->object) {
-      const auto mapped = map_exiftool_tag(field.first);
-      if (!mapped) {
+    std::vector<std::size_t> send;
+    send.reserve(paths.size());
+    for (std::size_t i = 0; i < paths.size(); ++i) {
+      Result<BaseDocument> checked = precheck_media(paths[i]);
+      if (!checked.ok()) {
+        documents.push_back(checked.error());
         continue;
       }
-      append_entry(document, *mapped, field.second);
+      documents.emplace_back(BaseDocument{});
+      send.push_back(i);
     }
-    return document;
+    if (send.empty()) {
+      return documents;
+    }
+
+    std::string command = read_command_prefix();
+    for (std::size_t index : send) {
+      command += path_to_utf8(paths[index]);
+      command += '\n';
+    }
+    command += "-execute\n";
+    Result<std::string> body = execute(command);
+    if (!body.ok()) {
+      if (body.error().code == ErrorCode::cancelled ||
+          body.error().code == ErrorCode::deadline_exceeded) {
+        return body.error();
+      }
+      for (std::size_t index : send) {
+        documents[index] = body.error();
+      }
+      return documents;
+    }
+
+    const std::string json_text = trim_exiftool_payload(std::move(body).value());
+    std::string parse_error;
+    const auto parsed = parse_json(json_text, &parse_error);
+    if (!parsed) {
+      Error failed = make_error(ErrorCode::backend_failed,
+                               "failed to parse ExifTool JSON", parse_error);
+      for (std::size_t index : send) {
+        documents[index] = failed;
+      }
+      return documents;
+    }
+    std::vector<const JsonValue*> objects;
+    if (parsed->kind == JsonValue::Kind::array) {
+      for (const JsonValue& item : parsed->array) {
+        objects.push_back(&item);
+      }
+    } else if (parsed->kind == JsonValue::Kind::object) {
+      objects.push_back(&*parsed);
+    } else {
+      Error failed = make_error(ErrorCode::backend_failed,
+                               "ExifTool JSON was not an object", json_text);
+      for (std::size_t index : send) {
+        documents[index] = failed;
+      }
+      return documents;
+    }
+
+    std::vector<bool> used(objects.size(), false);
+    auto take_object = [&](std::size_t index) -> const JsonValue* {
+      const std::string sent = path_to_utf8(paths[index]);
+      for (std::size_t i = 0; i < objects.size(); ++i) {
+        if (used[i] || objects[i]->kind != JsonValue::Kind::object) {
+          continue;
+        }
+        const JsonValue* source = source_file_field(*objects[i]);
+        if (!source) {
+          continue;
+        }
+        if (source->as_text() == sent ||
+            same_source_path(paths[index], source->as_text())) {
+          used[i] = true;
+          return objects[i];
+        }
+      }
+      std::size_t filename_hit = objects.size();
+      int filename_hits = 0;
+      for (std::size_t i = 0; i < objects.size(); ++i) {
+        if (used[i] || objects[i]->kind != JsonValue::Kind::object) {
+          continue;
+        }
+        const JsonValue* source = source_file_field(*objects[i]);
+        if (!source) {
+          continue;
+        }
+        const std::filesystem::path reported(std::u8string(
+            reinterpret_cast<const char8_t*>(source->as_text().data()),
+            source->as_text().size()));
+        if (reported.filename() == paths[index].filename()) {
+          filename_hit = i;
+          ++filename_hits;
+        }
+      }
+      if (filename_hits == 1) {
+        used[filename_hit] = true;
+        return objects[filename_hit];
+      }
+      if (objects.size() == 1 && !used[0] && send.size() == 1) {
+        used[0] = true;
+        return objects[0];
+      }
+      return nullptr;
+    };
+
+    for (std::size_t index : send) {
+      const JsonValue* object = take_object(index);
+      if (!object) {
+        documents[index] = make_error(ErrorCode::backend_failed,
+                                     "ExifTool omitted a batch result",
+                                     path_to_utf8(paths[index]));
+        continue;
+      }
+      documents[index] = document_from_object(*object);
+    }
+    return documents;
   } catch (const std::exception& error) {
     return make_error(ErrorCode::backend_failed, "ExifTool read failed",
                       error.what());

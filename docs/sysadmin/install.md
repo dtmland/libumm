@@ -23,6 +23,10 @@ package. Binary prefixes also install `LICENSE`, `NOTICE.md`, `THIRD-PARTY-NOTIC
 
 ## Build options
 
+- `UMM_BUILD_BENCHMARKS` (default **OFF**): build `read_bench`
+  (`tests/bench/read_bench.cpp`). It is not a CTest target and is not run in CI.
+  The binary prints full vs selective `read` and `readMany` totals for the JPEG
+  and MP4 fixtures (and Tier B HEIC when `UMM_CORPUS_DIR` is configured).
 - `UMM_SANITIZE` (default empty): `thread` or `address` enables the matching sanitizer
   on non-MSVC compilers. `thread` is not supported on MSVC. The `tsan` CI job configures
   with `-DUMM_SANITIZE=thread`.

@@ -20,6 +20,21 @@ selective read. Sidecar pairing is unchanged. ExifTool receives the
 registry-derived tag list; Exiv2 ignores the hint. Listed-id values match a
 full read.
 
+### Session 62 — `readMany` and ExifTool batching
+
+`umm::readMany` streams per-path results on the calling thread. Per-file
+errors go to the callback. Cancellation, deadline, and argument errors are the
+return value and stop further callbacks. ExifTool batches up to
+`kExifToolReadBatch` (32) paths per `-execute`. Exiv2 loops. `read_bench` is
+built with `-DUMM_BUILD_BENCHMARKS=ON` and is not part of CTest.
+
+### Session 63 — Read-time upcasts
+
+`ReadOptions::upcast` fills empty canonical targets from named up groups in
+memory only. Unknown groups fail with `invalid_value`. A representation always
+wins. `needs_force` and `ambiguous` never apply. Naming `videoCreated` applies
+that approximate group. Provenance is `cast:<group>`.
+
 ### Session 71 — Durable writes
 
 `WriteOptions::durable` and `SyncOptions::durable` (default `false`). POSIX

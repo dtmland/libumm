@@ -14,7 +14,7 @@ namespace umm {
 struct SourceRef {
   std::string base_key;    // neutral base vocabulary (Exiv2 key syntax; see backend.hpp)
   std::string backend;     // backend id that produced it
-  std::string container;   // "embedded" | "sidecar" (docs/reconciliation-policy.md)
+  std::string container;   // "embedded" | "sidecar" | "cast:<group>"
 
   bool operator==(const SourceRef&) const = default;
 };

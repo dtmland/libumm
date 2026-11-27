@@ -58,6 +58,10 @@ Statuses per group: `can_cast`, `equal`, `needs_force`, `source_empty`
 (omitted from reports), `target_not_storable`, `ambiguous`.
 
 `ReadOptions::report_casts` (default off) fills `Metadata::castCandidates()`.
+`ReadOptions::upcast` (`nullopt` or empty = none) applies named up groups after
+reconcile, in memory only. Only `can_cast` rows apply. Naming an approximate
+group is the opt-in (`videoCreated`). Provenance uses container `cast:<group>`
+and the source base key. `describe` stays opt-in and does not apply upcasts.
 `WriteOptions::downcast`: `nullopt` = library default (`capturePosition` on
 video); empty vector = none.
 

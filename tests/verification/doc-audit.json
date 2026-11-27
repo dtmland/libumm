@@ -28,7 +28,8 @@
       "document": "docs/user/guide.md",
       "heading": "Fast scans",
       "tests": [
-        "tests/backend/test_read.cpp"
+        "tests/backend/test_read.cpp",
+        "tests/backend/test_read_many.cpp"
       ]
     },
     {
@@ -62,6 +63,7 @@
       "tests": [
         "tests/backend/test_cast.cpp",
         "tests/backend/test_casting_verification.cpp",
+        "tests/backend/test_upcast.cpp",
         "tests/unit/test_cast.cpp"
       ]
     },

@@ -6,7 +6,9 @@
 
 #include <chrono>
 #include <filesystem>
+#include <functional>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -48,6 +50,12 @@ struct ReadOptions {
   // unknown_property. dumpAll() and dumpUnmapped() are empty. Sidecar
   // pairing still follows merge_sidecar and sidecar_required.
   std::optional<std::vector<std::string>> properties;
+  // Read-time upcasts (decision F9). nullopt and empty apply no groups
+  // (OQ-F1: off by default). A set list applies those up groups in memory
+  // only. Unknown ids fail with invalid_value. A named approximate group
+  // (videoCreated) is applied; umm::cast still requires include_approximate.
+  // needs_force and ambiguous never apply. A representation always wins.
+  std::optional<std::vector<std::string>> upcast;
 };
 
 struct WriteOptions {
@@ -131,8 +139,9 @@ std::filesystem::path sidecarPath(const std::filesystem::path& media);
 std::optional<std::filesystem::path> findSidecar(
     const std::filesystem::path& media);
 
-// Thread-safety (decision F1): read, write, synchronize, cast, capabilities,
-// and propertyAccess may be called concurrently, including on the same path.
+// Thread-safety (decision F1): read, readMany, write, synchronize, cast,
+// capabilities, and propertyAccess may be called concurrently, including on
+// the same path.
 // A Metadata instance is not synchronized; do not mutate one object from two
 // threads. configureExifTool may run during reads: calls that have already
 // started finish on the previous ExifTool process; later calls use the new
@@ -147,7 +156,20 @@ std::optional<std::filesystem::path> findSidecar(
 // A standalone .xmp file is readable as sidecar-only. sidecar_required fails
 // when a non-sidecar path has no paired .xmp. ReadOptions::properties limits
 // reconciliation to those ids; listed-id values match a full read.
+// ReadOptions::upcast fills empty targets from named up groups in memory
+// only; the file is not modified.
 Result<Metadata> read(const std::filesystem::path& media, ReadOptions options = {});
+
+// Stream one result per path, on the calling thread, in input order
+// (decision F8). Per-file errors go to the callback. The return fails only
+// for cancellation, deadline, or argument errors (empty callback, unknown
+// property, unknown upcast group, unknown backend name). A cancel or
+// deadline stops further callbacks, including the rest of an in-flight
+// ExifTool batch. ExifTool sends up to kExifToolReadBatch paths per
+// -execute; Exiv2 loops. Sidecar pairing matches read().
+Result<void> readMany(
+    std::span<const std::filesystem::path> paths, ReadOptions options,
+    std::function<void(const std::filesystem::path&, Result<Metadata>)> callback);
 
 // Enumerate disagreed properties without inspecting every field of a read.
 // Same pipeline as read(); no second reconciliation engine. Entries cover

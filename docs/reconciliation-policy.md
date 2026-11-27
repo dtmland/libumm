@@ -69,6 +69,11 @@ Same-tier means the same metadata family after mapping (XMP vs XMP, IIM vs IIM,
 EXIF vs EXIF). Two unequal XMP encodings of one property are `conflict`.
 Cross-family disagreement is `reconciled` using the precedence row.
 
+A representation always wins over a read-time upcast. `ReadOptions::upcast`
+fills an empty canonical target from a named up group in memory only. It does
+not replace a value that reconcile already produced, and it does not write the
+file.
+
 ## Phase 1 properties
 
 Base keys below are the Exiv2-syntax vocabulary (`Exif.*` / `Iptc.*` / `Xmp.*`).

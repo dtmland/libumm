@@ -49,6 +49,7 @@
 #include <filesystem>
 #include <memory>
 #include <mutex>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -105,6 +106,21 @@ class Backend {
   // backend exceptions/diagnostics never escape (decision M1).
   virtual Result<BaseDocument> readBase(const std::filesystem::path& media) = 0;
 
+  // Multi-file read (decision F8). Default loops readBase. ExifTool overrides
+  // this and sends up to kExifToolReadBatch paths in one -execute. A returned
+  // error (not a vector) means the whole call stopped: cancelled or
+  // deadline_exceeded. Per-file failures are elements of the vector, in
+  // input order, same length as paths.
+  virtual Result<std::vector<Result<BaseDocument>>> readBaseMany(
+      std::span<const std::filesystem::path> paths) {
+    std::vector<Result<BaseDocument>> documents;
+    documents.reserve(paths.size());
+    for (const std::filesystem::path& path : paths) {
+      documents.push_back(readBase(path));
+    }
+    return documents;
+  }
+
   // Write via temp-file + atomic rename, owned by core (decision M3.3);
   // the backend writes to the temp path it is handed (a working copy).
   virtual Result<void> writeBase(const std::filesystem::path& media,
@@ -114,6 +130,11 @@ class Backend {
   // media_type is a container name such as "JPEG" or "XMP".
   virtual Result<void> typeCapabilities(std::string_view media_type) const = 0;
 };
+
+// Paths per ExifTool -execute inside readMany (session 62). Stay_open
+// round-trips dominate below this; larger chunks grow the JSON payload
+// without a matching gain on the Tier A fixtures.
+inline constexpr std::size_t kExifToolReadBatch = 32;
 
 // ExifTool adapter configuration (decision S1c: locate, never bundle).
 // Discovery order: non-empty paths here -> UMM_EXIFTOOL env var -> PATH.

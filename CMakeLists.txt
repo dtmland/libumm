@@ -42,6 +42,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(BUILD_SHARED_LIBS "Build shared libraries instead of static (decision M4c: static default)" OFF)
 option(UMM_BUILD_TESTS "Build unit tests" ON)
+option(UMM_BUILD_BENCHMARKS "Build the read benchmark (not run in CI)" OFF)
 option(UMM_ENABLE_FAILING_SELFTEST "Build and register the deliberately failing self-test" OFF)
 option(UMM_REQUIRE_EXIV2 "Require Exiv2 at configure time" OFF)
 option(UMM_REQUIRE_EXIFTOOL "Require ExifTool at configure time" OFF)
@@ -417,6 +418,44 @@ if(UMM_BUILD_TESTS)
     add_test(NAME test_read COMMAND test_read)
     umm_apply_fixture_dir_to_test(test_read)
 
+    add_executable(test_read_many tests/backend/test_read_many.cpp)
+    target_link_libraries(test_read_many PRIVATE umm::umm)
+    target_include_directories(test_read_many
+      PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/backend"
+    )
+    umm_apply_fixture_dir(test_read_many)
+    if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)
+      file(TO_CMAKE_PATH "${UMM_EXIFTOOL_SCRIPT}" UMM_TEST_READ_MANY_EXIFTOOL_SCRIPT)
+      file(TO_CMAKE_PATH "${UMM_PERL_EXECUTABLE}" UMM_TEST_READ_MANY_EXIFTOOL_PERL)
+      target_compile_definitions(test_read_many
+        PRIVATE
+          "UMM_TEST_EXIFTOOL_SCRIPT=R\"(${UMM_TEST_READ_MANY_EXIFTOOL_SCRIPT})\""
+          "UMM_TEST_EXIFTOOL_PERL=R\"(${UMM_TEST_READ_MANY_EXIFTOOL_PERL})\""
+      )
+    endif()
+    add_test(NAME test_read_many COMMAND test_read_many)
+    umm_apply_fixture_dir_to_test(test_read_many)
+
+    add_executable(test_upcast tests/backend/test_upcast.cpp)
+    target_link_libraries(test_upcast PRIVATE umm::umm)
+    target_include_directories(test_upcast
+      PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/backend"
+    )
+    umm_apply_fixture_dir(test_upcast)
+    if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)
+      file(TO_CMAKE_PATH "${UMM_EXIFTOOL_SCRIPT}" UMM_TEST_UPCAST_EXIFTOOL_SCRIPT)
+      file(TO_CMAKE_PATH "${UMM_PERL_EXECUTABLE}" UMM_TEST_UPCAST_EXIFTOOL_PERL)
+      target_compile_definitions(test_upcast
+        PRIVATE
+          "UMM_TEST_EXIFTOOL_SCRIPT=R\"(${UMM_TEST_UPCAST_EXIFTOOL_SCRIPT})\""
+          "UMM_TEST_EXIFTOOL_PERL=R\"(${UMM_TEST_UPCAST_EXIFTOOL_PERL})\""
+      )
+    endif()
+    add_test(NAME test_upcast COMMAND test_upcast)
+    umm_apply_fixture_dir_to_test(test_upcast)
+
     add_executable(test_parallel_read tests/backend/test_parallel_read.cpp)
     target_link_libraries(test_parallel_read PRIVATE umm::umm)
     umm_apply_fixture_dir(test_parallel_read)
@@ -743,6 +782,36 @@ if(UMM_BUILD_TESTS)
     )
     add_test(NAME test_exiftool_cancel COMMAND test_exiftool_cancel)
     umm_apply_fixture_dir_to_test(test_exiftool_cancel)
+  endif()
+endif()
+
+if(UMM_BUILD_BENCHMARKS)
+  add_executable(read_bench tests/bench/read_bench.cpp)
+  target_link_libraries(read_bench PRIVATE umm::umm)
+  if(UMM_BUILD_TESTS)
+    umm_apply_fixture_dir(read_bench)
+  else()
+    file(TO_CMAKE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures" UMM_BENCH_FIXTURES_DIR)
+    target_compile_definitions(read_bench
+      PRIVATE
+        "UMM_FIXTURES_DIR=R\"(${UMM_BENCH_FIXTURES_DIR})\""
+    )
+  endif()
+  if(UMM_CORPUS_DIR)
+    file(TO_CMAKE_PATH "${UMM_CORPUS_DIR}" UMM_BENCH_CORPUS_DIR)
+    target_compile_definitions(read_bench
+      PRIVATE
+        "UMM_CORPUS_DIR=R\"(${UMM_BENCH_CORPUS_DIR})\""
+    )
+  endif()
+  if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)
+    file(TO_CMAKE_PATH "${UMM_EXIFTOOL_SCRIPT}" UMM_BENCH_EXIFTOOL_SCRIPT)
+    file(TO_CMAKE_PATH "${UMM_PERL_EXECUTABLE}" UMM_BENCH_EXIFTOOL_PERL)
+    target_compile_definitions(read_bench
+      PRIVATE
+        "UMM_TEST_EXIFTOOL_SCRIPT=R\"(${UMM_BENCH_EXIFTOOL_SCRIPT})\""
+        "UMM_TEST_EXIFTOOL_PERL=R\"(${UMM_BENCH_EXIFTOOL_PERL})\""
+    )
   endif()
 endif()
 
