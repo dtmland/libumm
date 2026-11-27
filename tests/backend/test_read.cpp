@@ -2,6 +2,7 @@
 #include "umm/umm.hpp"
 
 #include <cmath>
+#include <filesystem>
 #include <string>
 #include <string_view>
 #include <variant>
@@ -863,6 +864,124 @@ int compare_agreeing_backends(const std::string& a, const std::string& b,
   return 0;
 }
 
+const std::vector<std::string> kPhotoScanIds = {
+    "iptc.photo.dateCreated",
+    "iptc.photo.locationCreated",
+    "iptc.photo.imageRating",
+};
+const std::vector<std::string> kVideoScanIds = {
+    "iptc.video.dateCreated",
+    "iptc.video.locationShot",
+    "iptc.video.workflowRating",
+};
+
+bool skip_selective_fixture(const std::filesystem::path& path) {
+  for (const auto& part : path) {
+    const std::string name = part.string();
+    if (name == "tracks" || name == "generator" || name == "corrupt") {
+      return true;
+    }
+  }
+  return false;
+}
+
+int check_property_equal(const char* label, const std::string& id,
+                         const umm::Metadata& full, const umm::Metadata& selective) {
+  const auto left = full.get(id);
+  const auto right = selective.get(id);
+  if (!left && !right) {
+    return 0;
+  }
+  if (!left || !right || *left != *right) {
+    std::fprintf(stderr, "selective mismatch %s %s\n", label, id.c_str());
+    return 1;
+  }
+  return 0;
+}
+
+int check_selective_reads(const std::string& backend_id) {
+  umm::ReadOptions unknown;
+  unknown.backend = backend_id;
+  unknown.properties = std::vector<std::string>{"not-a-property"};
+  const auto bad = umm::read(raw_jpeg("minimal.jpg"), unknown);
+  if (bad.ok() || bad.error().code != umm::ErrorCode::unknown_property) {
+    return fail_read("selective unknown id should fail");
+  }
+
+  umm::ReadOptions empty;
+  empty.backend = backend_id;
+  empty.properties = std::vector<std::string>{};
+  const auto none = umm::read(raw_jpeg("minimal.jpg"), empty);
+  if (!none.ok()) {
+    std::fprintf(stderr, "empty selective read failed: %s\n",
+                 none.error().message.c_str());
+    return 1;
+  }
+  if (!none.value().propertyIds().empty() || !none.value().dumpAll().empty() ||
+      !none.value().dumpUnmapped().empty()) {
+    return fail_read("empty selective read should have no properties or dumps");
+  }
+
+  umm::ReadOptions required;
+  required.backend = backend_id;
+  required.sidecar_required = true;
+  required.properties = kPhotoScanIds;
+  const auto missing_sidecar = umm::read(raw_jpeg("minimal.jpg"), required);
+  if (missing_sidecar.ok() ||
+      missing_sidecar.error().code != umm::ErrorCode::io_not_found) {
+    return fail_read("selective read should still honor sidecar_required");
+  }
+
+  const std::filesystem::path root = raw_fixtures_dir();
+  for (const auto& entry :
+       std::filesystem::recursive_directory_iterator(root)) {
+    if (!entry.is_regular_file()) {
+      continue;
+    }
+    const std::filesystem::path path = entry.path();
+    if (skip_selective_fixture(path)) {
+      continue;
+    }
+    umm::ReadOptions full_options;
+    full_options.backend = backend_id;
+    const auto full = umm::read(path, full_options);
+    const bool video =
+        full.ok() && full.value().mediaDomain() == umm::MediaDomain::video;
+    umm::ReadOptions selective_options = full_options;
+    selective_options.properties = video ? kVideoScanIds : kPhotoScanIds;
+    const auto selective = umm::read(path, selective_options);
+    const std::string label = backend_id + " " + path.string();
+    if (!full.ok() || !selective.ok()) {
+      if (full.ok() != selective.ok() ||
+          (full.ok() == false && full.error().code != selective.error().code)) {
+        std::fprintf(stderr, "selective error mismatch %s\n", label.c_str());
+        return 1;
+      }
+      continue;
+    }
+    if (!selective.value().dumpAll().empty() ||
+        !selective.value().dumpUnmapped().empty()) {
+      std::fprintf(stderr, "selective dumps not empty %s\n", label.c_str());
+      return 1;
+    }
+    const auto& ids = video ? kVideoScanIds : kPhotoScanIds;
+    for (const std::string& id : ids) {
+      if (const int rc =
+              check_property_equal(label.c_str(), id, full.value(),
+                                   selective.value());
+          rc != 0) {
+        return rc;
+      }
+    }
+    if (full.value().creator() && selective.value().creator()) {
+      std::fprintf(stderr, "selective read reconciled an unlisted id %s\n",
+                   label.c_str());
+      return 1;
+    }
+  }
+  return 0;
+}
+
 }  // namespace
 
 int main() {
@@ -910,6 +1029,10 @@ int main() {
         std::fprintf(stderr, "backend %s video failed\n", id.c_str());
         return rc;
       }
+    }
+    if (const int rc = check_selective_reads(id); rc != 0) {
+      std::fprintf(stderr, "backend %s selective read failed\n", id.c_str());
+      return rc;
     }
     tested.push_back(id);
   }

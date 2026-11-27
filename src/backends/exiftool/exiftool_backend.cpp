@@ -619,7 +619,20 @@ Result<BaseDocument> ExifToolBackend::readBase(
     // --binary- cancels stay_open common_args -b. Do not use -b-: ExifTool
     // treats that as a binary extract and JSON collapses to SourceFile only.
     // fixtures_exiftool uses -j -G1 -a -s -n without -b and sees GPS.
+    // A selective read (decision F7) appends registry-derived -TAG lines.
+    // An empty list must still limit extraction; a missing tag name does.
     std::string command = "-j\n-n\n-a\n-s\n--binary-\n";
+    if (const std::vector<std::string>* tags = current_selective_tags()) {
+      if (tags->empty()) {
+        command += "-UMMSelectiveEmpty\n";
+      } else {
+        for (const std::string& tag : *tags) {
+          command += "-";
+          command += tag;
+          command += "\n";
+        }
+      }
+    }
     command += path_to_utf8(media);
     command += "\n-execute\n";
     Result<std::string> body = execute(command);

@@ -69,7 +69,7 @@ that can share a sitting and a suggested order. Sessions 52–59 ship as v0.2.0,
 | Session | Title | Requests | Depends on | Progress |
 |---|---|---|---|---|
 | [60](60-datetime-shift-helpers.md) | `DateTime` shift and offset helpers | U8 | — | done |
-| [61](61-selective-reads.md) | Selective reads | U10 | 52 | planned |
+| [61](61-selective-reads.md) | Selective reads | U10 | 52 | done |
 | [62](62-read-many-and-batching.md) | `readMany`, ExifTool batching, benchmark | U10 | 54, 55, 61 | planned |
 | [63](63-read-time-upcasts.md) | Read-time upcasts | U3, U12, U13 (prerequisite) | — | planned |
 | [64](64-video-technical-upcasts.md) | Video technical upcasts from QuickTime | U3 | 63 | planned |

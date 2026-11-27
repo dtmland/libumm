@@ -93,6 +93,7 @@ add_library(umm
   src/core/write_sync.cpp
   src/core/atomic_write.cpp
   src/core/sidecar.cpp
+  src/core/selective.cpp
   src/backends/backend_manager.cpp
   src/backends/exiftool/json.cpp
   src/backends/exiftool/keys.cpp

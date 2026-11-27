@@ -844,99 +844,6 @@ bool list_equal_set(const std::vector<std::string>& a,
   return left == right;
 }
 
-std::string exif_base_key(std::string_view tag) {
-  const auto colon = tag.find(':');
-  std::string group;
-  std::string name(tag);
-  if (colon != std::string_view::npos) {
-    group = std::string(tag.substr(0, colon));
-    name = std::string(tag.substr(colon + 1));
-  }
-  if (group == "IFD0") {
-    return "Exif.Image." + name;
-  }
-  if (group == "IFD1") {
-    return "Exif.Thumbnail." + name;
-  }
-  if (group == "ExifIFD") {
-    return "Exif.Photo." + name;
-  }
-  if (group == "GPS") {
-    return "Exif.GPSInfo." + name;
-  }
-  if (group == "InteropIFD") {
-    return "Exif.Iop." + name;
-  }
-  return "Exif." + (group.empty() ? name : group + "." + name);
-}
-
-std::string iim_base_key(std::string_view dataset) {
-  if (dataset == "2:80") {
-    return "Iptc.Application2.Byline";
-  }
-  if (dataset == "2:120") {
-    return "Iptc.Application2.Caption";
-  }
-  if (dataset == "2:105") {
-    return "Iptc.Application2.Headline";
-  }
-  if (dataset == "2:116") {
-    return "Iptc.Application2.Copyright";
-  }
-  if (dataset == "2:110") {
-    return "Iptc.Application2.Credit";
-  }
-  if (dataset == "2:25") {
-    return "Iptc.Application2.Keywords";
-  }
-  if (dataset == "2:55") {
-    return "Iptc.Application2.DateCreated";
-  }
-  if (dataset == "2:60") {
-    return "Iptc.Application2.TimeCreated";
-  }
-  if (dataset == "2:04") {
-    return "Iptc.Application2.ObjectAttribute";
-  }
-  if (dataset == "2:05") {
-    return "Iptc.Application2.ObjectName";
-  }
-  if (dataset == "2:12") {
-    return "Iptc.Application2.Subject";
-  }
-  if (dataset == "2:40") {
-    return "Iptc.Application2.SpecialInstructions";
-  }
-  if (dataset == "2:85") {
-    return "Iptc.Application2.BylineTitle";
-  }
-  if (dataset == "2:90") {
-    return "Iptc.Application2.City";
-  }
-  if (dataset == "2:92") {
-    return "Iptc.Application2.SubLocation";
-  }
-  if (dataset == "2:95") {
-    return "Iptc.Application2.ProvinceState";
-  }
-  if (dataset == "2:100") {
-    return "Iptc.Application2.CountryCode";
-  }
-  if (dataset == "2:101") {
-    return "Iptc.Application2.CountryName";
-  }
-  if (dataset == "2:103") {
-    return "Iptc.Application2.TransmissionReference";
-  }
-  if (dataset == "2:115") {
-    return "Iptc.Application2.Source";
-  }
-  if (dataset == "2:122") {
-    return "Iptc.Application2.Writer";
-  }
-  return {};
-}
-
 std::vector<const BaseEntry*> matching(const BaseDocument& document,
                                       std::string_view base) {
   std::vector<const BaseEntry*> out;
@@ -2154,33 +2061,49 @@ void reconcile_property(Metadata& metadata, const BaseDocument& embedded,
 
 }  // namespace
 
+static bool id_selected(std::string_view id,
+                         const std::vector<std::string>* only_ids) {
+  if (!only_ids) {
+    return true;
+  }
+  for (const std::string& item : *only_ids) {
+    if (item == id) {
+      return true;
+    }
+  }
+  return false;
+}
+
 Result<Metadata> reconcile(const BaseDocument& document,
                            std::string_view backend_id,
                            const BaseDocument* sidecar,
                            std::string_view file_type,
-                           std::vector<ConflictEntry>* disagreements) {
+                           std::vector<ConflictEntry>* disagreements,
+                           const std::vector<std::string>* only_ids) {
   Metadata metadata;
-  std::vector<BaseEntry> entries = document.entries;
-  if (sidecar) {
-    entries.insert(entries.end(), sidecar->entries.begin(), sidecar->entries.end());
+  if (!only_ids) {
+    std::vector<BaseEntry> entries = document.entries;
+    if (sidecar) {
+      entries.insert(entries.end(), sidecar->entries.begin(),
+                     sidecar->entries.end());
+    }
+    metadata.assignBase(std::move(entries));
   }
-  metadata.assignBase(std::move(entries));
   const MediaDomain domain = media_domain_from_file_type(file_type);
   metadata.setMediaDomain(domain);
   const bool video = domain == MediaDomain::video;
-  if (video) {
-    for (std::string_view id : mapped_video_property_ids()) {
-      reconcile_property(metadata, document, sidecar, backend_id, id, true,
-                         disagreements);
+  const std::vector<std::string_view> ids =
+      video ? mapped_video_property_ids() : mapped_photo_property_ids();
+  for (std::string_view id : ids) {
+    if (!id_selected(id, only_ids)) {
+      continue;
     }
-    metadata.recomputeUnmapped();
-    return metadata;
-  }
-  for (std::string_view id : mapped_photo_property_ids()) {
-    reconcile_property(metadata, document, sidecar, backend_id, id, false,
+    reconcile_property(metadata, document, sidecar, backend_id, id, video,
                        disagreements);
   }
-  metadata.recomputeUnmapped();
+  if (!only_ids) {
+    metadata.recomputeUnmapped();
+  }
   return metadata;
 }
 

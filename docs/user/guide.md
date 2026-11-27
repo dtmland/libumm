@@ -41,6 +41,24 @@ auto report = umm::write("photo.jpg", m);      // atomic, write-synchronized
 - `umm::describe` returns the property map (representations, casts, cross-media partner);
   pass a file to fill values and cast statuses. See [Exploring a property](#exploring-a-property).
 
+## Fast scans
+
+A library scan often needs only a few properties. Set `ReadOptions::properties`
+to the registry ids to reconcile (`iptc.photo.dateCreated`,
+`iptc.photo.locationCreated`, `iptc.photo.imageRating`, or the video ids
+`iptc.video.dateCreated`, `iptc.video.locationShot`, `iptc.video.workflowRating`).
+Those are the ids behind the `dateCreated`, `locationCreated`, and `rating`
+accessors — the accessor names themselves are not property ids.
+
+- Unknown ids fail with `unknown_property`. An empty list reconciles nothing.
+- Values for the listed ids match a full read of the same file and options.
+- `dumpAll()` and `dumpUnmapped()` are empty. A selective read does not return
+  base entries it did not reconcile.
+- Sidecar pairing is unchanged: `merge_sidecar` and `sidecar_required` still
+  apply.
+- ExifTool is asked only for the tags those ids represent. Exiv2 still parses
+  the file; the saving there is reconcile and dump work.
+
 ## Canonical property names
 
 Properties are addressed by stable registry ids:
