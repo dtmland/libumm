@@ -93,6 +93,78 @@ bool is_quicktime_group(std::string_view group) {
          group == "UserData";
 }
 
+bool is_lang_or_copy_suffix(std::string_view suffix) {
+  if (suffix.size() > 4 && suffix.substr(0, 4) == "copy") {
+    for (char c : suffix.substr(4)) {
+      if (c < '0' || c > '9') {
+        return false;
+      }
+    }
+    return true;
+  }
+  if (suffix.size() < 2 || suffix.size() > 3) {
+    return false;
+  }
+  for (char c : suffix) {
+    if (!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+std::string_view quicktime_tag_stem(std::string_view tag) {
+  // ExifTool appends -copyN and -lang (Artist-eng, Title-fra-FR) for the same
+  // stored QuickTime tag. Win/mac Perl builds emit the suffixed form for
+  // UserData ©ART even when the packed language is the default.
+  std::string_view stem = tag;
+  for (int i = 0; i < 3; ++i) {
+    const auto dash = stem.rfind('-');
+    if (dash == std::string_view::npos || dash == 0) {
+      break;
+    }
+    if (!is_lang_or_copy_suffix(stem.substr(dash + 1))) {
+      break;
+    }
+    stem = stem.substr(0, dash);
+  }
+  return stem;
+}
+
+bool copyright_fourcc(std::string_view tag, std::string_view cc) {
+  if (tag.size() == cc.size() + 1 &&
+      static_cast<unsigned char>(tag[0]) == 0xA9 && tag.substr(1) == cc) {
+    return true;
+  }
+  return tag.size() == cc.size() + 2 &&
+         static_cast<unsigned char>(tag[0]) == 0xC2 &&
+         static_cast<unsigned char>(tag[1]) == 0xA9 && tag.substr(2) == cc;
+}
+
+std::string_view alias_quicktime_tag(std::string_view group,
+                                     std::string_view tag) {
+  const std::string_view stem = quicktime_tag_stem(tag);
+  if (group != "UserData") {
+    return stem;
+  }
+  // Lookup miss for a © atom: illegal characters are stripped, so ©ART can
+  // arrive as ART or UserData_ART instead of Artist.
+  if (stem == "ART" || stem == "UserData_ART" || copyright_fourcc(stem, "ART")) {
+    return "Artist";
+  }
+  if (stem == "nam" || stem == "UserData_nam" || copyright_fourcc(stem, "nam")) {
+    return "Title";
+  }
+  if (stem == "day" || stem == "UserData_day" || copyright_fourcc(stem, "day")) {
+    return "ContentCreateDate";
+  }
+  if (stem == "des" || stem == "dscp" || stem == "UserData_des" ||
+      copyright_fourcc(stem, "des")) {
+    return "Description";
+  }
+  return stem;
+}
+
 std::string mapped_quicktime_tag(std::string_view tag) {
   if (tag == "Keyword") {
     return "Keywords";
@@ -273,7 +345,7 @@ std::optional<BaseKey> map_exiftool_tag(std::string_view json_key) {
     return key;
   }
   if (is_quicktime_group(group)) {
-    const std::string mapped = mapped_quicktime_tag(tag);
+    const std::string mapped = mapped_quicktime_tag(alias_quicktime_tag(group, tag));
     if (!mapped.empty()) {
       key.family = "QuickTime";
       if (group == "QuickTime") {

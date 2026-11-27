@@ -232,7 +232,18 @@ Result<BaseDocument> document_from_object(const JsonValue& object) {
     }
   }
   BaseDocument document;
+  bool saw_userdata_artist = false;
+  bool saw_itemlist_artist = false;
   for (const auto& field : object.object) {
+    if (field.first.find("Artist") != std::string::npos ||
+        field.first.find("ART") != std::string::npos) {
+      if (field.first.find("UserData") != std::string::npos) {
+        saw_userdata_artist = true;
+      }
+      if (field.first.find("ItemList") != std::string::npos) {
+        saw_itemlist_artist = true;
+      }
+    }
     if (const auto intrinsic = file_intrinsic_key(field.first)) {
       BaseEntry entry;
       entry.key = *intrinsic;
@@ -246,6 +257,22 @@ Result<BaseDocument> document_from_object(const JsonValue& object) {
       continue;
     }
     append_entry(document, *mapped, field.second);
+  }
+  // macOS ExifTool emits both UserData ©ART and an ItemList Artist copy of
+  // the same name. quicktime_tag_matches treats them as one representation,
+  // so reconcile would require two entities. Keep the UserData source that
+  // the opt-in upcast reads.
+  if (saw_userdata_artist && saw_itemlist_artist) {
+    std::vector<BaseEntry> kept;
+    bool dropped_item = false;
+    for (BaseEntry& entry : document.entries) {
+      if (!dropped_item && entry.key.key == "QuickTime.ItemList.Artist") {
+        dropped_item = true;
+        continue;
+      }
+      kept.push_back(std::move(entry));
+    }
+    document.entries = std::move(kept);
   }
   return document;
 }

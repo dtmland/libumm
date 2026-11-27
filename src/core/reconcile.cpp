@@ -1980,7 +1980,20 @@ void collect_video_property(std::vector<Group>& groups,
     for (const char* key : {"QuickTime.ItemList.Artist", "QuickTime.Keys.Author",
                             "QuickTime.ItemList.Director"}) {
       auto part = collect_list(document, key);
-      qt_names.insert(qt_names.end(), part.begin(), part.end());
+      for (const std::string& name : part) {
+        // UserData.Artist matches ItemList.Artist. A language-suffixed copy
+        // of the same name must not become a second entity.
+        bool seen = false;
+        for (const std::string& have : qt_names) {
+          if (have == name) {
+            seen = true;
+            break;
+          }
+        }
+        if (!seen) {
+          qt_names.push_back(name);
+        }
+      }
     }
     if (!qt_names.empty()) {
       std::vector<Structure> entities;

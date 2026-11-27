@@ -493,6 +493,23 @@ int main() {
 
   {
     const auto result = umm::internal::reconcile(
+        doc({entry("QuickTime", "QuickTime.UserData.Artist", "UD Artist"),
+             entry("QuickTime", "QuickTime.ItemList.Artist", "UD Artist")}),
+        "test", nullptr, "MOV");
+    if (!result.ok()) {
+      return fail("duplicate quicktime artist reconcile failed");
+    }
+    const auto creator = result.value().get("iptc.video.creator");
+    const auto* entities =
+        creator ? std::get_if<std::vector<umm::Structure>>(&creator->value.data)
+                : nullptr;
+    if (!entities || entities->size() != 1) {
+      return fail("duplicate quicktime artist is one entity");
+    }
+  }
+
+  {
+    const auto result = umm::internal::reconcile(
         doc({entry("Xmp", "Xmp.dc.description", "XMP description"),
              entry("QuickTime", "QuickTime.Description", "QT description"),
              entry("Xmp", "Xmp.photoshop.DateCreated", "2020:03:03T00:00:00"),
