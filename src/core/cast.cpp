@@ -1179,6 +1179,74 @@ void apply_list_side(Metadata& metadata, const CastCandidate& candidate,
 
 }  // namespace
 
+bool is_upcast_group(std::string_view id) {
+  for (const CastGroupDef& group : kCastGroups) {
+    if (group.id == id && group.direction == "up") {
+      return true;
+    }
+  }
+  return false;
+}
+
+void record_upcast_provenance(Metadata& metadata, const CastCandidate& candidate,
+                              std::string_view backend_id) {
+  if (candidate.status != CastStatus::can_cast || candidate.target_id.empty()) {
+    return;
+  }
+  auto property = metadata.get(candidate.target_id);
+  if (!property) {
+    return;
+  }
+  std::vector<std::string> keys;
+  auto add_key = [&](std::string key) {
+    if (key.empty()) {
+      return;
+    }
+    for (const std::string& have : keys) {
+      if (have == key) {
+        return;
+      }
+    }
+    keys.push_back(std::move(key));
+  };
+  if (candidate.source_id.find('.') != std::string::npos) {
+    add_key(candidate.source_id);
+  }
+  for (const CastRuleDef& rule : kCastRules) {
+    if (rule.group != candidate.group || rule.direction != "up" ||
+        rule.source_kind != "base_key") {
+      continue;
+    }
+    if (find_base(metadata, rule.source_key)) {
+      add_key(std::string(rule.source_key));
+    }
+  }
+  for (const std::string& key : keys) {
+    bool exists = false;
+    for (const SourceRef& have : property->sources) {
+      if (have.base_key == key && have.container == "cast:" + candidate.group) {
+        exists = true;
+        break;
+      }
+    }
+    if (exists) {
+      continue;
+    }
+    SourceRef ref;
+    ref.base_key = key;
+    ref.backend = std::string(backend_id);
+    ref.container = "cast:" + candidate.group;
+    property->sources.push_back(std::move(ref));
+  }
+  if (property->preferred_source.empty() && !keys.empty()) {
+    property->preferred_source = keys.front();
+  }
+  if (property->resolution == Resolution::single && !property->sources.empty()) {
+    property->resolution = Resolution::reconciled;
+  }
+  (void)metadata.set(candidate.target_id, *property);
+}
+
 std::vector<CastCandidate> evaluate_casts(const Metadata& metadata,
                                           CastDirection direction,
                                           const CastOptions& options,

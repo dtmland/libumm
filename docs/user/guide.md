@@ -58,6 +58,25 @@ accessors — the accessor names themselves are not property ids.
   apply.
 - ExifTool is asked only for the tags those ids represent. Exiv2 still parses
   the file; the saving there is reconcile and dump work.
+- `umm::readMany` streams one result per path, on the calling thread, in input
+  order. Per-file errors go to the callback. The return fails only for
+  cancellation, a deadline, or argument errors (empty callback, unknown
+  property, unknown upcast group, unknown backend name). ExifTool sends up to
+  32 paths per `-execute`; Exiv2 loops. Sidecar pairing matches `read`.
+
+Measured with `read_bench` on this tree (N=8 copies, totals in ms, not per
+file). Tier B HEIC (`heic/quicktime.heic`) was not present. Selective ExifTool
+reads are faster. Batched `readMany` is faster than eight separate ExifTool
+reads on both JPEG and MP4. Exiv2 does not batch; the JPEG gain is small.
+Exiv2 cannot read `gps.mp4` in the bundled build (video support off), so that
+row has no time.
+
+| Backend | File | Full `read` | Selective `read` | `readMany` |
+|---|---|---:|---:|---:|
+| exiftool | exif-only.jpg | 115.3 | 28.6 | 21.3 |
+| exiftool | gps.mp4 | 74.8 | 45.9 | 56.0 |
+| exiv2 | exif-only.jpg | 0.9 | 0.4 | 0.6 |
+| exiv2 | gps.mp4 | — | — | — |
 
 ## Canonical property names
 
@@ -174,6 +193,17 @@ automatic `dateCreated` representation.
 `WriteOptions::downcast` defaults to `capturePosition` on video so players that
 only read QuickTime GPS still see a written `locationShot` GPS. Pass an empty
 vector to write none.
+
+`ReadOptions::upcast` applies named **up** groups in memory only. `nullopt` and
+an empty list apply none. Unknown group ids fail with `invalid_value`. Naming
+`videoCreated` applies that approximate group; `umm::cast` still requires
+`include_approximate`. `needs_force` and `ambiguous` never apply. A
+representation always wins, so an existing `dateCreated` is not replaced.
+Applied values record `cast:<group>` provenance (`preferred_source` is the
+first source base key). `describe` does not apply upcasts. A later `umm::write`
+of that `Metadata` writes the canonical representations; the read itself does
+not modify the file. With `properties` set, only groups whose target id is
+listed run, and the dumps stay empty.
 
 Cast-rule sources appear in `dumpUnmapped()` with `BaseEntry::cast_source`.
 

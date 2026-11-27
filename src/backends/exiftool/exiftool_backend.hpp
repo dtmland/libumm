@@ -7,6 +7,8 @@
 #include <memory>
 #include <mutex>
 
+#include <span>
+
 #include "umm/backend.hpp"
 
 namespace umm::internal {
@@ -21,6 +23,8 @@ class ExifToolBackend final : public Backend {
   std::string id() const override;
   BackendAvailability availability() const override;
   Result<BaseDocument> readBase(const std::filesystem::path& media) override;
+  Result<std::vector<Result<BaseDocument>>> readBaseMany(
+      std::span<const std::filesystem::path> paths) override;
   Result<void> writeBase(const std::filesystem::path& media,
                         const BaseChanges& changes) override;
   Result<void> typeCapabilities(std::string_view media_type) const override;
