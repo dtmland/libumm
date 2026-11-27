@@ -1,7 +1,7 @@
 // Value vocabulary mirrors the registry datatype set from session 06
 // (docs/implementation/06-registry-importer.md) plus boolean, rational, and
 // GPS shapes reserved in session 07. Values are standards-shaped, not
-// backend-shaped.
+// backend-shaped. Value is a plain value type with no shared mutable state.
 #pragma once
 
 #include <cstdint>

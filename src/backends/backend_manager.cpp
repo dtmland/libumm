@@ -1,5 +1,6 @@
 #include "umm/backend.hpp"
 
+#include <mutex>
 #include <utility>
 
 #ifdef UMM_HAS_EXIV2
@@ -71,17 +72,25 @@ BackendManager::BackendManager() {
 }
 
 void BackendManager::configureExifTool(ExifToolConfig config) {
+  std::lock_guard lock(mu_);
   exiftool_config_ = config;
-  if (Backend* backend = get("exiftool")) {
+  Backend* backend = nullptr;
+  for (const auto& item : backends_) {
+    if (item->id() == to_string(BackendId::exiftool)) {
+      backend = item.get();
+      break;
+    }
+  }
+  if (backend) {
     static_cast<internal::ExifToolBackend*>(backend)->configure(
         std::move(config));
   } else {
-    backends_.push_back(
-        internal::make_exiftool_backend(std::move(config)));
+    backends_.push_back(internal::make_exiftool_backend(std::move(config)));
   }
 }
 
 std::vector<std::string> BackendManager::backendIds() const {
+  std::lock_guard lock(mu_);
   std::vector<std::string> ids;
   ids.reserve(backends_.size());
   for (const auto& backend : backends_) {
@@ -91,6 +100,7 @@ std::vector<std::string> BackendManager::backendIds() const {
 }
 
 const Backend* BackendManager::get(std::string_view id) const {
+  std::lock_guard lock(mu_);
   for (const auto& backend : backends_) {
     if (backend->id() == id) {
       return backend.get();
@@ -105,9 +115,17 @@ Backend* BackendManager::get(std::string_view id) {
 }
 
 Backend* BackendManager::firstAvailable() {
-  for (auto& backend : backends_) {
+  std::vector<Backend*> snapshot;
+  {
+    std::lock_guard lock(mu_);
+    snapshot.reserve(backends_.size());
+    for (auto& backend : backends_) {
+      snapshot.push_back(backend.get());
+    }
+  }
+  for (Backend* backend : snapshot) {
     if (backend->availability().available) {
-      return backend.get();
+      return backend;
     }
   }
   return nullptr;

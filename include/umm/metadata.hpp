@@ -1,6 +1,8 @@
 // Canonical, reconciled metadata for one asset (media file + any sidecar).
 // Typed accessors follow IPTC Photo Core/Extension and Video Metadata Hub
 // ids. Camera GPS is Location GPS on `locationCreated` / `locationShot` (C8).
+// Thread-safety: a Metadata instance is not synchronized. Concurrent reads of
+// distinct instances are fine; do not share one instance across threads.
 #pragma once
 
 #include <map>

@@ -4,6 +4,7 @@
 // using capability data for the sniffed type (session 16).
 #pragma once
 
+#include <chrono>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -11,6 +12,7 @@
 #include <vector>
 
 #include "umm/backend.hpp"
+#include "umm/cancel.hpp"
 #include "umm/capabilities.hpp"
 #include "umm/describe.hpp"
 #include "umm/metadata.hpp"
@@ -21,14 +23,6 @@
 #include "umm/version.hpp"
 
 namespace umm {
-
-// Embedded-vs-sidecar policy (concept.md §12).
-enum class StoragePolicy {
-  preferred,        // library decides per capabilities + policy engine
-  embedded_only,
-  sidecar_only,
-  sidecar_required, // sidecar must exist/be written; embedded optional
-};
 
 struct StorageDecision {
   enum class Method { embedded, sidecar, mixed } method{Method::embedded};
@@ -46,6 +40,8 @@ struct ReadOptions {
   bool sidecar_required{false};
   // When true, fill Metadata::castCandidates() with up/down/side previews.
   bool report_casts{false};
+  CancelToken cancel;
+  std::optional<std::chrono::steady_clock::time_point> deadline;
 };
 
 struct WriteOptions {
@@ -55,6 +51,8 @@ struct WriteOptions {
   // Downcast groups to apply on write. nullopt = library defaults
   // (capturePosition on video). Empty vector = none.
   std::optional<std::vector<std::string>> downcast;
+  CancelToken cancel;
+  std::optional<std::chrono::steady_clock::time_point> deadline;
 };
 
 struct WriteReport {
@@ -83,6 +81,8 @@ struct SyncOptions {
   // When unset, synchronize() reads first according to `direction`.
   std::optional<Metadata> metadata;
   bool dry_run{false};
+  CancelToken cancel;
+  std::optional<std::chrono::steady_clock::time_point> deadline;
 };
 
 // One carrier actually targeted by synchronize() (or mixed umm::write).
@@ -113,6 +113,15 @@ std::filesystem::path sidecarPath(const std::filesystem::path& media);
 std::optional<std::filesystem::path> findSidecar(
     const std::filesystem::path& media);
 
+// Thread-safety (decision F1): read, write, synchronize, cast, capabilities,
+// and propertyAccess may be called concurrently, including on the same path.
+// A Metadata instance is not synchronized; do not mutate one object from two
+// threads. configureExifTool may run during reads: calls that have already
+// started finish on the previous ExifTool process; later calls use the new
+// config. CancelToken and deadline are checked at checkpoints, not mid-Exiv2
+// call. After an atomic rename has succeeded, the call returns success even
+// if the token is then cancelled.
+//
 // --- Entry points ------------------------------------------------------------
 
 // Read + reconcile (docs/reconciliation-policy.md) into canonical Metadata.
@@ -184,6 +193,8 @@ struct CastOptions {
   bool force{false};
   bool include_approximate{false};
   std::vector<std::string> groups;  // empty = all groups for the direction
+  CancelToken cancel;
+  std::optional<std::chrono::steady_clock::time_point> deadline;
 };
 
 struct CastReport {

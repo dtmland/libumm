@@ -48,3 +48,21 @@ None.
 
 - Every public entry point states its thread-safety rule in its header.
 - Existing tests pass on all three CI OSes; the new configure-while-reading test passes.
+
+## Findings
+
+Process-wide mutable state audited for this session:
+
+- `BackendManager` guards registration and `configureExifTool` with a mutex. It does not
+  hold that mutex across `readBase` / `writeBase`. `configureExifTool` does not call
+  `get()` while the lock is held.
+- ExifTool parallelism is a process pool inside `ExifToolBackend` (F2), not a
+  manager-owned per-id mutex around every call. `get("exiftool")` still returns that
+  object. `max_processes` below 1 is treated as 1.
+- Exiv2 is serialized with a mutex around `readBase` / `writeBase`. One-time init
+  (`LogMsg::setLevel`, `XmpParser::initialize`) uses `std::call_once`. The XMP toolkit
+  is process-global, so the pool size stays 1.
+- The registry singleton is immutable after load. `CancelToken` and the thread-local
+  call context are the only new cross-thread state. `Metadata` remains caller-synchronized.
+- `tests/backend/test_exiftool_pool.cpp` reconfigures while reads are in flight: those
+  calls finish, the children are retired, and the next read uses the new script.

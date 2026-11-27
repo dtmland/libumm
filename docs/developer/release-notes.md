@@ -2,6 +2,42 @@
 
 Pre-1.0 (`0.y.z`): the C++ ABI is not stable. See [docs/abi-policy.md](../abi-policy.md).
 
+## v0.2.0
+
+Breaking / relink required. Pre-1.0 `SOVERSION` is `0.2`. `ErrorCode` gained
+`cancelled` and `deadline_exceeded` (appended; earlier codes are unchanged).
+
+### Sessions 52–54 — Thread safety and backend pool
+
+Public headers state which calls are safe to run concurrently. ExifTool keeps a
+process pool (`ExifToolConfig::max_processes`, default 1). Exiv2 stays serialized
+because its XMP toolkit is process-global. `configureExifTool` applies to calls
+that start after it returns; in-flight children are retired when they finish.
+`tests/backend/test_parallel_read.cpp` and `test_exiftool_pool.cpp` cover the
+contract. CI job `tsan (ubuntu-24.04)` configures `-DUMM_SANITIZE=thread`.
+
+### Sessions 55–56 — Cancellation
+
+`ReadOptions`, `WriteOptions`, `SyncOptions`, and `CastOptions` accept a shared
+`CancelToken` and an optional deadline. Checkpoints run before backend selection,
+between carriers, between read and reconcile, and before the atomic rename. A
+write that has already renamed returns success. ExifTool's poll loop wakes within
+50 ms, kills that child, and the next call starts clean.
+
+### Sessions 57–58 — Per-property access
+
+`umm::propertyAccess` and `propertyAccessAll` dry-run `umm::write` and report
+`AccessReason` (`ok`, `unknown_property`, `backend_unavailable`,
+`container_read_only`, `policy_forbids_sidecar`, `policy_requires_sidecar`,
+`property_read_only`, `no_mapping_for_type`). Reason strings are stable within
+this minor version.
+
+### Session 59 — Verification
+
+User guide sections Threads, Cancellation, and Enabling editor controls. Install
+docs cover `UMM_SANITIZE`. U1, U4, and U9 ship in this version. U7's packaging
+guide remains session 72.
+
 ## Unreleased
 
 ### Session 51 — Casting verification

@@ -6,6 +6,8 @@
 #include <system_error>
 #include <utility>
 
+#include "core/call_context.hpp"
+
 #include "exiftool/json.hpp"
 #include "exiftool/keys.hpp"
 #include "exiftool/process.hpp"
@@ -197,38 +199,165 @@ std::string ExifToolBackend::id() const {
 }
 
 void ExifToolBackend::configure(ExifToolConfig config) {
-  shutdown();
+  std::lock_guard lock(mu_);
   config_ = std::move(config);
   perl_.clear();
   script_.clear();
   native_exe_ = false;
   absence_reason_.clear();
   version_.clear();
+  for (auto it = slots_.begin(); it != slots_.end();) {
+    Slot& slot = **it;
+    if (slot.busy) {
+      slot.retire = true;
+      ++it;
+      continue;
+    }
+    shutdown_slot(slot);
+    it = slots_.erase(it);
+  }
+  cv_.notify_all();
+}
+
+std::uint64_t ExifToolBackend::spawnCount() const {
+  return spawn_count_.load(std::memory_order_relaxed);
+}
+
+std::size_t ExifToolBackend::liveProcessCount() const {
+  std::lock_guard lock(mu_);
+  std::size_t live = 0;
+  for (const auto& slot : slots_) {
+    // A busy slot's child is owned by its worker thread; use the flag only.
+    const bool alive = slot->busy
+                           ? slot->spawned.load()
+                           : (slot->child && slot->child->running());
+    if (alive) {
+      ++live;
+    }
+  }
+  return live;
 }
 
 void ExifToolBackend::killChildForTest() {
-  if (child_) {
-    child_->kill();
-    child_->wait_for(std::chrono::milliseconds{1000});
-    child_.reset();
-  }
-}
-
-void ExifToolBackend::shutdown() {
-  if (!child_) {
-    return;
-  }
-  if (child_->running()) {
-    (void)child_->write_all("-stay_open\nFalse\n");
-    if (!child_->wait_for(std::chrono::milliseconds{2000})) {
-      child_->kill();
-      child_->wait_for(std::chrono::milliseconds{1000});
+  std::lock_guard lock(mu_);
+  for (auto& slot : slots_) {
+    if (slot->child) {
+      slot->child->kill();
+      slot->child->wait_for(std::chrono::milliseconds{1000});
+      slot->child.reset();
     }
   }
-  child_.reset();
 }
 
-void ExifToolBackend::resolve() const {
+int ExifToolBackend::process_limit() const {
+  return config_.max_processes < 1 ? 1 : config_.max_processes;
+}
+
+void ExifToolBackend::shutdown_slot(Slot& slot) {
+  if (!slot.child) {
+    return;
+  }
+  if (slot.child->running()) {
+    (void)slot.child->write_all("-stay_open\nFalse\n");
+    if (!slot.child->wait_for(std::chrono::milliseconds{2000})) {
+      slot.child->kill();
+      slot.child->wait_for(std::chrono::milliseconds{1000});
+    }
+  }
+  slot.child.reset();
+}
+
+void ExifToolBackend::shutdown_all() {
+  std::lock_guard lock(mu_);
+  for (auto& slot : slots_) {
+    if (slot->child) {
+      slot->child->kill();
+      slot->child->wait_for(std::chrono::milliseconds{1000});
+      slot->child.reset();
+    }
+  }
+  slots_.clear();
+}
+
+ExifToolBackend::Slot* ExifToolBackend::acquire() {
+  std::unique_lock lock(mu_);
+  cv_.wait(lock, [&] {
+    for (const auto& slot : slots_) {
+      if (!slot->busy && !slot->retire) {
+        return true;
+      }
+    }
+    int live = 0;
+    for (const auto& slot : slots_) {
+      if (!slot->retire || slot->busy) {
+        ++live;
+      }
+    }
+    return live < process_limit();
+  });
+  for (auto& slot : slots_) {
+    if (!slot->busy && !slot->retire) {
+      slot->busy = true;
+      return slot.get();
+    }
+  }
+  auto created = std::make_unique<Slot>();
+  created->config = config_;
+  created->busy = true;
+  Slot* raw = created.get();
+  slots_.push_back(std::move(created));
+  return raw;
+}
+
+void ExifToolBackend::release(Slot* slot) {
+  if (!slot) {
+    return;
+  }
+  std::lock_guard lock(mu_);
+  slot->busy = false;
+  if (slot->retire) {
+    shutdown_slot(*slot);
+    slots_.remove_if([slot](const std::unique_ptr<Slot>& item) {
+      return item.get() == slot;
+    });
+  }
+  cv_.notify_all();
+}
+
+void ExifToolBackend::resolve_slot(Slot& slot) {
+  slot.absence_reason.clear();
+  slot.native_exe = false;
+  slot.perl.clear();
+  if (!slot.config.exiftool_script.empty()) {
+    slot.script = slot.config.exiftool_script;
+  } else if (const char* env = std::getenv("UMM_EXIFTOOL"); env && *env) {
+    slot.script = std::filesystem::path(env);
+  } else {
+    slot.script = which("exiftool");
+  }
+
+  if (slot.script.empty() || !is_file(slot.script)) {
+    slot.absence_reason = "ExifTool script not found";
+    return;
+  }
+
+  if (is_native_windows_exe(slot.script)) {
+    slot.native_exe = true;
+    return;
+  }
+
+  if (!slot.config.perl_interpreter.empty()) {
+    slot.perl = slot.config.perl_interpreter;
+  } else {
+    slot.perl = which("perl");
+  }
+  if (slot.perl.empty() || !is_file(slot.perl)) {
+    slot.absence_reason = "Perl interpreter not found";
+  }
+}
+
+std::string ExifToolBackend::resolve() const {
+  std::lock_guard lock(mu_);
   absence_reason_.clear();
   native_exe_ = false;
   perl_.clear();
@@ -242,12 +371,12 @@ void ExifToolBackend::resolve() const {
 
   if (script_.empty() || !is_file(script_)) {
     absence_reason_ = "ExifTool script not found";
-    return;
+    return absence_reason_;
   }
 
   if (is_native_windows_exe(script_)) {
     native_exe_ = true;
-    return;
+    return absence_reason_;
   }
 
   if (!config_.perl_interpreter.empty()) {
@@ -257,31 +386,45 @@ void ExifToolBackend::resolve() const {
   }
   if (perl_.empty() || !is_file(perl_)) {
     absence_reason_ = "Perl interpreter not found";
-    return;
   }
+  return absence_reason_;
 }
 
 BackendAvailability ExifToolBackend::availability() const {
   resolve();
+  std::filesystem::path perl;
+  std::filesystem::path script;
+  bool native_exe = false;
+  std::string absence;
+  std::string version;
+  std::chrono::milliseconds timeout{30'000};
+  {
+    std::lock_guard lock(mu_);
+    absence = absence_reason_;
+    perl = perl_;
+    script = script_;
+    native_exe = native_exe_;
+    version = version_;
+    if (config_.command_timeout.count() > 0) {
+      timeout = config_.command_timeout;
+    }
+  }
   BackendAvailability status;
-  if (!absence_reason_.empty()) {
+  if (!absence.empty()) {
     status.available = false;
-    status.reason = absence_reason_;
+    status.reason = absence;
     return status;
   }
   status.available = true;
-  if (version_.empty()) {
+  if (version.empty()) {
     ChildProcess probe;
-    SpawnCommand command = make_spawn_command(native_exe_, perl_, script_);
+    SpawnCommand command = make_spawn_command(native_exe, perl, script);
     command.argv.emplace_back("-ver");
     const std::string err = probe.spawn(command.exe, command.argv);
     if (err.empty()) {
       std::string out;
       std::string stderr_text;
       std::string read_err;
-      const auto timeout = config_.command_timeout.count() > 0
-                               ? config_.command_timeout
-                               : std::chrono::milliseconds{30'000};
       if (probe.read_all(timeout, out, stderr_text, read_err) ==
           ChildProcess::Read::ok) {
         auto first_line = [](std::string text) {
@@ -300,36 +443,46 @@ BackendAvailability ExifToolBackend::availability() const {
           }
           return text;
         };
-        version_ = first_line(std::move(out));
-        if (version_.empty()) {
+        version = first_line(std::move(out));
+        if (version.empty()) {
           const std::string err_line = first_line(std::move(stderr_text));
           const bool looks_like_version =
               !err_line.empty() &&
               err_line.find_first_not_of("0123456789.") == std::string::npos &&
               err_line.front() != '.';
           if (looks_like_version) {
-            version_ = err_line;
+            version = err_line;
           }
         }
       }
     }
+    if (!version.empty()) {
+      std::lock_guard lock(mu_);
+      if (version_.empty()) {
+        version_ = version;
+      } else {
+        version = version_;
+      }
+    }
   }
-  status.version = version_;
+  status.version = version;
   return status;
 }
 
-Result<void> ExifToolBackend::ensure_process() {
-  if (child_ && child_->running()) {
+Result<void> ExifToolBackend::ensure_process(Slot& slot) {
+  if (slot.child && slot.child->running()) {
     return {};
   }
-  child_.reset();
-  resolve();
-  if (!absence_reason_.empty()) {
-    return make_error(ErrorCode::backend_unavailable, absence_reason_, "");
+  slot.child.reset();
+  slot.spawned.store(false);
+  resolve_slot(slot);
+  if (!slot.absence_reason.empty()) {
+    return make_error(ErrorCode::backend_unavailable, slot.absence_reason, "");
   }
 
   auto process = std::make_unique<ChildProcess>();
-  SpawnCommand command = make_spawn_command(native_exe_, perl_, script_);
+  SpawnCommand command =
+      make_spawn_command(slot.native_exe, slot.perl, slot.script);
   // Do not put -b in common_args: it is appended after each command, so it
   // would re-enable binary after a JSON read's --binary- and some Perl
   // builds then omit EXIF GPS from -j (Win/mac CI).
@@ -357,24 +510,48 @@ Result<void> ExifToolBackend::ensure_process() {
     return make_error(ErrorCode::backend_failed, "ExifTool exited immediately",
                       "");
   }
-  child_ = std::move(process);
-  ++spawn_count_;
+  slot.child = std::move(process);
+  slot.spawned.store(true);
+  spawn_count_.fetch_add(1, std::memory_order_relaxed);
   return {};
 }
 
 Result<std::string> ExifToolBackend::execute(const std::string& command) {
-  Result<void> ready = ensure_process();
+  Slot* slot = acquire();
+  struct Lease {
+    ExifToolBackend* self;
+    Slot* slot;
+    ~Lease() {
+      if (self) {
+        self->release(slot);
+      }
+    }
+  } lease{this, slot};
+
+  if (const CallState* call = current_call()) {
+    if (call->token.cancelled()) {
+      return Error{ErrorCode::cancelled, "cancelled", "exiftool", ""};
+    }
+    if (call->deadline &&
+        std::chrono::steady_clock::now() >= *call->deadline) {
+      return Error{ErrorCode::deadline_exceeded, "deadline exceeded",
+                   "exiftool", ""};
+    }
+  }
+
+  Result<void> ready = ensure_process(*slot);
   if (!ready.ok()) {
     return ready.error();
   }
-  const std::string write_err = child_->write_all(command);
+  const std::string write_err = slot->child->write_all(command);
   if (!write_err.empty()) {
-    child_.reset();
-    ready = ensure_process();
+    slot->child.reset();
+    slot->spawned.store(false);
+    ready = ensure_process(*slot);
     if (!ready.ok()) {
       return ready.error();
     }
-    const std::string retry = child_->write_all(command);
+    const std::string retry = slot->child->write_all(command);
     if (!retry.empty()) {
       return make_error(ErrorCode::backend_failed,
                         "failed to write ExifTool command", retry);
@@ -384,23 +561,37 @@ Result<std::string> ExifToolBackend::execute(const std::string& command) {
   std::string out;
   std::string err;
   std::string read_err;
-  const auto timeout = config_.command_timeout.count() > 0
-                           ? config_.command_timeout
+  const auto timeout = slot->config.command_timeout.count() > 0
+                           ? slot->config.command_timeout
                            : std::chrono::milliseconds{30'000};
   const auto status =
-      child_->read_until("{ready}", timeout, out, err, read_err);
-  if (status == ChildProcess::Read::timeout) {
-    if (child_) {
-      child_->kill();
-      child_->wait_for(std::chrono::milliseconds{1000});
-      child_.reset();
+      slot->child->read_until("{ready}", timeout, out, err, read_err);
+  auto discard = [&] {
+    if (slot->child) {
+      slot->child->kill();
+      slot->child->wait_for(std::chrono::milliseconds{1000});
+      slot->child.reset();
+      slot->spawned.store(false);
     }
+  };
+  if (status == ChildProcess::Read::timeout) {
+    discard();
     return make_error(ErrorCode::backend_timeout, "ExifTool command timed out",
                       err);
   }
+  if (status == ChildProcess::Read::cancelled) {
+    discard();
+    return Error{ErrorCode::cancelled, "cancelled", "exiftool", err};
+  }
+  if (status == ChildProcess::Read::deadline) {
+    discard();
+    return Error{ErrorCode::deadline_exceeded, "deadline exceeded", "exiftool",
+                 err};
+  }
   if (status == ChildProcess::Read::error ||
       status == ChildProcess::Read::eof) {
-    child_.reset();
+    slot->child.reset();
+    slot->spawned.store(false);
     return make_error(ErrorCode::backend_failed, "ExifTool process failed",
                       read_err.empty() ? err : read_err);
   }
@@ -410,9 +601,9 @@ Result<std::string> ExifToolBackend::execute(const std::string& command) {
 Result<BaseDocument> ExifToolBackend::readBase(
     const std::filesystem::path& media) {
   try {
-    resolve();
-    if (!absence_reason_.empty()) {
-      return make_error(ErrorCode::backend_unavailable, absence_reason_, "");
+    const std::string absent = resolve();
+    if (!absent.empty()) {
+      return make_error(ErrorCode::backend_unavailable, absent, "");
     }
     if (media.empty() || !std::filesystem::exists(media)) {
       return make_error(ErrorCode::io_not_found, "media file not found",
@@ -499,9 +690,9 @@ Result<BaseDocument> ExifToolBackend::readBase(
 Result<void> ExifToolBackend::writeBase(const std::filesystem::path& media,
                                        const BaseChanges& changes) {
   try {
-    resolve();
-    if (!absence_reason_.empty()) {
-      return make_error(ErrorCode::backend_unavailable, absence_reason_, "");
+    const std::string absent = resolve();
+    if (!absent.empty()) {
+      return make_error(ErrorCode::backend_unavailable, absent, "");
     }
     if (media.empty() || !std::filesystem::exists(media)) {
       return make_error(ErrorCode::io_not_found, "media file not found",
@@ -601,9 +792,9 @@ Result<void> ExifToolBackend::writeBase(const std::filesystem::path& media,
 
 Result<void> ExifToolBackend::typeCapabilities(
     std::string_view media_type) const {
-  resolve();
-  if (!absence_reason_.empty()) {
-    return make_error(ErrorCode::backend_unavailable, absence_reason_, "");
+  const std::string absent = resolve();
+  if (!absent.empty()) {
+    return make_error(ErrorCode::backend_unavailable, absent, "");
   }
   Result<Capabilities> caps = capabilitiesForType(media_type);
   if (!caps.ok()) {
@@ -619,7 +810,7 @@ Result<void> ExifToolBackend::typeCapabilities(
                     std::string(media_type));
 }
 
-ExifToolBackend::~ExifToolBackend() { shutdown(); }
+ExifToolBackend::~ExifToolBackend() { shutdown_all(); }
 
 std::unique_ptr<Backend> make_exiftool_backend(ExifToolConfig config) {
   return std::make_unique<ExifToolBackend>(std::move(config));

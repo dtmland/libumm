@@ -8,19 +8,28 @@
 //  - Backend types (Exiv2 classes, ExifTool JSON) never leak through this
 //    interface; the neutral base-metadata vocabulary below is the boundary.
 //
-// Thread-safety: each Backend instance is single-threaded. Callers must not
-// share an instance across threads. BackendManager may pool instances later;
-// this session's manager holds one instance per registered id.
+// Thread-safety (decision F1): BackendManager methods are safe to call
+// concurrently. get() returns a process-lifetime instance; callers may use
+// that pointer from multiple threads. Exiv2 metadata calls are serialized
+// (the XMP toolkit is process-global). ExifTool calls lease a child from a
+// pool of at most ExifToolConfig::max_processes. Do not destroy a backend
+// while a call on it is in flight; the manager's instances live until exit.
 //
 // Timeout: Exiv2 is in-process and has no adapter-level timeout. ExifTool
-// uses ExifToolConfig::command_timeout: on expiry the adapter kills the
+// uses ExifToolConfig::command_timeout: on expiry the adapter kills that
 // child and returns ErrorCode::backend_timeout; the next call respawns.
+// A CancelToken or deadline on the calling read/write/sync/cast is checked
+// at least every 50 ms during an ExifTool wait and uses the same kill path,
+// returning cancelled or deadline_exceeded.
 //
-// ExifTool process (decision S1a): one `-stay_open True -@ -` child per
-// adapter instance; commands are UTF-8 argfile lines on stdin ending with
-// `-execute`; responses end at `{ready}`. Shutdown writes
-// `-stay_open False` and waits. `-charset utf8` is passed before `-@`
-// so Windows Unicode paths and values survive (stdin is the argfile).
+// ExifTool process (decisions S1a, F2): each pooled child is
+// `-stay_open True -@ -`. Commands are UTF-8 argfile lines on stdin ending
+// with `-execute`; responses end at `{ready}`. Idle children shut down with
+// `-stay_open False`. configureExifTool applies to calls that start after it
+// returns; in-flight calls finish on the process they already leased, and
+// that process is reaped when the lease ends. `-charset utf8` is passed
+// before `-@` so Windows Unicode paths and values survive (stdin is the
+// argfile).
 //
 // ExifTool key mapping: JSON `-j -G1` names (`Group1:Tag`) are translated
 // into the Exiv2-syntax vocabulary. Phase 1 tags have an explicit table
@@ -39,6 +48,7 @@
 #include <chrono>
 #include <filesystem>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -119,6 +129,9 @@ struct ExifToolConfig {
   std::filesystem::path exiftool_script;  // empty = discover
   std::filesystem::path perl_interpreter; // empty = discover (script packaging)
   std::chrono::milliseconds command_timeout{30'000};  // kill + restart after
+  // Parallel -stay_open children. Values below 1 are treated as 1.
+  // Exiv2 stays serialized regardless of this field (decision F2).
+  int max_processes{1};
 };
 
 class BackendManager {
@@ -139,6 +152,7 @@ class BackendManager {
 
   std::vector<std::unique_ptr<Backend>> backends_;
   ExifToolConfig exiftool_config_;
+  mutable std::mutex mu_;
 };
 
 }  // namespace umm

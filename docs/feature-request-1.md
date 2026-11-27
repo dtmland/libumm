@@ -9,6 +9,10 @@ against the current sources before implementing.
 These requests come from a desktop application that organizes large local
 photo and video libraries.
 
+**Status (v0.2.0):** U1, U4, and U9 shipped. U7 is partial — the thread-safety
+and `configureExifTool` contract is documented; the packaging guide is session 72.
+U2, U3, U5, U6, U8, and U10–U14 are not in this version.
+
 ## What the caller needs from metadata
 
 - **Large libraries, kept fresh.** Scan and watch tens of thousands of files

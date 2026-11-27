@@ -1,5 +1,7 @@
 #include "umm/umm.hpp"
 
+#include "core/call_context.hpp"
+
 namespace umm {
 namespace {
 
@@ -10,6 +12,8 @@ Result<Metadata> load_sync_metadata(const std::filesystem::path& media,
   }
   ReadOptions read;
   read.backend = options.backend;
+  read.cancel = options.cancel;
+  read.deadline = options.deadline;
   switch (options.direction) {
     case SyncDirection::embedded_to_sidecar:
       read.merge_sidecar = false;
@@ -45,6 +49,8 @@ WriteOptions write_opts(const SyncOptions& options, StoragePolicy policy) {
   write.backend = options.backend;
   write.policy = policy;
   write.dry_run = options.dry_run;
+  write.cancel = options.cancel;
+  write.deadline = options.deadline;
   return write;
 }
 
@@ -60,6 +66,11 @@ void add_carrier(SyncReport& report, std::string container,
 
 Result<SyncReport> synchronize(const std::filesystem::path& media,
                                SyncOptions options) {
+  internal::CallGuard guard(options.cancel, options.deadline);
+  if (Result<void> stopped = internal::checkpoint("before_backend");
+      !stopped.ok()) {
+    return stopped.error();
+  }
   Result<Metadata> loaded = load_sync_metadata(media, options);
   if (!loaded.ok()) {
     return loaded.error();
@@ -105,6 +116,17 @@ Result<SyncReport> synchronize(const std::filesystem::path& media,
   }
 
   if (want_sidecar) {
+    if (!report.carriers.empty()) {
+      if (Result<void> stopped = internal::checkpoint("between_carriers");
+          !stopped.ok()) {
+        Error error = stopped.error();
+        if (error.detail.empty()) {
+          error.detail = error.message;
+        }
+        error.message = "embedded write succeeded; sidecar write failed";
+        return error;
+      }
+    }
     Result<WriteReport> written =
         write(media, metadata, write_opts(options, StoragePolicy::sidecar_only));
     if (!written.ok()) {

@@ -118,6 +118,29 @@
       ]
     },
     {
+      "document": "docs/user/guide.md",
+      "heading": "Threads",
+      "tests": [
+        "tests/backend/test_parallel_read.cpp",
+        "tests/backend/test_exiftool_pool.cpp"
+      ]
+    },
+    {
+      "document": "docs/user/guide.md",
+      "heading": "Cancellation",
+      "tests": [
+        "tests/unit/test_cancel.cpp",
+        "tests/backend/test_exiftool_cancel.cpp"
+      ]
+    },
+    {
+      "document": "docs/user/guide.md",
+      "heading": "Enabling editor controls",
+      "tests": [
+        "tests/backend/test_property_access.cpp"
+      ]
+    },
+    {
       "document": "docs/reconciliation-policy.md",
       "heading": "Reconciliation policy (Phase 1)",
       "tests": [

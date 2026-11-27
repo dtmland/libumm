@@ -1,4 +1,5 @@
 #include "core/atomic_write.hpp"
+#include "core/call_context.hpp"
 
 #include <atomic>
 #include <cstdint>
@@ -201,6 +202,10 @@ Result<void> mutate_file_atomically(
         io_error(ErrorCode::io_write_failed, "injected write failure",
                  "before_rename"),
         temp);
+  }
+
+  if (Result<void> stopped = checkpoint("before_rename"); !stopped.ok()) {
+    return with_temp_cleanup(stopped.error(), temp);
   }
 
   Result<void> replaced = replace_file(destination, temp);

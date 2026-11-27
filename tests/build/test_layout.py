@@ -180,7 +180,7 @@ class TestLayout(unittest.TestCase):
         self.assertIn("UMM_PRIVATE_EXIV2_KIND", config_in)
         self.assertIn("SHARED IMPORTED", config_in)
         self.assertIn("does not locate Exiv2 as a CMake package", install)
-        self.assertIn("find_package(umm 0.1 CONFIG REQUIRED)", consumer)
+        self.assertIn("find_package(umm 0.2 CONFIG REQUIRED)", consumer)
         self.assertIn("umm::umm", consumer)
         self.assertIn("CMAKE_SKIP_INSTALL_RULES", exiv2)
         self.assertIn("find_dependency(Iconv)", config_in)

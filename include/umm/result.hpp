@@ -31,6 +31,9 @@ enum class ErrorCode {
   unknown_property,
   // Catch-all: a bug in libumm, never expected input
   internal,
+  // Cooperative stop (decision F3). Append-only: do not reorder earlier codes.
+  cancelled,
+  deadline_exceeded,
 };
 
 struct Error {

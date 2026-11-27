@@ -3,6 +3,7 @@
 // hand-typed in C++; semantics remain owned by the standards. Photo properties
 // use iptc.photo.*; video-domain semantics from the Video Metadata Hub use
 // iptc.video.* — shared concepts are distinct registry entries.
+// Thread-safe: registry() is immutable and may be used from any thread.
 #pragma once
 
 #include <cstddef>

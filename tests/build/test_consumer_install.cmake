@@ -132,6 +132,12 @@ endif()
 if(UMM_CXX_COMPILER)
   list(APPEND _umm_configure_cmd "-DCMAKE_CXX_COMPILER=${UMM_CXX_COMPILER}")
 endif()
+if(UMM_SANITIZE)
+  # The static library is instrumented, so the consumer must link the runtime.
+  list(APPEND _umm_configure_cmd
+    "-DCMAKE_CXX_FLAGS=-fsanitize=${UMM_SANITIZE}"
+    "-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=${UMM_SANITIZE}")
+endif()
 if(UMM_MAKE_PROGRAM)
   list(APPEND _umm_configure_cmd "-DCMAKE_MAKE_PROGRAM=${UMM_MAKE_PROGRAM}")
 endif()

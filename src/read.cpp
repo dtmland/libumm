@@ -1,5 +1,6 @@
 #include "umm/umm.hpp"
 
+#include "core/call_context.hpp"
 #include "core/cast.hpp"
 #include "core/media_domain.hpp"
 #include "core/read_internal.hpp"
@@ -65,6 +66,9 @@ namespace internal {
 
 Result<LoadedRead> load_read(const std::filesystem::path& media,
                              const ReadOptions& options) {
+  if (Result<void> stopped = checkpoint("before_backend"); !stopped.ok()) {
+    return stopped.error();
+  }
   Backend* backend = select_backend(media, options);
   if (!backend) {
     if (!options.backend.empty()) {
@@ -106,6 +110,9 @@ Result<LoadedRead> load_read(const std::filesystem::path& media,
 
   if (options.merge_sidecar) {
     if (sidecar_path) {
+      if (Result<void> stopped = checkpoint("between_carriers"); !stopped.ok()) {
+        return stopped.error();
+      }
       Result<BaseDocument> sidecar_document = backend->readBase(*sidecar_path);
       if (!sidecar_document.ok()) {
         return sidecar_document.error();
@@ -125,11 +132,16 @@ Result<LoadedRead> load_read(const std::filesystem::path& media,
 }  // namespace internal
 
 Result<Metadata> read(const std::filesystem::path& media, ReadOptions options) {
+  internal::CallGuard guard(options.cancel, options.deadline);
   Result<internal::LoadedRead> loaded = internal::load_read(media, options);
   if (!loaded.ok()) {
     return loaded.error();
   }
   internal::LoadedRead asset = std::move(loaded).value();
+  if (Result<void> stopped = internal::checkpoint("between_read_and_reconcile");
+      !stopped.ok()) {
+    return stopped.error();
+  }
   Result<Metadata> metadata = internal::reconcile(
       asset.embedded, asset.backend_id, asset.sidecar(), asset.file_type);
   if (metadata.ok()) {

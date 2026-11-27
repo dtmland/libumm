@@ -1,5 +1,6 @@
 #include "umm/umm.hpp"
 
+#include "core/call_context.hpp"
 #include "core/cast.hpp"
 #include "core/media_domain.hpp"
 #include "core/read_internal.hpp"
@@ -19,7 +20,15 @@ CastReport make_report(Metadata metadata, std::vector<CastCandidate> candidates)
 
 Result<CastReport> cast(const std::filesystem::path& media, CastDirection direction,
                         CastOptions options) {
-  Result<internal::LoadedRead> loaded = internal::load_read(media, {});
+  internal::CallGuard guard(options.cancel, options.deadline);
+  if (Result<void> stopped = internal::checkpoint("before_backend");
+      !stopped.ok()) {
+    return stopped.error();
+  }
+  ReadOptions read_options;
+  read_options.cancel = options.cancel;
+  read_options.deadline = options.deadline;
+  Result<internal::LoadedRead> loaded = internal::load_read(media, read_options);
   if (!loaded.ok()) {
     return loaded.error();
   }
@@ -53,6 +62,8 @@ Result<CastReport> cast(const std::filesystem::path& media, CastDirection direct
   value.assignCastCandidates(candidates);
 
   WriteOptions write_options;
+  write_options.cancel = options.cancel;
+  write_options.deadline = options.deadline;
   if (direction == CastDirection::down) {
     write_options.downcast = options.groups.empty()
                                  ? std::vector<std::string>{"capturePosition"}

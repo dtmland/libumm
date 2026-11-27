@@ -1,6 +1,7 @@
 #include "umm/umm.hpp"
 
 #include "core/atomic_write.hpp"
+#include "core/call_context.hpp"
 #include "core/cast.hpp"
 #include "core/sidecar.hpp"
 #include "core/write_sync.hpp"
@@ -164,6 +165,11 @@ Result<WriteReport> write(const std::filesystem::path& media,
 
 Result<WriteReport> write(const std::filesystem::path& media,
                           const Metadata& metadata, WriteOptions options) {
+  internal::CallGuard guard(options.cancel, options.deadline);
+  if (Result<void> stopped = internal::checkpoint("before_backend");
+      !stopped.ok()) {
+    return stopped.error();
+  }
   Result<StorageDecision> decision = evaluateStorage(media, options);
   if (!decision.ok()) {
     return decision.error();
@@ -210,6 +216,15 @@ Result<WriteReport> write(const std::filesystem::path& media,
     Result<void> embedded = commit_embedded(*backend, media, changes);
     if (!embedded.ok()) {
       return embedded.error();
+    }
+    if (Result<void> stopped = internal::checkpoint("between_carriers");
+        !stopped.ok()) {
+      Error error = stopped.error();
+      if (error.detail.empty()) {
+        error.detail = error.message;
+      }
+      error.message = "embedded write succeeded; sidecar write failed";
+      return error;
     }
     Result<void> side = commit_sidecar(*backend, sidecarPath(media), sidecar);
     if (!side.ok()) {
