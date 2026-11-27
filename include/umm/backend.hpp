@@ -38,8 +38,10 @@
 // QuickTime/Keys/ItemList/UserData tags -> QuickTime.<Tag>, ...). Other
 // XMP-ns:Tag keys become Xmp.ns.Tag; anything else is kept as the
 // adapter-specific key ExifTool.<Group1>.<Tag>. File/ExifTool groups are
-// omitted (not stored metadata). Composite is omitted except GPS (when the
-// GPS IFD copy is dropped) and Rotation (video display matrix; F10).
+// omitted (not stored metadata), except File:ImageWidth and File:ImageHeight,
+// which become BaseDocument::intrinsics PixelWidth/PixelHeight (F11). Composite
+// is omitted except GPS (when the GPS IFD copy is dropped) and Rotation
+// (video display matrix; F10).
 //
 // Error mapping: missing/unreadable files -> io_*; unrecognized, truncated,
 // or corrupt containers -> format_*; thrown backend diagnostics ->

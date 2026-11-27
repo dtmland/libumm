@@ -233,6 +233,14 @@ Result<BaseDocument> document_from_object(const JsonValue& object) {
   }
   BaseDocument document;
   for (const auto& field : object.object) {
+    if (const auto intrinsic = file_intrinsic_key(field.first)) {
+      BaseEntry entry;
+      entry.key = *intrinsic;
+      entry.type_hint = "number";
+      entry.value = field.second.as_text();
+      document.intrinsics.push_back(std::move(entry));
+      continue;
+    }
     const auto mapped = map_exiftool_tag(field.first);
     if (!mapped) {
       continue;

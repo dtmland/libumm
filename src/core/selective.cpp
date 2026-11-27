@@ -4,6 +4,8 @@
 #include "core/xmp_codec.hpp"
 #include "exiftool/keys.hpp"
 #include "property_registry.hpp"
+#include "technical_sources.hpp"
+#include "umm/metadata.hpp"
 
 #include <optional>
 #include <string>
@@ -153,6 +155,32 @@ void add_property(std::vector<std::string>& out, std::string_view property_id) {
   add_struct_fields(out, property_id);
 }
 
+void append_technical_source_tags_impl(
+    std::vector<std::string>& tags,
+    const std::vector<std::string>& property_ids) {
+  bool pixel_size = false;
+  for (const std::string& id : property_ids) {
+    if (!isTechnicalPropertyId(id)) {
+      continue;
+    }
+    if (id == "technical.pixelSize") {
+      pixel_size = true;
+    }
+    for (const TechnicalSourceDef& row : kTechnicalSources) {
+      if (row.pseudo_id != id || row.kind != "base_key") {
+        continue;
+      }
+      add_base_key(tags, row.key);
+      if (!row.companion.empty()) {
+        add_base_key(tags, row.companion);
+      }
+    }
+  }
+  if (pixel_size) {
+    append_file_intrinsic_tags(tags);
+  }
+}
+
 }  // namespace
 
 std::vector<std::string> exiftool_tags_for_properties(
@@ -162,6 +190,11 @@ std::vector<std::string> exiftool_tags_for_properties(
     add_property(tags, id);
   }
   return tags;
+}
+
+void append_technical_source_tags(std::vector<std::string>& tags,
+                                  const std::vector<std::string>& property_ids) {
+  append_technical_source_tags_impl(tags, property_ids);
 }
 
 void append_upcast_source_tags(std::vector<std::string>& tags,

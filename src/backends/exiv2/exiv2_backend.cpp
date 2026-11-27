@@ -444,6 +444,20 @@ class Exiv2Backend final : public Backend {
       append_entries(document, image->exifData(), "Exif");
       append_entries(document, image->iptcData(), "Iptc");
       append_entries(document, image->xmpData(), "Xmp");
+      const auto width = image->pixelWidth();
+      const auto height = image->pixelHeight();
+      if (width > 0 && height > 0) {
+        BaseEntry pixel_width;
+        pixel_width.key = BaseKey{"File", "PixelWidth"};
+        pixel_width.type_hint = "number";
+        pixel_width.value = std::to_string(width);
+        BaseEntry pixel_height;
+        pixel_height.key = BaseKey{"File", "PixelHeight"};
+        pixel_height.type_hint = "number";
+        pixel_height.value = std::to_string(height);
+        document.intrinsics.push_back(std::move(pixel_width));
+        document.intrinsics.push_back(std::move(pixel_height));
+      }
       return document;
     } catch (const Exiv2::Error& error) {
       return map_exiv2_error(error);

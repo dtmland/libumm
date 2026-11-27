@@ -10,6 +10,7 @@
 #include "core/reconcile.hpp"
 #include "core/selective.hpp"
 #include "core/sidecar.hpp"
+#include "core/technical.hpp"
 
 namespace umm {
 namespace {
@@ -209,6 +210,8 @@ Result<Metadata> finish_loaded(const std::filesystem::path& media,
     }
   }
   apply_requested_upcasts(value, options, asset);
+  internal::fill_technical(value, asset.embedded,
+                           options.properties ? &*options.properties : nullptr);
   return finish_read(std::move(value), options, asset.backend_id);
 }
 
@@ -256,6 +259,7 @@ Result<LoadedRead> load_read(const std::filesystem::path& media,
       }
     }
     selective_tags = exiftool_tags_for_properties(*options.properties);
+    append_technical_source_tags(selective_tags, *options.properties);
     if (options.upcast) {
       append_upcast_source_tags(selective_tags, *options.upcast);
     }
@@ -350,6 +354,7 @@ Result<void> readMany(
   const std::vector<std::string>* selective = nullptr;
   if (options.properties) {
     selective_tags = internal::exiftool_tags_for_properties(*options.properties);
+    internal::append_technical_source_tags(selective_tags, *options.properties);
     if (options.upcast) {
       internal::append_upcast_source_tags(selective_tags, *options.upcast);
     }

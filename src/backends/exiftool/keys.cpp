@@ -115,6 +115,40 @@ std::string mapped_quicktime_tag(std::string_view tag) {
 
 }  // namespace
 
+std::optional<BaseKey> file_intrinsic_key(std::string_view json_key) {
+  const auto colon = json_key.find(':');
+  if (colon == std::string_view::npos || json_key.substr(0, colon) != "File") {
+    return std::nullopt;
+  }
+  const std::string_view tag = json_key.substr(colon + 1);
+  BaseKey key;
+  key.family = "File";
+  if (tag == "ImageWidth") {
+    key.key = "PixelWidth";
+    return key;
+  }
+  if (tag == "ImageHeight") {
+    key.key = "PixelHeight";
+    return key;
+  }
+  return std::nullopt;
+}
+
+void append_file_intrinsic_tags(std::vector<std::string>& tags) {
+  auto add = [&](const char* tag) {
+    for (const std::string& have : tags) {
+      if (have == tag) {
+        return;
+      }
+    }
+    tags.emplace_back(tag);
+  };
+  // Inverse of file_intrinsic_key. Source table intrinsic rows are
+  // PixelWidth / PixelHeight, not stored metadata.
+  add("File:ImageWidth");
+  add("File:ImageHeight");
+}
+
 std::optional<BaseKey> map_exiftool_tag(std::string_view json_key) {
   if (json_key.empty() || json_key == "SourceFile" || json_key == "Error" ||
       json_key == "Warning") {

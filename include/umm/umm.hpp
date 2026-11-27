@@ -157,7 +157,9 @@ std::optional<std::filesystem::path> findSidecar(
 // when a non-sidecar path has no paired .xmp. ReadOptions::properties limits
 // reconciliation to those ids; listed-id values match a full read.
 // ReadOptions::upcast fills empty targets from named up groups in memory
-// only; the file is not modified.
+// only; the file is not modified. Metadata::technical() is filled on every
+// read from the generated source table. A selective list fills only the
+// technical.* ids it names; other technical fields stay absent.
 Result<Metadata> read(const std::filesystem::path& media, ReadOptions options = {});
 
 // Stream one result per path, on the calling thread, in input order
