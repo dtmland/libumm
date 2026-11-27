@@ -339,6 +339,28 @@ edit them by hand.
 - [Video properties](properties/video.md)
 - [Base keys](properties/base-keys.md) — cast sources and frequent camera tags (`Make`, `Model`, exposure, lens)
 
+## Technical information
+
+`Metadata::technical()` is a read-only view of camera and frame facts that are
+not IPTC canonical properties. `umm::write` ignores it: there is no setter, and
+writes use canonical properties. A field that the file does not carry stays
+absent (`std::nullopt`). Each present value names the base key it came from.
+
+- Camera make, model, and lens come from EXIF `Make`, `Model`, and `LensModel`
+  for photos. Video prefers QuickTime Keys make and model, then those EXIF tags
+  when a still-image IFD is stored in the container.
+- Photo orientation is EXIF 1–8. Video orientation is rotation degrees from the
+  track display matrix; 0/90/180/270 map to EXIF 1/6/3/8.
+- Pixel size prefers container dimensions (`PixelWidth` / `PixelHeight`). Those
+  are not stored metadata and do not appear in `dumpAll()`. Photos then fall
+  back to EXIF `PixelXDimension` / `PixelYDimension`, then IFD0 `ImageWidth` /
+  `ImageLength`. Video falls back to the track image size.
+
+Selective reads name `technical.cameraMake`, `technical.cameraModel`,
+`technical.lensModel`, `technical.orientation`, or `technical.pixelSize` and
+fill only those fields. Exposure, focal length, and other camera facts stay in
+`dumpUnmapped()`.
+
 ## Base metadata
 
 Entries as stored in a file are **base metadata** (a base key plus a base entry). Canonical

@@ -119,6 +119,13 @@
     },
     {
       "document": "docs/user/guide.md",
+      "heading": "Technical information",
+      "tests": [
+        "tests/backend/test_technical.cpp"
+      ]
+    },
+    {
+      "document": "docs/user/guide.md",
       "heading": "Base metadata",
       "tests": [
         "tests/backend/test_read.cpp",

@@ -80,6 +80,11 @@ std::string rename_exif(std::string_view group, std::string_view tag) {
   if (tag == "ModifyDate" && (group == "IFD0" || group == "IFD1")) {
     return "DateTime";
   }
+  // ExifTool calls IFD0 0x0101 ImageHeight. Exiv2 and the technical source
+  // table use the EXIF name ImageLength.
+  if (tag == "ImageHeight" && group == "IFD0") {
+    return "ImageLength";
+  }
   return std::string(tag);
 }
 
@@ -363,6 +368,9 @@ std::optional<std::string> exiftool_tag_for_base_key(std::string_view base_key) 
   if (const auto name = after_prefix("Exif.Image.")) {
     if (*name == "DateTime") {
       return std::string("IFD0") + ":" + "ModifyDate";
+    }
+    if (*name == "ImageLength") {
+      return "IFD0:ImageHeight";
     }
     return "IFD0:" + *name;
   }

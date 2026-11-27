@@ -36,7 +36,8 @@ int expect_skip(std::string_view json_key) {
 }  // namespace
 
 int main() {
-  if (expect_key("IFD0:Artist", "Exif", "Exif.Image.Artist") != 0 ||
+  if (expect_key("IFD0:ImageHeight", "Exif", "Exif.Image.ImageLength") != 0 ||
+      expect_key("IFD0:Artist", "Exif", "Exif.Image.Artist") != 0 ||
       expect_key("ExifIFD:DateTimeOriginal", "Exif",
                  "Exif.Photo.DateTimeOriginal") != 0 ||
       expect_key("ExifIFD:CreateDate", "Exif", "Exif.Photo.DateTimeDigitized") !=
@@ -108,6 +109,12 @@ int main() {
     return 1;
   }
 
+  const auto length =
+      umm::internal::exiftool_tag_for_base_key("Exif.Image.ImageLength");
+  if (!length || *length != "IFD0:ImageHeight") {
+    std::fprintf(stderr, "Exif.Image.ImageLength tag\n");
+    return 1;
+  }
   const auto artist = umm::internal::exiftool_tag_for_base_key("Exif.Image.Artist");
   const auto byline =
       umm::internal::exiftool_tag_for_base_key("Iptc.Application2.Byline");

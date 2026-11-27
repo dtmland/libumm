@@ -80,12 +80,16 @@ only and are never written.
 `Metadata::technical()` is a read-only, non-canonical view. It is not a
 registry domain and is not written. Session 65 defines the types and the
 generated source table (`registry/technical/sources.json` →
-`src/generated/technical_sources.hpp`). The view stays empty until session 66
-fills it. Selective reads accept the pseudo-ids `technical.cameraMake`,
+`src/generated/technical_sources.hpp`). `umm::read` fills the view from that
+table after reconcile. Video make, model, lens, orientation, and pixel size
+use the table even when `ReadOptions::upcast` does not name `recordingDevice`
+or `videoTechnical`; canonical video values are a fallback only when the table
+misses a field. Selective reads accept the pseudo-ids `technical.cameraMake`,
 `technical.cameraModel`, `technical.lensModel`, `technical.orientation`, and
 `technical.pixelSize`. `propertyAccess` reports them as `property_read_only`.
 Container pixel facts that are not stored metadata travel in
-`BaseDocument::intrinsics`; `dumpAll()` is unchanged.
+`BaseDocument::intrinsics`; `dumpAll()` is unchanged. `assignTechnical` is a
+read-pipeline hook, not a write API.
 
 ## First rule set
 
