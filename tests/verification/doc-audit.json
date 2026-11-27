@@ -26,6 +26,13 @@
     },
     {
       "document": "docs/user/guide.md",
+      "heading": "Fast scans",
+      "tests": [
+        "tests/backend/test_read.cpp"
+      ]
+    },
+    {
+      "document": "docs/user/guide.md",
       "heading": "Canonical property names",
       "tests": [
         "tests/backend/test_read.cpp",
