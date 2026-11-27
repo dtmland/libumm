@@ -227,7 +227,11 @@ std::size_t ExifToolBackend::liveProcessCount() const {
   std::lock_guard lock(mu_);
   std::size_t live = 0;
   for (const auto& slot : slots_) {
-    if (slot->child && slot->child->running()) {
+    // A busy slot's child is owned by its worker thread; use the flag only.
+    const bool alive = slot->busy
+                           ? slot->spawned.load()
+                           : (slot->child && slot->child->running());
+    if (alive) {
       ++live;
     }
   }
@@ -352,7 +356,7 @@ void ExifToolBackend::resolve_slot(Slot& slot) {
   }
 }
 
-void ExifToolBackend::resolve() const {
+std::string ExifToolBackend::resolve() const {
   std::lock_guard lock(mu_);
   absence_reason_.clear();
   native_exe_ = false;
@@ -367,12 +371,12 @@ void ExifToolBackend::resolve() const {
 
   if (script_.empty() || !is_file(script_)) {
     absence_reason_ = "ExifTool script not found";
-    return;
+    return absence_reason_;
   }
 
   if (is_native_windows_exe(script_)) {
     native_exe_ = true;
-    return;
+    return absence_reason_;
   }
 
   if (!config_.perl_interpreter.empty()) {
@@ -383,6 +387,7 @@ void ExifToolBackend::resolve() const {
   if (perl_.empty() || !is_file(perl_)) {
     absence_reason_ = "Perl interpreter not found";
   }
+  return absence_reason_;
 }
 
 BackendAvailability ExifToolBackend::availability() const {
@@ -469,6 +474,7 @@ Result<void> ExifToolBackend::ensure_process(Slot& slot) {
     return {};
   }
   slot.child.reset();
+  slot.spawned.store(false);
   resolve_slot(slot);
   if (!slot.absence_reason.empty()) {
     return make_error(ErrorCode::backend_unavailable, slot.absence_reason, "");
@@ -505,6 +511,7 @@ Result<void> ExifToolBackend::ensure_process(Slot& slot) {
                       "");
   }
   slot.child = std::move(process);
+  slot.spawned.store(true);
   spawn_count_.fetch_add(1, std::memory_order_relaxed);
   return {};
 }
@@ -539,6 +546,7 @@ Result<std::string> ExifToolBackend::execute(const std::string& command) {
   const std::string write_err = slot->child->write_all(command);
   if (!write_err.empty()) {
     slot->child.reset();
+    slot->spawned.store(false);
     ready = ensure_process(*slot);
     if (!ready.ok()) {
       return ready.error();
@@ -563,6 +571,7 @@ Result<std::string> ExifToolBackend::execute(const std::string& command) {
       slot->child->kill();
       slot->child->wait_for(std::chrono::milliseconds{1000});
       slot->child.reset();
+      slot->spawned.store(false);
     }
   };
   if (status == ChildProcess::Read::timeout) {
@@ -582,6 +591,7 @@ Result<std::string> ExifToolBackend::execute(const std::string& command) {
   if (status == ChildProcess::Read::error ||
       status == ChildProcess::Read::eof) {
     slot->child.reset();
+    slot->spawned.store(false);
     return make_error(ErrorCode::backend_failed, "ExifTool process failed",
                       read_err.empty() ? err : read_err);
   }
@@ -591,9 +601,9 @@ Result<std::string> ExifToolBackend::execute(const std::string& command) {
 Result<BaseDocument> ExifToolBackend::readBase(
     const std::filesystem::path& media) {
   try {
-    resolve();
-    if (!absence_reason_.empty()) {
-      return make_error(ErrorCode::backend_unavailable, absence_reason_, "");
+    const std::string absent = resolve();
+    if (!absent.empty()) {
+      return make_error(ErrorCode::backend_unavailable, absent, "");
     }
     if (media.empty() || !std::filesystem::exists(media)) {
       return make_error(ErrorCode::io_not_found, "media file not found",
@@ -680,9 +690,9 @@ Result<BaseDocument> ExifToolBackend::readBase(
 Result<void> ExifToolBackend::writeBase(const std::filesystem::path& media,
                                        const BaseChanges& changes) {
   try {
-    resolve();
-    if (!absence_reason_.empty()) {
-      return make_error(ErrorCode::backend_unavailable, absence_reason_, "");
+    const std::string absent = resolve();
+    if (!absent.empty()) {
+      return make_error(ErrorCode::backend_unavailable, absent, "");
     }
     if (media.empty() || !std::filesystem::exists(media)) {
       return make_error(ErrorCode::io_not_found, "media file not found",
@@ -782,9 +792,9 @@ Result<void> ExifToolBackend::writeBase(const std::filesystem::path& media,
 
 Result<void> ExifToolBackend::typeCapabilities(
     std::string_view media_type) const {
-  resolve();
-  if (!absence_reason_.empty()) {
-    return make_error(ErrorCode::backend_unavailable, absence_reason_, "");
+  const std::string absent = resolve();
+  if (!absent.empty()) {
+    return make_error(ErrorCode::backend_unavailable, absent, "");
   }
   Result<Capabilities> caps = capabilitiesForType(media_type);
   if (!caps.ok()) {

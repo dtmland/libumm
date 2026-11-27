@@ -40,6 +40,7 @@ class ExifToolBackend final : public Backend {
     std::string absence_reason;
     bool busy = false;
     bool retire = false;
+    std::atomic<bool> spawned{false};
   };
 
   Slot* acquire();
@@ -48,7 +49,7 @@ class ExifToolBackend final : public Backend {
   Result<std::string> execute(const std::string& command);
   void shutdown_slot(Slot& slot);
   void resolve_slot(Slot& slot);
-  void resolve() const;
+  std::string resolve() const;
   int process_limit() const;
   void shutdown_all();
 
