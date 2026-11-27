@@ -145,6 +145,12 @@ PURPOSES = {
         "QuickTime keys + XMP agree — video reconciliation \"equivalent\" path"
     ),
     "video/gps.mp4": "QuickTime GPSCoordinates + XMP GPS",
+    "video/technical.mp4": "No XMP; duration, 16x16 frame, 10 fps, audio, rotation 0",
+    "video/technical-rotated.mp4": (
+        "Same as technical.mp4 with a 90-degree display matrix (orientation 6)"
+    ),
+    "video/technical.mov": "MOV counterpart of technical.mp4",
+    "video/technical-rotated.mov": "MOV counterpart of technical-rotated.mp4",
     "video/conflicting.mp4": (
         "QuickTime vs XMP date disagreement — video conflict/reconcile path"
     ),
@@ -687,6 +693,60 @@ def write_lavfi_video(ffmpeg: str, dest: Path, container: str) -> list[str]:
         raise GeneratorError(f"ffmpeg did not write {dest}")
     recorded = ["ffmpeg"] + rel_args(args[1:], dest.parent.parent)
     return [" ".join(recorded)]
+
+
+def write_technical_video(
+    tool: ExifTool, ffmpeg: str, dest: Path, container: str, rotate: bool
+) -> list[str]:
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    args = [
+        ffmpeg,
+        "-y",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-f",
+        "lavfi",
+        "-i",
+        "color=c=gray:s=16x16:r=10",
+        "-f",
+        "lavfi",
+        "-i",
+        "anullsrc=r=8000:cl=mono",
+        "-t",
+        "0.1",
+        "-c:v",
+        "mpeg4",
+        "-q:v",
+        "12",
+        "-c:a",
+        "aac",
+        "-shortest",
+    ]
+    if container == "mov":
+        args.extend(["-f", "mov"])
+    else:
+        args.extend(["-movflags", "+faststart"])
+    if rotate:
+        args.extend(["-metadata:s:v:0", "rotate=90"])
+    args.append(str(dest))
+    result = subprocess.run(args, capture_output=True, check=False)
+    if result.returncode != 0:
+        stderr = result.stderr.decode("utf-8", errors="replace")
+        raise GeneratorError(
+            f"ffmpeg failed ({result.returncode}): {' '.join(args)}\n{stderr}"
+        )
+    if not dest.is_file():
+        raise GeneratorError(f"ffmpeg did not write {dest}")
+    recorded = ["ffmpeg"] + rel_args(args[1:], dest.parent.parent)
+    commands = [" ".join(recorded)]
+    if container == "mov":
+        # ffmpeg writes a UserData software tag that is not part of the
+        # technical contract and is not ignored by the fixture comparison.
+        cleared = ["-overwrite_original", "-UserData:SoftwareVersion=", str(dest)]
+        tool.run(cleared)
+        commands.append(logical_command(rel_args(cleared, dest.parent.parent)))
+    return commands
 
 
 def make_video(
@@ -1409,6 +1469,30 @@ def generate(
                 ("XMP-exif:GPSLongitude", f"{GPS_LON}W"),
             ],
             "mp4",
+        ),
+    )
+    add(
+        "video/technical.mp4",
+        write_technical_video(
+            tool, ffmpeg, output_dir / "video/technical.mp4", "mp4", False
+        ),
+    )
+    add(
+        "video/technical-rotated.mp4",
+        write_technical_video(
+            tool, ffmpeg, output_dir / "video/technical-rotated.mp4", "mp4", True
+        ),
+    )
+    add(
+        "video/technical.mov",
+        write_technical_video(
+            tool, ffmpeg, output_dir / "video/technical.mov", "mov", False
+        ),
+    )
+    add(
+        "video/technical-rotated.mov",
+        write_technical_video(
+            tool, ffmpeg, output_dir / "video/technical-rotated.mov", "mov", True
         ),
     )
     add(

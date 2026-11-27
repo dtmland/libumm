@@ -390,6 +390,12 @@ void fill_layers(PropertyLayers& layers, const Metadata& metadata,
     if (!touches) {
       continue;
     }
+    // Multi-target groups (videoTechnical) emit one candidate per target.
+    // Side casts still match when this property is the source or the target.
+    if (!candidate.target_id.empty() && candidate.target_id != layers.id &&
+        candidate.source_id != layers.id) {
+      continue;
+    }
     layers.cast_groups.push_back(candidate);
     for (CastLinkMap& link : layers.casts) {
       if (link.group == candidate.group && link.direction == candidate.direction) {

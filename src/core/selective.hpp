@@ -11,4 +11,9 @@ namespace umm::internal {
 std::vector<std::string> exiftool_tags_for_properties(
     const std::vector<std::string>& property_ids);
 
+// Source tags for named upcast groups, so a selective read can still apply
+// them. Skips synthetic Exiv2 Xmp.video / Xmp.audio keys.
+void append_upcast_source_tags(std::vector<std::string>& tags,
+                               const std::vector<std::string>& groups);
+
 }  // namespace umm::internal

@@ -2291,7 +2291,13 @@ Number of used audio channels
 
 ### Cast rules
 
-_No cast rules touch this property._
+| Group | Direction | Partner | Heuristic | Flags | Citation |
+|---|---|---|---|---|---|
+| `videoTechnical` | up | `Xmp.audio.ChannelType` | H11 — Units / encodings; 1e-5° / 0.5 m | partial, one-way | Exiv2 synthetic Xmp.audio.ChannelType; cast source only, never written |
+| `videoTechnical` | up | `QuickTime.AudioChannels` | H11 — Units / encodings; 1e-5° / 0.5 m | partial, one-way | ExifTool QuickTime AudioChannels when the track group is absent |
+| `videoTechnical` | up | `ExifTool.Track2.AudioChannels` | H11 — Units / encodings; 1e-5° / 0.5 m | partial, one-way | ExifTool Track2 AudioChannels |
+
+Casts are opt-in (`umm::cast`). See [canonical model heuristics](../../developer/canonical-model.md).
 
 ### Accessor
 
@@ -2359,7 +2365,13 @@ Rate used for sampling the audio
 
 ### Cast rules
 
-_No cast rules touch this property._
+| Group | Direction | Partner | Heuristic | Flags | Citation |
+|---|---|---|---|---|---|
+| `videoTechnical` | up | `Xmp.audio.SampleRate` | H11 — Units / encodings; 1e-5° / 0.5 m | partial, one-way | Exiv2 synthetic Xmp.audio.SampleRate; cast source only, never written |
+| `videoTechnical` | up | `QuickTime.AudioSampleRate` | H11 — Units / encodings; 1e-5° / 0.5 m | partial, one-way | ExifTool QuickTime AudioSampleRate when the track group is absent |
+| `videoTechnical` | up | `ExifTool.Track2.AudioSampleRate` | H11 — Units / encodings; 1e-5° / 0.5 m | partial, one-way | ExifTool Track2 AudioSampleRate |
+
+Casts are opt-in (`umm::cast`). See [canonical model heuristics](../../developer/canonical-model.md).
 
 ### Accessor
 
@@ -2534,7 +2546,13 @@ Duration of the overall video (from the first to the last frame)
 
 ### Cast rules
 
-_No cast rules touch this property._
+| Group | Direction | Partner | Heuristic | Flags | Citation |
+|---|---|---|---|---|---|
+| `videoTechnical` | up | `Xmp.video.Duration` | H11 — Units / encodings; 1e-5° / 0.5 m | partial, one-way | Exiv2 synthetic Xmp.video.Duration milliseconds; cast source only, never written |
+| `videoTechnical` | up | `QuickTime.Duration` | H11 — Units / encodings; 1e-5° / 0.5 m | partial, one-way | ExifTool QuickTime:Duration seconds; VideoTime timeFormat seconds (H11) |
+| `videoTechnical` | up | `ExifTool.Track1.MediaDuration` | H11 — Units / encodings; 1e-5° / 0.5 m | partial, one-way | Video track MediaDuration when the movie Duration key is absent; not the audio track |
+
+Casts are opt-in (`umm::cast`). See [canonical model heuristics](../../developer/canonical-model.md).
 
 ### Accessor
 
@@ -2603,7 +2621,16 @@ Size of the video frame in pixels
 
 ### Cast rules
 
-_No cast rules touch this property._
+| Group | Direction | Partner | Heuristic | Flags | Citation |
+|---|---|---|---|---|---|
+| `videoTechnical` | up | `Xmp.video.Height` | H11 — Units / encodings; 1e-5° / 0.5 m | partial, one-way | Exiv2 synthetic Xmp.video.Height; cast source only, never written |
+| `videoTechnical` | up | `Xmp.video.Width` | H11 — Units / encodings; 1e-5° / 0.5 m | partial, one-way | Exiv2 synthetic Xmp.video.Width; cast source only, never written |
+| `videoTechnical` | up | `QuickTime.ImageHeight` | H11 — Units / encodings; 1e-5° / 0.5 m | partial, one-way | ExifTool QuickTime ImageHeight when the track group is absent |
+| `videoTechnical` | up | `QuickTime.ImageWidth` | H11 — Units / encodings; 1e-5° / 0.5 m | partial, one-way | ExifTool QuickTime ImageWidth when the track group is absent |
+| `videoTechnical` | up | `ExifTool.Track1.ImageHeight` | H11 — Units / encodings; 1e-5° / 0.5 m | partial, one-way | ExifTool Track1 ImageHeight |
+| `videoTechnical` | up | `ExifTool.Track1.ImageWidth` | H11 — Units / encodings; 1e-5° / 0.5 m | partial, one-way | ExifTool Track1 ImageWidth; sample description, not the movie header |
+
+Casts are opt-in (`umm::cast`). See [canonical model heuristics](../../developer/canonical-model.md).
 
 ### Accessor
 
@@ -2660,7 +2687,13 @@ Orientation of the visual content of the video as defined by TIFF.
 
 ### Cast rules
 
-_No cast rules touch this property._
+| Group | Direction | Partner | Heuristic | Flags | Citation |
+|---|---|---|---|---|---|
+| `videoTechnical` | up | `ExifTool.Composite.Rotation` | H11 — Units / encodings; 1e-5° / 0.5 m | partial, one-way | ExifTool Composite Rotation degrees; 0/90/180/270 map to EXIF orientation 1/6/3/8 |
+| `videoTechnical` | up | `QuickTime.Rotation` | H11 — Units / encodings; 1e-5° / 0.5 m | partial, one-way | ExifTool QuickTime Rotation degrees when neither Composite nor the track matrix is present |
+| `videoTechnical` | up | `ExifTool.Track1.MatrixStructure` | H11 — Units / encodings; 1e-5° / 0.5 m | partial, one-way | Track1 display matrix when Composite Rotation is absent; movie-level matrix is not used |
+
+Casts are opt-in (`umm::cast`). See [canonical model heuristics](../../developer/canonical-model.md).
 
 ### Accessor
 
@@ -2846,7 +2879,16 @@ Machine readable code and a human readable term for the used video coding
 
 ### Cast rules
 
-_No cast rules touch this property._
+| Group | Direction | Partner | Heuristic | Flags | Citation |
+|---|---|---|---|---|---|
+| `videoTechnical` | up | `Xmp.video.Codec` | H11 — Units / encodings; 1e-5° / 0.5 m | partial, one-way | Exiv2 synthetic Xmp.video.Codec; cast source only, never written |
+| `videoTechnical` | up | `Xmp.video.Compressor` | H11 — Units / encodings; 1e-5° / 0.5 m | partial, one-way | Exiv2 synthetic Xmp.video.Compressor; cast source only, never written |
+| `videoTechnical` | up | `QuickTime.CompressorID` | H11 — Units / encodings; 1e-5° / 0.5 m | partial, one-way | ExifTool QuickTime CompressorID when the track group is absent |
+| `videoTechnical` | up | `QuickTime.CompressorName` | H11 — Units / encodings; 1e-5° / 0.5 m | partial, one-way | ExifTool QuickTime CompressorName when the track group is absent |
+| `videoTechnical` | up | `ExifTool.Track1.CompressorID` | H11 — Units / encodings; 1e-5° / 0.5 m | partial, one-way | ExifTool Track1 CompressorID fourcc as Entity identifiers |
+| `videoTechnical` | up | `ExifTool.Track1.CompressorName` | H11 — Units / encodings; 1e-5° / 0.5 m | partial, one-way | ExifTool Track1 CompressorName as Entity name x-default |
+
+Casts are opt-in (`umm::cast`). See [canonical model heuristics](../../developer/canonical-model.md).
 
 ### Accessor
 
@@ -2874,7 +2916,13 @@ Used frame rate
 
 ### Cast rules
 
-_No cast rules touch this property._
+| Group | Direction | Partner | Heuristic | Flags | Citation |
+|---|---|---|---|---|---|
+| `videoTechnical` | up | `Xmp.video.FrameRate` | H11 — Units / encodings; 1e-5° / 0.5 m | partial, one-way | Exiv2 synthetic Xmp.video.FrameRate; cast source only, never written |
+| `videoTechnical` | up | `QuickTime.VideoFrameRate` | H11 — Units / encodings; 1e-5° / 0.5 m | partial, one-way | ExifTool QuickTime VideoFrameRate when the track group is absent |
+| `videoTechnical` | up | `ExifTool.Track1.VideoFrameRate` | H11 — Units / encodings; 1e-5° / 0.5 m | partial, one-way | ExifTool Track1 VideoFrameRate |
+
+Casts are opt-in (`umm::cast`). See [canonical model heuristics](../../developer/canonical-model.md).
 
 ### Accessor
 

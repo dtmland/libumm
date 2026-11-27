@@ -8,7 +8,10 @@
 
 #include "core/transpose.hpp"
 #include "cross_media_accessors.hpp"
+#include "technical_sources.hpp"
 #include "umm/registry.hpp"
+
+static_assert(umm::internal::kTechnicalSourceCount > 0);
 
 namespace umm {
 namespace {
@@ -657,6 +660,8 @@ bool entry_consumed(const std::map<std::string, PropertyValue>& properties,
 }  // namespace
 
 const std::vector<BaseEntry>& Metadata::dumpAll() const { return base_; }
+
+const TechnicalInfo& Metadata::technical() const { return technical_; }
 
 const std::vector<BaseEntry>& Metadata::dumpUnmapped() const {
   return unmapped_;

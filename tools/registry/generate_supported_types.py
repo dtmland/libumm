@@ -22,7 +22,17 @@ WRITABLE = frozenset({"read_write", "create"})
 # Sniffed domain (src/core/media_domain.hpp): only these select iptc.video.*.
 VIDEO_DOMAIN = frozenset({"MP4", "MOV"})
 # Container cast base keys (registry/casts/). Photo side casts are property-to-property.
-CAST_BASE_PREFIXES = ("QuickTime.", "Exif.", "ExifTool.GoPro.")
+# A new prefix must also be named in the master-list Canonical bullet.
+CAST_BASE_PREFIXES = (
+    "QuickTime.",
+    "Exif.",
+    "ExifTool.GoPro.",
+    "ExifTool.Track1.",
+    "ExifTool.Track2.",
+    "ExifTool.Composite.",
+    "Xmp.video.",
+    "Xmp.audio.",
+)
 BACKEND_DISPLAY = {"exiv2": "Exiv2", "exiftool": "ExifTool"}
 ACCESS_CPP = {
     "none": "Access::none",
@@ -423,8 +433,9 @@ def assert_container_cast_scope() -> None:
 
 def canonical_coverage(type_name: str, rows: list[dict[str, Any]]) -> str:
     if type_name in VIDEO_DOMAIN:
-        # XMP plus VMH QuickTime keys are representations. Container GPS and
-        # movie-header dates are casts (canonical-model.md; registry/casts/).
+        # XMP plus VMH QuickTime keys are representations. Container GPS,
+        # movie-header dates, recording-device tags, and technical facts are
+        # casts (canonical-model.md; registry/casts/).
         if not representation_readable(rows, ("xmp",)):
             raise GeneratorError(
                 f"{type_name}: video domain has no XMP representation path"
@@ -548,9 +559,11 @@ def master_list_lines(
             "of `iptc.photo.*`. Every type here except MP4 and MOV is the photo domain "
             "(`src/core/media_domain.hpp`). `umm::read` / `get` reconcile those automatically.",
             "- `direct + cast (video)` — MP4 and MOV use `iptc.video.*`. XMP and Video Metadata Hub "
-            "QuickTime keys are representations. Container GPS, movie-header dates, and "
-            "recording-device tags are casts (`registry/casts/`); they are not filled unless "
-            "casting is requested. Default video writes downcast `capturePosition`.",
+            "QuickTime keys are representations. Container GPS, movie-header dates, "
+            "recording-device tags, and technical facts (duration, frame size, frame rate, "
+            "coding, audio, rotation) are casts (`registry/casts/`); they are not filled unless "
+            "casting is requested. Default video writes downcast `capturePosition`. Exiv2 "
+            "synthetic `Xmp.video.*` and `Xmp.audio.*` keys are cast sources only and are never written.",
             "- `—` — no representation family and no cast rule. Backends may still return base tags "
             "(`dumpAll()` / `dumpUnmapped()`).",
             "",

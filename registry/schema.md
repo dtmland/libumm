@@ -92,6 +92,27 @@ Each rule has `id`, `source`, `target`, `heuristic` (`H1`–`H21`), and
 `citation`. Endpoints are `{kind, key, field?, index?}` with `kind`
 `base_key`, `property`, or `property_field`.
 
+`videoTechnical` is one group with several targets. `source_priority` is the
+evaluation order (the generated table pads that list; the count is authoritative).
+A multi-field target such as frame size is complete only when every required
+field has a hit. Synthetic Exiv2 `Xmp.video.*` / `Xmp.audio.*` keys may appear
+as sources; they are never representations and must not be written.
+
+## Technical sources (`registry/technical/sources.json`)
+
+Read-only view sources for `Metadata::technical()` (F11). Not canonical
+properties. Codegen writes `src/generated/technical_sources.hpp`.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `field` | string | `cameraMake`, `cameraModel`, `lensModel`, `orientation`, `pixelSize` |
+| `domain` | string | `photo` or `video` |
+| `priority` | array | Base keys in preference order, each with `key` and `citation` |
+| `companion` | string, optional | Note that is not a base key (for example a video canonical id) |
+
+`priority` entries are required. `companion` is optional and must not be treated
+as a base key. The public pseudo-ids are `technical.<field>`.
+
 ## Representations
 
 | Field | Type | Meaning |

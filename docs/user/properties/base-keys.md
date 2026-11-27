@@ -65,6 +65,14 @@ Lens model. Intentionally non-canonical.
 |---|---|---|---|---|
 | `recordingDevice` | up | [`iptc.video.recordingDevice`](video.md#iptc.video.recordingDevice)`[0].attLensDescription` | H8 — Struct ↔ scalar: field-level merge | EXIF LensModel |
 
+<a id="ExifTool.Composite.Rotation"></a>
+
+## `ExifTool.Composite.Rotation`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `videoTechnical` | up | [`iptc.video.orientation`](video.md#iptc.video.orientation) | H11 — Units / encodings; 1e-5° / 0.5 m | ExifTool Composite Rotation degrees; 0/90/180/270 map to EXIF orientation 1/6/3/8 |
+
 <a id="ExifTool.GoPro.CameraSerialNumber"></a>
 
 ## `ExifTool.GoPro.CameraSerialNumber`
@@ -81,6 +89,110 @@ Lens model. Intentionally non-canonical.
 |---|---|---|---|---|
 | `recordingDevice` | up | [`iptc.video.recordingDevice`](video.md#iptc.video.recordingDevice)`[0].modelName` | H8 — Struct ↔ scalar: field-level merge | C19 GoPro Model |
 
+<a id="ExifTool.Track1.CompressorID"></a>
+
+## `ExifTool.Track1.CompressorID`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `videoTechnical` | up | [`iptc.video.videoCoding`](video.md#iptc.video.videoCoding)`[0].identifiers` | H11 — Units / encodings; 1e-5° / 0.5 m | ExifTool Track1 CompressorID fourcc as Entity identifiers |
+
+<a id="ExifTool.Track1.CompressorName"></a>
+
+## `ExifTool.Track1.CompressorName`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `videoTechnical` | up | [`iptc.video.videoCoding`](video.md#iptc.video.videoCoding)`[0].name` | H11 — Units / encodings; 1e-5° / 0.5 m | ExifTool Track1 CompressorName as Entity name x-default |
+
+<a id="ExifTool.Track1.ImageHeight"></a>
+
+## `ExifTool.Track1.ImageHeight`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `videoTechnical` | up | [`iptc.video.frameSize`](video.md#iptc.video.frameSize)`[0].heightPixels` | H11 — Units / encodings; 1e-5° / 0.5 m | ExifTool Track1 ImageHeight |
+
+<a id="ExifTool.Track1.ImageWidth"></a>
+
+## `ExifTool.Track1.ImageWidth`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `videoTechnical` | up | [`iptc.video.frameSize`](video.md#iptc.video.frameSize)`[0].widthPixels` | H11 — Units / encodings; 1e-5° / 0.5 m | ExifTool Track1 ImageWidth; sample description, not the movie header |
+
+<a id="ExifTool.Track1.MatrixStructure"></a>
+
+## `ExifTool.Track1.MatrixStructure`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `videoTechnical` | up | [`iptc.video.orientation`](video.md#iptc.video.orientation) | H11 — Units / encodings; 1e-5° / 0.5 m | Track1 display matrix when Composite Rotation is absent; movie-level matrix is not used |
+
+<a id="ExifTool.Track1.MediaDuration"></a>
+
+## `ExifTool.Track1.MediaDuration`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `videoTechnical` | up | [`iptc.video.fileDuration`](video.md#iptc.video.fileDuration) | H11 — Units / encodings; 1e-5° / 0.5 m | Video track MediaDuration when the movie Duration key is absent; not the audio track |
+
+<a id="ExifTool.Track1.VideoFrameRate"></a>
+
+## `ExifTool.Track1.VideoFrameRate`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `videoTechnical` | up | [`iptc.video.videoFrameRate`](video.md#iptc.video.videoFrameRate) | H11 — Units / encodings; 1e-5° / 0.5 m | ExifTool Track1 VideoFrameRate |
+
+<a id="ExifTool.Track2.AudioChannels"></a>
+
+## `ExifTool.Track2.AudioChannels`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `videoTechnical` | up | [`iptc.video.audioChannels`](video.md#iptc.video.audioChannels) | H11 — Units / encodings; 1e-5° / 0.5 m | ExifTool Track2 AudioChannels |
+
+<a id="ExifTool.Track2.AudioSampleRate"></a>
+
+## `ExifTool.Track2.AudioSampleRate`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `videoTechnical` | up | [`iptc.video.audioSampleRate`](video.md#iptc.video.audioSampleRate) | H11 — Units / encodings; 1e-5° / 0.5 m | ExifTool Track2 AudioSampleRate |
+
+<a id="QuickTime.AudioChannels"></a>
+
+## `QuickTime.AudioChannels`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `videoTechnical` | up | [`iptc.video.audioChannels`](video.md#iptc.video.audioChannels) | H11 — Units / encodings; 1e-5° / 0.5 m | ExifTool QuickTime AudioChannels when the track group is absent |
+
+<a id="QuickTime.AudioSampleRate"></a>
+
+## `QuickTime.AudioSampleRate`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `videoTechnical` | up | [`iptc.video.audioSampleRate`](video.md#iptc.video.audioSampleRate) | H11 — Units / encodings; 1e-5° / 0.5 m | ExifTool QuickTime AudioSampleRate when the track group is absent |
+
+<a id="QuickTime.CompressorID"></a>
+
+## `QuickTime.CompressorID`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `videoTechnical` | up | [`iptc.video.videoCoding`](video.md#iptc.video.videoCoding)`[0].identifiers` | H11 — Units / encodings; 1e-5° / 0.5 m | ExifTool QuickTime CompressorID when the track group is absent |
+
+<a id="QuickTime.CompressorName"></a>
+
+## `QuickTime.CompressorName`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `videoTechnical` | up | [`iptc.video.videoCoding`](video.md#iptc.video.videoCoding)`[0].name` | H11 — Units / encodings; 1e-5° / 0.5 m | ExifTool QuickTime CompressorName when the track group is absent |
+
 <a id="QuickTime.CreateDate"></a>
 
 ## `QuickTime.CreateDate`
@@ -88,6 +200,30 @@ Lens model. Intentionally non-canonical.
 | Group | Direction | Canonical partner | Heuristic | Citation |
 |---|---|---|---|---|
 | `videoCreated` (approximate) | up | [`iptc.video.dateCreated`](video.md#iptc.video.dateCreated) | H12 — Dates / offsets: never invent an offset | Movie-header CreateDate; never invent a UTC offset (H12) |
+
+<a id="QuickTime.Duration"></a>
+
+## `QuickTime.Duration`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `videoTechnical` | up | [`iptc.video.fileDuration`](video.md#iptc.video.fileDuration) | H11 — Units / encodings; 1e-5° / 0.5 m | ExifTool QuickTime:Duration seconds; VideoTime timeFormat seconds (H11) |
+
+<a id="QuickTime.ImageHeight"></a>
+
+## `QuickTime.ImageHeight`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `videoTechnical` | up | [`iptc.video.frameSize`](video.md#iptc.video.frameSize)`[0].heightPixels` | H11 — Units / encodings; 1e-5° / 0.5 m | ExifTool QuickTime ImageHeight when the track group is absent |
+
+<a id="QuickTime.ImageWidth"></a>
+
+## `QuickTime.ImageWidth`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `videoTechnical` | up | [`iptc.video.frameSize`](video.md#iptc.video.frameSize)`[0].widthPixels` | H11 — Units / encodings; 1e-5° / 0.5 m | ExifTool QuickTime ImageWidth when the track group is absent |
 
 <a id="QuickTime.Keys.Make"></a>
 
@@ -124,6 +260,14 @@ Lens model. Intentionally non-canonical.
 |---|---|---|---|---|
 | `videoModified` | up | [`iptc.video.dateModified`](video.md#iptc.video.dateModified) | H12 — Dates / offsets: never invent an offset | Movie-header ModifyDate; never invent a UTC offset (H12) |
 
+<a id="QuickTime.Rotation"></a>
+
+## `QuickTime.Rotation`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `videoTechnical` | up | [`iptc.video.orientation`](video.md#iptc.video.orientation) | H11 — Units / encodings; 1e-5° / 0.5 m | ExifTool QuickTime Rotation degrees when neither Composite nor the track matrix is present |
+
 <a id="QuickTime.UserData.GPSCoordinates"></a>
 
 ## `QuickTime.UserData.GPSCoordinates`
@@ -134,6 +278,78 @@ Lens model. Intentionally non-canonical.
 | `capturePosition` | down | [`iptc.video.locationShot`](video.md#iptc.video.locationShot)`[0].gpsLongitude` | H1 — List → single: first entry | First locationShot GPS (H1) to Keys location.ISO6709 and UserData GPSCoordinates |
 | `capturePosition` | up | [`iptc.video.locationShot`](video.md#iptc.video.locationShot)`[0].gpsLatitude` | H11 — Units / encodings; 1e-5° / 0.5 m | QuickTime UserData copyright-xyz / GPSCoordinates |
 | `capturePosition` | up | [`iptc.video.locationShot`](video.md#iptc.video.locationShot)`[0].gpsLongitude` | H11 — Units / encodings; 1e-5° / 0.5 m | QuickTime UserData copyright-xyz / GPSCoordinates |
+
+<a id="QuickTime.VideoFrameRate"></a>
+
+## `QuickTime.VideoFrameRate`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `videoTechnical` | up | [`iptc.video.videoFrameRate`](video.md#iptc.video.videoFrameRate) | H11 — Units / encodings; 1e-5° / 0.5 m | ExifTool QuickTime VideoFrameRate when the track group is absent |
+
+<a id="Xmp.audio.ChannelType"></a>
+
+## `Xmp.audio.ChannelType`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `videoTechnical` | up | [`iptc.video.audioChannels`](video.md#iptc.video.audioChannels) | H11 — Units / encodings; 1e-5° / 0.5 m | Exiv2 synthetic Xmp.audio.ChannelType; cast source only, never written |
+
+<a id="Xmp.audio.SampleRate"></a>
+
+## `Xmp.audio.SampleRate`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `videoTechnical` | up | [`iptc.video.audioSampleRate`](video.md#iptc.video.audioSampleRate) | H11 — Units / encodings; 1e-5° / 0.5 m | Exiv2 synthetic Xmp.audio.SampleRate; cast source only, never written |
+
+<a id="Xmp.video.Codec"></a>
+
+## `Xmp.video.Codec`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `videoTechnical` | up | [`iptc.video.videoCoding`](video.md#iptc.video.videoCoding)`[0].identifiers` | H11 — Units / encodings; 1e-5° / 0.5 m | Exiv2 synthetic Xmp.video.Codec; cast source only, never written |
+
+<a id="Xmp.video.Compressor"></a>
+
+## `Xmp.video.Compressor`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `videoTechnical` | up | [`iptc.video.videoCoding`](video.md#iptc.video.videoCoding)`[0].name` | H11 — Units / encodings; 1e-5° / 0.5 m | Exiv2 synthetic Xmp.video.Compressor; cast source only, never written |
+
+<a id="Xmp.video.Duration"></a>
+
+## `Xmp.video.Duration`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `videoTechnical` | up | [`iptc.video.fileDuration`](video.md#iptc.video.fileDuration) | H11 — Units / encodings; 1e-5° / 0.5 m | Exiv2 synthetic Xmp.video.Duration milliseconds; cast source only, never written |
+
+<a id="Xmp.video.FrameRate"></a>
+
+## `Xmp.video.FrameRate`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `videoTechnical` | up | [`iptc.video.videoFrameRate`](video.md#iptc.video.videoFrameRate) | H11 — Units / encodings; 1e-5° / 0.5 m | Exiv2 synthetic Xmp.video.FrameRate; cast source only, never written |
+
+<a id="Xmp.video.Height"></a>
+
+## `Xmp.video.Height`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `videoTechnical` | up | [`iptc.video.frameSize`](video.md#iptc.video.frameSize)`[0].heightPixels` | H11 — Units / encodings; 1e-5° / 0.5 m | Exiv2 synthetic Xmp.video.Height; cast source only, never written |
+
+<a id="Xmp.video.Width"></a>
+
+## `Xmp.video.Width`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `videoTechnical` | up | [`iptc.video.frameSize`](video.md#iptc.video.frameSize)`[0].widthPixels` | H11 — Units / encodings; 1e-5° / 0.5 m | Exiv2 synthetic Xmp.video.Width; cast source only, never written |
 
 ## Frequent camera keys
 

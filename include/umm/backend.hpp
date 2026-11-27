@@ -37,8 +37,9 @@
 // XMP-dc:Creator -> Xmp.dc.creator, GPS:* -> Exif.GPSInfo.*, mapped
 // QuickTime/Keys/ItemList/UserData tags -> QuickTime.<Tag>, ...). Other
 // XMP-ns:Tag keys become Xmp.ns.Tag; anything else is kept as the
-// adapter-specific key ExifTool.<Group1>.<Tag>. File/ExifTool/Composite
-// groups are omitted (not stored metadata).
+// adapter-specific key ExifTool.<Group1>.<Tag>. File/ExifTool groups are
+// omitted (not stored metadata). Composite is omitted except GPS (when the
+// GPS IFD copy is dropped) and Rotation (video display matrix; F10).
 //
 // Error mapping: missing/unreadable files -> io_*; unrecognized, truncated,
 // or corrupt containers -> format_*; thrown backend diagnostics ->
@@ -86,6 +87,9 @@ struct BackendAvailability {
 // the ExifTool adapter translates its Group1:Tag names into it.
 struct BaseDocument {
   std::vector<BaseEntry> entries;  // source order preserved
+  // Container header facts that are not stored metadata (F11), such as pixel
+  // dimensions. Not part of dumpAll().
+  std::vector<BaseEntry> intrinsics;
 };
 
 // Changes expressed in base vocabulary, produced by the write-sync layer from

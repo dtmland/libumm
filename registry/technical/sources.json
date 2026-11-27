@@ -1,0 +1,142 @@
+{
+  "document": "libumm technical view source table",
+  "version": "1",
+  "fields": [
+    {
+      "id": "cameraMake",
+      "pseudo_id": "technical.cameraMake",
+      "photo": [
+        {
+          "kind": "base_key",
+          "key": "Exif.Image.Make",
+          "citation": "EXIF 2.32 IFD0 Make (0x010F); CIPA DC-008"
+        }
+      ],
+      "video": [
+        {
+          "kind": "base_key",
+          "key": "QuickTime.Keys.Make",
+          "citation": "ExifTool QuickTime Keys:Make; Apple item-list com.apple.quicktime.make"
+        },
+        {
+          "kind": "base_key",
+          "key": "Exif.Image.Make",
+          "citation": "EXIF 2.32 IFD0 Make when a still-image IFD is stored in the container"
+        }
+      ]
+    },
+    {
+      "id": "cameraModel",
+      "pseudo_id": "technical.cameraModel",
+      "photo": [
+        {
+          "kind": "base_key",
+          "key": "Exif.Image.Model",
+          "citation": "EXIF 2.32 IFD0 Model (0x0110); CIPA DC-008"
+        }
+      ],
+      "video": [
+        {
+          "kind": "base_key",
+          "key": "QuickTime.Keys.Model",
+          "citation": "ExifTool QuickTime Keys:Model; Apple item-list com.apple.quicktime.model"
+        },
+        {
+          "kind": "base_key",
+          "key": "ExifTool.GoPro.Model",
+          "citation": "ExifTool GoPro Model; camera model when Keys Model is absent"
+        },
+        {
+          "kind": "base_key",
+          "key": "Exif.Image.Model",
+          "citation": "EXIF 2.32 IFD0 Model when a still-image IFD is stored in the container"
+        }
+      ]
+    },
+    {
+      "id": "lensModel",
+      "pseudo_id": "technical.lensModel",
+      "photo": [
+        {
+          "kind": "base_key",
+          "key": "Exif.Photo.LensModel",
+          "citation": "EXIF 2.32 Exif IFD LensModel (0xA434); CIPA DC-008"
+        }
+      ],
+      "video": [
+        {
+          "kind": "base_key",
+          "key": "Exif.Photo.LensModel",
+          "citation": "EXIF 2.32 Exif IFD LensModel when present in the container"
+        }
+      ]
+    },
+    {
+      "id": "orientation",
+      "pseudo_id": "technical.orientation",
+      "photo": [
+        {
+          "kind": "base_key",
+          "key": "Exif.Image.Orientation",
+          "citation": "EXIF 2.32 IFD0 Orientation (0x0112), values 1-8; CIPA DC-008"
+        }
+      ],
+      "video": [
+        {
+          "kind": "base_key",
+          "key": "ExifTool.Composite.Rotation",
+          "citation": "ExifTool Composite Rotation degrees derived from the video track display matrix (F10)"
+        },
+        {
+          "kind": "base_key",
+          "key": "ExifTool.Track1.MatrixStructure",
+          "citation": "QuickTime track display matrix; 0/90/180/270 degrees map to EXIF orientation 1/6/3/8 (F10, H11)"
+        }
+      ]
+    },
+    {
+      "id": "pixelSize",
+      "pseudo_id": "technical.pixelSize",
+      "photo": [
+        {
+          "kind": "intrinsic",
+          "key": "PixelWidth",
+          "companion": "PixelHeight",
+          "citation": "F11: container header dimensions, preferred over stale EXIF PixelXDimension/PixelYDimension"
+        },
+        {
+          "kind": "base_key",
+          "key": "Exif.Photo.PixelXDimension",
+          "companion": "Exif.Photo.PixelYDimension",
+          "citation": "EXIF 2.32 Exif IFD PixelXDimension (0xA002) and PixelYDimension (0xA003); CIPA DC-008"
+        },
+        {
+          "kind": "base_key",
+          "key": "Exif.Image.ImageWidth",
+          "companion": "Exif.Image.ImageLength",
+          "citation": "EXIF 2.32 IFD0 ImageWidth (0x0100) and ImageLength (0x0101); CIPA DC-008"
+        }
+      ],
+      "video": [
+        {
+          "kind": "intrinsic",
+          "key": "PixelWidth",
+          "companion": "PixelHeight",
+          "citation": "F11: container header dimensions when the backend reports them as intrinsics"
+        },
+        {
+          "kind": "base_key",
+          "key": "ExifTool.Track1.ImageWidth",
+          "companion": "ExifTool.Track1.ImageHeight",
+          "citation": "ExifTool Track1 ImageWidth/ImageHeight; video sample description, not the movie header (F10)"
+        },
+        {
+          "kind": "base_key",
+          "key": "QuickTime.ImageWidth",
+          "companion": "QuickTime.ImageHeight",
+          "citation": "ExifTool QuickTime ImageWidth/ImageHeight when the track group is not reported separately"
+        }
+      ]
+    }
+  ]
+}

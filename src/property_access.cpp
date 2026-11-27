@@ -237,6 +237,17 @@ Result<PropertyAccess> propertyAccess(const std::filesystem::path& media,
                                       std::string_view property_id,
                                       StoragePolicy policy) {
   const std::string id(property_id);
+  if (isTechnicalPropertyId(property_id)) {
+    Result<Capabilities> caps = capabilities(media);
+    if (!caps.ok()) {
+      return caps.error();
+    }
+    const Access access =
+        any_readable(caps.value()) ? Access::read : Access::none;
+    return finish_row(id, policy, access, AccessReason::property_read_only,
+                      caps.value().preferred_backend, caps.value().file_type,
+                      "property_read_only");
+  }
   const std::optional<PropertyDef> def = registry().find(property_id);
   if (!def) {
     return finish_row(id, policy, Access::none, AccessReason::unknown_property,
@@ -291,6 +302,13 @@ Result<std::vector<PropertyAccess>> propertyAccessAll(
   rows.reserve(all.size());
   for (const PropertyDef& def : all) {
     Result<PropertyAccess> row = propertyAccess(media, def.id, policy);
+    if (!row.ok()) {
+      return row.error();
+    }
+    rows.push_back(std::move(row).value());
+  }
+  for (const std::string_view id : kTechnicalPropertyIds) {
+    Result<PropertyAccess> row = propertyAccess(media, id, policy);
     if (!row.ok()) {
       return row.error();
     }

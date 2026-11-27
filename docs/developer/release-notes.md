@@ -28,6 +28,21 @@ return value and stop further callbacks. ExifTool batches up to
 `kExifToolReadBatch` (32) paths per `-execute`. Exiv2 loops. `read_bench` is
 built with `-DUMM_BUILD_BENCHMARKS=ON` and is not part of CTest.
 
+### Session 64 — Video technical upcasts
+
+`videoTechnical` is a one-way up group for duration, frame size, frame rate,
+coding, audio sample rate and channels, and orientation. ExifTool is required.
+The Exiv2 0.28.9 video spike did not report rotation and misread a GPS fixture,
+so `EXIV2_ENABLE_VIDEO` stays off. Synthetic `Xmp.video.*` / `Xmp.audio.*` keys
+are never written.
+
+### Session 65 — Technical view contract
+
+`Metadata::technical()` and `TechnicalInfo` are in `include/umm/metadata.hpp`.
+The view is empty until values are filled. `BaseDocument::intrinsics` holds
+container pixel facts that are not stored metadata. Pseudo-ids `technical.*`
+are `property_read_only`.
+
 ### Session 63 — Read-time upcasts
 
 `ReadOptions::upcast` fills empty canonical targets from named up groups in

@@ -67,6 +67,57 @@ struct CastCandidate {
   bool operator==(const CastCandidate&) const = default;
 };
 
+// Read-only technical view (F11). Not a canonical property and not written.
+// Session 65 defines the contract; values are filled later (session 66).
+template <typename T>
+struct TechnicalValue {
+  T value{};
+  BaseKey source;
+
+  bool operator==(const TechnicalValue&) const = default;
+};
+
+// EXIF orientation 1–8, or video rotation in degrees plus a mirror flag.
+struct Orientation {
+  int exif = 0;
+  double degrees = 0;
+  bool mirror = false;
+
+  bool operator==(const Orientation&) const = default;
+};
+
+struct PixelSize {
+  int width = 0;
+  int height = 0;
+
+  bool operator==(const PixelSize&) const = default;
+};
+
+struct TechnicalInfo {
+  std::optional<TechnicalValue<std::string>> cameraMake;
+  std::optional<TechnicalValue<std::string>> cameraModel;
+  std::optional<TechnicalValue<std::string>> lensModel;
+  std::optional<TechnicalValue<Orientation>> orientation;
+  std::optional<TechnicalValue<PixelSize>> pixelSize;
+
+  bool operator==(const TechnicalInfo&) const = default;
+};
+
+// Pseudo-ids for ReadOptions::properties (F7). Not registry property ids.
+inline constexpr std::string_view kTechnicalPropertyIds[] = {
+    "technical.cameraMake", "technical.cameraModel", "technical.lensModel",
+    "technical.orientation", "technical.pixelSize",
+};
+
+inline bool isTechnicalPropertyId(std::string_view id) noexcept {
+  for (const std::string_view item : kTechnicalPropertyIds) {
+    if (item == id) {
+      return true;
+    }
+  }
+  return false;
+}
+
 class Metadata {
  public:
   MediaDomain mediaDomain() const;
@@ -194,6 +245,9 @@ class Metadata {
   const std::vector<CastCandidate>& castCandidates() const;
   void assignCastCandidates(std::vector<CastCandidate> candidates);
 
+  // Read-only. No setter; umm::write ignores this view (F11).
+  const TechnicalInfo& technical() const;
+
  private:
   std::optional<PropertyValue> getConcept(std::string_view concept_name) const;
   Result<void> setConcept(std::string_view concept_name, Value value);
@@ -202,6 +256,7 @@ class Metadata {
   std::vector<BaseEntry> base_;
   std::vector<BaseEntry> unmapped_;
   std::vector<CastCandidate> cast_candidates_;
+  TechnicalInfo technical_{};
   MediaDomain media_domain_{MediaDomain::unknown};
 };
 

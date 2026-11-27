@@ -17,12 +17,15 @@ DEFAULT_REGISTRY_DIRS = (
 DEFAULT_OVERLAY = REPO_ROOT / "registry" / "mappings" / "iptc-exif-overlay.json"
 DEFAULT_CROSS_MEDIA = REPO_ROOT / "registry" / "mappings" / "cross-media-accessors.json"
 DEFAULT_CASTS_DIR = REPO_ROOT / "registry" / "casts"
+DEFAULT_TECHNICAL_DIR = REPO_ROOT / "registry" / "technical"
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "src" / "generated"
 
 HEADER_NAME = "property_registry.hpp"
 SOURCE_NAME = "property_registry.cpp"
 CROSS_MEDIA_HEADER_NAME = "cross_media_accessors.hpp"
 CAST_HEADER_NAME = "cast_rules.hpp"
+TECHNICAL_HEADER_NAME = "technical_sources.hpp"
+CAST_SOURCE_PRIORITY_CAP = 48
 
 OVERLAY_SOURCE_KEYS = (
     "document",
@@ -66,6 +69,18 @@ CAST_ENDPOINT_KEYS = ("kind", "key", "field", "index")
 CAST_DIRECTIONS = ("up", "down", "side")
 CAST_KINDS = ("base_key", "property", "property_field")
 CAST_HEURISTICS = tuple(f"H{n}" for n in range(1, 22))
+TECHNICAL_TOP_KEYS = ("document", "version", "fields")
+TECHNICAL_FIELD_KEYS = ("id", "pseudo_id", "photo", "video")
+TECHNICAL_SOURCE_KEYS = ("kind", "key", "companion", "citation")
+TECHNICAL_KINDS = ("base_key", "intrinsic")
+TECHNICAL_DOMAINS = ("photo", "video")
+TECHNICAL_FIELD_IDS = (
+    "cameraMake",
+    "cameraModel",
+    "lensModel",
+    "orientation",
+    "pixelSize",
+)
 
 TRANSPOSITIONS = (
     "passthrough",
@@ -985,9 +1000,11 @@ def load_casts(casts_dir: Path) -> tuple[list[dict[str, Any]], list[dict[str, An
 
 def emit_cast_group(row: dict[str, Any]) -> str:
     priority = row["source_priority"]
-    padded = list(priority) + [""] * (8 - len(priority))
-    if len(priority) > 8:
-        raise CodegenError(f"group {row['id']}: more than 8 source_priority entries")
+    padded = list(priority) + [""] * (CAST_SOURCE_PRIORITY_CAP - len(priority))
+    if len(priority) > CAST_SOURCE_PRIORITY_CAP:
+        raise CodegenError(
+            f"group {row['id']}: more than {CAST_SOURCE_PRIORITY_CAP} source_priority entries"
+        )
     items = ", ".join(cpp_string(item) for item in padded)
     return "\n".join(
         [
@@ -1058,7 +1075,7 @@ def generate_cast_header(
         "  bool approximate;\n"
         "  bool one_way;\n"
         "  std::string_view citation;\n"
-        "  std::string_view source_priority[8];\n"
+        f"  std::string_view source_priority[{CAST_SOURCE_PRIORITY_CAP}];\n"
         "  std::size_t source_priority_count;\n"
         "};\n"
         "\n"
@@ -1096,13 +1113,154 @@ def generate_cast_header(
     )
 
 
+def load_technical_source(data: Any, *, path: str) -> dict[str, str]:
+    if not isinstance(data, dict):
+        raise CodegenError(f"{path}: source must be an object")
+    unknown = [key for key in data if key not in TECHNICAL_SOURCE_KEYS]
+    if unknown:
+        raise CodegenError(f"{path}: unexpected keys {unknown}")
+    for required in ("kind", "key", "citation"):
+        if required not in data:
+            raise CodegenError(f"{path}: missing {required}")
+    if data["kind"] not in TECHNICAL_KINDS:
+        raise CodegenError(f"{path}: unknown kind {data['kind']!r}")
+    if not isinstance(data["key"], str) or not data["key"]:
+        raise CodegenError(f"{path}: key must be a non-empty string")
+    if not isinstance(data["citation"], str) or not data["citation"]:
+        raise CodegenError(f"{path}: citation must be a non-empty string")
+    companion = data.get("companion") or ""
+    if companion and not isinstance(companion, str):
+        raise CodegenError(f"{path}: companion must be a string")
+    return {
+        "kind": data["kind"],
+        "key": data["key"],
+        "companion": companion,
+        "citation": data["citation"],
+    }
+
+
+def load_technical(technical_dir: Path) -> tuple[list[dict[str, Any]], list[Path]]:
+    if not technical_dir.is_dir():
+        raise CodegenError(f"{technical_dir}: missing technical directory")
+    files = sorted(technical_dir.glob("sources.json"))
+    if not files:
+        raise CodegenError(f"{technical_dir}: missing sources.json")
+    rows: list[dict[str, Any]] = []
+    seen_fields: set[str] = set()
+    seen_pseudo: set[str] = set()
+    for path in files:
+        data = load_json(path)
+        table = ordered(data, TECHNICAL_TOP_KEYS, path=str(path))
+        if not isinstance(table["document"], str) or not table["document"]:
+            raise CodegenError(f"{path}: document must be a non-empty string")
+        if not isinstance(table["version"], str) or not table["version"]:
+            raise CodegenError(f"{path}: version must be a non-empty string")
+        if not isinstance(table["fields"], list) or not table["fields"]:
+            raise CodegenError(f"{path}: fields must be a non-empty array")
+        for index, raw_field in enumerate(table["fields"]):
+            field_path = f"{path}:fields[{index}]"
+            if not isinstance(raw_field, dict):
+                raise CodegenError(f"{field_path}: field must be an object")
+            field = ordered(raw_field, TECHNICAL_FIELD_KEYS, path=field_path)
+            field_id = field["id"]
+            if field_id not in TECHNICAL_FIELD_IDS:
+                raise CodegenError(f"{field_path}: unknown field {field_id!r}")
+            if field_id in seen_fields:
+                raise CodegenError(f"{field_path}: duplicate field {field_id}")
+            seen_fields.add(field_id)
+            pseudo = field["pseudo_id"]
+            if pseudo != f"technical.{field_id}":
+                raise CodegenError(f"{field_path}: pseudo_id must be technical.{field_id}")
+            if pseudo in seen_pseudo:
+                raise CodegenError(f"{field_path}: duplicate pseudo_id {pseudo}")
+            seen_pseudo.add(pseudo)
+            for domain in TECHNICAL_DOMAINS:
+                sources = field[domain]
+                if not isinstance(sources, list) or not sources:
+                    raise CodegenError(f"{field_path}: {domain} must be a non-empty array")
+                for source_index, raw_source in enumerate(sources):
+                    loaded = load_technical_source(
+                        raw_source, path=f"{field_path}.{domain}[{source_index}]"
+                    )
+                    rows.append(
+                        {
+                            "field": field_id,
+                            "pseudo_id": pseudo,
+                            "domain": domain,
+                            "priority": source_index,
+                            **loaded,
+                        }
+                    )
+    missing = [item for item in TECHNICAL_FIELD_IDS if item not in seen_fields]
+    if missing:
+        raise CodegenError(f"{technical_dir}: missing fields {missing}")
+    rows.sort(key=lambda item: (item["field"], item["domain"], item["priority"]))
+    return rows, files
+
+
+def emit_technical_source(row: dict[str, Any]) -> str:
+    return "\n".join(
+        [
+            "    {",
+            f"        {cpp_string(row['field'])},",
+            f"        {cpp_string(row['pseudo_id'])},",
+            f"        {cpp_string(row['domain'])},",
+            f"        {cpp_string(row['kind'])},",
+            f"        {cpp_string(row['key'])},",
+            f"        {cpp_string(row['companion'])},",
+            f"        {cpp_string(row['citation'])},",
+            f"        {row['priority']},",
+            "    }",
+        ]
+    )
+
+
+def generate_technical_header(*, files: list[Path], rows: list[dict[str, Any]]) -> str:
+    names = ", ".join(path.name for path in files)
+    body = ",\n".join(emit_technical_source(row) for row in rows)
+    return (
+        "// GENERATED by tools/registry/generate_cpp.py — do not edit.\n"
+        f"// Technical sources: {names}\n"
+        "\n"
+        "#pragma once\n"
+        "\n"
+        "#include <cstddef>\n"
+        "#include <iterator>\n"
+        "#include <string_view>\n"
+        "\n"
+        "namespace umm::internal {\n"
+        "\n"
+        "struct TechnicalSourceDef {\n"
+        "  std::string_view field;\n"
+        "  std::string_view pseudo_id;\n"
+        "  std::string_view domain;\n"
+        "  std::string_view kind;\n"
+        "  std::string_view key;\n"
+        "  std::string_view companion;\n"
+        "  std::string_view citation;\n"
+        "  int priority;\n"
+        "};\n"
+        "\n"
+        f"inline constexpr std::size_t kTechnicalSourceCount = {len(rows)};\n"
+        "\n"
+        "inline constexpr TechnicalSourceDef kTechnicalSources[] = {\n"
+        f"{body}\n"
+        "};\n"
+        "\n"
+        "static_assert(std::size(kTechnicalSources) == kTechnicalSourceCount);\n"
+        "\n"
+        "}  // namespace umm::internal\n"
+    )
+
+
 def generate(
     registry_dirs: list[Path],
     overlay_path: Path,
     output_dir: Path,
     cross_media_path: Path | None = None,
     casts_dir: Path | None = None,
-) -> tuple[Path, Path, Path, Path]:
+    technical_dir: Path | None = None,
+) -> tuple[Path, Path, Path, Path, Path]:
     files = registry_files(registry_dirs)
     overlay = load_overlay(overlay_path)
     registries: list[dict[str, Any]] = []
@@ -1175,7 +1333,15 @@ def generate(
     write_text(cross_path, cross_header)
     cast_path = output_dir / CAST_HEADER_NAME
     write_text(cast_path, cast_header)
-    return header_path, source_path, cross_path, cast_path
+    technical_rows, technical_files = load_technical(
+        technical_dir or DEFAULT_TECHNICAL_DIR
+    )
+    technical_header = generate_technical_header(
+        files=technical_files, rows=technical_rows
+    )
+    technical_path = output_dir / TECHNICAL_HEADER_NAME
+    write_text(technical_path, technical_header)
+    return header_path, source_path, cross_path, cast_path, technical_path
 
 
 def write_text(path: Path, text: str) -> None:
@@ -1218,6 +1384,12 @@ def main(argv: list[str] | None = None) -> int:
         default=DEFAULT_CASTS_DIR,
         help="Directory of curated cast-rule JSON files",
     )
+    parser.add_argument(
+        "--technical-dir",
+        type=Path,
+        default=DEFAULT_TECHNICAL_DIR,
+        help="Directory of the technical-view source table",
+    )
     args = parser.parse_args(argv)
     try:
         registry_dirs = args.registry_dirs or list(DEFAULT_REGISTRY_DIRS)
@@ -1227,6 +1399,7 @@ def main(argv: list[str] | None = None) -> int:
             args.output_dir.resolve(),
             args.cross_media.resolve(),
             args.casts_dir.resolve(),
+            args.technical_dir.resolve(),
         )
     except (CodegenError, OSError, json.JSONDecodeError, KeyError) as exc:
         print(f"generate_cpp: {exc}", file=sys.stderr)

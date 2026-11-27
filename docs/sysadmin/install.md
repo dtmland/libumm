@@ -30,6 +30,9 @@ package. Binary prefixes also install `LICENSE`, `NOTICE.md`, `THIRD-PARTY-NOTIC
 - `UMM_SANITIZE` (default empty): `thread` or `address` enables the matching sanitizer
   on non-MSVC compilers. `thread` is not supported on MSVC. The `tsan` CI job configures
   with `-DUMM_SANITIZE=thread`.
+- `EXIV2_ENABLE_VIDEO` stays **OFF** in `cmake/LibummExiv2.cmake`. A pinned
+  0.28.9 spike with the option on did not report rotation and misread a GPS
+  MP4. Video technical values are ExifTool-only.
 - `UMM_EXIV2_SHARED` (default **OFF**): link the Exiv2 backend against a shared `exiv2`
   library. When ON, CMake prefers `find_package(exiv2 CONFIG)` with a version floor of the
   pinned minor in `tools/build/backends.env`; if no suitable system or consumer Exiv2 is
