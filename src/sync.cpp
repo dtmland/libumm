@@ -51,6 +51,7 @@ WriteOptions write_opts(const SyncOptions& options, StoragePolicy policy) {
   write.dry_run = options.dry_run;
   write.cancel = options.cancel;
   write.deadline = options.deadline;
+  write.durable = options.durable;
   return write;
 }
 

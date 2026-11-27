@@ -44,6 +44,13 @@
     },
     {
       "document": "docs/user/guide.md",
+      "heading": "Shifting capture times",
+      "tests": [
+        "tests/unit/test_value.cpp"
+      ]
+    },
+    {
+      "document": "docs/user/guide.md",
       "heading": "Casting",
       "tests": [
         "tests/backend/test_cast.cpp",
@@ -131,6 +138,13 @@
       "tests": [
         "tests/unit/test_cancel.cpp",
         "tests/backend/test_exiftool_cancel.cpp"
+      ]
+    },
+    {
+      "document": "docs/user/guide.md",
+      "heading": "Durable writes",
+      "tests": [
+        "tests/unit/test_atomic_write.cpp"
       ]
     },
     {

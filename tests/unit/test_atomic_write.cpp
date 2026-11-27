@@ -139,6 +139,69 @@ int main() {
     return fail("create_if_missing did not write destination");
   }
 
+  write_all(file, "durable-original");
+  const auto durable_ok = umm::internal::mutate_file_atomically(
+      file,
+      [](const std::filesystem::path& working) {
+        write_all(working, "durable-committed");
+        return umm::Result<void>{};
+      },
+      false, true);
+  if (!durable_ok.ok() || read_all(file) != "durable-committed") {
+    return fail("durable mutate failed");
+  }
+
+  write_all(file, "durable-keep");
+  umm::internal::set_atomic_write_fault_for_test(
+      umm::internal::AtomicWriteFault::before_file_sync);
+  const auto file_sync = umm::internal::mutate_file_atomically(
+      file,
+      [](const std::filesystem::path& working) {
+        write_all(working, "durable-should-not-commit");
+        return umm::Result<void>{};
+      },
+      false, true);
+  umm::internal::set_atomic_write_fault_for_test(
+      umm::internal::AtomicWriteFault::none);
+  if (file_sync.ok() || file_sync.error().detail != "before_file_sync") {
+    return fail("before_file_sync should fail before rename");
+  }
+  if (read_all(file) != "durable-keep") {
+    return fail("before_file_sync mutated the original");
+  }
+
+  umm::internal::set_atomic_write_fault_for_test(
+      umm::internal::AtomicWriteFault::after_rename_sync);
+  const auto after = umm::internal::mutate_file_atomically(
+      file,
+      [](const std::filesystem::path& working) {
+        write_all(working, "durable-renamed");
+        return umm::Result<void>{};
+      },
+      false, true);
+  umm::internal::set_atomic_write_fault_for_test(
+      umm::internal::AtomicWriteFault::none);
+  if (after.ok() || after.error().detail != "after_rename_sync") {
+    return fail("after_rename_sync should report an error");
+  }
+  if (read_all(file) != "durable-renamed") {
+    return fail("after_rename_sync should leave the renamed bytes");
+  }
+
+  write_all(file, "nondurable-keep");
+  umm::internal::set_atomic_write_fault_for_test(
+      umm::internal::AtomicWriteFault::before_file_sync);
+  const auto ignored = umm::internal::mutate_file_atomically(
+      file, [](const std::filesystem::path& working) {
+        write_all(working, "nondurable-committed");
+        return umm::Result<void>{};
+      });
+  umm::internal::set_atomic_write_fault_for_test(
+      umm::internal::AtomicWriteFault::none);
+  if (!ignored.ok() || read_all(file) != "nondurable-committed") {
+    return fail("durable faults must not affect the default write path");
+  }
+
   std::filesystem::remove_all(dir);
   return 0;
 }

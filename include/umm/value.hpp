@@ -4,12 +4,15 @@
 // backend-shaped. Value is a plain value type with no shared mutable state.
 #pragma once
 
+#include <chrono>
 #include <cstdint>
 #include <map>
 #include <optional>
 #include <string>
 #include <variant>
 #include <vector>
+
+#include "umm/result.hpp"
 
 namespace umm {
 
@@ -39,6 +42,33 @@ struct DateTime {
 
   bool operator==(const DateTime&) const = default;
 };
+
+// Decision F6. Backend-free and always thread-safe: no shared state, no
+// backend, no time-zone database, no leap seconds. Arithmetic is proleptic
+// Gregorian via std::chrono calendar types. An absent utc_offset_minutes is
+// unknown, never UTC (H12); shift never invents one.
+//
+// Precision is the finest component present. A shift must be representable
+// at that precision, else invalid_value:
+// - year, or year and month: only a zero shift
+// - date (no time): a whole number of days
+// - minute (hour and minute, no seconds): a whole number of minutes
+// - second or sub-second: any whole seconds; sub-seconds are unchanged
+// Input fields must already be valid (calendar date, 0-23/0-59, sub-second
+// nanoseconds, offset within ±18:00) or the call returns invalid_value.
+enum class OffsetMode {
+  reinterpret,  // same wall-clock fields, new offset label
+  convert,      // same instant; wall clock moves by the offset delta
+};
+
+Result<DateTime> shift(const DateTime& value, std::chrono::seconds delta);
+
+// `minutes` must be within ±18:00 (XMP / ISO 8601). convert fails with
+// invalid_value when the offset is unknown or the value has no time
+// component. reinterpret assigns `minutes` without moving the wall clock,
+// including when the input offset was unknown — that assignment is explicit,
+// not a guess that unknown means UTC.
+Result<DateTime> withOffset(const DateTime& value, int minutes, OffsetMode mode);
 
 // GPS coordinate (GPS coordinates and named place are SEPARATE capabilities
 // and separate value shapes; see supported-types.md §3).

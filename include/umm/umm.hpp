@@ -53,6 +53,15 @@ struct WriteOptions {
   std::optional<std::vector<std::string>> downcast;
   CancelToken cancel;
   std::optional<std::chrono::steady_clock::time_point> deadline;
+  // When true, the call does not return until the replacement is flushed
+  // (decision F14). Default false leaves the existing rename path unchanged.
+  // POSIX: fsync the temp file (macOS F_FULLFSYNC), rename, fsync the parent
+  // directory. Windows: FlushFileBuffers on the temp file, ReplaceFileW, then
+  // flush the destination; the fallback is MoveFileExW with
+  // MOVEFILE_WRITE_THROUGH. A flush that fails before the rename leaves the
+  // original byte-identical. A flush that fails after the rename returns
+  // io_write_failed even though the new bytes are already in place.
+  bool durable{false};
 };
 
 struct WriteReport {
@@ -83,6 +92,9 @@ struct SyncOptions {
   bool dry_run{false};
   CancelToken cancel;
   std::optional<std::chrono::steady_clock::time_point> deadline;
+  // Same per-platform flush sequence as WriteOptions::durable. Sidecar and
+  // embedded carriers each honor the flag.
+  bool durable{false};
 };
 
 // One carrier actually targeted by synchronize() (or mixed umm::write).

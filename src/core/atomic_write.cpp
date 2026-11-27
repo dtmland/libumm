@@ -7,6 +7,11 @@
 #include <system_error>
 #include <utility>
 
+#if !defined(_WIN32)
+#include <fcntl.h>
+#include <unistd.h>
+#endif
+
 #if defined(_WIN32)
 #ifndef NOMINMAX
 #define NOMINMAX
@@ -92,6 +97,73 @@ Result<void> copy_file_bytes(const std::filesystem::path& from,
   return {};
 }
 
+Result<void> sync_file(const std::filesystem::path& path, bool full_fsync) {
+#if defined(_WIN32)
+  (void)full_fsync;
+  const HANDLE handle =
+      CreateFileW(path.wstring().c_str(), GENERIC_READ | GENERIC_WRITE,
+                  FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                  nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+  if (handle == INVALID_HANDLE_VALUE) {
+    return io_error(ErrorCode::io_write_failed, "failed to flush file",
+                    path_utf8(path));
+  }
+  const BOOL flushed = FlushFileBuffers(handle);
+  CloseHandle(handle);
+  if (!flushed) {
+    return io_error(ErrorCode::io_write_failed, "failed to flush file",
+                    path_utf8(path));
+  }
+  return {};
+#else
+  const int fd = ::open(path.c_str(), O_RDONLY);
+  if (fd < 0) {
+    return io_error(ErrorCode::io_write_failed, "failed to flush file",
+                    path_utf8(path));
+  }
+  int rc = 0;
+#if defined(__APPLE__)
+  if (full_fsync) {
+    rc = ::fcntl(fd, F_FULLFSYNC);
+  } else {
+    rc = ::fsync(fd);
+  }
+#else
+  (void)full_fsync;
+  rc = ::fsync(fd);
+#endif
+  ::close(fd);
+  if (rc != 0) {
+    return io_error(ErrorCode::io_write_failed, "failed to flush file",
+                    path_utf8(path));
+  }
+  return {};
+#endif
+}
+
+Result<void> sync_parent_directory(const std::filesystem::path& destination) {
+#if defined(_WIN32)
+  return sync_file(destination, false);
+#else
+  std::filesystem::path parent = destination.parent_path();
+  if (parent.empty()) {
+    parent = ".";
+  }
+  const int fd = ::open(parent.c_str(), O_RDONLY);
+  if (fd < 0) {
+    return io_error(ErrorCode::io_write_failed, "failed to flush directory",
+                    path_utf8(parent));
+  }
+  const int rc = ::fsync(fd);
+  ::close(fd);
+  if (rc != 0) {
+    return io_error(ErrorCode::io_write_failed, "failed to flush directory",
+                    path_utf8(parent));
+  }
+  return {};
+#endif
+}
+
 Result<void> replace_file(const std::filesystem::path& destination,
                           const std::filesystem::path& temp) {
 #if defined(_WIN32)
@@ -141,7 +213,7 @@ Result<void> mutate_file_atomically(
     const std::filesystem::path& destination,
     const std::function<Result<void>(const std::filesystem::path& working_copy)>&
         mutate,
-    bool create_if_missing) {
+    bool create_if_missing, bool durable) {
   if (destination.empty()) {
     return io_error(ErrorCode::io_not_found, "media file not found", "");
   }
@@ -197,6 +269,18 @@ Result<void> mutate_file_atomically(
     return with_temp_cleanup(mutated.error(), temp);
   }
 
+  if (durable) {
+    if (inject && fault == AtomicWriteFault::before_file_sync) {
+      return with_temp_cleanup(
+          io_error(ErrorCode::io_write_failed, "injected write failure",
+                   "before_file_sync"),
+          temp);
+    }
+    if (Result<void> flushed = sync_file(temp, true); !flushed.ok()) {
+      return with_temp_cleanup(flushed.error(), temp);
+    }
+  }
+
   if (inject && fault == AtomicWriteFault::before_rename) {
     return with_temp_cleanup(
         io_error(ErrorCode::io_write_failed, "injected write failure",
@@ -212,7 +296,14 @@ Result<void> mutate_file_atomically(
   if (!replaced.ok()) {
     return with_temp_cleanup(replaced.error(), temp);
   }
-  return {};
+  if (!durable) {
+    return {};
+  }
+  if (inject && fault == AtomicWriteFault::after_rename_sync) {
+    return io_error(ErrorCode::io_write_failed, "injected write failure",
+                    "after_rename_sync");
+  }
+  return sync_parent_directory(destination);
 }
 
 }  // namespace umm::internal

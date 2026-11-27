@@ -119,7 +119,7 @@ BaseChanges xmp_changes(const BaseChanges& changes) {
 }
 
 Result<void> commit_sidecar(Backend& backend, const std::filesystem::path& dest,
-                            const BaseChanges& changes) {
+                            const BaseChanges& changes, bool durable) {
   std::error_code ec;
   const bool exists = std::filesystem::is_regular_file(dest, ec);
   return internal::mutate_file_atomically(
@@ -127,15 +127,17 @@ Result<void> commit_sidecar(Backend& backend, const std::filesystem::path& dest,
       [&](const std::filesystem::path& working_copy) {
         return write_working_copy(backend, working_copy, changes, !exists);
       },
-      true);
+      true, durable);
 }
 
 Result<void> commit_embedded(Backend& backend, const std::filesystem::path& dest,
-                             const BaseChanges& changes) {
+                             const BaseChanges& changes, bool durable) {
   return internal::mutate_file_atomically(
-      dest, [&](const std::filesystem::path& working_copy) {
+      dest,
+      [&](const std::filesystem::path& working_copy) {
         return backend.writeBase(working_copy, changes);
-      });
+      },
+      false, durable);
 }
 
 Result<void> write_working_copy(Backend& backend,
@@ -213,7 +215,8 @@ Result<WriteReport> write(const std::filesystem::path& media,
   }
 
   if (mixed) {
-    Result<void> embedded = commit_embedded(*backend, media, changes);
+    Result<void> embedded =
+        commit_embedded(*backend, media, changes, options.durable);
     if (!embedded.ok()) {
       return embedded.error();
     }
@@ -226,7 +229,8 @@ Result<WriteReport> write(const std::filesystem::path& media,
       error.message = "embedded write succeeded; sidecar write failed";
       return error;
     }
-    Result<void> side = commit_sidecar(*backend, sidecarPath(media), sidecar);
+    Result<void> side =
+        commit_sidecar(*backend, sidecarPath(media), sidecar, options.durable);
     if (!side.ok()) {
       Error error = side.error();
       if (error.detail.empty()) {
@@ -240,14 +244,15 @@ Result<WriteReport> write(const std::filesystem::path& media,
 
   if (sidecar_write) {
     Result<void> written =
-        commit_sidecar(*backend, sidecarPath(media), changes);
+        commit_sidecar(*backend, sidecarPath(media), changes, options.durable);
     if (!written.ok()) {
       return written.error();
     }
     return report;
   }
 
-  Result<void> written = commit_embedded(*backend, media, changes);
+  Result<void> written =
+      commit_embedded(*backend, media, changes, options.durable);
   if (!written.ok()) {
     return written.error();
   }

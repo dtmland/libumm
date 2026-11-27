@@ -2,6 +2,23 @@
 
 Pre-1.0 (`0.y.z`): the C++ ABI is not stable. See [docs/abi-policy.md](../abi-policy.md).
 
+## v0.3.0 (in progress)
+
+Not released. `SOVERSION` stays `0.2` until session 77.
+
+### Session 60 — DateTime shift and offset helpers
+
+`umm::shift` and `umm::withOffset` in `include/umm/value.hpp`. Backend-free.
+Precision rules and the ±18:00 offset limit are in the header. An unknown
+offset is not treated as UTC.
+
+### Session 71 — Durable writes
+
+`WriteOptions::durable` and `SyncOptions::durable` (default `false`). POSIX
+`fsync` / macOS `F_FULLFSYNC` and Windows `FlushFileBuffers` run only when the
+flag is set. Fault points `before_file_sync` and `after_rename_sync` cover the
+flush steps.
+
 ## v0.2.0
 
 Breaking / relink required. Pre-1.0 `SOVERSION` is `0.2`. `ErrorCode` gained

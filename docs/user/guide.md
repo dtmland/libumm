@@ -94,6 +94,43 @@ write `locationCreated`. Use `umm::cast(..., CastDirection::side)` group
 (MWG maps those IIM/photoshop fields to Location Shown; both are typically
 filled afterwards, unlike capture GPS).
 
+## Shifting capture times
+
+`umm::shift` and `umm::withOffset` (`include/umm/value.hpp`) adjust a `DateTime`
+without reading or writing a file. They are backend-free and safe to call from
+any thread. An absent offset stays unknown; it is never treated as UTC.
+
+`shift` keeps the input's precision. A date-only value accepts whole days, a
+minute value accepts whole minutes, and a value with seconds accepts any whole
+seconds (sub-seconds are unchanged). Year-only and year-month values accept
+only a zero shift. The offset label, if any, is preserved.
+
+`withOffset` takes an offset in minutes, within ±18:00. `OffsetMode::reinterpret`
+keeps the wall-clock fields and assigns that label. `OffsetMode::convert` keeps
+the same instant and fails when the offset is unknown or the value has no time
+component.
+
+```cpp
+auto created = meta->dateCreated();
+if (created) {
+  auto shifted = umm::shift(*created, std::chrono::hours{1});
+  if (shifted) {
+    umm::Metadata photo = *meta;
+    photo.setMediaDomain(umm::MediaDomain::photo);
+    photo.setDateCreated(*shifted);          // iptc.photo.dateCreated
+    umm::write("photo.jpg", photo);
+
+    umm::Metadata clip = *meta;
+    clip.setMediaDomain(umm::MediaDomain::video);
+    clip.setDateCreated(*shifted);           // iptc.video.dateCreated
+    umm::write("clip.mp4", clip);
+  }
+}
+```
+
+Writing the shifted value is a normal `umm::write`. The helpers themselves do
+not touch the file.
+
 ## Casting
 
 Casts are opt-in links that are **not** representations (C7). Preview with
@@ -295,6 +332,9 @@ your own lock. `CancelToken` is safe to share.
 `configureExifTool` applies to calls that start after it returns. An in-flight ExifTool
 call finishes on the process it already leased; that process is then retired.
 
+What to ship with a GUI, and how to locate ExifTool, is in
+[Shipping an application that links libumm](../sysadmin/install.md#shipping-an-application-that-links-libumm).
+
 ## Cancellation
 
 `ReadOptions`, `WriteOptions`, `SyncOptions`, and `CastOptions` take an optional
@@ -308,6 +348,24 @@ temp file into place returns success. A cancel between an embedded write and its
 returns `cancelled` with the message `embedded write succeeded; sidecar write failed`, and
 the embedded file is already updated. Exiv2 calls are not interrupted mid-call. ExifTool
 calls wake within 50 ms, kill that child, and the next call starts a new process.
+
+## Durable writes
+
+`WriteOptions::durable` and `SyncOptions::durable` (default `false`) ask
+`umm::write` / `umm::synchronize` to flush the replacement before returning.
+Sidecar writes and mixed embedded-plus-sidecar writes honor the flag on each
+carrier. The default path is unchanged: temp file, then atomic rename.
+
+- POSIX: `fsync` the temp file, rename, `fsync` the parent directory. On macOS
+  the file flush is `fcntl(F_FULLFSYNC)`.
+- Windows: `FlushFileBuffers` on the temp file, `ReplaceFileW`, then a flush of
+  the destination. If `ReplaceFileW` fails, the fallback is `MoveFileExW` with
+  `MOVEFILE_WRITE_THROUGH`.
+
+A flush failure before the rename leaves the original byte-identical. A flush
+failure after the rename returns `io_write_failed`; the new bytes are already
+in place. Power loss is not tested in CI — the guarantee is this syscall
+sequence (`src/core/atomic_write.cpp`).
 
 ## Enabling editor controls
 
