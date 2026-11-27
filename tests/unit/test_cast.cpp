@@ -401,9 +401,9 @@ int main() {
     options.include_approximate = true;
     auto preview = umm::internal::evaluate_casts(
         metadata, umm::CastDirection::up, options, "MP4", nullptr);
-    const auto* duration = nullptr;
-    const auto* frame = nullptr;
-    const auto* orientation = nullptr;
+    const umm::CastCandidate* duration = nullptr;
+    const umm::CastCandidate* frame = nullptr;
+    const umm::CastCandidate* orientation = nullptr;
     for (const umm::CastCandidate& candidate : preview) {
       if (candidate.target_id == "iptc.video.fileDuration") {
         duration = &candidate;

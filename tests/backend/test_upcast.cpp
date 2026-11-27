@@ -269,9 +269,11 @@ int check_technical(const char* backend) {
     if (meta.technical().orientation || meta.technical().pixelSize) {
       return fail("technical view must stay empty");
     }
-    const auto* duration = as_struct(meta.get("iptc.video.fileDuration"));
+    const auto duration_property = meta.get("iptc.video.fileDuration");
+    const auto frame_property = meta.get("iptc.video.frameSize");
+    const auto* duration = as_struct(duration_property);
     const std::string* seconds = struct_text(duration, "timeValue");
-    const auto* frame = as_struct(meta.get("iptc.video.frameSize"));
+    const auto* frame = as_struct(frame_property);
     const auto width = frame ? frame->find("widthPixels") : umm::Structure::const_iterator{};
     const auto height = frame ? frame->find("heightPixels") : umm::Structure::const_iterator{};
     const double* width_n =
