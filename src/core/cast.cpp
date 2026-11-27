@@ -4,7 +4,9 @@
 #include "core/media_domain.hpp"
 #include "core/xmp_codec.hpp"
 
+#include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <cstdlib>
 #include <iomanip>
 #include <optional>
@@ -12,6 +14,7 @@
 #include <string>
 #include <utility>
 #include <variant>
+#include <vector>
 
 namespace umm::internal {
 namespace {
@@ -66,9 +69,19 @@ std::string_view qt_tag(std::string_view key) {
   return rest;
 }
 
+bool explicit_container_group(std::string_view key) {
+  return key.find(".UserData.") != std::string_view::npos ||
+         key.find(".Keys.") != std::string_view::npos ||
+         key.find(".ItemList.") != std::string_view::npos;
+}
+
 bool base_key_matches(std::string_view entry, std::string_view want) {
   if (entry == want) {
     return true;
+  }
+  // UserData Title must not satisfy a Keys/ItemList rule, or the reverse.
+  if (explicit_container_group(entry) || explicit_container_group(want)) {
+    return false;
   }
   if (entry.rfind("QuickTime.", 0) == 0 && want.rfind("QuickTime.", 0) == 0) {
     return qt_tag(entry) == qt_tag(want);
@@ -480,11 +493,13 @@ bool group_selected(const CastOptions& options, std::string_view id) {
 
 bool group_applies(std::string_view id, MediaDomain domain) {
   if (id == "capturePosition" || id == "videoCreated" || id == "videoModified" ||
-      id == "recordingDevice" || id == "videoTechnical") {
+      id == "recordingDevice" || id == "videoTechnical" ||
+      id == "quickTimeUserData") {
     return domain == MediaDomain::video;
   }
   if (id == "locationShownLegacy" || id == "personShown" ||
-      id == "creatorImageCreator") {
+      id == "creatorImageCreator" || id == "windowsXP" ||
+      id == "exifUserComment" || id == "pngText") {
     return domain != MediaDomain::video;
   }
   return true;
@@ -1319,6 +1334,537 @@ void apply_video_technical(Metadata& metadata, const CastCandidate& candidate,
   }
 }
 
+bool is_text_group(std::string_view id) {
+  return id == "windowsXP" || id == "exifUserComment" || id == "pngText" ||
+         id == "quickTimeUserData";
+}
+
+void append_utf8(std::string& out, std::uint32_t codepoint) {
+  if (codepoint < 0x80) {
+    out.push_back(static_cast<char>(codepoint));
+    return;
+  }
+  if (codepoint < 0x800) {
+    out.push_back(static_cast<char>(0xC0 | (codepoint >> 6)));
+    out.push_back(static_cast<char>(0x80 | (codepoint & 0x3F)));
+    return;
+  }
+  if (codepoint < 0x10000) {
+    out.push_back(static_cast<char>(0xE0 | (codepoint >> 12)));
+    out.push_back(static_cast<char>(0x80 | ((codepoint >> 6) & 0x3F)));
+    out.push_back(static_cast<char>(0x80 | (codepoint & 0x3F)));
+  }
+}
+
+std::optional<std::vector<unsigned char>> parse_byte_list(std::string_view text) {
+  text = trim(text);
+  if (text.empty()) {
+    return std::nullopt;
+  }
+  std::vector<unsigned char> bytes;
+  std::size_t index = 0;
+  while (index < text.size()) {
+    while (index < text.size() && text[index] == ' ') {
+      ++index;
+    }
+    if (index >= text.size()) {
+      break;
+    }
+    if (text[index] < '0' || text[index] > '9') {
+      return std::nullopt;
+    }
+    int value = 0;
+    int digits = 0;
+    while (index < text.size() && text[index] >= '0' && text[index] <= '9') {
+      value = value * 10 + (text[index] - '0');
+      if (value > 255 || digits == 3) {
+        return std::nullopt;
+      }
+      ++digits;
+      ++index;
+    }
+    bytes.push_back(static_cast<unsigned char>(value));
+  }
+  if (bytes.size() < 4 || (bytes.size() % 2) != 0) {
+    return std::nullopt;
+  }
+  return bytes;
+}
+
+std::optional<std::string> utf8_from_ucs2(const std::vector<unsigned char>& bytes) {
+  if (bytes.size() % 2 != 0) {
+    return std::nullopt;
+  }
+  std::string out;
+  std::size_t index = 0;
+  if (bytes.size() >= 2 && bytes[0] == 0xFF && bytes[1] == 0xFE) {
+    index = 2;
+  }
+  for (; index + 1 < bytes.size(); index += 2) {
+    const std::uint32_t codepoint =
+        bytes[index] | (static_cast<std::uint32_t>(bytes[index + 1]) << 8);
+    if (codepoint == 0) {
+      break;
+    }
+    if (codepoint >= 0xD800 && codepoint <= 0xDFFF) {
+      return std::nullopt;
+    }
+    append_utf8(out, codepoint);
+  }
+  if (out.empty()) {
+    return std::nullopt;
+  }
+  return out;
+}
+
+std::optional<std::string> latin1_utf8(const std::vector<unsigned char>& bytes) {
+  std::string out;
+  for (const unsigned char byte : bytes) {
+    if (byte == 0) {
+      break;
+    }
+    append_utf8(out, byte);
+  }
+  if (out.empty()) {
+    return std::nullopt;
+  }
+  return out;
+}
+
+bool take_charset_prefix(std::string& body, std::string& charset) {
+  constexpr std::string_view kPrefix = "charset=";
+  if (body.size() < kPrefix.size() ||
+      ascii_lower(std::string_view(body).substr(0, kPrefix.size())) != kPrefix) {
+    return false;
+  }
+  std::string_view rest = std::string_view(body).substr(kPrefix.size());
+  if (!rest.empty() && rest.front() == '"') {
+    rest.remove_prefix(1);
+    const auto end = rest.find('"');
+    if (end == std::string_view::npos) {
+      return false;
+    }
+    charset = ascii_lower(rest.substr(0, end));
+    rest.remove_prefix(end + 1);
+  } else {
+    const auto space = rest.find(' ');
+    if (space == std::string_view::npos) {
+      charset = ascii_lower(rest);
+      rest = {};
+    } else {
+      charset = ascii_lower(rest.substr(0, space));
+      rest.remove_prefix(space + 1);
+    }
+  }
+  if (!rest.empty() && rest.front() == ' ') {
+    rest.remove_prefix(1);
+  }
+  body = std::string(rest);
+  return true;
+}
+
+bool take_eight_byte_charset(std::string& body, std::string& charset) {
+  if (body.size() < 8) {
+    return false;
+  }
+  for (std::size_t i = 0; i < 8; ++i) {
+    const unsigned char byte = static_cast<unsigned char>(body[i]);
+    if (byte > 127) {
+      return false;
+    }
+  }
+  std::string id = body.substr(0, 8);
+  while (!id.empty() && (id.back() == '\0' || id.back() == ' ')) {
+    id.pop_back();
+  }
+  const std::string lower = ascii_lower(id);
+  if (lower != "ascii" && lower != "unicode" && lower != "jis" &&
+      lower != "undefined") {
+    return false;
+  }
+  charset = lower;
+  body = body.substr(8);
+  return true;
+}
+
+std::optional<std::string> decode_legacy_text(std::string_view raw, bool user_comment,
+                                              bool& ambiguous) {
+  ambiguous = false;
+  std::string body(trim(raw));
+  std::string charset;
+  if (user_comment) {
+    if (!take_charset_prefix(body, charset)) {
+      (void)take_eight_byte_charset(body, charset);
+    }
+    charset = ascii_lower(charset);
+    if (charset == "jis") {
+      ambiguous = true;
+      return std::nullopt;
+    }
+  }
+  if (const auto bytes = parse_byte_list(body)) {
+    if (!user_comment || charset == "unicode") {
+      return utf8_from_ucs2(*bytes);
+    }
+    return latin1_utf8(*bytes);
+  }
+  if (body.find('\0') != std::string::npos) {
+    const std::vector<unsigned char> bytes(body.begin(), body.end());
+    if (!user_comment || charset == "unicode") {
+      return utf8_from_ucs2(bytes);
+    }
+    return latin1_utf8(bytes);
+  }
+  body = std::string(trim(body));
+  if (body.empty()) {
+    return std::nullopt;
+  }
+  return body;
+}
+
+void attach_offset(std::string_view text, DateTime& dt) {
+  text = trim(text);
+  if (text.empty()) {
+    return;
+  }
+  if (text.back() == 'Z' || text.back() == 'z') {
+    if (text.size() > 1 && text[text.size() - 2] >= '0' &&
+        text[text.size() - 2] <= '9') {
+      dt.utc_offset_minutes = 0;
+    }
+    return;
+  }
+  const auto sign = text.find_last_of("+-");
+  if (sign == std::string_view::npos || sign == 0) {
+    return;
+  }
+  if (text[sign - 1] < '0' || text[sign - 1] > '9') {
+    return;
+  }
+  const std::string_view tail = text.substr(sign + 1);
+  int hour = 0;
+  int minute = 0;
+  if (tail.size() == 5 && tail[2] == ':') {
+    if (parse_i32(tail.substr(0, 2), hour) != 2 ||
+        parse_i32(tail.substr(3, 2), minute) != 2) {
+      return;
+    }
+  } else if (tail.size() == 4) {
+    if (parse_i32(tail.substr(0, 2), hour) != 2 ||
+        parse_i32(tail.substr(2, 2), minute) != 2) {
+      return;
+    }
+  } else {
+    return;
+  }
+  if (hour > 18 || minute > 59) {
+    return;
+  }
+  const int total = (text[sign] == '-' ? -1 : 1) * (hour * 60 + minute);
+  if (total < -18 * 60 || total > 18 * 60) {
+    return;
+  }
+  dt.utc_offset_minutes = total;
+}
+
+bool parse_text_date(std::string_view text, DateTime& out) {
+  if (!parse_datetime_text(text, out)) {
+    return false;
+  }
+  attach_offset(text, out);
+  return true;
+}
+
+std::vector<std::string> split_semicolon(std::string_view text) {
+  std::vector<std::string> out;
+  std::size_t start = 0;
+  while (start <= text.size()) {
+    const auto pos = text.find(';', start);
+    const std::string part = std::string(
+        trim(pos == std::string_view::npos ? text.substr(start)
+                                           : text.substr(start, pos - start)));
+    if (!part.empty()) {
+      out.push_back(part);
+    }
+    if (pos == std::string_view::npos) {
+      break;
+    }
+    start = pos + 1;
+  }
+  return out;
+}
+
+enum class TextShape { lang_alt, string_list, entity_list, date };
+
+TextShape text_shape(std::string_view target) {
+  if (target == "iptc.video.dateCreated") {
+    return TextShape::date;
+  }
+  if (target == "iptc.video.creator") {
+    return TextShape::entity_list;
+  }
+  if (target == "iptc.photo.keywords" || target == "iptc.photo.creator") {
+    return TextShape::string_list;
+  }
+  return TextShape::lang_alt;
+}
+
+Value lang_alt_value(const std::string& text) {
+  return make_value(LangAlt{{"x-default", text}});
+}
+
+Value string_list_value(const std::vector<std::string>& names) {
+  return make_value(names);
+}
+
+Value entity_list_value(const std::vector<std::string>& names) {
+  std::vector<Structure> entities;
+  for (const std::string& name : names) {
+    Structure entity;
+    entity.emplace("name", lang_alt_value(name));
+    entities.push_back(std::move(entity));
+  }
+  return make_value(std::move(entities));
+}
+
+std::vector<std::string> entity_names(const Value& value) {
+  const auto* list = std::get_if<std::vector<Structure>>(&value.data);
+  if (!list) {
+    return {};
+  }
+  std::vector<std::string> names;
+  for (const Structure& item : *list) {
+    const auto it = item.find("name");
+    if (it == item.end()) {
+      continue;
+    }
+    const std::string name = display_text(it->second);
+    if (!name.empty()) {
+      names.push_back(name);
+    }
+  }
+  return names;
+}
+
+bool same_string_set(std::vector<std::string> left, std::vector<std::string> right) {
+  std::sort(left.begin(), left.end());
+  std::sort(right.begin(), right.end());
+  return left == right;
+}
+
+bool text_dates_equal(const DateTime& left, const DateTime& right) {
+  if (!datetime_equal(left, right)) {
+    return false;
+  }
+  return left.utc_offset_minutes == right.utc_offset_minutes;
+}
+
+bool values_equal(TextShape shape, const Value& existing, const Value& built) {
+  if (shape == TextShape::date) {
+    const auto* left = std::get_if<DateTime>(&existing.data);
+    const auto* right = std::get_if<DateTime>(&built.data);
+    return left && right && text_dates_equal(*left, *right);
+  }
+  if (shape == TextShape::string_list) {
+    return same_string_set(as_name_list(existing), as_name_list(built));
+  }
+  if (shape == TextShape::entity_list) {
+    return same_string_set(entity_names(existing), entity_names(built));
+  }
+  return display_text(existing) == display_text(built);
+}
+
+struct TextBuilt {
+  std::string target_id;
+  std::string source_id;
+  std::string source_preview;
+  Value value;
+  std::vector<std::string> notes;
+  bool ambiguous = false;
+};
+
+std::vector<TextBuilt> build_text_group(const Metadata& metadata,
+                                        const CastGroupDef& group) {
+  struct Acc {
+    std::string target;
+    std::optional<TextBuilt> built;
+    bool saw_source = false;
+    bool ambiguous = false;
+  };
+  std::vector<Acc> accs;
+  const bool user_comment = group.id == "exifUserComment";
+  const bool legacy = group.id == "windowsXP" || user_comment;
+  for (std::size_t i = 0; i < group.source_priority_count; ++i) {
+    const CastRuleDef* rule = rule_by_id(group, group.source_priority[i]);
+    if (!rule || rule->source_kind != "base_key") {
+      continue;
+    }
+    Acc* acc = nullptr;
+    for (Acc& item : accs) {
+      if (item.target == rule->target_key) {
+        acc = &item;
+        break;
+      }
+    }
+    if (!acc) {
+      accs.push_back(Acc{std::string(rule->target_key), std::nullopt, false, false});
+      acc = &accs.back();
+    }
+    const BaseEntry* entry = find_base(metadata, rule->source_key);
+    if (!entry) {
+      continue;
+    }
+    acc->saw_source = true;
+    bool ambiguous = false;
+    std::optional<std::string> decoded;
+    if (legacy) {
+      decoded = decode_legacy_text(entry->value, user_comment, ambiguous);
+    } else {
+      const std::string plain(trim(entry->value));
+      if (!plain.empty()) {
+        decoded = plain;
+      }
+    }
+    if (!decoded) {
+      if (ambiguous && !acc->built) {
+        acc->ambiguous = true;
+      }
+      continue;
+    }
+    const TextShape shape = text_shape(rule->target_key);
+    Value value;
+    std::string preview = *decoded;
+    if (shape == TextShape::date) {
+      DateTime parsed;
+      if (!parse_text_date(*decoded, parsed)) {
+        if (!acc->built) {
+          acc->ambiguous = true;
+        }
+        continue;
+      }
+      value = make_value(parsed);
+      preview = display_text(value);
+    } else if (shape == TextShape::string_list || shape == TextShape::entity_list) {
+      const std::vector<std::string> names = split_semicolon(*decoded);
+      if (names.empty()) {
+        continue;
+      }
+      value = shape == TextShape::entity_list ? entity_list_value(names)
+                                              : string_list_value(names);
+      preview.clear();
+      for (std::size_t n = 0; n < names.size(); ++n) {
+        if (n != 0) {
+          preview += "; ";
+        }
+        preview += names[n];
+      }
+    } else {
+      value = lang_alt_value(*decoded);
+    }
+    if (!acc->built) {
+      TextBuilt built;
+      built.target_id = std::string(rule->target_key);
+      built.source_id = std::string(rule->source_key);
+      built.source_preview = std::move(preview);
+      built.value = std::move(value);
+      acc->built = std::move(built);
+      acc->ambiguous = false;
+      continue;
+    }
+    if (acc->built->source_preview != preview) {
+      bool noted = false;
+      for (const std::string& note : acc->built->notes) {
+        if (note == "H17") {
+          noted = true;
+          break;
+        }
+      }
+      if (!noted) {
+        acc->built->notes.emplace_back("H17");
+      }
+    }
+  }
+  std::vector<TextBuilt> built;
+  for (Acc& acc : accs) {
+    if (acc.built) {
+      built.push_back(std::move(*acc.built));
+      continue;
+    }
+    if (acc.saw_source && acc.ambiguous) {
+      TextBuilt item;
+      item.target_id = acc.target;
+      item.ambiguous = true;
+      item.notes.emplace_back("unparsed text");
+      built.push_back(std::move(item));
+    }
+  }
+  return built;
+}
+
+CastStatus text_status(const Metadata& metadata, const TextBuilt& built) {
+  if (built.ambiguous) {
+    return CastStatus::ambiguous;
+  }
+  const auto existing = metadata.get(built.target_id);
+  if (!existing) {
+    return CastStatus::can_cast;
+  }
+  if (values_equal(text_shape(built.target_id), existing->value, built.value)) {
+    return CastStatus::equal;
+  }
+  return CastStatus::needs_force;
+}
+
+std::vector<CastCandidate> evaluate_text_group(const Metadata& metadata,
+                                               const CastGroupDef& group) {
+  std::vector<CastCandidate> out;
+  for (const TextBuilt& built : build_text_group(metadata, group)) {
+    out.push_back(make_candidate(group, text_status(metadata, built),
+                                 built.source_id, built.target_id,
+                                 built.source_preview, display_text(built.value),
+                                 built.notes));
+  }
+  return out;
+}
+
+bool target_has_value(const Metadata& metadata, std::string_view id) {
+  const auto property = metadata.get(id);
+  if (!property) {
+    return false;
+  }
+  if (text_shape(id) == TextShape::date) {
+    return std::holds_alternative<DateTime>(property->value.data);
+  }
+  if (text_shape(id) == TextShape::entity_list) {
+    return !entity_names(property->value).empty();
+  }
+  if (text_shape(id) == TextShape::string_list) {
+    return !as_name_list(property->value).empty();
+  }
+  return !display_text(property->value).empty();
+}
+
+void apply_text_group(Metadata& metadata, const CastCandidate& candidate,
+                      bool force) {
+  if (candidate.status != CastStatus::can_cast &&
+      !(force && candidate.status == CastStatus::needs_force)) {
+    return;
+  }
+  if (!force && target_has_value(metadata, candidate.target_id)) {
+    return;
+  }
+  const CastGroupDef* group = find_group(candidate.group, "up");
+  if (!group) {
+    return;
+  }
+  for (const TextBuilt& built : build_text_group(metadata, *group)) {
+    if (built.target_id == candidate.target_id && !built.ambiguous) {
+      (void)metadata.set(built.target_id, built.value);
+      return;
+    }
+  }
+}
+
 CastCandidate evaluate_group(const Metadata& metadata, const CastGroupDef& group,
                              const Capabilities* caps) {
   if (group.id == "capturePosition" && group.direction == "up") {
@@ -1656,6 +2202,15 @@ std::vector<CastCandidate> evaluate_casts(const Metadata& metadata,
       }
       continue;
     }
+    if (is_text_group(group.id)) {
+      for (CastCandidate& candidate : evaluate_text_group(metadata, group)) {
+        if (candidate.status == CastStatus::source_empty) {
+          continue;
+        }
+        out.push_back(std::move(candidate));
+      }
+      continue;
+    }
     CastCandidate candidate = evaluate_group(metadata, group, caps);
     if (candidate.status == CastStatus::source_empty) {
       continue;
@@ -1668,18 +2223,22 @@ std::vector<CastCandidate> evaluate_casts(const Metadata& metadata,
 void apply_cast_candidates(Metadata& metadata,
                            const std::vector<CastCandidate>& candidates,
                            const CastOptions& options, BaseChanges* extra_base) {
-  for (const CastCandidate& candidate : candidates) {
+  auto apply_one = [&](const CastCandidate& candidate, bool approximate_pass) {
     const CastGroupDef* group =
         find_group(candidate.group,
                    candidate.direction == CastDirection::down
                        ? "down"
                        : (candidate.direction == CastDirection::side ? "side"
                                                                      : "up"));
-    if (!group) {
-      continue;
+    if (!group || group->approximate != approximate_pass) {
+      return;
     }
     if (group->approximate && !options.include_approximate) {
-      continue;
+      return;
+    }
+    if (is_text_group(candidate.group)) {
+      apply_text_group(metadata, candidate, options.force);
+      return;
     }
     if (candidate.group == "capturePosition" &&
         candidate.direction == CastDirection::up) {
@@ -1705,6 +2264,12 @@ void apply_cast_candidates(Metadata& metadata,
     } else if (candidate.group == "creatorImageCreator") {
       apply_list_side(metadata, candidate, "iptc.photo.creator",
                       "iptc.photo.imageCreator", false, options.force);
+    }
+  };
+  // Non-approximate text fills first so UserComment cannot overwrite XPComment.
+  for (const bool approximate_pass : {false, true}) {
+    for (const CastCandidate& candidate : candidates) {
+      apply_one(candidate, approximate_pass);
     }
   }
 }

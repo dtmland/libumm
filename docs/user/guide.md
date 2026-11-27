@@ -213,6 +213,18 @@ orientation `1` (not rotated); `90` is `6`. The bundled Exiv2 build does not
 read these values. The library never writes synthetic `Xmp.video.*` or
 `Xmp.audio.*` keys.
 
+`windowsXP` fills photo title, description, keywords, and creator from Windows
+`XP*` tags. Keywords and authors split on `;`. `XPComment` wins over
+`XPSubject` when they disagree. `exifUserComment` is approximate and fills
+description only when that property is still empty. `pngText` fills the same
+photo text properties, plus copyright, from PNG `tEXt` / `iTXt` keywords.
+`quickTimeUserData` fills video title, creator, description, and date created
+from QuickTime user-data atoms (`©nam`, `©ART`, `©des`, `©day`). A date
+without an offset stays without an offset. These groups are up-only: writing
+the canonical property does not update or remove the legacy or container text.
+An existing canonical value is left unchanged. Exiv2 reads PNG Description
+only, and does not read QuickTime user data in the bundled build.
+
 Cast-rule sources appear in `dumpUnmapped()` with `BaseEntry::cast_source`.
 
 ## Exploring a property

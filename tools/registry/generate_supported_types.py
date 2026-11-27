@@ -32,6 +32,8 @@ CAST_BASE_PREFIXES = (
     "ExifTool.Composite.",
     "Xmp.video.",
     "Xmp.audio.",
+    "ExifTool.PNG.",
+    "Png.",
 )
 BACKEND_DISPLAY = {"exiv2": "Exiv2", "exiftool": "ExifTool"}
 ACCESS_CPP = {
@@ -557,11 +559,14 @@ def master_list_lines(
             "",
             "- `direct (photo)` — the container can hold EXIF, IPTC IIM, and/or XMP representations "
             "of `iptc.photo.*`. Every type here except MP4 and MOV is the photo domain "
-            "(`src/core/media_domain.hpp`). `umm::read` / `get` reconcile those automatically.",
+            "(`src/core/media_domain.hpp`). `umm::read` / `get` reconcile those automatically. "
+            "Windows XP* / UserComment (`Exif.*`) and PNG text (`ExifTool.PNG.*`, `Png.Text.*`) "
+            "are upcasts, not representations.",
             "- `direct + cast (video)` — MP4 and MOV use `iptc.video.*`. XMP and Video Metadata Hub "
             "QuickTime keys are representations. Container GPS, movie-header dates, "
-            "recording-device tags, and technical facts (duration, frame size, frame rate, "
-            "coding, audio, rotation) are casts (`registry/casts/`); they are not filled unless "
+            "recording-device tags, technical facts (duration, frame size, frame rate, "
+            "coding, audio, rotation), and QuickTime user-data text (`QuickTime.UserData.*`) "
+            "are casts (`registry/casts/`); they are not filled unless "
             "casting is requested. Default video writes downcast `capturePosition`. Exiv2 "
             "synthetic `Xmp.video.*` and `Xmp.audio.*` keys are cast sources only and are never written.",
             "- `—` — no representation family and no cast rule. Backends may still return base tags "

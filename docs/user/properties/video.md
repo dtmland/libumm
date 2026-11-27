@@ -333,6 +333,7 @@ Designates the date and optionally the time the content of the video was created
 
 | Group | Direction | Partner | Heuristic | Flags | Citation |
 |---|---|---|---|---|---|
+| `quickTimeUserData` | up | `QuickTime.UserData.ContentCreateDate` | H12 — Dates / offsets: never invent an offset | partial, one-way | UserData ©day (ContentCreateDate). Never invent a UTC offset (H12). |
 | `videoCreated` | up | `QuickTime.CreateDate` | H12 — Dates / offsets: never invent an offset | approximate, one-way | Movie-header CreateDate; never invent a UTC offset (H12) |
 
 Casts are opt-in (`umm::cast`). See [canonical model heuristics](../../developer/canonical-model.md).
@@ -1359,7 +1360,11 @@ Textual description of the content of the video
 
 ### Cast rules
 
-_No cast rules touch this property._
+| Group | Direction | Partner | Heuristic | Flags | Citation |
+|---|---|---|---|---|---|
+| `quickTimeUserData` | up | `QuickTime.UserData.Description` | H7 — lang-alt ↔ string via `x-default` | partial, one-way | UserData ©des (Description) to lang-alt x-default (H7) |
+
+Casts are opt-in (`umm::cast`). See [canonical model heuristics](../../developer/canonical-model.md).
 
 ### Accessor
 
@@ -2053,7 +2058,11 @@ Title of the video, should be a shorthand reference
 
 ### Cast rules
 
-_No cast rules touch this property._
+| Group | Direction | Partner | Heuristic | Flags | Citation |
+|---|---|---|---|---|---|
+| `quickTimeUserData` | up | `QuickTime.UserData.Title` | H7 — lang-alt ↔ string via `x-default` | partial, one-way | UserData ©nam (Title) to lang-alt x-default (H7). Keys/ItemList Title is not this source. |
+
+Casts are opt-in (`umm::cast`). See [canonical model heuristics](../../developer/canonical-model.md).
 
 ### Accessor
 
@@ -3139,7 +3148,11 @@ Party or parties (person or organisation) which created the video, refinement by
 
 ### Cast rules
 
-_No cast rules touch this property._
+| Group | Direction | Partner | Heuristic | Flags | Citation |
+|---|---|---|---|---|---|
+| `quickTimeUserData` | up | `QuickTime.UserData.Artist` | H8 — Struct ↔ scalar: field-level merge | partial, one-way | UserData ©ART (Artist) to EntityWRole name. Multiple names split on semicolon (H5). The cast schema has no separator field; ';' is fixed in the citation. |
+
+Casts are opt-in (`umm::cast`). See [canonical model heuristics](../../developer/canonical-model.md).
 
 ### Accessor
 

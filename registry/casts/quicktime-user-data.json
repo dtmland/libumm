@@ -1,0 +1,68 @@
+{
+  "id": "quickTimeUserData",
+  "direction": "up",
+  "partial": true,
+  "approximate": false,
+  "one_way": true,
+  "citation": "F12, F9, H12; QuickTime user-data ©nam/©ART/©day/©des are not VMH representations. Canonical writes do not update or remove them. An offset is recorded only when the source string has one.",
+  "source_priority": [
+    "ud_title",
+    "ud_artist",
+    "ud_description",
+    "ud_content_create_date"
+  ],
+  "rules": [
+    {
+      "id": "ud_title",
+      "source": {
+        "kind": "base_key",
+        "key": "QuickTime.UserData.Title"
+      },
+      "target": {
+        "kind": "property",
+        "key": "iptc.video.title"
+      },
+      "heuristic": "H7",
+      "citation": "UserData ©nam (Title) to lang-alt x-default (H7). Keys/ItemList Title is not this source."
+    },
+    {
+      "id": "ud_artist",
+      "source": {
+        "kind": "base_key",
+        "key": "QuickTime.UserData.Artist"
+      },
+      "target": {
+        "kind": "property",
+        "key": "iptc.video.creator"
+      },
+      "heuristic": "H8",
+      "citation": "UserData ©ART (Artist) to EntityWRole name. Multiple names split on semicolon (H5). The cast schema has no separator field; ';' is fixed in the citation."
+    },
+    {
+      "id": "ud_description",
+      "source": {
+        "kind": "base_key",
+        "key": "QuickTime.UserData.Description"
+      },
+      "target": {
+        "kind": "property",
+        "key": "iptc.video.description"
+      },
+      "heuristic": "H7",
+      "citation": "UserData ©des (Description) to lang-alt x-default (H7)"
+    },
+    {
+      "id": "ud_content_create_date",
+      "source": {
+        "kind": "base_key",
+        "key": "QuickTime.UserData.ContentCreateDate"
+      },
+      "target": {
+        "kind": "property",
+        "key": "iptc.video.dateCreated"
+      },
+      "heuristic": "H12",
+      "citation": "UserData ©day (ContentCreateDate). Never invent a UTC offset (H12)."
+    }
+  ]
+}

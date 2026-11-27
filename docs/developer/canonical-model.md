@@ -104,9 +104,19 @@ read-pipeline hook, not a write API.
 | `locationShownLegacy` | side | Legacy city/state/country/countryCode/sublocation ↔ `locationShownInTheImage[0]` (H3, H14; MWG Location Shown) |
 | `personShown` | side | `personShownInTheImage` ↔ details `name` (H4 union) |
 | `creatorImageCreator` | side | `creator` ↔ `imageCreator[*].imageCreatorName` (H4 union) |
+| `windowsXP` | up | `XPTitle` / `XPComment` / `XPSubject` / `XPKeywords` / `XPAuthor` → photo title, description, keywords, creator (H5, H7, H17). One candidate per target |
+| `exifUserComment` | up | `UserComment` → photo description; `approximate` (H16). Does not replace a nonempty description |
+| `pngText` | up | PNG Title/Author/Description/Copyright → photo title, creator, description, copyrightNotice (H5, H7) |
+| `quickTimeUserData` | up | UserData ©nam/©ART/©des/©day → video title, creator, description, dateCreated (H7, H8, H12). Exact UserData keys; no invented offset |
 
 H3 never appends a second location entry. H15/H16 apply only with
-`include_approximate`. H19 and H21 are not implemented.
+`include_approximate`. H19 and H21 are not implemented. Legacy and container
+text casts are up-only (F12): a canonical write does not update or remove
+`XP*`, `UserComment`, PNG text, or QuickTime user-data text. An existing
+canonical value wins (`equal` / `needs_force`) and does not block other
+targets in the same group. `XP*` UCS-2LE byte lists and `UserComment` charset
+prefixes are decoded in the cast. JIS `UserComment` is `ambiguous`. Keyword
+and author lists split on `;` (H5; the cast schema has no separator field).
 
 ## Cast-rule schema (`registry/casts/`)
 

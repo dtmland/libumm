@@ -1678,7 +1678,11 @@ Enter a Notice on the current owner of the Copyright for this image, such as ©2
 
 ### Cast rules
 
-_No cast rules touch this property._
+| Group | Direction | Partner | Heuristic | Flags | Citation |
+|---|---|---|---|---|---|
+| `pngText` | up | `ExifTool.PNG.Copyright` | H7 — lang-alt ↔ string via `x-default` | partial, one-way | PNG Copyright to lang-alt x-default (H7) |
+
+Casts are opt-in (`umm::cast`). See [canonical model heuristics](../../developer/canonical-model.md).
 
 ### Accessor
 
@@ -1780,6 +1784,8 @@ Enter the name of the person that created this image
 |---|---|---|---|---|---|
 | `creatorImageCreator` | side | `iptc.photo.imageCreator.imageCreatorName` | H4 — List ↔ list: union by display value | partial | Creator names to PLUS ImageCreator name |
 | `creatorImageCreator` | side | `iptc.photo.imageCreator.imageCreatorName` | H4 — List ↔ list: union by display value | partial | PLUS ImageCreator name to Creator |
+| `pngText` | up | `ExifTool.PNG.Author` | H5 — Joined string ↔ list | partial, one-way | PNG Author split on semicolon (H5). The cast schema has no separator field; ';' is fixed in the citation. |
+| `windowsXP` | up | `Exif.Image.XPAuthor` | H5 — Joined string ↔ list | partial, one-way | XPAuthor split on semicolon (H5). The cast schema has no separator field; ';' is fixed in the citation. |
 
 Casts are opt-in (`umm::cast`). See [canonical model heuristics](../../developer/canonical-model.md).
 
@@ -1950,7 +1956,15 @@ Enter a "caption" describing the who, what, and why of what is happening in this
 
 ### Cast rules
 
-_No cast rules touch this property._
+| Group | Direction | Partner | Heuristic | Flags | Citation |
+|---|---|---|---|---|---|
+| `exifUserComment` | up | `Exif.Photo.UserComment` | H16 — Semantic near-miss: `approximate` | approximate, partial, one-way | UserComment charset prefix to lang-alt x-default. Approximate (H16); a nonempty description is not replaced unless force. |
+| `pngText` | up | `ExifTool.PNG.Description` | H7 — lang-alt ↔ string via `x-default` | partial, one-way | PNG Description to lang-alt x-default (H7) |
+| `pngText` | up | `Png.Text.Description` | H17 — Sources disagree: first non-empty in group priority | partial, one-way | Exiv2 surfaces only the PNG Description keyword as an image comment (Png.Text.Description). Title, Author, and Copyright are not read. |
+| `windowsXP` | up | `Exif.Image.XPComment` | H7 — lang-alt ↔ string via `x-default` | partial, one-way | XPComment before XPSubject (H17); lang-alt x-default (H7) |
+| `windowsXP` | up | `Exif.Image.XPSubject` | H17 — Sources disagree: first non-empty in group priority | partial, one-way | XPSubject fills description only when XPComment is empty; disagreement is reported (H17) |
+
+Casts are opt-in (`umm::cast`). See [canonical model heuristics](../../developer/canonical-model.md).
 
 ### Accessor
 
@@ -2154,7 +2168,11 @@ Enter any number of keywords, terms or phrases to express the subject and other 
 
 ### Cast rules
 
-_No cast rules touch this property._
+| Group | Direction | Partner | Heuristic | Flags | Citation |
+|---|---|---|---|---|---|
+| `windowsXP` | up | `Exif.Image.XPKeywords` | H5 — Joined string ↔ list | partial, one-way | XPKeywords split on semicolon (H5). The cast schema has no separator field; ';' is fixed in the citation. |
+
+Casts are opt-in (`umm::cast`). See [canonical model heuristics](../../developer/canonical-model.md).
 
 ### Accessor
 
@@ -2368,7 +2386,12 @@ Enter a short verbal and human readable name for the image, this may be the file
 
 ### Cast rules
 
-_No cast rules touch this property._
+| Group | Direction | Partner | Heuristic | Flags | Citation |
+|---|---|---|---|---|---|
+| `pngText` | up | `ExifTool.PNG.Title` | H7 — lang-alt ↔ string via `x-default` | partial, one-way | PNG Title (tEXt or iTXt) to lang-alt x-default (H7) |
+| `windowsXP` | up | `Exif.Image.XPTitle` | H7 — lang-alt ↔ string via `x-default` | partial, one-way | XPTitle UCS-2LE to lang-alt x-default (H7) |
+
+Casts are opt-in (`umm::cast`). See [canonical model heuristics](../../developer/canonical-model.md).
 
 ### Accessor
 

@@ -52,12 +52,33 @@ The view is empty until values are filled. `BaseDocument::intrinsics` holds
 container pixel facts that are not stored metadata. Pseudo-ids `technical.*`
 are `property_read_only`.
 
+### Sessions 67–68 — Legacy and container text upcasts
+
+`windowsXP`, `exifUserComment`, `pngText`, and `quickTimeUserData` are up-only.
+`XP*` UCS-2LE byte lists and `UserComment` charset prefixes are decoded in the
+cast. Keyword and author lists split on `;`. An existing canonical value wins
+and does not block other targets. `exifUserComment` is approximate and does
+not replace a nonempty description. QuickTime user-data dates keep an offset
+only when the source string has one. Exiv2 reads PNG Description only
+(`Png.Text.Description`); Title, Author, and Copyright, and QuickTime user
+data, stay ExifTool-only (`exiv2-png-text-keywords`,
+`exiv2-quicktime-user-data`).
+
 ### Session 63 — Read-time upcasts
 
 `ReadOptions::upcast` fills empty canonical targets from named up groups in
 memory only. Unknown groups fail with `invalid_value`. A representation always
 wins. `needs_force` and `ambiguous` never apply. Naming `videoCreated` applies
 that approximate group. Provenance is `cast:<group>`.
+
+### Sessions 67–68 — Legacy and container text upcasts
+
+`windowsXP` and approximate `exifUserComment` fill photo title, description,
+keywords, and creator. `pngText` and `quickTimeUserData` fill photo or video
+text from PNG keywords and QuickTime user-data atoms. Up only. UCS-2LE byte
+lists and `UserComment` charset prefixes are decoded in the cast. A date offset
+is recorded only when the source string has one. Exiv2 reads PNG Description
+only; bundled Exiv2 does not read QuickTime user data.
 
 ### Session 71 — Durable writes
 

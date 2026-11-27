@@ -43,9 +43,17 @@ const BackendCapability* find_row(const Capabilities& caps, std::string_view id)
   return nullptr;
 }
 
+bool opt_in_text_cast(std::string_view id) {
+  // Same ids as is_text_group in cast.cpp. These upcasts are not a stored
+  // representation of the target, so they must not make propertyAccess report
+  // property_read_only on a type that has no mapping (session 57).
+  return id == "windowsXP" || id == "exifUserComment" || id == "pngText" ||
+         id == "quickTimeUserData";
+}
+
 bool one_way_target(std::string_view id) {
   for (const internal::CastGroupDef& group : internal::kCastGroups) {
-    if (!group.one_way) {
+    if (!group.one_way || opt_in_text_cast(group.id)) {
       continue;
     }
     for (const internal::CastRuleDef& rule : internal::kCastRules) {

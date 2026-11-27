@@ -1,0 +1,82 @@
+{
+  "id": "windowsXP",
+  "direction": "up",
+  "partial": true,
+  "approximate": false,
+  "one_way": true,
+  "citation": "F12, F9; Windows XP* tags are not IPTC representations. Canonical writes do not update or remove them.",
+  "source_priority": [
+    "xp_title",
+    "xp_comment",
+    "xp_subject",
+    "xp_keywords",
+    "xp_author"
+  ],
+  "rules": [
+    {
+      "id": "xp_title",
+      "source": {
+        "kind": "base_key",
+        "key": "Exif.Image.XPTitle"
+      },
+      "target": {
+        "kind": "property",
+        "key": "iptc.photo.title"
+      },
+      "heuristic": "H7",
+      "citation": "XPTitle UCS-2LE to lang-alt x-default (H7)"
+    },
+    {
+      "id": "xp_comment",
+      "source": {
+        "kind": "base_key",
+        "key": "Exif.Image.XPComment"
+      },
+      "target": {
+        "kind": "property",
+        "key": "iptc.photo.description"
+      },
+      "heuristic": "H7",
+      "citation": "XPComment before XPSubject (H17); lang-alt x-default (H7)"
+    },
+    {
+      "id": "xp_subject",
+      "source": {
+        "kind": "base_key",
+        "key": "Exif.Image.XPSubject"
+      },
+      "target": {
+        "kind": "property",
+        "key": "iptc.photo.description"
+      },
+      "heuristic": "H17",
+      "citation": "XPSubject fills description only when XPComment is empty; disagreement is reported (H17)"
+    },
+    {
+      "id": "xp_keywords",
+      "source": {
+        "kind": "base_key",
+        "key": "Exif.Image.XPKeywords"
+      },
+      "target": {
+        "kind": "property",
+        "key": "iptc.photo.keywords"
+      },
+      "heuristic": "H5",
+      "citation": "XPKeywords split on semicolon (H5). The cast schema has no separator field; ';' is fixed in the citation."
+    },
+    {
+      "id": "xp_author",
+      "source": {
+        "kind": "base_key",
+        "key": "Exif.Image.XPAuthor"
+      },
+      "target": {
+        "kind": "property",
+        "key": "iptc.photo.creator"
+      },
+      "heuristic": "H5",
+      "citation": "XPAuthor split on semicolon (H5). The cast schema has no separator field; ';' is fixed in the citation."
+    }
+  ]
+}

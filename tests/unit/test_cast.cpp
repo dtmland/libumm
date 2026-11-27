@@ -508,5 +508,203 @@ int main() {
     }
   }
 
+  {
+    const std::string cafe = "Caf\xC3\xA9 Title";
+    umm::Metadata metadata;
+    metadata.setMediaDomain(umm::MediaDomain::photo);
+    metadata.assignBase({
+        entry("Exif", "Exif.Image.XPTitle",
+              "67 0 97 0 102 0 233 0 32 0 84 0 105 0 116 0 108 0 101 0 0 0"),
+        entry("Exif", "Exif.Image.XPComment", "Photo comment"),
+        entry("Exif", "Exif.Image.XPSubject", "Other subject"),
+        entry("Exif", "Exif.Image.XPKeywords", "alpha; beta"),
+        entry("Exif", "Exif.Image.XPAuthor", "Ada; Grace"),
+        entry("Exif", "Exif.Photo.UserComment", "charset=Ascii User note"),
+    });
+    umm::CastOptions options;
+    options.groups = {"windowsXP", "exifUserComment"};
+    options.include_approximate = true;
+    auto preview = umm::internal::evaluate_casts(
+        metadata, umm::CastDirection::up, options, "JPEG", nullptr);
+    const umm::CastCandidate* title = nullptr;
+    const umm::CastCandidate* description = nullptr;
+    bool saw_user = false;
+    for (const umm::CastCandidate& candidate : preview) {
+      if (candidate.group == "windowsXP" &&
+          candidate.target_id == "iptc.photo.title") {
+        title = &candidate;
+      }
+      if (candidate.group == "windowsXP" &&
+          candidate.target_id == "iptc.photo.description") {
+        description = &candidate;
+      }
+      if (candidate.group == "exifUserComment") {
+        saw_user = true;
+      }
+    }
+    if (!title || title->status != umm::CastStatus::can_cast || !description ||
+        !has_note(*description, "H17") || !saw_user) {
+      return fail("windowsXP dry-run");
+    }
+    umm::internal::apply_cast_candidates(metadata, preview, options, nullptr);
+    const auto stored_title = metadata.get("iptc.photo.title");
+    const auto* alt =
+        stored_title ? std::get_if<umm::LangAlt>(&stored_title->value.data)
+                     : nullptr;
+    const auto alt_it = alt ? alt->find("x-default") : umm::LangAlt::const_iterator{};
+    if (!alt || alt_it == alt->end() || alt_it->second != cafe) {
+      return fail("XPTitle UCS-2LE decode");
+    }
+    const auto stored_description = metadata.get("iptc.photo.description");
+    const auto* desc =
+        stored_description
+            ? std::get_if<umm::LangAlt>(&stored_description->value.data)
+            : nullptr;
+    const auto desc_it =
+        desc ? desc->find("x-default") : umm::LangAlt::const_iterator{};
+    if (!desc || desc_it == desc->end() || desc_it->second != "Photo comment") {
+      return fail("UserComment must not overwrite XPComment");
+    }
+    const auto keywords = metadata.get("iptc.photo.keywords");
+    const auto* words =
+        keywords ? std::get_if<std::vector<std::string>>(&keywords->value.data)
+                 : nullptr;
+    if (!words || words->size() != 2 || (*words)[0] != "alpha") {
+      return fail("XPKeywords semicolon split");
+    }
+  }
+
+  {
+    umm::Metadata metadata;
+    metadata.setMediaDomain(umm::MediaDomain::photo);
+    if (!metadata
+             .set("iptc.photo.title",
+                  umm::Value{umm::LangAlt{{"x-default", "Kept title"}}})
+             .ok()) {
+      return fail("set kept title");
+    }
+    metadata.assignBase(
+        {entry("Exif", "Exif.Image.XPTitle", "XP title"),
+         entry("Exif", "Exif.Image.XPComment", "Filled description")});
+    umm::CastOptions options;
+    options.groups = {"windowsXP"};
+    auto preview = umm::internal::evaluate_casts(
+        metadata, umm::CastDirection::up, options, "JPEG", nullptr);
+    const umm::CastCandidate* title = nullptr;
+    for (const umm::CastCandidate& candidate : preview) {
+      if (candidate.target_id == "iptc.photo.title") {
+        title = &candidate;
+      }
+    }
+    if (!title || title->status != umm::CastStatus::needs_force) {
+      return fail("existing title needs_force");
+    }
+    umm::internal::apply_cast_candidates(metadata, preview, options, nullptr);
+    const auto stored = metadata.get("iptc.photo.title");
+    const auto* alt =
+        stored ? std::get_if<umm::LangAlt>(&stored->value.data) : nullptr;
+    const auto it = alt ? alt->find("x-default") : umm::LangAlt::const_iterator{};
+    if (!alt || it == alt->end() || it->second != "Kept title") {
+      return fail("needs_force must not apply on read");
+    }
+    const auto description = metadata.get("iptc.photo.description");
+    const auto* desc =
+        description ? std::get_if<umm::LangAlt>(&description->value.data)
+                    : nullptr;
+    const auto desc_it =
+        desc ? desc->find("x-default") : umm::LangAlt::const_iterator{};
+    if (!desc || desc_it == desc->end() || desc_it->second != "Filled description") {
+      return fail("other windowsXP targets still fill");
+    }
+  }
+
+  {
+    umm::Metadata metadata;
+    metadata.setMediaDomain(umm::MediaDomain::photo);
+    metadata.assignBase(
+        {entry("Exif", "Exif.Photo.UserComment", "charset=\"JIS\" 27 36 66")});
+    umm::CastOptions options;
+    options.groups = {"exifUserComment"};
+    options.include_approximate = true;
+    auto preview = umm::internal::evaluate_casts(
+        metadata, umm::CastDirection::up, options, "JPEG", nullptr);
+    const auto* comment = find_group(preview, "exifUserComment");
+    if (!comment || comment->status != umm::CastStatus::ambiguous) {
+      return fail("JIS UserComment is ambiguous");
+    }
+  }
+
+  {
+    umm::Metadata metadata;
+    metadata.setMediaDomain(umm::MediaDomain::video);
+    metadata.assignBase({
+        entry("QuickTime", "QuickTime.Keys.Title", "Keys title"),
+        entry("QuickTime", "QuickTime.UserData.Title", "UD title"),
+        entry("QuickTime", "QuickTime.UserData.Artist", "UD Artist"),
+        entry("QuickTime", "QuickTime.UserData.Description", "UD description"),
+        entry("QuickTime", "QuickTime.UserData.ContentCreateDate",
+              "2020:01:02 03:04:05+05:30"),
+    });
+    umm::CastOptions options;
+    options.groups = {"quickTimeUserData"};
+    auto preview = umm::internal::evaluate_casts(
+        metadata, umm::CastDirection::up, options, "MOV", nullptr);
+    const umm::CastCandidate* title = nullptr;
+    for (const umm::CastCandidate& candidate : preview) {
+      if (candidate.target_id == "iptc.video.title") {
+        title = &candidate;
+      }
+    }
+    if (!title || title->source_id != "QuickTime.UserData.Title" ||
+        title->source_preview != "UD title") {
+      return fail("UserData title must not match Keys title");
+    }
+    umm::internal::apply_cast_candidates(metadata, preview, options, nullptr);
+    const auto date = metadata.get("iptc.video.dateCreated");
+    const auto* dt = date ? std::get_if<umm::DateTime>(&date->value.data) : nullptr;
+    if (!dt || dt->year != 2020 || !dt->utc_offset_minutes ||
+        *dt->utc_offset_minutes != 330) {
+      return fail("user-data date keeps its offset");
+    }
+    const auto creators = metadata.get("iptc.video.creator");
+    const auto* people =
+        creators ? std::get_if<std::vector<umm::Structure>>(&creators->value.data)
+                 : nullptr;
+    if (!people || people->size() != 1) {
+      return fail("user-data artist entity");
+    }
+  }
+
+  {
+    umm::Metadata metadata;
+    metadata.setMediaDomain(umm::MediaDomain::video);
+    metadata.assignBase({entry("QuickTime", "QuickTime.UserData.ContentCreateDate",
+                               "2020:01:02")});
+    umm::CastOptions options;
+    options.groups = {"quickTimeUserData"};
+    auto preview = umm::internal::evaluate_casts(
+        metadata, umm::CastDirection::up, options, "MP4", nullptr);
+    umm::internal::apply_cast_candidates(metadata, preview, options, nullptr);
+    const auto date = metadata.get("iptc.video.dateCreated");
+    const auto* dt = date ? std::get_if<umm::DateTime>(&date->value.data) : nullptr;
+    if (!dt || dt->utc_offset_minutes) {
+      return fail("date without offset must stay without offset");
+    }
+  }
+
+  {
+    umm::Metadata metadata;
+    metadata.setMediaDomain(umm::MediaDomain::photo);
+    metadata.assignBase(
+        {entry("QuickTime", "QuickTime.UserData.Title", "not a photo")});
+    umm::CastOptions options;
+    auto preview = umm::internal::evaluate_casts(
+        metadata, umm::CastDirection::up, options, "JPEG", nullptr);
+    if (find_group(preview, "quickTimeUserData") ||
+        find_group(preview, "windowsXP")) {
+      return fail("container text groups must stay in their domain");
+    }
+  }
+
   return 0;
 }

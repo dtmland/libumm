@@ -407,3 +407,44 @@ Each committed media file is generator-produced (decision **M6**); track files a
 - **Size:** 90 bytes
 - **Purpose:** NMEA with bad checksums and no usable positions
 - **Command:** `hand-authored (session 25; test-media-plan §4)`
+### `jpeg/windows-xp.jpg`
+
+- **SHA-256:** `3da94cf0f29ca11ca3027dbc71c70a8fae43c5f65e441929e89e4991069e053b`
+- **Size:** 445 bytes
+- **Purpose:** Windows XP* tags and UserComment for legacy text upcasts
+- **Command:** `exiftool -overwrite_original -all= jpeg/windows-xp.jpg && exiftool -overwrite_original -IFD0:XPTitle=Café Title -IFD0:XPComment=Photo comment -IFD0:XPSubject=Photo comment -IFD0:XPKeywords=alpha; beta -IFD0:XPAuthor=Ada; Grace -ExifIFD:UserComment=User note jpeg/windows-xp.jpg`
+
+### `jpeg/windows-xp-kept.jpg`
+
+- **SHA-256:** `6bf0c3c86351c5149ae7e55c338f77c1078f7056238282b66d9a1921d5baf0bf`
+- **Size:** 3152 bytes
+- **Purpose:** XMP title differs from XPTitle so title stays needs_force while description fills
+- **Command:** `exiftool -overwrite_original -all= jpeg/windows-xp-kept.jpg && exiftool -overwrite_original -XMP-dc:Title=Kept title -IFD0:XPTitle=XP title -IFD0:XPComment=Filled description jpeg/windows-xp-kept.jpg`
+
+### `png/text-chunks.png`
+
+- **SHA-256:** `acc28af196f549c838c6e98e0dc1a621102776d59cb36932cdff7714a84d913c`
+- **Size:** 202 bytes
+- **Purpose:** Latin PNG tEXt keywords for the pngText upcast
+- **Command:** `exiftool -overwrite_original -all= png/text-chunks.png && exiftool -overwrite_original -PNG:Title=PNG Title -PNG:Author=PNG Author -PNG:Description=PNG Description -PNG:Copyright=PNG Copyright png/text-chunks.png`
+
+### `png/text-itxt.png`
+
+- **SHA-256:** `5fc0f8337ec4dce965ff23dedd8f4df0af2adaa84220e3af66b531fb8df10c11`
+- **Size:** 141 bytes
+- **Purpose:** Unicode PNG iTXt keywords for the pngText upcast
+- **Command:** `exiftool -overwrite_original -all= png/text-itxt.png && exiftool -overwrite_original -PNG:Title=Título -PNG:Description=Descripción png/text-itxt.png`
+
+### `video/user-data.mp4`
+
+- **SHA-256:** `b1b36ca9e28010273079222401b59553a7c79a6cfa0a346c2839549c3066e2a3`
+- **Size:** 910 bytes
+- **Purpose:** QuickTime user-data text atoms for the quickTimeUserData upcast
+- **Command:** `ffmpeg -y -hide_banner -loglevel error -f lavfi -i color=c=gray:s=16x16:r=10 -t 0.1 -an -c:v mpeg4 -q:v 12 -movflags +faststart video/user-data.mp4 && exiftool -overwrite_original -all= video/user-data.mp4 && exiftool -overwrite_original -UserData:Title=UD title -UserData:Artist=UD Artist -UserData:Description=UD description -UserData:ContentCreateDate=2020:01:02 03:04:05 video/user-data.mp4`
+
+### `video/user-data.mov`
+
+- **SHA-256:** `909cb1bc677e382cfcd5a5f8663d9f3ed67ef9a3cb908adc21620b25bc2076b4`
+- **Size:** 918 bytes
+- **Purpose:** QuickTime user-data text atoms for the quickTimeUserData upcast
+- **Command:** `ffmpeg -y -hide_banner -loglevel error -f lavfi -i color=c=gray:s=16x16:r=10 -t 0.1 -an -c:v mpeg4 -q:v 12 -f mov video/user-data.mov && exiftool -overwrite_original -all= video/user-data.mov && exiftool -overwrite_original -UserData:Title=UD title -UserData:Artist=UD Artist -UserData:Description=UD description -UserData:ContentCreateDate=2020:01:02 03:04:05 video/user-data.mov`
