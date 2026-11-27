@@ -2,10 +2,12 @@
 // stable across libumm writes and metadata-only ExifTool edits, and equals
 // ExifTool's ImageDataHash (SHA256). ExifTool comparisons are skipped, not
 // failed, when ExifTool is absent.
+#include "exiftool/process.hpp"
 #include "umm/digest.hpp"
 #include "umm/umm.hpp"
 
 #include <array>
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
@@ -14,16 +16,6 @@
 
 #ifndef UMM_FIXTURES_DIR
 #error "UMM_FIXTURES_DIR must be defined by the build"
-#endif
-
-#if defined(_WIN32)
-#define UMM_POPEN _popen
-#define UMM_PCLOSE _pclose
-#define UMM_DEVNULL "NUL"
-#else
-#define UMM_POPEN popen
-#define UMM_PCLOSE pclose
-#define UMM_DEVNULL "/dev/null"
 #endif
 
 namespace {
@@ -59,26 +51,41 @@ void maybe_configure_exiftool() {
 }
 
 #ifdef UMM_TEST_EXIFTOOL_SCRIPT
+// Spawn the pinned ExifTool with the given arguments and capture its stdout.
+// Uses the project's cross-platform process spawner so command-line quoting is
+// handled consistently on Windows (cmd.exe mangles multi-quote command strings
+// passed to popen/system). Returns false if the process cannot be run.
+bool run_exiftool(const std::vector<std::string>& args, std::string& out) {
+  const std::filesystem::path perl(std::u8string(
+      reinterpret_cast<const char8_t*>(UMM_TEST_EXIFTOOL_PERL)));
+  const std::filesystem::path script(std::u8string(
+      reinterpret_cast<const char8_t*>(UMM_TEST_EXIFTOOL_SCRIPT)));
+  std::vector<std::string> argv;
+  argv.reserve(args.size() + 2);
+  argv.push_back(umm::internal::path_to_utf8(perl));
+  argv.push_back(umm::internal::path_to_utf8(script));
+  for (const std::string& arg : args) {
+    argv.push_back(arg);
+  }
+  umm::internal::ChildProcess child;
+  if (!child.spawn(perl, argv).empty()) {
+    return false;
+  }
+  std::string err;
+  std::string read_err;
+  return child.read_all(std::chrono::milliseconds{30'000}, out, err,
+                        read_err) == umm::internal::ChildProcess::Read::ok;
+}
+
 // Run the pinned ExifTool and return its ImageDataHash (lowercase hex), or empty
 // on failure.
 std::string exiftool_image_data_hash(const std::filesystem::path& file) {
-  const std::string perl = reinterpret_cast<const char*>(UMM_TEST_EXIFTOOL_PERL);
-  const std::string script =
-      reinterpret_cast<const char*>(UMM_TEST_EXIFTOOL_SCRIPT);
-  const std::string cmd = "\"" + perl + "\" \"" + script +
-                          "\" -api ImageHashType=SHA256 -ImageDataHash -s3 \"" +
-                          file.string() + "\" 2>" UMM_DEVNULL;
-  std::FILE* pipe = UMM_POPEN(cmd.c_str(), "r");
-  if (pipe == nullptr) {
+  std::string out;
+  if (!run_exiftool({"-api", "ImageHashType=SHA256", "-ImageDataHash", "-s3",
+                     umm::internal::path_to_utf8(file)},
+                    out)) {
     return {};
   }
-  std::string out;
-  std::array<char, 256> buffer{};
-  while (std::fgets(buffer.data(), static_cast<int>(buffer.size()), pipe) !=
-         nullptr) {
-    out += buffer.data();
-  }
-  UMM_PCLOSE(pipe);
   // Trim trailing whitespace/newline.
   while (!out.empty() &&
          (out.back() == '\n' || out.back() == '\r' || out.back() == ' ')) {
@@ -194,15 +201,29 @@ int main() {
                                std::filesystem::copy_options::overwrite_existing,
                                ec);
     const std::string before = digest_hex(copy);
-    const std::string perl =
-        reinterpret_cast<const char*>(UMM_TEST_EXIFTOOL_PERL);
-    const std::string script =
-        reinterpret_cast<const char*>(UMM_TEST_EXIFTOOL_SCRIPT);
-    const std::string cmd = "\"" + perl + "\" \"" + script +
-                            "\" -overwrite_original -Title=\"edited\" \"" +
-                            copy.string() + "\" >" UMM_DEVNULL " 2>&1";
-    if (std::system(cmd.c_str()) != 0) {
+    std::string edit_out;
+    if (!run_exiftool({"-overwrite_original", "-Title=edited",
+                       umm::internal::path_to_utf8(copy)},
+                      edit_out)) {
       return fail("exiftool metadata edit command failed");
+    }
+    // Confirm the edit actually took effect (ChildProcess exposes no exit code,
+    // and a silently failed edit would otherwise leave the digest trivially
+    // unchanged).
+    std::string title;
+    if (!run_exiftool({"-Title", "-s3", umm::internal::path_to_utf8(copy)},
+                      title)) {
+      return fail("exiftool title read-back failed");
+    }
+    while (!title.empty() &&
+           (title.back() == '\n' || title.back() == '\r' ||
+            title.back() == ' ')) {
+      title.pop_back();
+    }
+    if (title != "edited") {
+      std::fprintf(stderr, "exiftool title after edit: \"%s\"\n",
+                   title.c_str());
+      return fail("exiftool metadata edit did not take effect");
     }
     const std::string after = digest_hex(copy);
     if (after != before) {

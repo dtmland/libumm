@@ -402,6 +402,9 @@ if(UMM_BUILD_TESTS)
 
     add_executable(test_digest_backend tests/backend/test_digest_backend.cpp)
     target_link_libraries(test_digest_backend PRIVATE umm::umm)
+    target_include_directories(test_digest_backend
+      PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/backends")
     umm_apply_fixture_dir(test_digest_backend)
     if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)
       file(TO_CMAKE_PATH "${UMM_EXIFTOOL_SCRIPT}" UMM_TEST_DIGEST_EXIFTOOL_SCRIPT)
