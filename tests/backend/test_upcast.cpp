@@ -555,8 +555,12 @@ int check_user_data(const char* backend) {
   if (!people || people->size() != 1) {
     std::fprintf(stderr, "user data artist keys:\n");
     for (const umm::BaseEntry& entry : read.value().dumpAll()) {
-      std::fprintf(stderr, "  %s=%s\n", entry.key.key.c_str(),
-                   entry.value.c_str());
+      if (entry.key.key.find("Artist") != std::string::npos ||
+          entry.key.key.find("Author") != std::string::npos ||
+          entry.key.key.find("Director") != std::string::npos) {
+        std::fprintf(stderr, "  %s=%s\n", entry.key.key.c_str(),
+                     entry.value.c_str());
+      }
     }
     return fail("user data artist");
   }
