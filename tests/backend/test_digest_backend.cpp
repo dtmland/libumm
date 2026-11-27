@@ -16,6 +16,16 @@
 #error "UMM_FIXTURES_DIR must be defined by the build"
 #endif
 
+#if defined(_WIN32)
+#define UMM_POPEN _popen
+#define UMM_PCLOSE _pclose
+#define UMM_DEVNULL "NUL"
+#else
+#define UMM_POPEN popen
+#define UMM_PCLOSE pclose
+#define UMM_DEVNULL "/dev/null"
+#endif
+
 namespace {
 
 int fail(const char* message) {
@@ -57,8 +67,8 @@ std::string exiftool_image_data_hash(const std::filesystem::path& file) {
       reinterpret_cast<const char*>(UMM_TEST_EXIFTOOL_SCRIPT);
   const std::string cmd = "\"" + perl + "\" \"" + script +
                           "\" -api ImageHashType=SHA256 -ImageDataHash -s3 \"" +
-                          file.string() + "\" 2>/dev/null";
-  std::FILE* pipe = popen(cmd.c_str(), "r");
+                          file.string() + "\" 2>" UMM_DEVNULL;
+  std::FILE* pipe = UMM_POPEN(cmd.c_str(), "r");
   if (pipe == nullptr) {
     return {};
   }
@@ -68,7 +78,7 @@ std::string exiftool_image_data_hash(const std::filesystem::path& file) {
          nullptr) {
     out += buffer.data();
   }
-  pclose(pipe);
+  UMM_PCLOSE(pipe);
   // Trim trailing whitespace/newline.
   while (!out.empty() &&
          (out.back() == '\n' || out.back() == '\r' || out.back() == ' ')) {
@@ -190,7 +200,7 @@ int main() {
         reinterpret_cast<const char*>(UMM_TEST_EXIFTOOL_SCRIPT);
     const std::string cmd = "\"" + perl + "\" \"" + script +
                             "\" -overwrite_original -Title=\"edited\" \"" +
-                            copy.string() + "\" >/dev/null 2>&1";
+                            copy.string() + "\" >" UMM_DEVNULL " 2>&1";
     if (std::system(cmd.c_str()) != 0) {
       return fail("exiftool metadata edit command failed");
     }
