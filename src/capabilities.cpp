@@ -1,8 +1,12 @@
 #include "umm/umm.hpp"
 
 #include "capabilities_data.hpp"
+#include "core/read_internal.hpp"
 
+#include <algorithm>
+#include <cstddef>
 #include <fstream>
+#include <span>
 #include <string_view>
 #include <system_error>
 #include <vector>
@@ -175,8 +179,7 @@ bool ftyp_has_brand(const std::vector<unsigned char>& bytes, const char* four) {
 }
 
 std::string iso_bmff_type(const std::vector<unsigned char>& bytes,
-                          const std::filesystem::path& media) {
-  const std::string from_ext = type_from_extension(media);
+                          std::string_view from_ext) {
   if (ftyp_has_brand(bytes, "qt  ")) {
     return "MOV";
   }
@@ -197,14 +200,14 @@ std::string iso_bmff_type(const std::vector<unsigned char>& bytes,
   if (ftyp_has_brand(bytes, "mif1") || ftyp_has_brand(bytes, "msf1") ||
       ftyp_has_brand(bytes, "heif") || ftyp_has_brand(bytes, "heis")) {
     if (from_ext == "HEIC" || from_ext == "HEIF" || from_ext == "AVIF") {
-      return from_ext;
+      return std::string(from_ext);
     }
     return "HEIF";
   }
   if (from_ext == "MOV" || from_ext == "HEIC" || from_ext == "HEIF" ||
       from_ext == "AVIF" || from_ext == "CR3" || from_ext == "JXL" ||
       from_ext == "MP4") {
-    return from_ext;
+    return std::string(from_ext);
   }
   return "MP4";
 }
@@ -224,6 +227,40 @@ bool looks_like_xmp(const std::vector<unsigned char>& bytes) {
   return text.find(std::string("x:") + "xmpmeta") != std::string_view::npos;
 }
 
+std::string sniff_type_bytes(const std::vector<unsigned char>& bytes,
+                             std::string_view ext_type) {
+  if (looks_like_jpeg(bytes)) {
+    return "JPEG";
+  }
+  // Container magics before XMP text: embedded XMP packets in stills
+  // must not classify the file as a sidecar (sessions 17–18).
+  if (looks_like_tiff(bytes)) {
+    // DNG is TIFF-based; discriminate by extension/hint (session 19).
+    if (ext_type == "DNG") {
+      return "DNG";
+    }
+    return "TIFF";
+  }
+  if (looks_like_png(bytes)) {
+    return "PNG";
+  }
+  if (looks_like_webp(bytes)) {
+    return "WEBP";
+  }
+  // Naked JPEG XL (FF 0A) and the 12-byte ISOBMFF JXL signature box come
+  // before ftyp classification (session 35).
+  if (looks_like_jxl(bytes)) {
+    return "JXL";
+  }
+  if (looks_like_iso_bmff(bytes)) {
+    return iso_bmff_type(bytes, ext_type);
+  }
+  if (looks_like_xmp(bytes)) {
+    return "XMP";
+  }
+  return std::string();
+}
+
 std::string sniff_type(const std::filesystem::path& media) {
   std::error_code ec;
   if (std::filesystem::is_regular_file(media, ec)) {
@@ -233,34 +270,9 @@ std::string sniff_type(const std::filesystem::path& media) {
             static_cast<std::streamsize>(bytes.size()));
     const std::streamsize n = in.gcount();
     bytes.resize(n < 0 ? 0 : static_cast<std::size_t>(n));
-    if (looks_like_jpeg(bytes)) {
-      return "JPEG";
-    }
-    // Container magics before XMP text: embedded XMP packets in stills
-    // must not classify the file as a sidecar (sessions 17–18).
-    if (looks_like_tiff(bytes)) {
-      // DNG is TIFF-based; discriminate by extension (session 19).
-      if (type_from_extension(media) == "DNG") {
-        return "DNG";
-      }
-      return "TIFF";
-    }
-    if (looks_like_png(bytes)) {
-      return "PNG";
-    }
-    if (looks_like_webp(bytes)) {
-      return "WEBP";
-    }
-    // Naked JPEG XL (FF 0A) and the 12-byte ISOBMFF JXL signature box come
-    // before ftyp classification (session 35).
-    if (looks_like_jxl(bytes)) {
-      return "JXL";
-    }
-    if (looks_like_iso_bmff(bytes)) {
-      return iso_bmff_type(bytes, media);
-    }
-    if (looks_like_xmp(bytes)) {
-      return "XMP";
+    std::string sniffed = sniff_type_bytes(bytes, type_from_extension(media));
+    if (!sniffed.empty()) {
+      return sniffed;
     }
   }
   return type_from_extension(media);
@@ -287,6 +299,25 @@ BackendCapability from_record(const internal::CapabilityRecord& row,
 }
 
 }  // namespace
+
+namespace internal {
+
+std::string sniff_type_from_bytes(std::span<const std::byte> bytes,
+                                  std::string_view type_hint) {
+  const std::size_t n = std::min<std::size_t>(bytes.size(), 256);
+  std::vector<unsigned char> head(n);
+  for (std::size_t i = 0; i < n; ++i) {
+    head[i] = static_cast<unsigned char>(bytes[i]);
+  }
+  const std::string ext = canonical_type(type_hint);
+  std::string sniffed = sniff_type_bytes(head, ext);
+  if (!sniffed.empty()) {
+    return sniffed;
+  }
+  return ext;
+}
+
+}  // namespace internal
 
 Result<Capabilities> capabilitiesForType(std::string_view file_type) {
   const std::string canonical = canonical_type(file_type);

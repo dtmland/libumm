@@ -41,6 +41,26 @@ auto report = umm::write("photo.jpg", m);      // atomic, write-synchronized
 - `umm::describe` returns the property map (representations, casts, cross-media partner);
   pass a file to fill values and cast statuses. See [Exploring a property](#exploring-a-property).
 
+## Reading from memory
+
+When the bytes are already in memory — a download buffer, a database blob, an archive
+member — read them without staging a file first:
+
+```cpp
+std::vector<std::byte> buffer = fetch_bytes();            // your bytes
+auto meta = umm::read(buffer);                            // type sniffed from magic
+auto dng  = umm::read(buffer, {}, "DNG");                 // hint disambiguates TIFF-based types
+```
+
+- The media type is sniffed from the leading magic bytes. Pass `file_type_hint` (a canonical
+  file type such as `"DNG"`, `"MP4"`, or `"MOV"`) to disambiguate container-ambiguous bytes;
+  it is ignored when the magic alone is decisive.
+- A byte buffer has no companion file, so no `.xmp` sidecar is paired. `ReadOptions` otherwise
+  behaves as in `umm::read(path)`; setting `sidecar_required` returns `invalid_value`.
+- The result matches a path read of the same bytes (minus the sidecar). The Exiv2 backend reads
+  the buffer in memory; the ExifTool backend stages it in a private, owner-only temporary file
+  and removes it before returning, including on error or cancellation.
+
 ## Fast scans
 
 A library scan often needs only a few properties. Set `ReadOptions::properties`

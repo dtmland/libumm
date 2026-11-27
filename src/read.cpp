@@ -42,6 +42,23 @@ Backend* select_backend(const std::filesystem::path& media,
   return manager.firstAvailable();
 }
 
+Backend* select_backend_for_type(std::string_view file_type,
+                                 const ReadOptions& options) {
+  BackendManager& manager = BackendManager::instance();
+  if (!options.backend.empty()) {
+    return manager.get(options.backend);
+  }
+  if (const Result<Capabilities> caps = capabilitiesForType(file_type);
+      caps.ok() && !caps.value().preferred_backend.empty()) {
+    if (Backend* backend = manager.get(caps.value().preferred_backend)) {
+      if (backend->availability().available) {
+        return backend;
+      }
+    }
+  }
+  return manager.firstAvailable();
+}
+
 void keep_xmp_entries(BaseDocument& document) {
   std::vector<BaseEntry> xmp;
   for (BaseEntry& entry : document.entries) {
@@ -182,7 +199,12 @@ Result<Metadata> finish_loaded(const std::filesystem::path& media,
   }
   if (options.report_casts) {
     std::optional<Capabilities> caps;
-    if (const auto discovered = capabilities(media); discovered.ok()) {
+    if (!media.empty()) {
+      if (const auto discovered = capabilities(media); discovered.ok()) {
+        caps = discovered.value();
+      }
+    } else if (const auto discovered = capabilitiesForType(asset.file_type);
+               discovered.ok()) {
       caps = discovered.value();
     }
     const Capabilities* caps_ptr = caps ? &*caps : nullptr;
@@ -326,6 +348,71 @@ Result<LoadedRead> load_read(const std::filesystem::path& media,
   return loaded;
 }
 
+Result<LoadedRead> load_read_bytes(std::span<const std::byte> bytes,
+                                   std::string_view file_type_hint,
+                                   const ReadOptions& options) {
+  if (Result<void> stopped = checkpoint("before_backend"); !stopped.ok()) {
+    return stopped.error();
+  }
+  const std::string file_type = sniff_type_from_bytes(bytes, file_type_hint);
+  if (file_type.empty()) {
+    return Error{ErrorCode::unsupported_type,
+                 "could not determine media type from bytes", "", ""};
+  }
+
+  std::vector<std::string> selective_tags;
+  const std::vector<std::string>* selective = nullptr;
+  if (options.properties) {
+    for (const std::string& id : *options.properties) {
+      if (!registry().find(id) && !isTechnicalPropertyId(id)) {
+        return Error{ErrorCode::unknown_property, "unknown property: " + id,
+                     "", ""};
+      }
+    }
+    selective_tags = exiftool_tags_for_properties(*options.properties);
+    append_technical_source_tags(selective_tags, *options.properties);
+    if (options.upcast) {
+      append_upcast_source_tags(selective_tags, *options.upcast);
+    }
+    selective = &selective_tags;
+  }
+  SelectiveTagGuard tags(selective);
+
+  Backend* backend = select_backend_for_type(file_type, options);
+  if (!backend) {
+    if (!options.backend.empty()) {
+      return unavailable("unknown backend: " + options.backend,
+                         options.backend);
+    }
+    return unavailable("no metadata backend is available", "");
+  }
+  const BackendAvailability status = backend->availability();
+  if (!status.available) {
+    return unavailable(status.reason.empty() ? "backend is unavailable"
+                                             : status.reason,
+                       backend->id());
+  }
+
+  Result<BaseDocument> document = backend->readBase(bytes, file_type);
+  if (!document.ok()) {
+    return document.error();
+  }
+
+  LoadedRead loaded;
+  loaded.backend_id = backend->id();
+  loaded.embedded = std::move(document).value();
+  loaded.file_type = file_type;
+  if (file_type == "XMP") {
+    // A bare XMP buffer is a sidecar payload, not embedded metadata; mirror the
+    // path reader so reconciliation sees sidecar provenance (sessions 17–18).
+    keep_xmp_entries(loaded.embedded);
+    loaded.sidecar_document = std::move(loaded.embedded);
+    loaded.embedded = {};
+    loaded.has_sidecar = true;
+  }
+  return loaded;
+}
+
 }  // namespace internal
 
 Result<Metadata> read(const std::filesystem::path& media, ReadOptions options) {
@@ -338,6 +425,26 @@ Result<Metadata> read(const std::filesystem::path& media, ReadOptions options) {
     return loaded.error();
   }
   return finish_loaded(media, options, std::move(loaded).value());
+}
+
+Result<Metadata> read(std::span<const std::byte> bytes, ReadOptions options,
+                      std::string_view file_type_hint) {
+  if (Result<void> invalid = validate_read_options(options); !invalid.ok()) {
+    return invalid.error();
+  }
+  // A byte buffer has no companion file, so sidecar pairing cannot be honored.
+  if (options.sidecar_required) {
+    return Error{ErrorCode::invalid_value,
+                 "sidecar_required is not valid for an in-memory read", "", ""};
+  }
+  internal::CallGuard guard(options.cancel, options.deadline);
+  Result<internal::LoadedRead> loaded =
+      internal::load_read_bytes(bytes, file_type_hint, options);
+  if (!loaded.ok()) {
+    return loaded.error();
+  }
+  return finish_loaded(std::filesystem::path{}, options,
+                       std::move(loaded).value());
 }
 
 Result<void> readMany(

@@ -2,7 +2,10 @@
 
 #include <cstdlib>
 #include <exception>
+#include <fstream>
+#include <random>
 #include <span>
+#include <string>
 #include <string_view>
 #include <system_error>
 #include <utility>
@@ -287,6 +290,70 @@ Result<BaseDocument> precheck_media(const std::filesystem::path& media) {
                       path_to_utf8(media));
   }
   return BaseDocument{};
+}
+
+// Lowercase ASCII extension (without a dot) for a canonical file type, so the
+// private temp file carries a type hint ExifTool recognizes. ExifTool also
+// sniffs content, so an unknown type still usually parses.
+std::string temp_extension_for_type(std::string_view file_type) {
+  std::string ext;
+  ext.reserve(file_type.size());
+  for (char c : file_type) {
+    if (c >= 'A' && c <= 'Z') {
+      c = static_cast<char>(c - 'A' + 'a');
+    }
+    ext.push_back(c);
+  }
+  return ext;
+}
+
+// Create an owner-only private temp file holding `bytes`. On success returns the
+// path; the caller removes it. POSIX permissions are tightened to 0600.
+Result<std::filesystem::path> write_private_temp(std::span<const std::byte> bytes,
+                                                 std::string_view file_type) {
+  std::error_code ec;
+  const std::filesystem::path dir = std::filesystem::temp_directory_path(ec);
+  if (ec) {
+    return make_error(ErrorCode::io_write_failed,
+                      "no temp directory for byte read", ec.message());
+  }
+  const std::string ext = temp_extension_for_type(file_type);
+  std::random_device rng;
+  for (int attempt = 0; attempt < 64; ++attempt) {
+    std::string name = "umm-readbytes-";
+    name += std::to_string(static_cast<unsigned long>(rng()));
+    name += '-';
+    name += std::to_string(static_cast<unsigned long>(rng()));
+    if (!ext.empty()) {
+      name += '.';
+      name += ext;
+    }
+    std::filesystem::path candidate = dir / name;
+    if (std::filesystem::exists(candidate, ec)) {
+      continue;
+    }
+    std::ofstream out(candidate, std::ios::binary | std::ios::trunc);
+    if (!out) {
+      continue;
+    }
+    std::filesystem::permissions(
+        candidate,
+        std::filesystem::perms::owner_read | std::filesystem::perms::owner_write,
+        std::filesystem::perm_options::replace, ec);
+    if (!bytes.empty()) {
+      out.write(reinterpret_cast<const char*>(bytes.data()),
+                static_cast<std::streamsize>(bytes.size()));
+    }
+    out.close();
+    if (!out) {
+      std::filesystem::remove(candidate, ec);
+      return make_error(ErrorCode::io_write_failed,
+                        "failed to write temp file for byte read", name);
+    }
+    return candidate;
+  }
+  return make_error(ErrorCode::io_write_failed,
+                    "could not create a unique temp file for byte read", "");
 }
 
 void append_entry(BaseDocument& document, BaseKey key, const JsonValue& value) {
@@ -788,6 +855,28 @@ Result<BaseDocument> ExifToolBackend::readBase(
     return make_error(ErrorCode::internal, "unknown exception from ExifTool",
                       "");
   }
+}
+
+Result<BaseDocument> ExifToolBackend::readBase(std::span<const std::byte> bytes,
+                                              std::string_view file_type) {
+  const std::string absent = resolve();
+  if (!absent.empty()) {
+    return make_error(ErrorCode::backend_unavailable, absent, "");
+  }
+  // ExifTool has no stdin image read in -stay_open mode, so stage the buffer in
+  // a private temp file (session 75, decision S1a keeps stdin for the argfile).
+  Result<std::filesystem::path> temp = write_private_temp(bytes, file_type);
+  if (!temp.ok()) {
+    return temp.error();
+  }
+  const std::filesystem::path path = std::move(temp).value();
+  Result<BaseDocument> document = readBase(path);
+  std::error_code ec;
+  std::filesystem::remove(path, ec);  // best effort; also on error/cancel
+  if (!document.ok()) {
+    return document.error();
+  }
+  return std::move(document).value();
 }
 
 Result<std::vector<Result<BaseDocument>>> ExifToolBackend::readBaseMany(

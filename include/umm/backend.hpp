@@ -49,6 +49,7 @@
 #pragma once
 
 #include <chrono>
+#include <cstddef>
 #include <filesystem>
 #include <memory>
 #include <mutex>
@@ -111,6 +112,20 @@ class Backend {
   // Read every base entry the backend can see. Errors map to umm::Error;
   // backend exceptions/diagnostics never escape (decision M1).
   virtual Result<BaseDocument> readBase(const std::filesystem::path& media) = 0;
+
+  // Read every base entry from an in-memory buffer (session 75, decision U5).
+  // `file_type` is the container the core sniffed or the caller declared (e.g.
+  // "JPEG", "XMP"); there is no sidecar pairing. Exiv2 reads through MemIo;
+  // ExifTool writes a private, owner-only temp file and removes it afterwards,
+  // including on error. The default is unsupported for backends that only read
+  // paths. Backend exceptions never escape (decision M1).
+  virtual Result<BaseDocument> readBase(std::span<const std::byte> bytes,
+                                        std::string_view file_type) {
+    (void)bytes;
+    (void)file_type;
+    return Error{ErrorCode::unsupported_capability,
+                 "backend does not support reading from bytes", id(), ""};
+  }
 
   // Multi-file read (decision F8). Default loops readBase. ExifTool overrides
   // this and sends up to kExifToolReadBatch paths in one -execute. A returned

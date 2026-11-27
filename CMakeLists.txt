@@ -430,6 +430,21 @@ if(UMM_BUILD_TESTS)
     add_test(NAME test_compare_backend COMMAND test_compare_backend)
     umm_apply_fixture_dir_to_test(test_compare_backend)
 
+    add_executable(test_read_bytes tests/backend/test_read_bytes.cpp)
+    target_link_libraries(test_read_bytes PRIVATE umm::umm)
+    umm_apply_fixture_dir(test_read_bytes)
+    if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)
+      file(TO_CMAKE_PATH "${UMM_EXIFTOOL_SCRIPT}" UMM_TEST_READBYTES_EXIFTOOL_SCRIPT)
+      file(TO_CMAKE_PATH "${UMM_PERL_EXECUTABLE}" UMM_TEST_READBYTES_EXIFTOOL_PERL)
+      target_compile_definitions(test_read_bytes
+        PRIVATE
+          "UMM_TEST_EXIFTOOL_SCRIPT=R\"(${UMM_TEST_READBYTES_EXIFTOOL_SCRIPT})\""
+          "UMM_TEST_EXIFTOOL_PERL=R\"(${UMM_TEST_READBYTES_EXIFTOOL_PERL})\""
+      )
+    endif()
+    add_test(NAME test_read_bytes COMMAND test_read_bytes)
+    umm_apply_fixture_dir_to_test(test_read_bytes)
+
     add_executable(test_cross_media tests/backend/test_cross_media.cpp)
     target_link_libraries(test_cross_media PRIVATE umm::umm)
     target_include_directories(test_cross_media

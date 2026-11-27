@@ -6,6 +6,7 @@
 #include <mutex>
 #include <fstream>
 #include <map>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -172,9 +173,9 @@ Exiv2::Image::UniquePtr open_xmp_mem(std::vector<Exiv2::byte> bytes) {
   }
 }
 
-Exiv2::Image::UniquePtr open_image_mem(const std::filesystem::path& media) {
-  std::vector<Exiv2::byte> bytes = read_media_bytes(media);
-  if (bytes.empty() || looks_like_xmp(bytes) || path_looks_like_xmp(media)) {
+Exiv2::Image::UniquePtr open_image_from_bytes(std::vector<Exiv2::byte> bytes,
+                                              bool force_xmp) {
+  if (bytes.empty() || force_xmp || looks_like_xmp(bytes)) {
     return open_xmp_mem(std::move(bytes));
   }
   auto io = std::make_unique<Exiv2::MemIo>();
@@ -187,6 +188,11 @@ Exiv2::Image::UniquePtr open_image_mem(const std::filesystem::path& media) {
   return Exiv2::ImageFactory::open(std::move(io));
 }
 
+Exiv2::Image::UniquePtr open_image_mem(const std::filesystem::path& media) {
+  return open_image_from_bytes(read_media_bytes(media),
+                               path_looks_like_xmp(media));
+}
+
 Exiv2::Image::UniquePtr open_image(const std::filesystem::path& media) {
 #if defined(_WIN32)
   // Exiv2 0.28 FileIo::open uses ::fopen, which on Windows is the ANSI code
@@ -197,6 +203,41 @@ Exiv2::Image::UniquePtr open_image(const std::filesystem::path& media) {
 #else
   return Exiv2::ImageFactory::open(path_as_utf8(media));
 #endif
+}
+
+// Build the BaseDocument from an opened, metadata-read Exiv2 image. Shared by
+// the path and bytes readBase overloads (session 75).
+BaseDocument build_base_document(Exiv2::Image& image) {
+  BaseDocument document;
+  append_entries(document, image.exifData(), "Exif");
+  append_entries(document, image.iptcData(), "Iptc");
+  append_entries(document, image.xmpData(), "Xmp");
+  // Exiv2 0.28.9 does not expose PNG tEXt/iTXt as metadata keys. It copies
+  // only the Description keyword into the image comment.
+  if (image.mimeType() == "image/png") {
+    const std::string comment = image.comment();
+    if (!comment.empty()) {
+      BaseEntry text;
+      text.key = BaseKey{"Png", "Png.Text.Description"};
+      text.value = comment;
+      document.entries.push_back(std::move(text));
+    }
+  }
+  const auto width = image.pixelWidth();
+  const auto height = image.pixelHeight();
+  if (width > 0 && height > 0) {
+    BaseEntry pixel_width;
+    pixel_width.key = BaseKey{"File", "PixelWidth"};
+    pixel_width.type_hint = "number";
+    pixel_width.value = std::to_string(width);
+    BaseEntry pixel_height;
+    pixel_height.key = BaseKey{"File", "PixelHeight"};
+    pixel_height.type_hint = "number";
+    pixel_height.value = std::to_string(height);
+    document.intrinsics.push_back(std::move(pixel_width));
+    document.intrinsics.push_back(std::move(pixel_height));
+  }
+  return document;
 }
 
 std::string exiv2_parent_key(std::string_view key) {
@@ -439,37 +480,33 @@ class Exiv2Backend final : public Backend {
                           "Exiv2 could not open media", path_as_utf8(media));
       }
       image->readMetadata();
+      return build_base_document(*image);
+    } catch (const Exiv2::Error& error) {
+      return map_exiv2_error(error);
+    } catch (const std::exception& error) {
+      return make_error(ErrorCode::backend_failed, "Exiv2 read failed",
+                        error.what());
+    } catch (...) {
+      return make_error(ErrorCode::internal, "unknown exception from Exiv2",
+                        "");
+    }
+  }
 
-      BaseDocument document;
-      append_entries(document, image->exifData(), "Exif");
-      append_entries(document, image->iptcData(), "Iptc");
-      append_entries(document, image->xmpData(), "Xmp");
-      // Exiv2 0.28.9 does not expose PNG tEXt/iTXt as metadata keys. It copies
-      // only the Description keyword into the image comment.
-      if (image->mimeType() == "image/png") {
-        const std::string comment = image->comment();
-        if (!comment.empty()) {
-          BaseEntry text;
-          text.key = BaseKey{"Png", "Png.Text.Description"};
-          text.value = comment;
-          document.entries.push_back(std::move(text));
-        }
+  // Read from an in-memory buffer via MemIo (session 75, U5). No temp file.
+  Result<BaseDocument> readBase(std::span<const std::byte> bytes,
+                                std::string_view file_type) override {
+    ensure_exiv2_initialized();
+    std::lock_guard lock(exiv2_call_mutex());
+    try {
+      const auto* begin = reinterpret_cast<const Exiv2::byte*>(bytes.data());
+      std::vector<Exiv2::byte> data(begin, begin + bytes.size());
+      auto image = open_image_from_bytes(std::move(data), file_type == "XMP");
+      if (!image) {
+        return make_error(ErrorCode::format_unrecognized,
+                          "Exiv2 could not open media", "");
       }
-      const auto width = image->pixelWidth();
-      const auto height = image->pixelHeight();
-      if (width > 0 && height > 0) {
-        BaseEntry pixel_width;
-        pixel_width.key = BaseKey{"File", "PixelWidth"};
-        pixel_width.type_hint = "number";
-        pixel_width.value = std::to_string(width);
-        BaseEntry pixel_height;
-        pixel_height.key = BaseKey{"File", "PixelHeight"};
-        pixel_height.type_hint = "number";
-        pixel_height.value = std::to_string(height);
-        document.intrinsics.push_back(std::move(pixel_width));
-        document.intrinsics.push_back(std::move(pixel_height));
-      }
-      return document;
+      image->readMetadata();
+      return build_base_document(*image);
     } catch (const Exiv2::Error& error) {
       return map_exiv2_error(error);
     } catch (const std::exception& error) {

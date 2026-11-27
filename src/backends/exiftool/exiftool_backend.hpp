@@ -23,6 +23,8 @@ class ExifToolBackend final : public Backend {
   std::string id() const override;
   BackendAvailability availability() const override;
   Result<BaseDocument> readBase(const std::filesystem::path& media) override;
+  Result<BaseDocument> readBase(std::span<const std::byte> bytes,
+                                std::string_view file_type) override;
   Result<std::vector<Result<BaseDocument>>> readBaseMany(
       std::span<const std::filesystem::path> paths) override;
   Result<void> writeBase(const std::filesystem::path& media,

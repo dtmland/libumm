@@ -108,6 +108,21 @@ with the payload digest, returning `identical`, `metadata_only`, `payload_only`,
 `both`, or `payload_unknown`. Every libumm write on a digest-supported type keeps
 the essence intact, so a metadata rewrite compares as `metadata_only`.
 
+### Session 75 — Read from bytes
+
+`umm::read(std::span<const std::byte>, ReadOptions, std::string_view file_type_hint)`
+in `include/umm/umm.hpp` reads metadata from an in-memory buffer. The media type
+is sniffed from the leading magic bytes (shared with the path sniffer);
+`file_type_hint` disambiguates container-ambiguous bytes such as TIFF-based DNG
+and ISO-BMFF video. A byte buffer has no companion file, so no sidecar is paired
+and `sidecar_required` returns `invalid_value`. `Backend::readBase` gains a bytes
+overload: the Exiv2 backend reads the buffer in memory via `MemIo`, while the
+ExifTool backend stages it in a private, owner-only temporary file and removes it
+before returning, including on error or cancellation. A bytes read equals a path
+read of the same bytes (minus the sidecar) on both backends. This also fixes a
+latent bug where `iptc.video.keywords` (a lang-alt value) was compared as a
+string list, so two equivalent values were reported as differing.
+
 ## v0.2.0
 
 Breaking / relink required. Pre-1.0 `SOVERSION` is `0.2`. `ErrorCode` gained
