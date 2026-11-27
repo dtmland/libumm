@@ -62,6 +62,52 @@ Any ExifTool on PATH also works (for example from a distribution package, Homebr
 Windows executable packaging); the helper exists so deployments can match the pinned,
 CI-tested version exactly.
 
+## Shipping an application that links libumm
+
+This section states facts about artifacts already in the repository. It is not
+legal advice; the license texts are the authority.
+
+**Notices.** A binary that links the Exiv2 backend is GPL-3.0-governed whether
+Exiv2 is static or shared (`UMM_EXIV2_SHARED` does not change that analysis;
+see [Build options](#build-options) and `cmake/LibummExiv2.cmake`). Ship
+`THIRD-PARTY-NOTICES.md`, the texts in `licenses/` (`GPL-3.0.txt`, and the
+Expat/zlib texts those notices name), and `NOTICE.md`. `cmake --install` copies
+those files, plus `tools/build/corresponding-source.json`, under
+`share/doc/libumm/` (see [Building and installing](#building-and-installing)).
+`tests/build/test_notices.py` checks that the install prefix and the notices
+file stay in agreement.
+
+**Corresponding source.** `tools/build/corresponding-source.json` is the
+manifest. `tools/build/fetch_corresponding_source.py` retrieves the pinned
+sources it lists; `tools/build/generate_corresponding_source.py` regenerates
+the manifest from `tools/build/backends.env`. ExifTool is not in that manifest
+(`test_notices.py` asserts it is absent) because libumm does not bundle it.
+
+**Locating ExifTool.** Do not bundle it (decision S1c; `include/umm/backend.hpp`
+`ExifToolConfig`). Discovery order is an explicit `ExifToolConfig::exiftool_script`
+from application settings, then `UMM_EXIFTOOL`, then PATH. An explicit path that
+does not exist is absent — there is no fallback. Offer
+`tools/get-exiftool/install.sh` or `install.ps1` so users can fetch the pinned
+build. Windows `.exe` packaging (`exiftool.exe` / `ExifTool.exe`) is spawned
+directly and does not need Perl. A Perl script (`exiftool` without `.exe`, or
+`.pl`) runs as `perl script`; set `ExifToolConfig::perl_interpreter` or rely on
+PATH (`perl` / `perl.exe`).
+
+**Reconfiguring at runtime.** `BackendManager::configureExifTool` may be called
+any number of times, from any thread, before or after reads start
+(`include/umm/backend.hpp`). A new configuration applies to calls that start
+after it returns. In-flight calls finish on the process they already leased.
+
+**Pool sizing.** `ExifToolConfig::max_processes` (default 1) bounds stay-open
+ExifTool children. Exiv2 stays serialized regardless of that field
+(`include/umm/backend.hpp`). Raise `max_processes` only when the application
+issues concurrent ExifTool calls.
+
+**Surfacing absence.** `umm::propertyAccess` reports `AccessReason::backend_unavailable`
+when the backend that could write the property is not available; `backend` names
+it (`include/umm/capabilities.hpp`, `docs/user/guide.md` "Enabling editor controls").
+Show that reason in the UI instead of a generic failure.
+
 ## Licensing when redistributing
 
 libumm source is Apache-2.0 (provisional). Binaries that contain the statically linked Exiv2

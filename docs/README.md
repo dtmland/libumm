@@ -15,7 +15,7 @@ Documentation is organized by audience.
 ## For sysadmins (building, packaging, deploying)
 
 - [Installing and deploying libumm](sysadmin/install.md) — build, install, build options,
-  getting ExifTool, redistribution licensing, releases.
+  getting ExifTool, shipping an application, redistribution licensing, releases.
 - [Release checklist](release-checklist.md) — steps before publishing a draft release.
 
 ## For developers (working on libumm itself)

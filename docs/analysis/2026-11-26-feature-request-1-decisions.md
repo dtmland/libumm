@@ -1,7 +1,8 @@
 # Feature request 1 — decision record and session plan — 2026-11-26
 
-Status: **F1–F5 implemented in v0.2.0** (sessions 52–59). F6–F16 remain accepted
-design only. The maintainer answered OQ-F1–OQ-F6 on 2026-11-26 (§5). The same
+Status: **F1–F5 implemented in v0.2.0** (sessions 52–59). **F6** (session 60)
+and **F14** (session 71) are implemented toward v0.3.0. F7–F13 and F15–F16
+remain accepted design only. The maintainer answered OQ-F1–OQ-F6 on 2026-11-26 (§5). The same
 answers added F16 (metadata diff) and the §6 research on payload hashing. Sessions
 52–77 in [docs/implementation/](../implementation/) carry the *what*; this record
 keeps the *why*.
