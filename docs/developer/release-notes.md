@@ -87,6 +87,56 @@ only; bundled Exiv2 does not read QuickTime user data.
 flag is set. Fault points `before_file_sync` and `after_rename_sync` cover the
 flush steps.
 
+### Session 73 — Payload digest
+
+`umm::payloadDigest` in `include/umm/digest.hpp` returns a stable SHA-256 of the
+media essence for JPEG, PNG, WebP, and MP4/MOV, ignoring metadata edits. The
+`PayloadDigest::scheme` is `exiftool-imagedatahash-sha256`; libumm hashes the
+same bytes as ExifTool's `ImageDataHash`, verified by a live cross-check.
+Backend-free and thread-safe. Unsupported types return
+`unsupported_capability`; truncated containers return `format_corrupt`.
+
+### Session 74 — Metadata diff and file comparison
+
+`umm::diff` in `include/umm/diff.hpp` compares two reconciled `Metadata` sets and
+reports `added`, `removed`, and `changed` canonical properties. Pure,
+backend-free, thread-safe. It reuses reconcile's normalization, so keyword set
+order, date offsets, lang-alt formatting, and GPS within epsilon are not
+reported. `DiffOptions::base_entries` also diffs base metadata by `BaseKey`,
+flagging unmapped keys. `umm::compareFiles` reads both files and pairs the diff
+with the payload digest, returning `identical`, `metadata_only`, `payload_only`,
+`both`, or `payload_unknown`. Every libumm write on a digest-supported type keeps
+the essence intact, so a metadata rewrite compares as `metadata_only`.
+
+### Session 75 — Read from bytes
+
+`umm::read(std::span<const std::byte>, ReadOptions, std::string_view file_type_hint)`
+in `include/umm/umm.hpp` reads metadata from an in-memory buffer. The media type
+is sniffed from the leading magic bytes (shared with the path sniffer);
+`file_type_hint` disambiguates container-ambiguous bytes such as TIFF-based DNG
+and ISO-BMFF video. A byte buffer has no companion file, so no sidecar is paired
+and `sidecar_required` returns `invalid_value`. `Backend::readBase` gains a bytes
+overload: the Exiv2 backend reads the buffer in memory via `MemIo`, while the
+ExifTool backend stages it in a private, owner-only temporary file and removes it
+before returning, including on error or cancellation. A bytes read equals a path
+read of the same bytes (minus the sidecar) on both backends. This also fixes a
+latent bug where `iptc.video.keywords` (a lang-alt value) was compared as a
+string list, so two equivalent values were reported as differing.
+
+### Session 69 — Hierarchical keywords and legacy write-sync policy
+
+`hierarchicalKeywords` is a new up-only cast group that unions the leaf term
+after the last `|` of each Lightroom `lr:hierarchicalSubject` path (H6) into
+`iptc.photo.keywords` (H4 union: existing order kept, missing leaves appended,
+duplicates dropped). It completes the five legacy/container up-cast groups
+(`windowsXP`, `exifUserComment`, `pngText`, `quickTimeUserData`,
+`hierarchicalKeywords`). A matching test proves the F12 write-sync policy: a
+canonical write leaves `lr:hierarchicalSubject`, the `XP*` tags, PNG text, and
+QuickTime user data byte-for-byte unchanged, so disagreement stays visible as a
+cast candidate rather than being silently rewritten. The leaf match is
+case-insensitive because the Exiv2 and ExifTool adapters capitalize the
+`HierarchicalSubject` tag differently.
+
 ## v0.2.0
 
 Breaking / relink required. Pre-1.0 `SOVERSION` is `0.2`. `ErrorCode` gained

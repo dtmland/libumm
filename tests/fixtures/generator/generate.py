@@ -75,6 +75,9 @@ TRUNCATE_BYTES = 64
 PURPOSES = {
     "jpeg/minimal.jpg": "No metadata at all — read returns empty, write starts from scratch",
     "jpeg/windows-xp.jpg": "Windows XP* tags and UserComment for legacy text upcasts",
+    "jpeg/hierarchical-keywords.jpg": (
+        "Lightroom lr:hierarchicalSubject plus flat dc:subject for the hierarchicalKeywords union upcast"
+    ),
     "jpeg/windows-xp-kept.jpg": (
         "XMP title differs from XPTitle so title stays needs_force while description fills"
     ),
@@ -1670,6 +1673,23 @@ def generate(
                 ("XMP-dc:Title", "Kept title"),
                 ("IFD0:XPTitle", "XP title"),
                 ("IFD0:XPComment", "Filled description"),
+            ],
+        ),
+    )
+    add(
+        "jpeg/hierarchical-keywords.jpg",
+        make_jpeg(
+            tool,
+            base,
+            output_dir / "jpeg/hierarchical-keywords.jpg",
+            [
+                # Lightroom "export containing keywords" layout: parents are
+                # also flattened into dc:subject, so the union must dedupe.
+                ("XMP-dc:Subject", "alpha"),
+                ("XMP-dc:Subject", "beta"),
+                ("XMP-lr:HierarchicalSubject", "Places|France|Paris"),
+                ("XMP-lr:HierarchicalSubject", "Nature|Tree"),
+                ("XMP-lr:HierarchicalSubject", "alpha"),
             ],
         ),
     )

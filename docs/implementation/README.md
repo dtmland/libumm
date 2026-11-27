@@ -77,13 +77,13 @@ that can share a sitting and a suggested order. Sessions 52–59 ship as v0.2.0,
 | [66](66-technical-view-values.md) | Technical view: photo and video values | U2 | 64, 65 | done |
 | [67](67-legacy-text-casts.md) | Legacy EXIF text casts | U12 | 63 | done |
 | [68](68-container-text-casts.md) | Container text casts | U12 | 63 (after 67) | done |
-| [69](69-hierarchical-keywords.md) | Hierarchical keywords and legacy write-sync policy | U12 | 67, 68 | planned |
+| [69](69-hierarchical-keywords.md) | Hierarchical keywords and legacy write-sync policy | U12 | 67, 68 | done |
 | [70](70-people-regions.md) | People regions read cast and guidance | U13 | 63 | planned |
 | [71](71-durable-writes.md) | Durable write option | U11 | — | done |
 | [72](72-application-packaging-guide.md) | Application packaging and ExifTool guide | U7 | 52, 54 | done |
-| [73](73-payload-digest.md) | Payload digest (ExifTool `ImageDataHash`-compatible) | U14 | — | planned |
-| [74](74-metadata-diff.md) | Metadata diff and file comparison | U14 (F16) | 73 | planned |
-| [75](75-read-from-bytes.md) | Read from bytes | U5 | 52 | planned |
+| [73](73-payload-digest.md) | Payload digest (ExifTool `ImageDataHash`-compatible) | U14 | — | done |
+| [74](74-metadata-diff.md) | Metadata diff and file comparison | U14 (F16) | 73 | done |
+| [75](75-read-from-bytes.md) | Read from bytes | U5 | 52 | done |
 | [76](76-more-type-mappings.md) | Read mappings and sidecars for BMP, MKV, AVI, WAV, ASF | U6 | 64 | planned |
 | [77](77-feature-request-1-verification.md) | v0.3.0 verification, doc audit, release | all | 60–76 | planned |
 

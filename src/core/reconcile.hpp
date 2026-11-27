@@ -26,4 +26,10 @@ Result<Metadata> reconcile(const BaseDocument& document,
                            std::vector<ConflictEntry>* disagreements = nullptr,
                            const std::vector<std::string>* only_ids = nullptr);
 
+// Normalization-aware value comparison shared with diff (session 74, F16):
+// values that reconcile treats as agreeing (date offsets, keyword set order,
+// lang-alt, GPS epsilon, ...) compare equal here. Defined in reconcile.cpp.
+bool values_equivalent(std::string_view property_id, const Value& a,
+                       const Value& b);
+
 }  // namespace umm::internal

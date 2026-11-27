@@ -50,3 +50,31 @@ F15 (U14) and the decision record §6 (payload-hash research). Dependency rule i
 
 - Digest stable across every libumm write on supported types; changes on essence edits.
 - `exiftool-*` scheme digests equal ExifTool's `ImageDataHash` (SHA256) on `tier-b`.
+
+## Implementation notes (byte ranges and scheme)
+
+All four supported containers hash the same bytes as ExifTool's `ImageDataHash`,
+so every type uses the scheme string `exiftool-imagedatahash-sha256`. No type
+needed a `umm-payload-v1-sha256` fallback. Confirmed against the pinned ExifTool
+(`exiftool -api ImageHashType=SHA256 -ImageDataHash`) for every Tier A fixture in
+`tests/backend/test_digest_backend.cpp`.
+
+- **JPEG** (`ExifTool.pm`): each scan is hashed from its `SOS` marker (`FF DA`)
+  through the entropy-coded data, including embedded restart markers (`FF D0`–`FF
+  D7`) and `FF 00` byte stuffing, up to but not including the next non-scan
+  marker. Length-prefixed segments (APPn, DQT, DHT, SOFn, COM) are skipped, so
+  interleaved tables in a progressive file are excluded; `EOI` (`FF D9`) ends the
+  walk and is not hashed.
+- **PNG** (`PNG.pm` `%isDatChunk`): the data payload (excluding the 4-byte
+  length, 4-byte type, and 4-byte CRC) of every `IDAT`, `JDAT`, and `JDAA` chunk.
+- **WebP / RIFF** (`RIFF.pm` `%isImageData`): the chunk data, including the
+  trailing pad byte when the length is odd, of the image-data chunks `VP8 `,
+  `VP8L`, `ALPH`, `ANIM`, and `ANMF`.
+- **MP4 / MOV** (`QuickTimeStream.pl` `ProcessSamples`): the sample data of every
+  `vide` and `soun` track, read chunk by chunk, in `trak` file order, into one
+  digest. Per-chunk size is the sum of its sample sizes (`stsc` + `stsz`/`stz2`);
+  chunk offsets come from `stco`/`co64` (64-bit offsets supported).
+
+Scheme-versioning rule: the scheme string encodes this byte-range definition, so
+any change to what is hashed must bump the string; digests only compare within a
+scheme.

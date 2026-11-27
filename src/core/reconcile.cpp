@@ -1048,6 +1048,11 @@ std::optional<Group> boolean_group(const BaseDocument& document,
   return group;
 }
 
+}  // namespace
+
+// Shared with src/core/diff.cpp (session 74): the normalization-aware value
+// comparison reconcile uses, so diff reports nothing for differences that
+// reconcile treats as agreeing. Declared in reconcile.hpp.
 bool values_equivalent(std::string_view property_id, const Value& a,
                        const Value& b) {
   if (property_id == kDateCreated || property_id == kVideoDateCreated) {
@@ -1055,7 +1060,7 @@ bool values_equivalent(std::string_view property_id, const Value& a,
     const auto* db = std::get_if<DateTime>(&b.data);
     return da && db && datetime_equivalent(*da, *db);
   }
-  if (property_id == kKeywords || property_id == kVideoKeywords) {
+  if (property_id == kKeywords) {
     const auto* la = std::get_if<std::vector<std::string>>(&a.data);
     const auto* lb = std::get_if<std::vector<std::string>>(&b.data);
     return la && lb && list_equal_set(*la, *lb);
@@ -1164,6 +1169,8 @@ bool values_equivalent(std::string_view property_id, const Value& a,
   }
   return a == b;
 }
+
+namespace {
 
 Value merge_values(std::string_view property_id, Value a, const Value& b) {
   if (property_id == kDateCreated || property_id == kVideoDateCreated) {

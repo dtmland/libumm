@@ -41,6 +41,26 @@ auto report = umm::write("photo.jpg", m);      // atomic, write-synchronized
 - `umm::describe` returns the property map (representations, casts, cross-media partner);
   pass a file to fill values and cast statuses. See [Exploring a property](#exploring-a-property).
 
+## Reading from memory
+
+When the bytes are already in memory — a download buffer, a database blob, an archive
+member — read them without staging a file first:
+
+```cpp
+std::vector<std::byte> buffer = fetch_bytes();            // your bytes
+auto meta = umm::read(buffer);                            // type sniffed from magic
+auto dng  = umm::read(buffer, {}, "DNG");                 // hint disambiguates TIFF-based types
+```
+
+- The media type is sniffed from the leading magic bytes. Pass `file_type_hint` (a canonical
+  file type such as `"DNG"`, `"MP4"`, or `"MOV"`) to disambiguate container-ambiguous bytes;
+  it is ignored when the magic alone is decisive.
+- A byte buffer has no companion file, so no `.xmp` sidecar is paired. `ReadOptions` otherwise
+  behaves as in `umm::read(path)`; setting `sidecar_required` returns `invalid_value`.
+- The result matches a path read of the same bytes (minus the sidecar). The Exiv2 backend reads
+  the buffer in memory; the ExifTool backend stages it in a private, owner-only temporary file
+  and removes it before returning, including on error or cancellation.
+
 ## Fast scans
 
 A library scan often needs only a few properties. Set `ReadOptions::properties`
@@ -224,6 +244,22 @@ without an offset stays without an offset. These groups are up-only: writing
 the canonical property does not update or remove the legacy or container text.
 An existing canonical value is left unchanged. Exiv2 reads PNG Description
 only, and does not read QuickTime user data in the bundled build.
+
+`hierarchicalKeywords` fills photo keywords from Lightroom's
+`lr:hierarchicalSubject`. The leaf term after the last `|` of each path
+(`Places|France|Paris` → `Paris`) is unioned into `iptc.photo.keywords`:
+existing keywords keep their order, missing leaves are appended, and duplicates
+are dropped. It is up-only — a canonical keyword write never updates or removes
+`lr:hierarchicalSubject`.
+
+**Importing an existing library.** When you ingest files written by other tools,
+enable the legacy up-cast groups together — `windowsXP`, `exifUserComment`,
+`pngText`, `quickTimeUserData`, and `hierarchicalKeywords` — so established
+Windows, PNG, QuickTime, and Lightroom carriers surface as canonical
+properties. They are read-only: libumm never writes back to those carriers
+(see the write-sync policy in
+[reconciliation-policy.md](../reconciliation-policy.md)), so any disagreement
+stays visible as a cast candidate rather than being silently rewritten.
 
 Cast-rule sources appear in `dumpUnmapped()` with `BaseEntry::cast_source`.
 
@@ -456,6 +492,67 @@ A flush failure before the rename leaves the original byte-identical. A flush
 failure after the rename returns `io_write_failed`; the new bytes are already
 in place. Power loss is not tested in CI — the guarantee is this syscall
 sequence (`src/core/atomic_write.cpp`).
+
+## Duplicate detection
+
+`umm::payloadDigest(path)` returns a stable hash of the media essence — the
+pixels or samples — that ignores metadata edits. Two files whose titles,
+keywords, GPS, or other metadata differ but whose picture or video content is
+identical share one digest, which makes it a reliable duplicate-detection key.
+
+```cpp
+umm::Result<umm::PayloadDigest> digest = umm::payloadDigest("photo.jpg");
+if (digest.ok()) {
+  // digest.value().hex is a lowercase SHA-256; group files by it.
+}
+```
+
+Supported containers are JPEG, PNG, WebP, and MP4/MOV. Other types return
+`ErrorCode::unsupported_capability`; a truncated or malformed file returns
+`ErrorCode::format_corrupt`. The call is backend-free and thread-safe: it does
+not start ExifTool or take a metadata lock, and it never changes the file.
+
+`PayloadDigest::scheme` names both the hash and the exact byte-range definition.
+For every supported type libumm hashes the same bytes as ExifTool's
+`ImageDataHash`, so the scheme is `exiftool-imagedatahash-sha256` and the hex
+equals `exiftool -api ImageHashType=SHA256 -ImageDataHash`. Thumbnails and
+previews are excluded. Compare digests only within the same scheme: if a future
+release changes which bytes are hashed, the scheme string changes too, so old
+and new digests never silently compare as different content.
+
+## Comparing files
+
+`umm::compareFiles(a, b)` reads and reconciles both files, then reports whether
+they differ in metadata, in essence, or both. It pairs the canonical diff with
+the payload digest (see [Duplicate detection](#duplicate-detection)) so you can
+tell a metadata-only edit from a content change.
+
+```cpp
+umm::Result<umm::FileComparison> cmp = umm::compareFiles("a.jpg", "b.jpg");
+if (cmp.ok()) {
+  switch (cmp.value().kind) {
+    case umm::ComparisonKind::identical:       /* same metadata and essence */ break;
+    case umm::ComparisonKind::metadata_only:   /* only metadata differs */ break;
+    case umm::ComparisonKind::payload_only:    /* only essence differs */ break;
+    case umm::ComparisonKind::both:            /* metadata and essence differ */ break;
+    case umm::ComparisonKind::payload_unknown: /* a type has no digest */ break;
+  }
+}
+```
+
+Every libumm write on a digest-supported type keeps the essence bytes intact, so
+rewriting metadata and comparing yields `metadata_only`. `payload_unknown` means
+at least one file is a type with no payload digest (for example TIFF), or the two
+digests use different schemes; the `metadata` diff is still filled in those
+cases. Pass `CompareOptions::read` to apply specific `ReadOptions` to both reads.
+
+For comparing two in-memory reads without touching the filesystem, call
+`umm::diff(a, b)`. It is pure, backend-free, and thread-safe, and it reports
+`added`, `removed`, and `changed` canonical properties. Differences that
+reconciliation treats as equivalent — keyword set order, date-time offsets,
+language-alternative formatting, GPS within epsilon — are not reported. Set
+`DiffOptions::base_entries` to also diff base-metadata entries by `BaseKey`, with
+entries that no canonical property consumed flagged as unmapped.
 
 ## Enabling editor controls
 

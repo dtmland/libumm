@@ -423,6 +423,14 @@ Lens model. Intentionally non-canonical.
 |---|---|---|---|---|
 | `videoTechnical` | up | [`iptc.video.audioSampleRate`](video.md#iptc.video.audioSampleRate) | H11 — Units / encodings; 1e-5° / 0.5 m | Exiv2 synthetic Xmp.audio.SampleRate; cast source only, never written |
 
+<a id="Xmp.lr.hierarchicalSubject"></a>
+
+## `Xmp.lr.hierarchicalSubject`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `hierarchicalKeywords` | up | [`iptc.photo.keywords`](photo.md#iptc.photo.keywords) | H6 — Hierarchical ↔ flat (later) | lr:hierarchicalSubject leaf term after the last '\|' (H6), then union with existing keywords (H4). The cast schema has no separator field; '\|' is fixed in the citation. |
+
 <a id="Xmp.video.Codec"></a>
 
 ## `Xmp.video.Codec`

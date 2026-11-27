@@ -17,6 +17,8 @@
 #include "umm/cancel.hpp"
 #include "umm/capabilities.hpp"
 #include "umm/describe.hpp"
+#include "umm/diff.hpp"
+#include "umm/digest.hpp"
 #include "umm/metadata.hpp"
 #include "umm/registry.hpp"
 #include "umm/result.hpp"
@@ -161,6 +163,15 @@ std::optional<std::filesystem::path> findSidecar(
 // read from the generated source table. A selective list fills only the
 // technical.* ids it names; other technical fields stay absent.
 Result<Metadata> read(const std::filesystem::path& media, ReadOptions options = {});
+
+// Read metadata from an in-memory buffer instead of a file (session 75).
+// file_type_hint disambiguates container-ambiguous bytes (e.g. DNG vs TIFF,
+// MOV vs MP4); when empty the type is sniffed from magic bytes. There is no
+// companion file, so sidecar pairing does not occur and ReadOptions with
+// sidecar_required set returns invalid_value. The ExifTool backend stages the
+// buffer in a private temporary file; the Exiv2 backend reads it in memory.
+Result<Metadata> read(std::span<const std::byte> bytes, ReadOptions options = {},
+                      std::string_view file_type_hint = {});
 
 // Stream one result per path, on the calling thread, in input order
 // (decision F8). Per-file errors go to the callback. The return fails only
