@@ -1,0 +1,26 @@
+{
+  "id": "exifUserComment",
+  "direction": "up",
+  "partial": true,
+  "approximate": true,
+  "one_way": true,
+  "citation": "F12, C10, H16; EXIF UserComment is not a description representation. Applied only when the group is requested.",
+  "source_priority": [
+    "user_comment"
+  ],
+  "rules": [
+    {
+      "id": "user_comment",
+      "source": {
+        "kind": "base_key",
+        "key": "Exif.Photo.UserComment"
+      },
+      "target": {
+        "kind": "property",
+        "key": "iptc.photo.description"
+      },
+      "heuristic": "H16",
+      "citation": "UserComment charset prefix to lang-alt x-default. Approximate (H16); a nonempty description is not replaced unless force."
+    }
+  ]
+}

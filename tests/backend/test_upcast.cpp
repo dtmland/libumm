@@ -36,6 +36,18 @@ std::vector<std::uint8_t> file_bytes(const std::filesystem::path& path) {
   return {std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>()};
 }
 
+std::string lang_default(const std::optional<umm::PropertyValue>& property) {
+  if (!property) {
+    return {};
+  }
+  const auto* alt = std::get_if<umm::LangAlt>(&property->value.data);
+  if (!alt) {
+    return {};
+  }
+  const auto it = alt->find("x-default");
+  return it == alt->end() ? std::string{} : it->second;
+}
+
 const umm::DateTime* as_dt(const std::optional<umm::PropertyValue>& property) {
   if (!property) {
     return nullptr;
@@ -358,6 +370,213 @@ int check_exiv2_gap() {
   return 0;
 }
 
+int check_windows_xp(const char* backend) {
+  const auto path = raw_stem("jpeg", "windows-xp", ".jpg");
+  const auto before = file_bytes(path);
+  umm::ReadOptions options;
+  options.backend = backend;
+  options.report_casts = true;
+  options.upcast = std::vector<std::string>{"windowsXP", "exifUserComment"};
+  const auto read = umm::read(path, options);
+  if (!read.ok()) {
+    std::fprintf(stderr, "windows xp %s: %s\n", backend, read.error().message.c_str());
+    return 1;
+  }
+  if (file_bytes(path) != before) {
+    return fail("windows xp upcast modified the file");
+  }
+  if (lang_default(read.value().get("iptc.photo.title")) != "Caf\xC3\xA9 Title") {
+    return fail("windows xp title");
+  }
+  if (lang_default(read.value().get("iptc.photo.description")) != "Photo comment") {
+    return fail("windows xp description");
+  }
+  const auto keywords = read.value().get("iptc.photo.keywords");
+  const auto* words =
+      keywords ? std::get_if<std::vector<std::string>>(&keywords->value.data)
+               : nullptr;
+  if (!words || words->size() != 2) {
+    return fail("windows xp keywords");
+  }
+  const auto creators = read.value().get("iptc.photo.creator");
+  const auto* names =
+      creators ? std::get_if<std::vector<std::string>>(&creators->value.data)
+               : nullptr;
+  if (!names || names->size() != 2) {
+    return fail("windows xp creator");
+  }
+  const auto title = read.value().get("iptc.photo.title");
+  if (!title || !has_cast_source(*title, "windowsXP") ||
+      title->preferred_source != "Exif.Image.XPTitle") {
+    return fail("windows xp provenance");
+  }
+  bool listed = false;
+  for (const umm::CastCandidate& candidate : read.value().castCandidates()) {
+    if (candidate.group == "windowsXP") {
+      listed = true;
+    }
+  }
+  if (!listed) {
+    return fail("castCandidates must list windowsXP");
+  }
+  return 0;
+}
+
+int check_windows_xp_kept(const char* backend) {
+  umm::ReadOptions options;
+  options.backend = backend;
+  options.upcast = std::vector<std::string>{"windowsXP"};
+  options.report_casts = true;
+  const auto read = umm::read(raw_stem("jpeg", "windows-xp-kept", ".jpg"), options);
+  if (!read.ok()) {
+    std::fprintf(stderr, "windows xp kept %s: %s\n", backend,
+                 read.error().message.c_str());
+    return 1;
+  }
+  if (lang_default(read.value().get("iptc.photo.title")) != "Kept title") {
+    return fail("existing XMP title must win");
+  }
+  if (lang_default(read.value().get("iptc.photo.description")) !=
+      "Filled description") {
+    return fail("kept title must not block description");
+  }
+  bool needs = false;
+  for (const umm::CastCandidate& candidate : read.value().castCandidates()) {
+    if (candidate.target_id == "iptc.photo.title" &&
+        candidate.status == umm::CastStatus::needs_force) {
+      needs = true;
+    }
+  }
+  if (!needs) {
+    return fail("kept title must be needs_force");
+  }
+  return 0;
+}
+
+int check_windows_xp_selective(const char* backend) {
+  umm::ReadOptions options;
+  options.backend = backend;
+  options.properties = std::vector<std::string>{"iptc.photo.title"};
+  options.upcast = std::vector<std::string>{"windowsXP"};
+  const auto read = umm::read(raw_stem("jpeg", "windows-xp", ".jpg"), options);
+  if (!read.ok()) {
+    return fail("selective windows xp");
+  }
+  if (!read.value().dumpAll().empty() || !read.value().dumpUnmapped().empty()) {
+    return fail("selective windows xp dumps");
+  }
+  if (lang_default(read.value().get("iptc.photo.title")).empty()) {
+    return fail("selective windows xp missed title");
+  }
+  if (read.value().get("iptc.photo.keywords")) {
+    return fail("selective windows xp applied keywords");
+  }
+  return 0;
+}
+
+int check_png_text(const char* backend) {
+  const auto path = raw_stem("png", "text-chunks", ".png");
+  const auto before = file_bytes(path);
+  umm::ReadOptions options;
+  options.backend = backend;
+  options.upcast = std::vector<std::string>{"pngText"};
+  const auto read = umm::read(path, options);
+  if (!read.ok()) {
+    std::fprintf(stderr, "png text %s: %s\n", backend, read.error().message.c_str());
+    return 1;
+  }
+  if (file_bytes(path) != before) {
+    return fail("png text upcast modified the file");
+  }
+  if (std::string(backend) == "exiftool") {
+    if (lang_default(read.value().get("iptc.photo.title")) != "PNG Title" ||
+        lang_default(read.value().get("iptc.photo.description")) !=
+            "PNG Description" ||
+        lang_default(read.value().get("iptc.photo.copyrightNotice")) !=
+            "PNG Copyright") {
+      return fail("exiftool png text");
+    }
+    const auto creators = read.value().get("iptc.photo.creator");
+    const auto* names =
+        creators ? std::get_if<std::vector<std::string>>(&creators->value.data)
+                 : nullptr;
+    if (!names || names->size() != 1 || (*names)[0] != "PNG Author") {
+      return fail("exiftool png author");
+    }
+  } else if (lang_default(read.value().get("iptc.photo.description")) !=
+                 "PNG Description" ||
+             read.value().get("iptc.photo.title")) {
+    return fail("exiv2 png text is description only");
+  }
+  umm::ReadOptions unicode;
+  unicode.backend = backend;
+  unicode.upcast = std::vector<std::string>{"pngText"};
+  const auto itxt = umm::read(raw_stem("png", "text-itxt", ".png"), unicode);
+  if (!itxt.ok()) {
+    return fail("png itxt read");
+  }
+  if (std::string(backend) == "exiftool" &&
+      lang_default(itxt.value().get("iptc.photo.title")) != "T\xC3\xADtulo") {
+    return fail("png itxt title");
+  }
+  return 0;
+}
+
+int check_user_data(const char* backend) {
+  if (std::string(backend) != "exiftool") {
+    return 0;
+  }
+  const auto path = raw_stem("video", "user-data", ".mov");
+  const auto before = file_bytes(path);
+  umm::ReadOptions options;
+  options.backend = backend;
+  options.upcast = std::vector<std::string>{"quickTimeUserData"};
+  const auto read = umm::read(path, options);
+  if (!read.ok()) {
+    std::fprintf(stderr, "user data %s: %s\n", backend, read.error().message.c_str());
+    return 1;
+  }
+  if (file_bytes(path) != before) {
+    return fail("user data upcast modified the file");
+  }
+  if (lang_default(read.value().get("iptc.video.title")) != "UD title" ||
+      lang_default(read.value().get("iptc.video.description")) != "UD description") {
+    return fail("user data text");
+  }
+  const auto date = as_dt(read.value().get("iptc.video.dateCreated"));
+  if (!date || date->year != 2020 || date->month != 1 || date->day != 2) {
+    return fail("user data date");
+  }
+  if (date->utc_offset_minutes && *date->utc_offset_minutes != 0) {
+    return fail("user data date invented a nonzero offset");
+  }
+  const auto* people = as_structs(read.value().get("iptc.video.creator"));
+  if (!people || people->size() != 1) {
+    return fail("user data artist");
+  }
+  const auto mp4 = umm::read(raw_stem("video", "user-data", ".mp4"), options);
+  if (!mp4.ok() || lang_default(mp4.value().get("iptc.video.title")) != "UD title") {
+    return fail("user data mp4");
+  }
+  return 0;
+}
+
+int check_exiv2_text_gaps() {
+  umm::Backend* exiv2 = umm::BackendManager::instance().get("exiv2");
+  if (!exiv2 || !exiv2->availability().available) {
+    return 0;
+  }
+  umm::ReadOptions options;
+  options.backend = "exiv2";
+  options.upcast = std::vector<std::string>{"quickTimeUserData"};
+  const auto read = umm::read(raw_stem("video", "user-data", ".mov"), options);
+  if (read.ok() && (read.value().get("iptc.video.title") ||
+                    read.value().get("iptc.video.dateCreated"))) {
+    return fail("bundled Exiv2 must not report user-data text");
+  }
+  return 0;
+}
+
 int check_rejected() {
   umm::ReadOptions options;
   options.upcast = std::vector<std::string>{"not-a-group"};
@@ -383,8 +602,19 @@ int main() {
   if (check_rejected() != 0 || check_iphone("exiftool") != 0 ||
       check_gopro("exiftool") != 0 || check_selective("exiftool") != 0 ||
       check_write_follows("exiftool") != 0 ||
-      check_technical("exiftool") != 0 || check_exiv2_gap() != 0) {
+      check_technical("exiftool") != 0 || check_exiv2_gap() != 0 ||
+      check_windows_xp("exiftool") != 0 || check_windows_xp_kept("exiftool") != 0 ||
+      check_windows_xp_selective("exiftool") != 0 ||
+      check_png_text("exiftool") != 0 || check_user_data("exiftool") != 0) {
     return 1;
+  }
+  umm::Backend* exiv2 = umm::BackendManager::instance().get("exiv2");
+  if (exiv2 && exiv2->availability().available) {
+    if (check_windows_xp("exiv2") != 0 || check_windows_xp_kept("exiv2") != 0 ||
+        check_windows_xp_selective("exiv2") != 0 || check_png_text("exiv2") != 0 ||
+        check_exiv2_text_gaps() != 0) {
+      return 1;
+    }
   }
   return 0;
 }

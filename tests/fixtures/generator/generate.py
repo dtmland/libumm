@@ -74,6 +74,10 @@ TRUNCATE_BYTES = 64
 # test-media-plan.md §2.2 — purpose text is copied into MANIFEST.md.
 PURPOSES = {
     "jpeg/minimal.jpg": "No metadata at all — read returns empty, write starts from scratch",
+    "jpeg/windows-xp.jpg": "Windows XP* tags and UserComment for legacy text upcasts",
+    "jpeg/windows-xp-kept.jpg": (
+        "XMP title differs from XPTitle so title stays needs_force while description fills"
+    ),
     "jpeg/exif-only.jpg": "EXIF without IPTC/XMP",
     "jpeg/iptc-only.jpg": "IPTC-IIM without EXIF/XMP",
     "jpeg/xmp-only.jpg": "XMP without EXIF/IPTC",
@@ -122,6 +126,8 @@ PURPOSES = {
     "png/gps.png": (
         "XMP GPS + ExifTool-written EXIF GPS (Exiv2 is EXIF-blind on PNG)"
     ),
+    "png/text-chunks.png": "Latin PNG tEXt keywords for the pngText upcast",
+    "png/text-itxt.png": "Unicode PNG iTXt keywords for the pngText upcast",
     "webp/minimal.webp": "No metadata at all — read returns empty, write starts from scratch",
     "webp/xmp-only.webp": "XMP without EXIF/IPTC (both backends)",
     "webp/full-agreeing.webp": (
@@ -140,6 +146,8 @@ PURPOSES = {
         "All three blocks, values agree — DNG reconciliation \"equivalent\" path"
     ),
     "video/minimal.mp4": "No metadata at all — read returns empty, write starts from scratch",
+    "video/user-data.mp4": "QuickTime user-data text atoms for the quickTimeUserData upcast",
+    "video/user-data.mov": "QuickTime user-data text atoms for the quickTimeUserData upcast",
     "video/minimal.mov": "No metadata at all — MOV container counterpart of video/minimal.mp4",
     "video/full.mp4": (
         "QuickTime keys + XMP agree — video reconciliation \"equivalent\" path"
@@ -1635,6 +1643,88 @@ def generate(
     if gopro_extra:
         gopro_commands.append(logical_command(rel_args(gopro_extra, output_dir)))
     add("video/gopro-style.mp4", gopro_commands)
+
+    add(
+        "jpeg/windows-xp.jpg",
+        make_jpeg(
+            tool,
+            base,
+            output_dir / "jpeg/windows-xp.jpg",
+            [
+                ("IFD0:XPTitle", "Café Title"),
+                ("IFD0:XPComment", "Photo comment"),
+                ("IFD0:XPSubject", "Photo comment"),
+                ("IFD0:XPKeywords", "alpha; beta"),
+                ("IFD0:XPAuthor", "Ada; Grace"),
+                ("ExifIFD:UserComment", "User note"),
+            ],
+        ),
+    )
+    add(
+        "jpeg/windows-xp-kept.jpg",
+        make_jpeg(
+            tool,
+            base,
+            output_dir / "jpeg/windows-xp-kept.jpg",
+            [
+                ("XMP-dc:Title", "Kept title"),
+                ("IFD0:XPTitle", "XP title"),
+                ("IFD0:XPComment", "Filled description"),
+            ],
+        ),
+    )
+    add(
+        "png/text-chunks.png",
+        make_image(
+            tool,
+            png_base,
+            output_dir / "png/text-chunks.png",
+            [
+                ("PNG:Title", "PNG Title"),
+                ("PNG:Author", "PNG Author"),
+                ("PNG:Description", "PNG Description"),
+                ("PNG:Copyright", "PNG Copyright"),
+            ],
+        ),
+    )
+    add(
+        "png/text-itxt.png",
+        make_image(
+            tool,
+            png_base,
+            output_dir / "png/text-itxt.png",
+            [
+                ("PNG:Title", "Título"),
+                ("PNG:Description", "Descripción"),
+            ],
+        ),
+    )
+    user_data_tags = [
+        ("UserData:Title", "UD title"),
+        ("UserData:Artist", "UD Artist"),
+        ("UserData:Description", "UD description"),
+        ("UserData:ContentCreateDate", "2020:01:02 03:04:05"),
+    ]
+    add(
+        "video/user-data.mp4",
+        make_video(
+            tool,
+            ffmpeg,
+            output_dir / "video/user-data.mp4",
+            user_data_tags,
+            "mp4",
+        ),
+    )
+    add(
+        "video/user-data.mov",
+        make_video(
+            tool,
+            ffmpeg,
+            output_dir / "video/user-data.mov",
+            user_data_tags,
+            "mov",
+        ),
+    )
 
     copy_hand_authored_tracks(output_dir)
     for relpath in TRACK_FILES:

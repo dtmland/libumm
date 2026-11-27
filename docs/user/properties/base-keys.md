@@ -47,6 +47,46 @@ Camera model. Intentionally non-canonical (C17).
 |---|---|---|---|---|
 | `recordingDevice` | up | [`iptc.video.recordingDevice`](video.md#iptc.video.recordingDevice)`[0].modelName` | H8 — Struct ↔ scalar: field-level merge | EXIF IFD0 Model |
 
+<a id="Exif.Image.XPAuthor"></a>
+
+## `Exif.Image.XPAuthor`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `windowsXP` | up | [`iptc.photo.creator`](photo.md#iptc.photo.creator) | H5 — Joined string ↔ list | XPAuthor split on semicolon (H5). The cast schema has no separator field; ';' is fixed in the citation. |
+
+<a id="Exif.Image.XPComment"></a>
+
+## `Exif.Image.XPComment`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `windowsXP` | up | [`iptc.photo.description`](photo.md#iptc.photo.description) | H7 — lang-alt ↔ string via `x-default` | XPComment before XPSubject (H17); lang-alt x-default (H7) |
+
+<a id="Exif.Image.XPKeywords"></a>
+
+## `Exif.Image.XPKeywords`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `windowsXP` | up | [`iptc.photo.keywords`](photo.md#iptc.photo.keywords) | H5 — Joined string ↔ list | XPKeywords split on semicolon (H5). The cast schema has no separator field; ';' is fixed in the citation. |
+
+<a id="Exif.Image.XPSubject"></a>
+
+## `Exif.Image.XPSubject`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `windowsXP` | up | [`iptc.photo.description`](photo.md#iptc.photo.description) | H17 — Sources disagree: first non-empty in group priority | XPSubject fills description only when XPComment is empty; disagreement is reported (H17) |
+
+<a id="Exif.Image.XPTitle"></a>
+
+## `Exif.Image.XPTitle`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `windowsXP` | up | [`iptc.photo.title`](photo.md#iptc.photo.title) | H7 — lang-alt ↔ string via `x-default` | XPTitle UCS-2LE to lang-alt x-default (H7) |
+
 <a id="Exif.Photo.BodySerialNumber"></a>
 
 ## `Exif.Photo.BodySerialNumber`
@@ -64,6 +104,14 @@ Lens model. Intentionally non-canonical.
 | Group | Direction | Canonical partner | Heuristic | Citation |
 |---|---|---|---|---|
 | `recordingDevice` | up | [`iptc.video.recordingDevice`](video.md#iptc.video.recordingDevice)`[0].attLensDescription` | H8 — Struct ↔ scalar: field-level merge | EXIF LensModel |
+
+<a id="Exif.Photo.UserComment"></a>
+
+## `Exif.Photo.UserComment`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `exifUserComment` (approximate) | up | [`iptc.photo.description`](photo.md#iptc.photo.description) | H16 — Semantic near-miss: `approximate` | UserComment charset prefix to lang-alt x-default. Approximate (H16); a nonempty description is not replaced unless force. |
 
 <a id="ExifTool.Composite.Rotation"></a>
 
@@ -88,6 +136,38 @@ Lens model. Intentionally non-canonical.
 | Group | Direction | Canonical partner | Heuristic | Citation |
 |---|---|---|---|---|
 | `recordingDevice` | up | [`iptc.video.recordingDevice`](video.md#iptc.video.recordingDevice)`[0].modelName` | H8 — Struct ↔ scalar: field-level merge | C19 GoPro Model |
+
+<a id="ExifTool.PNG.Author"></a>
+
+## `ExifTool.PNG.Author`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `pngText` | up | [`iptc.photo.creator`](photo.md#iptc.photo.creator) | H5 — Joined string ↔ list | PNG Author split on semicolon (H5). The cast schema has no separator field; ';' is fixed in the citation. |
+
+<a id="ExifTool.PNG.Copyright"></a>
+
+## `ExifTool.PNG.Copyright`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `pngText` | up | [`iptc.photo.copyrightNotice`](photo.md#iptc.photo.copyrightNotice) | H7 — lang-alt ↔ string via `x-default` | PNG Copyright to lang-alt x-default (H7) |
+
+<a id="ExifTool.PNG.Description"></a>
+
+## `ExifTool.PNG.Description`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `pngText` | up | [`iptc.photo.description`](photo.md#iptc.photo.description) | H7 — lang-alt ↔ string via `x-default` | PNG Description to lang-alt x-default (H7) |
+
+<a id="ExifTool.PNG.Title"></a>
+
+## `ExifTool.PNG.Title`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `pngText` | up | [`iptc.photo.title`](photo.md#iptc.photo.title) | H7 — lang-alt ↔ string via `x-default` | PNG Title (tEXt or iTXt) to lang-alt x-default (H7) |
 
 <a id="ExifTool.Track1.CompressorID"></a>
 
@@ -160,6 +240,14 @@ Lens model. Intentionally non-canonical.
 | Group | Direction | Canonical partner | Heuristic | Citation |
 |---|---|---|---|---|
 | `videoTechnical` | up | [`iptc.video.audioSampleRate`](video.md#iptc.video.audioSampleRate) | H11 — Units / encodings; 1e-5° / 0.5 m | ExifTool Track2 AudioSampleRate |
+
+<a id="Png.Text.Description"></a>
+
+## `Png.Text.Description`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `pngText` | up | [`iptc.photo.description`](photo.md#iptc.photo.description) | H17 — Sources disagree: first non-empty in group priority | Exiv2 surfaces only the PNG Description keyword as an image comment (Png.Text.Description). Title, Author, and Copyright are not read. |
 
 <a id="QuickTime.AudioChannels"></a>
 
@@ -268,6 +356,30 @@ Lens model. Intentionally non-canonical.
 |---|---|---|---|---|
 | `videoTechnical` | up | [`iptc.video.orientation`](video.md#iptc.video.orientation) | H11 — Units / encodings; 1e-5° / 0.5 m | ExifTool QuickTime Rotation degrees when neither Composite nor the track matrix is present |
 
+<a id="QuickTime.UserData.Artist"></a>
+
+## `QuickTime.UserData.Artist`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `quickTimeUserData` | up | [`iptc.video.creator`](video.md#iptc.video.creator) | H8 — Struct ↔ scalar: field-level merge | UserData ©ART (Artist) to EntityWRole name. Multiple names split on semicolon (H5). The cast schema has no separator field; ';' is fixed in the citation. |
+
+<a id="QuickTime.UserData.ContentCreateDate"></a>
+
+## `QuickTime.UserData.ContentCreateDate`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `quickTimeUserData` | up | [`iptc.video.dateCreated`](video.md#iptc.video.dateCreated) | H12 — Dates / offsets: never invent an offset | UserData ©day (ContentCreateDate). Never invent a UTC offset (H12). |
+
+<a id="QuickTime.UserData.Description"></a>
+
+## `QuickTime.UserData.Description`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `quickTimeUserData` | up | [`iptc.video.description`](video.md#iptc.video.description) | H7 — lang-alt ↔ string via `x-default` | UserData ©des (Description) to lang-alt x-default (H7) |
+
 <a id="QuickTime.UserData.GPSCoordinates"></a>
 
 ## `QuickTime.UserData.GPSCoordinates`
@@ -278,6 +390,14 @@ Lens model. Intentionally non-canonical.
 | `capturePosition` | down | [`iptc.video.locationShot`](video.md#iptc.video.locationShot)`[0].gpsLongitude` | H1 — List → single: first entry | First locationShot GPS (H1) to Keys location.ISO6709 and UserData GPSCoordinates |
 | `capturePosition` | up | [`iptc.video.locationShot`](video.md#iptc.video.locationShot)`[0].gpsLatitude` | H11 — Units / encodings; 1e-5° / 0.5 m | QuickTime UserData copyright-xyz / GPSCoordinates |
 | `capturePosition` | up | [`iptc.video.locationShot`](video.md#iptc.video.locationShot)`[0].gpsLongitude` | H11 — Units / encodings; 1e-5° / 0.5 m | QuickTime UserData copyright-xyz / GPSCoordinates |
+
+<a id="QuickTime.UserData.Title"></a>
+
+## `QuickTime.UserData.Title`
+
+| Group | Direction | Canonical partner | Heuristic | Citation |
+|---|---|---|---|---|
+| `quickTimeUserData` | up | [`iptc.video.title`](video.md#iptc.video.title) | H7 — lang-alt ↔ string via `x-default` | UserData ©nam (Title) to lang-alt x-default (H7). Keys/ItemList Title is not this source. |
 
 <a id="QuickTime.VideoFrameRate"></a>
 

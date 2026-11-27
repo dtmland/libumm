@@ -444,6 +444,17 @@ class Exiv2Backend final : public Backend {
       append_entries(document, image->exifData(), "Exif");
       append_entries(document, image->iptcData(), "Iptc");
       append_entries(document, image->xmpData(), "Xmp");
+      // Exiv2 0.28.9 does not expose PNG tEXt/iTXt as metadata keys. It copies
+      // only the Description keyword into the image comment.
+      if (image->mimeType() == "image/png") {
+        const std::string comment = image->comment();
+        if (!comment.empty()) {
+          BaseEntry text;
+          text.key = BaseKey{"Png", "Png.Text.Description"};
+          text.value = comment;
+          document.entries.push_back(std::move(text));
+        }
+      }
       const auto width = image->pixelWidth();
       const auto height = image->pixelHeight();
       if (width > 0 && height > 0) {

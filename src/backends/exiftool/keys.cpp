@@ -112,7 +112,8 @@ std::string mapped_quicktime_tag(std::string_view tag) {
       tag == "Genre" || tag == "CreateDate" || tag == "CreationDate" ||
       tag == "ModifyDate" || tag == "GPSCoordinates" || tag == "Duration" ||
       tag == "MediaDuration" || tag == "TrackDuration" || tag == "Rating" ||
-      tag == "Make" || tag == "Model" || tag == "Software") {
+      tag == "Make" || tag == "Model" || tag == "Software" ||
+      tag == "ContentCreateDate") {
     return std::string(tag);
   }
   return {};

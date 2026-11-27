@@ -1,0 +1,82 @@
+{
+  "id": "pngText",
+  "direction": "up",
+  "partial": true,
+  "approximate": false,
+  "one_way": true,
+  "citation": "F12, F9; PNG tEXt/iTXt keywords are not IPTC representations. Canonical writes do not update or remove them.",
+  "source_priority": [
+    "png_title",
+    "png_author",
+    "png_description",
+    "png_copyright",
+    "png_description_comment"
+  ],
+  "rules": [
+    {
+      "id": "png_title",
+      "source": {
+        "kind": "base_key",
+        "key": "ExifTool.PNG.Title"
+      },
+      "target": {
+        "kind": "property",
+        "key": "iptc.photo.title"
+      },
+      "heuristic": "H7",
+      "citation": "PNG Title (tEXt or iTXt) to lang-alt x-default (H7)"
+    },
+    {
+      "id": "png_author",
+      "source": {
+        "kind": "base_key",
+        "key": "ExifTool.PNG.Author"
+      },
+      "target": {
+        "kind": "property",
+        "key": "iptc.photo.creator"
+      },
+      "heuristic": "H5",
+      "citation": "PNG Author split on semicolon (H5). The cast schema has no separator field; ';' is fixed in the citation."
+    },
+    {
+      "id": "png_description",
+      "source": {
+        "kind": "base_key",
+        "key": "ExifTool.PNG.Description"
+      },
+      "target": {
+        "kind": "property",
+        "key": "iptc.photo.description"
+      },
+      "heuristic": "H7",
+      "citation": "PNG Description to lang-alt x-default (H7)"
+    },
+    {
+      "id": "png_copyright",
+      "source": {
+        "kind": "base_key",
+        "key": "ExifTool.PNG.Copyright"
+      },
+      "target": {
+        "kind": "property",
+        "key": "iptc.photo.copyrightNotice"
+      },
+      "heuristic": "H7",
+      "citation": "PNG Copyright to lang-alt x-default (H7)"
+    },
+    {
+      "id": "png_description_comment",
+      "source": {
+        "kind": "base_key",
+        "key": "Png.Text.Description"
+      },
+      "target": {
+        "kind": "property",
+        "key": "iptc.photo.description"
+      },
+      "heuristic": "H17",
+      "citation": "Exiv2 surfaces only the PNG Description keyword as an image comment (Png.Text.Description). Title, Author, and Copyright are not read."
+    }
+  ]
+}

@@ -142,6 +142,31 @@
       "read_backend": "exiv2",
       "kind": "capability",
       "reason": "Bundled Exiv2 is built with video support off. It can open synthetic MP4/MOV but does not report container pixel size or track rotation, so Metadata::technical() stays empty for those fields. ExifTool fills them from Track1 image size and Composite Rotation."
+    },
+    {
+      "id": "exiv2-png-text-keywords",
+      "file_types": [
+        "PNG"
+      ],
+      "category": "",
+      "property_id": "",
+      "write_backend": "exiftool",
+      "read_backend": "exiv2",
+      "kind": "capability",
+      "reason": "Exiv2 0.28.9 does not expose PNG tEXt/iTXt as metadata keys. It copies only the Description keyword into the image comment, which libumm surfaces as Png.Text.Description. Title, Author, and Copyright upcasts are ExifTool-only (ExifTool.PNG.*)."
+    },
+    {
+      "id": "exiv2-quicktime-user-data",
+      "file_types": [
+        "MP4",
+        "MOV"
+      ],
+      "category": "",
+      "property_id": "",
+      "write_backend": "exiftool",
+      "read_backend": "exiv2",
+      "kind": "capability",
+      "reason": "Bundled Exiv2 is built with video support off, so UserData Title, Artist, Description, and ContentCreateDate are not read. quickTimeUserData is ExifTool-only."
     }
   ]
 }

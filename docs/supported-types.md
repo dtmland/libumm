@@ -61,8 +61,8 @@ This is the list. `umm::capabilities`, `umm::read` / `get`, and `umm::write` / `
 
 **Canonical** — whether container metadata is a representation or only a cast. This is not a promise that a given file contains those tags.
 
-- `direct (photo)` — the container can hold EXIF, IPTC IIM, and/or XMP representations of `iptc.photo.*`. Every type here except MP4 and MOV is the photo domain (`src/core/media_domain.hpp`). `umm::read` / `get` reconcile those automatically.
-- `direct + cast (video)` — MP4 and MOV use `iptc.video.*`. XMP and Video Metadata Hub QuickTime keys are representations. Container GPS, movie-header dates, recording-device tags, and technical facts (duration, frame size, frame rate, coding, audio, rotation) are casts (`registry/casts/`); they are not filled unless casting is requested. Default video writes downcast `capturePosition`. Exiv2 synthetic `Xmp.video.*` and `Xmp.audio.*` keys are cast sources only and are never written.
+- `direct (photo)` — the container can hold EXIF, IPTC IIM, and/or XMP representations of `iptc.photo.*`. Every type here except MP4 and MOV is the photo domain (`src/core/media_domain.hpp`). `umm::read` / `get` reconcile those automatically. Windows XP* / UserComment (`Exif.*`) and PNG text (`ExifTool.PNG.*`, `Png.Text.*`) are upcasts, not representations.
+- `direct + cast (video)` — MP4 and MOV use `iptc.video.*`. XMP and Video Metadata Hub QuickTime keys are representations. Container GPS, movie-header dates, recording-device tags, technical facts (duration, frame size, frame rate, coding, audio, rotation), and QuickTime user-data text (`QuickTime.UserData.*`) are casts (`registry/casts/`); they are not filled unless casting is requested. Default video writes downcast `capturePosition`. Exiv2 synthetic `Xmp.video.*` and `Xmp.audio.*` keys are cast sources only and are never written.
 - `—` — no representation family and no cast rule. Backends may still return base tags (`dumpAll()` / `dumpUnmapped()`).
 
 Photo side casts (`locationShownLegacy`, `personShown`, `creatorImageCreator`) copy between canonical properties that are already direct. They are not a separate container-coverage flag.
