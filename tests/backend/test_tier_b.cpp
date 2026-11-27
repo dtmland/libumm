@@ -23,6 +23,16 @@ void maybe_configure_exiftool() {
 #endif
 }
 
+int expect_positive_pixels(const umm::Metadata& meta, const char* label) {
+  const auto& size = meta.technical().pixelSize;
+  if (!size || size->value.width <= 0 || size->value.height <= 0 ||
+      size->source.key.empty()) {
+    std::fprintf(stderr, "%s technical pixelSize missing\n", label);
+    return 1;
+  }
+  return 0;
+}
+
 int require_file(const std::filesystem::path& path, const char* label) {
   if (!std::filesystem::is_regular_file(path)) {
     std::fprintf(stderr, "missing Tier B sample %s\n", label);
@@ -108,6 +118,10 @@ int main() {
                  heic_read.error().detail.c_str());
     return 1;
   }
+  if (const int rc = expect_positive_pixels(heic_read.value(), "HEIC");
+      rc != 0) {
+    return rc;
+  }
   umm::Backend* exiv2 = umm::BackendManager::instance().get("exiv2");
   if (exiv2 && exiv2->availability().available) {
     umm::ReadOptions exiv2_opts;
@@ -118,6 +132,10 @@ int main() {
                    heic_exiv2.error().message.c_str(),
                    heic_exiv2.error().detail.c_str());
       return 1;
+    }
+    if (const int rc = expect_positive_pixels(heic_exiv2.value(), "HEIC Exiv2");
+        rc != 0) {
+      return rc;
     }
   }
 
@@ -133,6 +151,31 @@ int main() {
   if (!cr3_storage.ok() ||
       cr3_storage.value().method != umm::StorageDecision::Method::sidecar) {
     return fail("CR3 preferred is not sidecar_recommended");
+  }
+  const auto cr3_read = umm::read(cr3, read_opts);
+  if (!cr3_read.ok()) {
+    std::fprintf(stderr, "CR3 read failed: %s (%s)\n",
+                 cr3_read.error().message.c_str(),
+                 cr3_read.error().detail.c_str());
+    return 1;
+  }
+  if (const int rc = expect_positive_pixels(cr3_read.value(), "CR3"); rc != 0) {
+    return rc;
+  }
+  if (exiv2 && exiv2->availability().available) {
+    umm::ReadOptions cr3_exiv2;
+    cr3_exiv2.backend = "exiv2";
+    const auto cr3_exiv2_read = umm::read(cr3, cr3_exiv2);
+    if (!cr3_exiv2_read.ok()) {
+      std::fprintf(stderr, "CR3 Exiv2 read failed: %s (%s)\n",
+                   cr3_exiv2_read.error().message.c_str(),
+                   cr3_exiv2_read.error().detail.c_str());
+      return 1;
+    }
+    if (const int rc = expect_positive_pixels(cr3_exiv2_read.value(), "CR3 Exiv2");
+        rc != 0) {
+      return rc;
+    }
   }
 
   const auto jxl = raw_corpus("jxl/codestream.jxl");

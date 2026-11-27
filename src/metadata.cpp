@@ -663,6 +663,10 @@ const std::vector<BaseEntry>& Metadata::dumpAll() const { return base_; }
 
 const TechnicalInfo& Metadata::technical() const { return technical_; }
 
+void Metadata::assignTechnical(TechnicalInfo info) {
+  technical_ = std::move(info);
+}
+
 const std::vector<BaseEntry>& Metadata::dumpUnmapped() const {
   return unmapped_;
 }

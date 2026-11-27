@@ -74,7 +74,7 @@ that can share a sitting and a suggested order. Sessions 52–59 ship as v0.2.0,
 | [63](63-read-time-upcasts.md) | Read-time upcasts | U3, U12, U13 (prerequisite) | — | done |
 | [64](64-video-technical-upcasts.md) | Video technical upcasts from QuickTime | U3 | 63 | done |
 | [65](65-technical-view-contract.md) | Technical view: header, source table, codegen | U2 | — | done |
-| [66](66-technical-view-values.md) | Technical view: photo and video values | U2 | 64, 65 | planned |
+| [66](66-technical-view-values.md) | Technical view: photo and video values | U2 | 64, 65 | done |
 | [67](67-legacy-text-casts.md) | Legacy EXIF text casts | U12 | 63 | planned |
 | [68](68-container-text-casts.md) | Container text casts | U12 | 63 (after 67) | planned |
 | [69](69-hierarchical-keywords.md) | Hierarchical keywords and legacy write-sync policy | U12 | 67, 68 | planned |

@@ -129,6 +129,19 @@
       "read_backend": "",
       "kind": "representation",
       "reason": "C19 Pixel JPEG photoshop:DateCreated 4-digit fraction versus EXIF SubSecTimeOriginal 6 digits is not equivalent under datetime_equivalent (zero-padded nanoseconds). H12 shorter-precision compare is not implemented; XMP wins when they disagree. xmp:CreateDate remains unused for dateCreated (C16)."
+    },
+    {
+      "id": "exiv2-video-technical-view",
+      "file_types": [
+        "MP4",
+        "MOV"
+      ],
+      "category": "",
+      "property_id": "technical.pixelSize",
+      "write_backend": "",
+      "read_backend": "exiv2",
+      "kind": "capability",
+      "reason": "Bundled Exiv2 is built with video support off. It can open synthetic MP4/MOV but does not report container pixel size or track rotation, so Metadata::technical() stays empty for those fields. ExifTool fills them from Track1 image size and Composite Rotation."
     }
   ]
 }

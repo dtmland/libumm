@@ -266,8 +266,11 @@ int check_technical(const char* backend) {
       return fail("videoTechnical read modified the file");
     }
     const umm::Metadata& meta = read.value();
-    if (meta.technical().orientation || meta.technical().pixelSize) {
-      return fail("technical view must stay empty");
+    if (std::string(backend) == "exiftool") {
+      const auto& size = meta.technical().pixelSize;
+      if (!size || size->value.width != 16 || size->value.height != 16) {
+        return fail("technical view pixel size");
+      }
     }
     const auto duration_property = meta.get("iptc.video.fileDuration");
     const auto frame_property = meta.get("iptc.video.frameSize");

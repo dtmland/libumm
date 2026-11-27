@@ -36,6 +36,15 @@ The Exiv2 0.28.9 video spike did not report rotation and misread a GPS fixture,
 so `EXIV2_ENABLE_VIDEO` stays off. Synthetic `Xmp.video.*` / `Xmp.audio.*` keys
 are never written.
 
+### Session 66 — Technical view values
+
+`umm::read` fills `Metadata::technical()` for JPEG, HEIC, RAW, and MP4/MOV.
+Each value carries its source key. Container pixel size is an intrinsic and is
+not in `dumpAll()`. Selective `technical.*` reads request only those sources.
+Exposure and focal length stay unmapped. ExifTool IFD0 `ImageHeight` is read
+as `Exif.Image.ImageLength`. Bundled Exiv2 does not fill video technical
+values (`exiv2-video-technical-view`).
+
 ### Session 65 — Technical view contract
 
 `Metadata::technical()` and `TechnicalInfo` are in `include/umm/metadata.hpp`.

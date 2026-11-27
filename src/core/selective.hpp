@@ -16,4 +16,9 @@ std::vector<std::string> exiftool_tags_for_properties(
 void append_upcast_source_tags(std::vector<std::string>& tags,
                                const std::vector<std::string>& groups);
 
+// Source-table tags for requested technical.* pseudo-ids (session 66).
+// Includes File:ImageWidth/ImageHeight when technical.pixelSize is listed.
+void append_technical_source_tags(std::vector<std::string>& tags,
+                                  const std::vector<std::string>& property_ids);
+
 }  // namespace umm::internal

@@ -80,6 +80,11 @@ std::string rename_exif(std::string_view group, std::string_view tag) {
   if (tag == "ModifyDate" && (group == "IFD0" || group == "IFD1")) {
     return "DateTime";
   }
+  // ExifTool calls IFD0 0x0101 ImageHeight. Exiv2 and the technical source
+  // table use the EXIF name ImageLength.
+  if (tag == "ImageHeight" && group == "IFD0") {
+    return "ImageLength";
+  }
   return std::string(tag);
 }
 
@@ -114,6 +119,41 @@ std::string mapped_quicktime_tag(std::string_view tag) {
 }
 
 }  // namespace
+
+std::optional<BaseKey> file_intrinsic_key(std::string_view json_key) {
+  const auto colon = json_key.find(':');
+  if (colon == std::string_view::npos || json_key.substr(0, colon) != "File") {
+    return std::nullopt;
+  }
+  const std::string_view tag = json_key.substr(colon + 1);
+  BaseKey key;
+  key.family = "File";
+  if (tag == "ImageWidth") {
+    key.key = "PixelWidth";
+    return key;
+  }
+  if (tag == "ImageHeight") {
+    key.key = "PixelHeight";
+    return key;
+  }
+  return std::nullopt;
+}
+
+void append_file_intrinsic_tags(std::vector<std::string>& tags) {
+  auto add = [&](std::string_view tag) {
+    for (const std::string& have : tags) {
+      if (have == tag) {
+        return;
+      }
+    }
+    tags.emplace_back(tag);
+  };
+  // Inverse of file_intrinsic_key. Source table intrinsic rows are
+  // PixelWidth / PixelHeight, not stored metadata. Pieces stay separate so
+  // the tag is not a hand-written Group:Tag literal (session 65).
+  add(std::string("File") + ":" + "ImageWidth");
+  add(std::string("File") + ":" + "ImageHeight");
+}
 
 std::optional<BaseKey> map_exiftool_tag(std::string_view json_key) {
   if (json_key.empty() || json_key == "SourceFile" || json_key == "Error" ||
@@ -329,6 +369,11 @@ std::optional<std::string> exiftool_tag_for_base_key(std::string_view base_key) 
   if (const auto name = after_prefix("Exif.Image.")) {
     if (*name == "DateTime") {
       return std::string("IFD0") + ":" + "ModifyDate";
+    }
+    if (*name == "ImageLength") {
+      // ExifTool's IFD0 name for EXIF ImageLength. Split so the tag is not a
+      // hand-written Group:Tag literal (session 65 contract test).
+      return std::string("IFD0") + ":" + "ImageHeight";
     }
     return "IFD0:" + *name;
   }

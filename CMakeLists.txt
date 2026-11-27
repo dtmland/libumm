@@ -95,6 +95,7 @@ add_library(umm
   src/core/atomic_write.cpp
   src/core/sidecar.cpp
   src/core/selective.cpp
+  src/core/technical.cpp
   src/backends/backend_manager.cpp
   src/backends/exiftool/json.cpp
   src/backends/exiftool/keys.cpp
@@ -455,6 +456,25 @@ if(UMM_BUILD_TESTS)
     endif()
     add_test(NAME test_upcast COMMAND test_upcast)
     umm_apply_fixture_dir_to_test(test_upcast)
+
+    add_executable(test_technical tests/backend/test_technical.cpp)
+    target_link_libraries(test_technical PRIVATE umm::umm)
+    target_include_directories(test_technical
+      PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/backend"
+    )
+    umm_apply_fixture_dir(test_technical)
+    if(UMM_EXIFTOOL_SCRIPT AND UMM_PERL_EXECUTABLE)
+      file(TO_CMAKE_PATH "${UMM_EXIFTOOL_SCRIPT}" UMM_TEST_TECHNICAL_EXIFTOOL_SCRIPT)
+      file(TO_CMAKE_PATH "${UMM_PERL_EXECUTABLE}" UMM_TEST_TECHNICAL_EXIFTOOL_PERL)
+      target_compile_definitions(test_technical
+        PRIVATE
+          "UMM_TEST_EXIFTOOL_SCRIPT=R\"(${UMM_TEST_TECHNICAL_EXIFTOOL_SCRIPT})\""
+          "UMM_TEST_EXIFTOOL_PERL=R\"(${UMM_TEST_TECHNICAL_EXIFTOOL_PERL})\""
+      )
+    endif()
+    add_test(NAME test_technical COMMAND test_technical)
+    umm_apply_fixture_dir_to_test(test_technical)
 
     add_executable(test_parallel_read tests/backend/test_parallel_read.cpp)
     target_link_libraries(test_parallel_read PRIVATE umm::umm)

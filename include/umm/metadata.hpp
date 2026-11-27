@@ -68,7 +68,7 @@ struct CastCandidate {
 };
 
 // Read-only technical view (F11). Not a canonical property and not written.
-// Session 65 defines the contract; values are filled later (session 66).
+// umm::read fills it from the generated source table (session 66).
 template <typename T>
 struct TechnicalValue {
   T value{};
@@ -245,8 +245,10 @@ class Metadata {
   const std::vector<CastCandidate>& castCandidates() const;
   void assignCastCandidates(std::vector<CastCandidate> candidates);
 
-  // Read-only. No setter; umm::write ignores this view (F11).
+  // Read-only. No user setter; umm::write ignores this view (F11).
   const TechnicalInfo& technical() const;
+  // Filled by umm::read. Not a write API.
+  void assignTechnical(TechnicalInfo info);
 
  private:
   std::optional<PropertyValue> getConcept(std::string_view concept_name) const;

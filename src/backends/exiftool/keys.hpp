@@ -3,6 +3,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "umm/metadata.hpp"
 
@@ -11,7 +12,17 @@ namespace umm::internal {
 // Translate an ExifTool -G1 JSON field (Group1:Tag) into the Exiv2-syntax
 // base vocabulary. nullopt means the field is not stored metadata (File,
 // ExifTool, Composite except GPS lat/lon/alt, SourceFile, Error/Warning).
+// File:ImageWidth and File:ImageHeight are not stored metadata; use
+// file_intrinsic_key for those.
 std::optional<BaseKey> map_exiftool_tag(std::string_view json_key);
+
+// File:ImageWidth / File:ImageHeight -> PixelWidth / PixelHeight (F11).
+// Other File: tags return nullopt. These keys match the technical source
+// table's intrinsic rows and are not written.
+std::optional<BaseKey> file_intrinsic_key(std::string_view json_key);
+
+// Inverse of file_intrinsic_key for a selective ExifTool request.
+void append_file_intrinsic_tags(std::vector<std::string>& tags);
 
 // Inverse of map_exiftool_tag for write commands. Indexed/struct suffixes
 // are stripped. nullopt means the base key cannot be expressed as a tag.
