@@ -370,8 +370,141 @@ int main() {
     auto preview = umm::internal::evaluate_casts(
         metadata, umm::CastDirection::up, options, "JPEG", nullptr);
     if (find_group(preview, "capturePosition") ||
-        find_group(preview, "videoCreated")) {
+        find_group(preview, "videoCreated") ||
+        find_group(preview, "videoTechnical")) {
       return fail("video groups must not apply on photo");
+    }
+  }
+
+  {
+    umm::Metadata metadata;
+    metadata.setMediaDomain(umm::MediaDomain::video);
+    if (metadata.technical().cameraMake || metadata.technical().orientation ||
+        metadata.technical().pixelSize) {
+      return fail("technical view is empty until values are filled");
+    }
+    metadata.assignBase({
+        entry("QuickTime", "QuickTime.Duration", "0.10 s"),
+        entry("ExifTool", "ExifTool.Track1.ImageWidth", "16"),
+        entry("ExifTool", "ExifTool.Track1.ImageHeight", "16"),
+        entry("ExifTool", "ExifTool.Track1.VideoFrameRate", "10"),
+        entry("ExifTool", "ExifTool.Track1.CompressorID", "mp4v"),
+        entry("ExifTool", "ExifTool.Track1.CompressorName", "mpeg4"),
+        entry("ExifTool", "ExifTool.Track2.AudioSampleRate", "8000"),
+        entry("ExifTool", "ExifTool.Track2.AudioChannels", "1"),
+        entry("ExifTool", "ExifTool.Composite.Rotation", "90"),
+        entry("ExifTool", "ExifTool.Track1.MatrixStructure",
+              "0 1 0 -1 0 0 16 0 1"),
+    });
+    umm::CastOptions options;
+    options.groups = {"videoTechnical"};
+    options.include_approximate = true;
+    auto preview = umm::internal::evaluate_casts(
+        metadata, umm::CastDirection::up, options, "MP4", nullptr);
+    const auto* duration = nullptr;
+    const auto* frame = nullptr;
+    const auto* orientation = nullptr;
+    for (const umm::CastCandidate& candidate : preview) {
+      if (candidate.target_id == "iptc.video.fileDuration") {
+        duration = &candidate;
+      } else if (candidate.target_id == "iptc.video.frameSize") {
+        frame = &candidate;
+      } else if (candidate.target_id == "iptc.video.orientation") {
+        orientation = &candidate;
+      }
+    }
+    if (!duration || duration->status != umm::CastStatus::can_cast ||
+        duration->source_id != "QuickTime.Duration" || !frame ||
+        frame->status != umm::CastStatus::can_cast || !orientation ||
+        orientation->source_id != "ExifTool.Composite.Rotation") {
+      return fail("videoTechnical dry-run");
+    }
+    umm::internal::apply_cast_candidates(metadata, preview, options, nullptr);
+    const auto stored = metadata.get("iptc.video.fileDuration");
+    const auto* time =
+        stored ? std::get_if<umm::Structure>(&stored->value.data) : nullptr;
+    const auto time_value = time ? time->find("timeValue") : umm::Structure::const_iterator{};
+    const auto* seconds =
+        time && time_value != time->end()
+            ? std::get_if<std::string>(&time_value->second.data)
+            : nullptr;
+    if (!time || !seconds || *seconds != "0.1") {
+      return fail("videoTechnical duration");
+    }
+    const auto size = metadata.get("iptc.video.frameSize");
+    const auto* frame_fields =
+        size ? std::get_if<umm::Structure>(&size->value.data) : nullptr;
+    const auto width = frame_fields ? frame_fields->find("widthPixels")
+                                    : umm::Structure::const_iterator{};
+    const auto* width_n =
+        frame_fields && width != frame_fields->end()
+            ? std::get_if<double>(&width->second.data)
+            : nullptr;
+    if (!width_n || *width_n != 16) {
+      return fail("videoTechnical frame size");
+    }
+    const auto turned = metadata.get("iptc.video.orientation");
+    const auto* turned_n =
+        turned ? std::get_if<double>(&turned->value.data) : nullptr;
+    if (!turned_n || *turned_n != 6) {
+      return fail("videoTechnical rotation");
+    }
+    umm::internal::record_upcast_provenance(metadata, *orientation, "exiftool");
+    const auto proven = metadata.get("iptc.video.orientation");
+    bool width_leaked = false;
+    bool rotation_source = false;
+    if (proven) {
+      for (const umm::SourceRef& source : proven->sources) {
+        if (source.base_key.find("ImageWidth") != std::string::npos) {
+          width_leaked = true;
+        }
+        if (source.base_key == "ExifTool.Composite.Rotation") {
+          rotation_source = true;
+        }
+      }
+    }
+    if (width_leaked || !rotation_source) {
+      return fail("videoTechnical provenance must stay on the target");
+    }
+  }
+
+  {
+    umm::Metadata metadata;
+    metadata.setMediaDomain(umm::MediaDomain::video);
+    metadata.assignBase({
+        entry("Xmp", "Xmp.video.Duration", "100"),
+        entry("ExifTool", "ExifTool.Track1.MatrixStructure",
+              "1 0 0 0 1 0 0 0 1"),
+    });
+    umm::CastOptions options;
+    options.groups = {"videoTechnical"};
+    auto preview = umm::internal::evaluate_casts(
+        metadata, umm::CastDirection::up, options, "MOV", nullptr);
+    umm::internal::apply_cast_candidates(metadata, preview, options, nullptr);
+    const auto stored = metadata.get("iptc.video.fileDuration");
+    const auto* time =
+        stored ? std::get_if<umm::Structure>(&stored->value.data) : nullptr;
+    const auto time_value = time ? time->find("timeValue") : umm::Structure::const_iterator{};
+    const auto* seconds =
+        time && time_value != time->end()
+            ? std::get_if<std::string>(&time_value->second.data)
+            : nullptr;
+    if (!seconds || *seconds != "0.1") {
+      return fail("Exiv2 duration is milliseconds");
+    }
+    const auto turned = metadata.get("iptc.video.orientation");
+    const auto* turned_n =
+        turned ? std::get_if<double>(&turned->value.data) : nullptr;
+    if (!turned_n || *turned_n != 1) {
+      return fail("identity matrix is orientation 1");
+    }
+    umm::BaseChanges extra =
+        umm::internal::downcast_write_changes(metadata, {}, "MP4", nullptr);
+    for (const umm::BaseEntry& item : extra.upserts) {
+      if (item.key.key.rfind("Xmp.video.", 0) == 0 ||
+          item.key.key.rfind("Xmp.audio.", 0) == 0) {
+        return fail("downcast must not emit synthetic Exiv2 keys");
+      }
     }
   }
 

@@ -1,9 +1,11 @@
 #include "core/selective.hpp"
 
+#include "cast_rules.hpp"
 #include "core/xmp_codec.hpp"
 #include "exiftool/keys.hpp"
 #include "property_registry.hpp"
 
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -160,6 +162,36 @@ std::vector<std::string> exiftool_tags_for_properties(
     add_property(tags, id);
   }
   return tags;
+}
+
+void append_upcast_source_tags(std::vector<std::string>& tags,
+                               const std::vector<std::string>& groups) {
+  for (const std::string& group : groups) {
+    for (const CastRuleDef& rule : kCastRules) {
+      if (rule.group != group || rule.direction != "up" ||
+          rule.source_kind != "base_key") {
+        continue;
+      }
+      if (rule.source_key.rfind("Xmp.video.", 0) == 0 ||
+          rule.source_key.rfind("Xmp.audio.", 0) == 0) {
+        continue;
+      }
+      if (const std::optional<std::string> tag =
+              exiftool_tag_for_base_key(rule.source_key)) {
+        bool exists = false;
+        for (const std::string& have : tags) {
+          if (have == *tag) {
+            exists = true;
+            break;
+          }
+        }
+        if (!exists && tag->find('\n') == std::string::npos &&
+            tag->find('\r') == std::string::npos) {
+          tags.push_back(*tag);
+        }
+      }
+    }
+  }
 }
 
 }  // namespace umm::internal

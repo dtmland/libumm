@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <iomanip>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -479,7 +480,7 @@ bool group_selected(const CastOptions& options, std::string_view id) {
 
 bool group_applies(std::string_view id, MediaDomain domain) {
   if (id == "capturePosition" || id == "videoCreated" || id == "videoModified" ||
-      id == "recordingDevice") {
+      id == "recordingDevice" || id == "videoTechnical") {
     return domain == MediaDomain::video;
   }
   if (id == "locationShownLegacy" || id == "personShown" ||
@@ -941,6 +942,383 @@ CastCandidate list_side(const Metadata& metadata, const CastGroupDef& group,
                         {});
 }
 
+std::string format_decimal(double value) {
+  std::ostringstream out;
+  out.setf(std::ios::fixed);
+  out << std::setprecision(6) << value;
+  std::string text = out.str();
+  while (text.size() > 1 && text.back() == '0') {
+    text.pop_back();
+  }
+  if (!text.empty() && text.back() == '.') {
+    text.pop_back();
+  }
+  if (text.empty() || text == "-") {
+    return "0";
+  }
+  return text;
+}
+
+std::string trimmed_copy(std::string_view text) {
+  return std::string(trim(text));
+}
+
+bool duration_seconds(std::string_view text, bool milliseconds, double& seconds) {
+  std::string_view body = trim(text);
+  if (body.size() > 2 && body.substr(body.size() - 2) == " s") {
+    body = trim(body.substr(0, body.size() - 2));
+  }
+  double number = 0;
+  if (!parse_double(body, number)) {
+    return false;
+  }
+  seconds = milliseconds ? number / 1000.0 : number;
+  return seconds >= 0;
+}
+
+Value video_time_value(double seconds) {
+  Structure fields;
+  fields.insert_or_assign("timeFormat", make_value(std::string("seconds")));
+  fields.insert_or_assign("timeValue", make_value(format_decimal(seconds)));
+  return make_value(std::move(fields));
+}
+
+bool parse_channels(std::string_view text, double& out) {
+  if (parse_double(trim(text), out)) {
+    return out > 0;
+  }
+  std::string lower = trimmed_copy(text);
+  for (char& ch : lower) {
+    if (ch >= 'A' && ch <= 'Z') {
+      ch = static_cast<char>(ch - 'A' + 'a');
+    }
+  }
+  if (lower.find("stereo") != std::string::npos) {
+    out = 2;
+    return true;
+  }
+  if (lower.find("mono") != std::string::npos) {
+    out = 1;
+    return true;
+  }
+  return false;
+}
+
+bool parse_rotation_degrees(std::string_view text, double& degrees) {
+  text = trim(text);
+  std::size_t index = 0;
+  if (!text.empty() && (text.front() == '-' || text.front() == '+')) {
+    index = 1;
+  }
+  const std::size_t start = 0;
+  while (index < text.size() &&
+         ((text[index] >= '0' && text[index] <= '9') || text[index] == '.')) {
+    ++index;
+  }
+  if (index == start || (text[0] == '-' || text[0] == '+') && index == 1) {
+    return false;
+  }
+  return parse_double(text.substr(0, index), degrees);
+}
+
+int orientation_from_degrees(double degrees) {
+  int turns = static_cast<int>(std::lround(degrees)) % 360;
+  if (turns < 0) {
+    turns += 360;
+  }
+  if (turns == 0) {
+    return 1;
+  }
+  if (turns == 90) {
+    return 6;
+  }
+  if (turns == 180) {
+    return 3;
+  }
+  if (turns == 270) {
+    return 8;
+  }
+  return 0;
+}
+
+bool parse_matrix_orientation(std::string_view text, int& orientation) {
+  double values[9];
+  std::size_t count = 0;
+  std::size_t index = 0;
+  text = trim(text);
+  while (index < text.size() && count < 9) {
+    while (index < text.size() && text[index] == ' ') {
+      ++index;
+    }
+    if (index >= text.size()) {
+      break;
+    }
+    const std::size_t start = index;
+    if (text[index] == '-' || text[index] == '+') {
+      ++index;
+    }
+    bool digit = false;
+    while (index < text.size() &&
+           ((text[index] >= '0' && text[index] <= '9') || text[index] == '.')) {
+      digit = true;
+      ++index;
+    }
+    if (!digit || !parse_double(text.substr(start, index - start), values[count])) {
+      return false;
+    }
+    ++count;
+  }
+  if (count != 9) {
+    return false;
+  }
+  const double a = values[0];
+  const double b = values[1];
+  const double d = values[3];
+  const double e = values[4];
+  if ((a * e - b * d) <= 0.5) {
+    return false;
+  }
+  const double degrees = std::atan2(b, a) * 180.0 / 3.14159265358979323846;
+  orientation = orientation_from_degrees(degrees);
+  return orientation != 0;
+}
+
+const CastRuleDef* rule_by_id(const CastGroupDef& group, std::string_view id) {
+  for (const CastRuleDef& rule : kCastRules) {
+    if (rule.group == group.id && rule.direction == group.direction &&
+        rule.id == id) {
+      return &rule;
+    }
+  }
+  return nullptr;
+}
+
+struct FieldHit {
+  std::string field;
+  std::string source_key;
+  std::string preview;
+  Value value;
+};
+
+bool field_filled(const std::vector<FieldHit>& hits, std::string_view field) {
+  for (const FieldHit& hit : hits) {
+    if (hit.field == field) {
+      return true;
+    }
+  }
+  return false;
+}
+
+std::optional<FieldHit> interpret_technical_rule(const Metadata& metadata,
+                                                 const CastRuleDef& rule) {
+  const BaseEntry* entry = find_base(metadata, rule.source_key);
+  if (!entry) {
+    return std::nullopt;
+  }
+  const std::string target(rule.target_key);
+  FieldHit hit;
+  hit.field = std::string(rule.target_field);
+  hit.source_key = std::string(rule.source_key);
+  hit.preview = trimmed_copy(entry->value);
+  if (target == "iptc.video.fileDuration") {
+    double seconds = 0;
+    if (!duration_seconds(entry->value, rule.source_key == "Xmp.video.Duration",
+                          seconds)) {
+      return std::nullopt;
+    }
+    hit.value = video_time_value(seconds);
+    return hit;
+  }
+  if (target == "iptc.video.frameSize") {
+    double pixels = 0;
+    if (!parse_double(trim(entry->value), pixels) || pixels <= 0) {
+      return std::nullopt;
+    }
+    hit.value = make_value(pixels);
+    return hit;
+  }
+  if (target == "iptc.video.videoFrameRate" ||
+      target == "iptc.video.audioSampleRate") {
+    double number = 0;
+    if (!parse_double(trim(entry->value), number) || number <= 0) {
+      return std::nullopt;
+    }
+    hit.value = make_value(number);
+    return hit;
+  }
+  if (target == "iptc.video.audioChannels") {
+    double number = 0;
+    if (!parse_channels(entry->value, number)) {
+      return std::nullopt;
+    }
+    hit.value = make_value(number);
+    return hit;
+  }
+  if (target == "iptc.video.videoCoding") {
+    const std::string text = trimmed_copy(entry->value);
+    if (text.empty()) {
+      return std::nullopt;
+    }
+    if (hit.field == "identifiers") {
+      hit.value = make_value(std::vector<std::string>{text});
+      return hit;
+    }
+    if (hit.field == "name") {
+      hit.value = make_value(LangAlt{{"x-default", text}});
+      return hit;
+    }
+    return std::nullopt;
+  }
+  if (target == "iptc.video.orientation") {
+    int orientation = 0;
+    if (rule.source_key.find("MatrixStructure") != std::string_view::npos) {
+      if (!parse_matrix_orientation(entry->value, orientation)) {
+        return std::nullopt;
+      }
+    } else {
+      double degrees = 0;
+      if (!parse_rotation_degrees(entry->value, degrees)) {
+        return std::nullopt;
+      }
+      orientation = orientation_from_degrees(degrees);
+      if (orientation == 0) {
+        return std::nullopt;
+      }
+    }
+    hit.value = make_value(static_cast<double>(orientation));
+    return hit;
+  }
+  return std::nullopt;
+}
+
+struct TechBuilt {
+  std::string target_id;
+  std::string source_id;
+  std::string source_preview;
+  Value value;
+};
+
+struct TargetAcc {
+  std::string target;
+  std::vector<FieldHit> hits;
+};
+
+bool target_complete(std::string_view target, const std::vector<FieldHit>& hits) {
+  if (hits.empty()) {
+    return false;
+  }
+  if (target == "iptc.video.frameSize") {
+    return field_filled(hits, "widthPixels") && field_filled(hits, "heightPixels");
+  }
+  return true;
+}
+
+Value assemble_target(std::string_view target, const std::vector<FieldHit>& hits) {
+  if (target == "iptc.video.frameSize") {
+    Structure fields;
+    for (const FieldHit& hit : hits) {
+      fields.insert_or_assign(hit.field, hit.value);
+    }
+    fields.insert_or_assign("unitPixels", make_value(std::string("pixels")));
+    return make_value(std::move(fields));
+  }
+  if (target == "iptc.video.videoCoding") {
+    Structure fields;
+    for (const FieldHit& hit : hits) {
+      fields.insert_or_assign(hit.field, hit.value);
+    }
+    return make_value(std::move(fields));
+  }
+  return hits.front().value;
+}
+
+std::vector<TechBuilt> build_video_technical(const Metadata& metadata,
+                                             const CastGroupDef& group) {
+  std::vector<TargetAcc> accs;
+  for (std::size_t i = 0; i < group.source_priority_count; ++i) {
+    const CastRuleDef* rule = rule_by_id(group, group.source_priority[i]);
+    if (!rule) {
+      continue;
+    }
+    TargetAcc* acc = nullptr;
+    for (TargetAcc& item : accs) {
+      if (item.target == rule->target_key) {
+        acc = &item;
+        break;
+      }
+    }
+    if (!acc) {
+      accs.push_back(TargetAcc{std::string(rule->target_key), {}});
+      acc = &accs.back();
+    }
+    if (field_filled(acc->hits, rule->target_field)) {
+      continue;
+    }
+    if (std::optional<FieldHit> hit = interpret_technical_rule(metadata, *rule)) {
+      acc->hits.push_back(std::move(*hit));
+    }
+  }
+  std::vector<TechBuilt> built;
+  for (const TargetAcc& acc : accs) {
+    if (!target_complete(acc.target, acc.hits)) {
+      continue;
+    }
+    TechBuilt item;
+    item.target_id = acc.target;
+    item.source_id = acc.hits.front().source_key;
+    for (std::size_t i = 0; i < acc.hits.size(); ++i) {
+      if (i != 0) {
+        item.source_preview += "; ";
+      }
+      item.source_preview += acc.hits[i].preview;
+    }
+    item.value = assemble_target(acc.target, acc.hits);
+    built.push_back(std::move(item));
+  }
+  return built;
+}
+
+CastStatus technical_status(const Metadata& metadata, const TechBuilt& built) {
+  const auto existing = metadata.get(built.target_id);
+  if (!existing) {
+    return CastStatus::can_cast;
+  }
+  if (display_text(existing->value) == display_text(built.value)) {
+    return CastStatus::equal;
+  }
+  return CastStatus::needs_force;
+}
+
+std::vector<CastCandidate> evaluate_video_technical(const Metadata& metadata,
+                                                    const CastGroupDef& group) {
+  std::vector<CastCandidate> out;
+  for (const TechBuilt& built : build_video_technical(metadata, group)) {
+    out.push_back(make_candidate(group, technical_status(metadata, built),
+                                 built.source_id, built.target_id,
+                                 built.source_preview, display_text(built.value),
+                                 {}));
+  }
+  return out;
+}
+
+void apply_video_technical(Metadata& metadata, const CastCandidate& candidate,
+                           bool force) {
+  if (candidate.status != CastStatus::can_cast &&
+      !(force && candidate.status == CastStatus::needs_force)) {
+    return;
+  }
+  const CastGroupDef* group = find_group("videoTechnical", "up");
+  if (!group) {
+    return;
+  }
+  for (const TechBuilt& built : build_video_technical(metadata, *group)) {
+    if (built.target_id == candidate.target_id) {
+      (void)metadata.set(built.target_id, built.value);
+      return;
+    }
+  }
+}
+
 CastCandidate evaluate_group(const Metadata& metadata, const CastGroupDef& group,
                              const Capabilities* caps) {
   if (group.id == "capturePosition" && group.direction == "up") {
@@ -1217,6 +1595,9 @@ void record_upcast_provenance(Metadata& metadata, const CastCandidate& candidate
         rule.source_kind != "base_key") {
       continue;
     }
+    if (!candidate.target_id.empty() && rule.target_key != candidate.target_id) {
+      continue;
+    }
     if (find_base(metadata, rule.source_key)) {
       add_key(std::string(rule.source_key));
     }
@@ -1266,6 +1647,15 @@ std::vector<CastCandidate> evaluate_casts(const Metadata& metadata,
         !group_applies(group.id, domain)) {
       continue;
     }
+    if (group.id == "videoTechnical") {
+      for (CastCandidate& candidate : evaluate_video_technical(metadata, group)) {
+        if (candidate.status == CastStatus::source_empty) {
+          continue;
+        }
+        out.push_back(std::move(candidate));
+      }
+      continue;
+    }
     CastCandidate candidate = evaluate_group(metadata, group, caps);
     if (candidate.status == CastStatus::source_empty) {
       continue;
@@ -1302,6 +1692,8 @@ void apply_cast_candidates(Metadata& metadata,
     } else if (candidate.group == "videoModified") {
       apply_date_up(metadata, candidate, "iptc.video.dateModified",
                     options.force);
+    } else if (candidate.group == "videoTechnical") {
+      apply_video_technical(metadata, candidate, options.force);
     } else if (candidate.group == "recordingDevice") {
       apply_recording_device(metadata, candidate, options.force);
     } else if (candidate.group == "locationShownLegacy") {

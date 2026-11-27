@@ -1,0 +1,228 @@
+{
+  "id": "videoTechnical",
+  "direction": "up",
+  "partial": true,
+  "approximate": false,
+  "one_way": true,
+  "citation": "F10; C7; C9; H11. ExifTool QuickTime and track keys first. Exiv2 synthetic Xmp.video and Xmp.audio keys are cast sources only and are never written. Bundled Exiv2 keeps EXIV2_ENABLE_VIDEO off.",
+  "source_priority": [
+    "qt_duration",
+    "track1_media_duration",
+    "exiv2_duration",
+    "track1_width",
+    "qt_width",
+    "exiv2_width",
+    "track1_height",
+    "qt_height",
+    "exiv2_height",
+    "track1_rate",
+    "qt_rate",
+    "exiv2_rate",
+    "track1_codec",
+    "qt_codec",
+    "exiv2_codec",
+    "track1_codec_name",
+    "qt_codec_name",
+    "exiv2_compressor",
+    "track2_audio_rate",
+    "qt_audio_rate",
+    "exiv2_audio_rate",
+    "track2_audio_channels",
+    "qt_audio_channels",
+    "exiv2_audio_channels",
+    "composite_rotation",
+    "track1_matrix",
+    "qt_rotation"
+  ],
+  "rules": [
+    {
+      "id": "qt_duration",
+      "source": {"kind": "base_key", "key": "QuickTime.Duration"},
+      "target": {"kind": "property", "key": "iptc.video.fileDuration"},
+      "heuristic": "H11",
+      "citation": "ExifTool QuickTime:Duration seconds; VideoTime timeFormat seconds (H11)"
+    },
+    {
+      "id": "track1_media_duration",
+      "source": {"kind": "base_key", "key": "ExifTool.Track1.MediaDuration"},
+      "target": {"kind": "property", "key": "iptc.video.fileDuration"},
+      "heuristic": "H11",
+      "citation": "Video track MediaDuration when the movie Duration key is absent; not the audio track"
+    },
+    {
+      "id": "exiv2_duration",
+      "source": {"kind": "base_key", "key": "Xmp.video.Duration"},
+      "target": {"kind": "property", "key": "iptc.video.fileDuration"},
+      "heuristic": "H11",
+      "citation": "Exiv2 synthetic Xmp.video.Duration milliseconds; cast source only, never written"
+    },
+    {
+      "id": "track1_width",
+      "source": {"kind": "base_key", "key": "ExifTool.Track1.ImageWidth"},
+      "target": {"kind": "property_field", "key": "iptc.video.frameSize", "field": "widthPixels"},
+      "heuristic": "H11",
+      "citation": "ExifTool Track1 ImageWidth; sample description, not the movie header"
+    },
+    {
+      "id": "qt_width",
+      "source": {"kind": "base_key", "key": "QuickTime.ImageWidth"},
+      "target": {"kind": "property_field", "key": "iptc.video.frameSize", "field": "widthPixels"},
+      "heuristic": "H11",
+      "citation": "ExifTool QuickTime ImageWidth when the track group is absent"
+    },
+    {
+      "id": "exiv2_width",
+      "source": {"kind": "base_key", "key": "Xmp.video.Width"},
+      "target": {"kind": "property_field", "key": "iptc.video.frameSize", "field": "widthPixels"},
+      "heuristic": "H11",
+      "citation": "Exiv2 synthetic Xmp.video.Width; cast source only, never written"
+    },
+    {
+      "id": "track1_height",
+      "source": {"kind": "base_key", "key": "ExifTool.Track1.ImageHeight"},
+      "target": {"kind": "property_field", "key": "iptc.video.frameSize", "field": "heightPixels"},
+      "heuristic": "H11",
+      "citation": "ExifTool Track1 ImageHeight"
+    },
+    {
+      "id": "qt_height",
+      "source": {"kind": "base_key", "key": "QuickTime.ImageHeight"},
+      "target": {"kind": "property_field", "key": "iptc.video.frameSize", "field": "heightPixels"},
+      "heuristic": "H11",
+      "citation": "ExifTool QuickTime ImageHeight when the track group is absent"
+    },
+    {
+      "id": "exiv2_height",
+      "source": {"kind": "base_key", "key": "Xmp.video.Height"},
+      "target": {"kind": "property_field", "key": "iptc.video.frameSize", "field": "heightPixels"},
+      "heuristic": "H11",
+      "citation": "Exiv2 synthetic Xmp.video.Height; cast source only, never written"
+    },
+    {
+      "id": "track1_rate",
+      "source": {"kind": "base_key", "key": "ExifTool.Track1.VideoFrameRate"},
+      "target": {"kind": "property", "key": "iptc.video.videoFrameRate"},
+      "heuristic": "H11",
+      "citation": "ExifTool Track1 VideoFrameRate"
+    },
+    {
+      "id": "qt_rate",
+      "source": {"kind": "base_key", "key": "QuickTime.VideoFrameRate"},
+      "target": {"kind": "property", "key": "iptc.video.videoFrameRate"},
+      "heuristic": "H11",
+      "citation": "ExifTool QuickTime VideoFrameRate when the track group is absent"
+    },
+    {
+      "id": "exiv2_rate",
+      "source": {"kind": "base_key", "key": "Xmp.video.FrameRate"},
+      "target": {"kind": "property", "key": "iptc.video.videoFrameRate"},
+      "heuristic": "H11",
+      "citation": "Exiv2 synthetic Xmp.video.FrameRate; cast source only, never written"
+    },
+    {
+      "id": "track1_codec",
+      "source": {"kind": "base_key", "key": "ExifTool.Track1.CompressorID"},
+      "target": {"kind": "property_field", "key": "iptc.video.videoCoding", "field": "identifiers"},
+      "heuristic": "H11",
+      "citation": "ExifTool Track1 CompressorID fourcc as Entity identifiers"
+    },
+    {
+      "id": "qt_codec",
+      "source": {"kind": "base_key", "key": "QuickTime.CompressorID"},
+      "target": {"kind": "property_field", "key": "iptc.video.videoCoding", "field": "identifiers"},
+      "heuristic": "H11",
+      "citation": "ExifTool QuickTime CompressorID when the track group is absent"
+    },
+    {
+      "id": "exiv2_codec",
+      "source": {"kind": "base_key", "key": "Xmp.video.Codec"},
+      "target": {"kind": "property_field", "key": "iptc.video.videoCoding", "field": "identifiers"},
+      "heuristic": "H11",
+      "citation": "Exiv2 synthetic Xmp.video.Codec; cast source only, never written"
+    },
+    {
+      "id": "track1_codec_name",
+      "source": {"kind": "base_key", "key": "ExifTool.Track1.CompressorName"},
+      "target": {"kind": "property_field", "key": "iptc.video.videoCoding", "field": "name"},
+      "heuristic": "H11",
+      "citation": "ExifTool Track1 CompressorName as Entity name x-default"
+    },
+    {
+      "id": "qt_codec_name",
+      "source": {"kind": "base_key", "key": "QuickTime.CompressorName"},
+      "target": {"kind": "property_field", "key": "iptc.video.videoCoding", "field": "name"},
+      "heuristic": "H11",
+      "citation": "ExifTool QuickTime CompressorName when the track group is absent"
+    },
+    {
+      "id": "exiv2_compressor",
+      "source": {"kind": "base_key", "key": "Xmp.video.Compressor"},
+      "target": {"kind": "property_field", "key": "iptc.video.videoCoding", "field": "name"},
+      "heuristic": "H11",
+      "citation": "Exiv2 synthetic Xmp.video.Compressor; cast source only, never written"
+    },
+    {
+      "id": "track2_audio_rate",
+      "source": {"kind": "base_key", "key": "ExifTool.Track2.AudioSampleRate"},
+      "target": {"kind": "property", "key": "iptc.video.audioSampleRate"},
+      "heuristic": "H11",
+      "citation": "ExifTool Track2 AudioSampleRate"
+    },
+    {
+      "id": "qt_audio_rate",
+      "source": {"kind": "base_key", "key": "QuickTime.AudioSampleRate"},
+      "target": {"kind": "property", "key": "iptc.video.audioSampleRate"},
+      "heuristic": "H11",
+      "citation": "ExifTool QuickTime AudioSampleRate when the track group is absent"
+    },
+    {
+      "id": "exiv2_audio_rate",
+      "source": {"kind": "base_key", "key": "Xmp.audio.SampleRate"},
+      "target": {"kind": "property", "key": "iptc.video.audioSampleRate"},
+      "heuristic": "H11",
+      "citation": "Exiv2 synthetic Xmp.audio.SampleRate; cast source only, never written"
+    },
+    {
+      "id": "track2_audio_channels",
+      "source": {"kind": "base_key", "key": "ExifTool.Track2.AudioChannels"},
+      "target": {"kind": "property", "key": "iptc.video.audioChannels"},
+      "heuristic": "H11",
+      "citation": "ExifTool Track2 AudioChannels"
+    },
+    {
+      "id": "qt_audio_channels",
+      "source": {"kind": "base_key", "key": "QuickTime.AudioChannels"},
+      "target": {"kind": "property", "key": "iptc.video.audioChannels"},
+      "heuristic": "H11",
+      "citation": "ExifTool QuickTime AudioChannels when the track group is absent"
+    },
+    {
+      "id": "exiv2_audio_channels",
+      "source": {"kind": "base_key", "key": "Xmp.audio.ChannelType"},
+      "target": {"kind": "property", "key": "iptc.video.audioChannels"},
+      "heuristic": "H11",
+      "citation": "Exiv2 synthetic Xmp.audio.ChannelType; cast source only, never written"
+    },
+    {
+      "id": "composite_rotation",
+      "source": {"kind": "base_key", "key": "ExifTool.Composite.Rotation"},
+      "target": {"kind": "property", "key": "iptc.video.orientation"},
+      "heuristic": "H11",
+      "citation": "ExifTool Composite Rotation degrees; 0/90/180/270 map to EXIF orientation 1/6/3/8"
+    },
+    {
+      "id": "track1_matrix",
+      "source": {"kind": "base_key", "key": "ExifTool.Track1.MatrixStructure"},
+      "target": {"kind": "property", "key": "iptc.video.orientation"},
+      "heuristic": "H11",
+      "citation": "Track1 display matrix when Composite Rotation is absent; movie-level matrix is not used"
+    },
+    {
+      "id": "qt_rotation",
+      "source": {"kind": "base_key", "key": "QuickTime.Rotation"},
+      "target": {"kind": "property", "key": "iptc.video.orientation"},
+      "heuristic": "H11",
+      "citation": "ExifTool QuickTime Rotation degrees when neither Composite nor the track matrix is present"
+    }
+  ]
+}

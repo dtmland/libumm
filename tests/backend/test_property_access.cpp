@@ -163,8 +163,20 @@ int main() {
   }
 
   const auto all = umm::propertyAccessAll(jpeg, umm::StoragePolicy::preferred);
-  if (!all.ok() || all.value().size() != umm::registry().size()) {
+  if (!all.ok() ||
+      all.value().size() !=
+          umm::registry().size() + std::size(umm::kTechnicalPropertyIds)) {
     return fail("propertyAccessAll size");
+  }
+  bool technical_read_only = false;
+  for (const umm::PropertyAccess& row : all.value()) {
+    if (row.id == "technical.orientation" &&
+        row.reason == umm::AccessReason::property_read_only) {
+      technical_read_only = true;
+    }
+  }
+  if (!technical_read_only) {
+    return fail("technical pseudo-id must be property_read_only");
   }
 
   const std::vector<std::filesystem::path> files = {

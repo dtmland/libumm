@@ -182,6 +182,14 @@ gap and U3 ships ExifTool-only with the reason surfaced by F5.
 Exiv2 capability probe, and regenerates `docs/supported-types.md`. The page is generated;
 it is never hand-edited.
 
+**Spike result (session 64, 2026-11-27).** Pinned Exiv2 0.28.9 with
+`EXIV2_ENABLE_VIDEO ON` (Brotli off) reads the session 64 fixtures and reports
+duration, frame size, frame rate, codec, and audio facts as synthetic
+`Xmp.video.*` / `Xmp.audio.*` keys. It does not report rotation. Track duration
+is 0. `video/gps.mp4` is misread (`HandlerType` becomes "Metadata Tags"). Those
+keys must never be written. The bundled option stays **off**. U3 is
+ExifTool-only; the capability page already says so through F5.
+
 ### F11 — Read-only technical view (U2)
 
 **Decision.** Keep C17: no EXIF canonical domain. Add a read-only, non-canonical view

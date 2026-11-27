@@ -231,5 +231,21 @@ int main() {
       return fail("xmp write-sync leaked non-XMP");
     }
   }
+  umm::Metadata technical;
+  technical.setMediaDomain(umm::MediaDomain::video);
+  umm::Structure duration;
+  duration.emplace("timeFormat", umm::Value{std::string("seconds")});
+  duration.emplace("timeValue", umm::Value{std::string("0.1")});
+  if (!technical.set("iptc.video.fileDuration", umm::Value{duration}).ok() ||
+      !technical.set("iptc.video.orientation", umm::Value{6.0}).ok()) {
+    return fail("set video technical properties");
+  }
+  const umm::BaseChanges technical_changes = umm::internal::write_sync(technical);
+  for (const umm::BaseEntry& item : technical_changes.upserts) {
+    if (item.key.key.rfind("Xmp.video.", 0) == 0 ||
+        item.key.key.rfind("Xmp.audio.", 0) == 0) {
+      return fail("write-sync must not emit synthetic Exiv2 video keys");
+    }
+  }
   return 0;
 }

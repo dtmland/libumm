@@ -67,7 +67,7 @@ Result<Metadata> finish_read(Result<Metadata> metadata, const ReadOptions& optio
 Result<void> validate_read_options(const ReadOptions& options) {
   if (options.properties) {
     for (const std::string& id : *options.properties) {
-      if (!registry().find(id)) {
+      if (!registry().find(id) && !isTechnicalPropertyId(id)) {
         return Error{ErrorCode::unknown_property, "unknown property: " + id, "",
                      ""};
       }
@@ -107,7 +107,8 @@ void merge_applied_casts(Metadata& value, std::vector<CastCandidate> applied) {
     candidate.notes.push_back("applied on read");
     bool replaced = false;
     for (CastCandidate& have : stored) {
-      if (have.group == candidate.group && have.direction == candidate.direction) {
+      if (have.group == candidate.group && have.direction == candidate.direction &&
+          have.target_id == candidate.target_id) {
         have = candidate;
         replaced = true;
         break;
@@ -249,12 +250,15 @@ Result<LoadedRead> load_read(const std::filesystem::path& media,
   const std::vector<std::string>* selective = nullptr;
   if (options.properties) {
     for (const std::string& id : *options.properties) {
-      if (!registry().find(id)) {
+      if (!registry().find(id) && !isTechnicalPropertyId(id)) {
         return Error{ErrorCode::unknown_property, "unknown property: " + id,
                      "", ""};
       }
     }
     selective_tags = exiftool_tags_for_properties(*options.properties);
+    if (options.upcast) {
+      append_upcast_source_tags(selective_tags, *options.upcast);
+    }
     selective = &selective_tags;
   }
   SelectiveTagGuard tags(selective);
@@ -346,6 +350,9 @@ Result<void> readMany(
   const std::vector<std::string>* selective = nullptr;
   if (options.properties) {
     selective_tags = internal::exiftool_tags_for_properties(*options.properties);
+    if (options.upcast) {
+      internal::append_upcast_source_tags(selective_tags, *options.upcast);
+    }
     selective = &selective_tags;
   }
   internal::SelectiveTagGuard tags(selective);

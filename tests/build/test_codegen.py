@@ -25,6 +25,8 @@ GENERATED_HPP = GENERATED_DIR / "property_registry.hpp"
 GENERATED_CPP = GENERATED_DIR / "property_registry.cpp"
 GENERATED_CROSS = GENERATED_DIR / "cross_media_accessors.hpp"
 GENERATED_CASTS = GENERATED_DIR / "cast_rules.hpp"
+GENERATED_TECHNICAL = GENERATED_DIR / "technical_sources.hpp"
+TECHNICAL_DIR = REPO_ROOT / "registry" / "technical"
 GITATTRIBUTES = REPO_ROOT / ".gitattributes"
 CMAKE_REGISTRY = REPO_ROOT / "cmake" / "LibummRegistry.cmake"
 
@@ -75,16 +77,19 @@ class TestCodegen(unittest.TestCase):
             GENERATED_CPP,
             GENERATED_CROSS,
             GENERATED_CASTS,
+            GENERATED_TECHNICAL,
             CMAKE_REGISTRY,
         ):
             self.assertTrue(path.is_file(), f"missing {path}")
         self.assertTrue(CASTS_DIR.is_dir(), f"missing {CASTS_DIR}")
+        self.assertTrue(TECHNICAL_DIR.is_dir(), f"missing {TECHNICAL_DIR}")
 
     def test_committed_generated_sources_match_generator(self) -> None:
         committed_hpp = GENERATED_HPP.read_bytes()
         committed_cpp = GENERATED_CPP.read_bytes()
         committed_cross = GENERATED_CROSS.read_bytes()
         committed_casts = GENERATED_CASTS.read_bytes()
+        committed_technical = GENERATED_TECHNICAL.read_bytes()
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp)
             result = run_generator([REGISTRY_DIR, VIDEO_REGISTRY_DIR], OVERLAY, output)
@@ -93,22 +98,27 @@ class TestCodegen(unittest.TestCase):
             generated_cpp = (output / GENERATED_CPP.name).read_bytes()
             generated_cross = (output / GENERATED_CROSS.name).read_bytes()
             generated_casts = (output / GENERATED_CASTS.name).read_bytes()
+            generated_technical = (output / GENERATED_TECHNICAL.name).read_bytes()
         self.assertEqual(generated_hpp, committed_hpp)
         self.assertEqual(generated_cpp, committed_cpp)
         self.assertEqual(generated_cross, committed_cross)
         self.assertEqual(generated_casts, committed_casts)
+        self.assertEqual(generated_technical, committed_technical)
         self.assertTrue(committed_hpp.endswith(b"\n"))
         self.assertTrue(committed_cpp.endswith(b"\n"))
         self.assertTrue(committed_cross.endswith(b"\n"))
         self.assertTrue(committed_casts.endswith(b"\n"))
+        self.assertTrue(committed_technical.endswith(b"\n"))
         self.assertNotIn(b"\r\n", committed_hpp)
         self.assertNotIn(b"\r\n", committed_cpp)
         self.assertNotIn(b"\r\n", committed_cross)
         self.assertNotIn(b"\r\n", committed_casts)
+        self.assertNotIn(b"\r\n", committed_technical)
         self.assertTrue(committed_hpp.startswith(b"// GENERATED"))
         self.assertTrue(committed_cpp.startswith(b"// GENERATED"))
         self.assertTrue(committed_cross.startswith(b"// GENERATED"))
         self.assertTrue(committed_casts.startswith(b"// GENERATED"))
+        self.assertTrue(committed_technical.startswith(b"// GENERATED"))
 
     def test_generator_is_byte_identical_across_runs(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -133,6 +143,10 @@ class TestCodegen(unittest.TestCase):
             self.assertEqual(
                 (first / GENERATED_CASTS.name).read_bytes(),
                 (second / GENERATED_CASTS.name).read_bytes(),
+            )
+            self.assertEqual(
+                (first / GENERATED_TECHNICAL.name).read_bytes(),
+                (second / GENERATED_TECHNICAL.name).read_bytes(),
             )
 
     def test_property_count_matches_registry_json(self) -> None:

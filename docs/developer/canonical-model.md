@@ -68,6 +68,25 @@ video); empty vector = none.
 Cast-rule sources are flagged on `dumpAll()` / `dumpUnmapped()`
 (`BaseEntry::cast_source`).
 
+`videoTechnical` is one-way and multi-target. Evaluation follows
+`source_priority`, not file order. Frame size is emitted only when both
+dimensions are present. Rotation `0` is orientation `1`. Movie-level
+`QuickTime.MatrixStructure` is not a source (it stays identity when the track
+is rotated). Synthetic `Xmp.video.*` / `Xmp.audio.*` keys are cast sources
+only and are never written.
+
+## Technical view (C17, F11)
+
+`Metadata::technical()` is a read-only, non-canonical view. It is not a
+registry domain and is not written. Session 65 defines the types and the
+generated source table (`registry/technical/sources.json` →
+`src/generated/technical_sources.hpp`). The view stays empty until session 66
+fills it. Selective reads accept the pseudo-ids `technical.cameraMake`,
+`technical.cameraModel`, `technical.lensModel`, `technical.orientation`, and
+`technical.pixelSize`. `propertyAccess` reports them as `property_read_only`.
+Container pixel facts that are not stored metadata travel in
+`BaseDocument::intrinsics`; `dumpAll()` is unchanged.
+
 ## First rule set
 
 | Group | Direction | Notes |
@@ -77,6 +96,7 @@ Cast-rule sources are flagged on `dumpAll()` / `dumpUnmapped()`
 | `videoCreated` | up | Movie-header `CreateDate` → `iptc.video.dateCreated`; `approximate` (H12, H16) |
 | `videoModified` | up | Movie-header `ModifyDate` → `iptc.video.dateModified` (H12) |
 | `recordingDevice` | up | Keys Make/Model, EXIF Make/Model/serial/lens, GoPro tags → Device struct (H8) |
+| `videoTechnical` | up | One-way QuickTime duration, frame size, rate, coding, audio, rotation → VMH technical ids (H11). Multi-target; provenance is the target's own source key |
 | `locationShownLegacy` | side | Legacy city/state/country/countryCode/sublocation ↔ `locationShownInTheImage[0]` (H3, H14; MWG Location Shown) |
 | `personShown` | side | `personShownInTheImage` ↔ details `name` (H4 union) |
 | `creatorImageCreator` | side | `creator` ↔ `imageCreator[*].imageCreatorName` (H4 union) |

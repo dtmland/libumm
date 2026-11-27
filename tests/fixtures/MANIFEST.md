@@ -282,6 +282,34 @@ Each committed media file is generator-produced (decision **M6**); track files a
 - **Purpose:** QuickTime keys + XMP agree — video reconciliation "equivalent" path
 - **Command:** `ffmpeg -y -hide_banner -loglevel error -f lavfi -i color=c=gray:s=16x16:r=10 -t 0.1 -an -c:v mpeg4 -q:v 12 -movflags +faststart video/full.mp4 && exiftool -overwrite_original -all= video/full.mp4 && exiftool -overwrite_original -ItemList:Title=Agreeing Title -ItemList:Description=Agreeing description -ItemList:Artist=Agreeing Creator -ItemList:Copyright=Agreeing Copyright -Keys:Keywords=alpha -Keys:CreationDate=2020:01:02 03:04:05 -XMP-dc:Title=Agreeing Title -XMP-dc:Description=Agreeing description -XMP-dc:Creator=Agreeing Creator -XMP-dc:Rights=Agreeing Copyright -XMP-dc:Subject=alpha -XMP-dc:Subject=beta -XMP-photoshop:DateCreated=2020:01:02T03:04:05 video/full.mp4`
 
+### `video/technical.mp4`
+
+- **SHA-256:** `a03c8c001fd2c1ecfc32ceb3cd8b67d85c40a6da46338848efaab16405281065`
+- **Size:** 1402 bytes
+- **Purpose:** No XMP; duration, 16x16 frame, 10 fps, audio, rotation 0
+- **Command:** `ffmpeg -y -hide_banner -loglevel error -f lavfi -i color=c=gray:s=16x16:r=10 -f lavfi -i anullsrc=r=8000:cl=mono -t 0.1 -c:v mpeg4 -q:v 12 -c:a aac -shortest -movflags +faststart video/technical.mp4`
+
+### `video/technical-rotated.mp4`
+
+- **SHA-256:** `ef7fcea1ff4542bd4fc9ad8ad9d9618ac81e303076bcb6aba060b7845ba5d687`
+- **Size:** 1402 bytes
+- **Purpose:** Same as technical.mp4 with a 90-degree display matrix (orientation 6)
+- **Command:** `ffmpeg -y -hide_banner -loglevel error -f lavfi -i color=c=gray:s=16x16:r=10 -f lavfi -i anullsrc=r=8000:cl=mono -t 0.1 -c:v mpeg4 -q:v 12 -c:a aac -shortest -movflags +faststart -metadata:s:v:0 rotate=90 video/technical-rotated.mp4`
+
+### `video/technical.mov`
+
+- **SHA-256:** `4b4e5cd34eee584337742d02b4bf72a68ac77d50f08bb1bafd94a0f5a372335a`
+- **Size:** 1514 bytes
+- **Purpose:** MOV counterpart of technical.mp4
+- **Command:** `ffmpeg -y -hide_banner -loglevel error -f lavfi -i color=c=gray:s=16x16:r=10 -f lavfi -i anullsrc=r=8000:cl=mono -t 0.1 -c:v mpeg4 -q:v 12 -c:a aac -shortest -f mov video/technical.mov`
+
+### `video/technical-rotated.mov`
+
+- **SHA-256:** `435b954eb507b13ad2c837b1088d9ea35439769cf2f917b3cf99a074ed25bf15`
+- **Size:** 1514 bytes
+- **Purpose:** MOV counterpart of technical-rotated.mp4
+- **Command:** `ffmpeg -y -hide_banner -loglevel error -f lavfi -i color=c=gray:s=16x16:r=10 -f lavfi -i anullsrc=r=8000:cl=mono -t 0.1 -c:v mpeg4 -q:v 12 -c:a aac -shortest -f mov -metadata:s:v:0 rotate=90 video/technical-rotated.mov`
+
 ### `video/gps.mp4`
 
 - **SHA-256:** `ea98d8b00ee556505391e5622de377887029316b31ad69fae97b945d83306bd7`

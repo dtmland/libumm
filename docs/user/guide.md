@@ -200,10 +200,18 @@ an empty list apply none. Unknown group ids fail with `invalid_value`. Naming
 `include_approximate`. `needs_force` and `ambiguous` never apply. A
 representation always wins, so an existing `dateCreated` is not replaced.
 Applied values record `cast:<group>` provenance (`preferred_source` is the
-first source base key). `describe` does not apply upcasts. A later `umm::write`
+first source base key). For `videoTechnical`, each target records only its own
+source key. `describe` does not apply upcasts. A later `umm::write`
 of that `Metadata` writes the canonical representations; the read itself does
 not modify the file. With `properties` set, only groups whose target id is
-listed run, and the dumps stay empty.
+listed run, and the dumps stay empty. `technical.*` pseudo-ids are accepted in
+that list and are read-only.
+
+`videoTechnical` fills VMH duration, frame size, frame rate, coding, audio
+facts, and orientation from QuickTime tags. It needs ExifTool. Rotation `0` is
+orientation `1` (not rotated); `90` is `6`. The bundled Exiv2 build does not
+read these values. The library never writes synthetic `Xmp.video.*` or
+`Xmp.audio.*` keys.
 
 Cast-rule sources appear in `dumpUnmapped()` with `BaseEntry::cast_source`.
 

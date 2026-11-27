@@ -146,6 +146,14 @@ std::optional<BaseKey> map_exiftool_tag(std::string_view json_key) {
       mapped.key = "Exif.GPSInfo." + compact;
       return mapped;
     }
+    // Rotation is derived from the track matrix. Keep it so videoTechnical
+    // can map degrees; it is not stored metadata and is never written.
+    if (compact == "Rotation") {
+      BaseKey mapped;
+      mapped.family = "ExifTool";
+      mapped.key = "ExifTool.Composite.Rotation";
+      return mapped;
+    }
     return std::nullopt;
   }
   if (tag == "Error" || tag == "Warning") {
@@ -363,6 +371,14 @@ std::optional<std::string> exiftool_tag_for_base_key(std::string_view base_key) 
       return "Keys:" + *name;
     }
     return "QuickTime:" + *name;
+  }
+  if (key.rfind("ExifTool.", 0) == 0) {
+    const std::string rest = key.substr(std::string("ExifTool.").size());
+    const auto dot = rest.find('.');
+    if (dot == std::string::npos || dot == 0 || dot + 1 >= rest.size()) {
+      return std::nullopt;
+    }
+    return rest.substr(0, dot) + ":" + rest.substr(dot + 1);
   }
   if (key.rfind("Xmp.", 0) == 0) {
     const std::string rest = key.substr(4);
